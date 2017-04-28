@@ -253,8 +253,8 @@ class SphericalCrystal:
         clause = (angle <= angle_max) & (angle >= angle_min)
         clause = np.ndarray.flatten(clause)
         
-        #return X[clause], D[clause], norm[clause], W[clause]
-        return X, D, norm, W
+        return X[clause], D[clause], norm[clause], W[clause]
+        #return X, D, norm, W
 
 
     def reflect_vectors(self, X, D, W):
@@ -510,8 +510,8 @@ def raytrace_special(duration, source, detector, crystal):
     detector.collect_rays(O, D, W)
     clause = detector.clause
     
-    #O1, D1, W1 = O[clause], D[clause], W[clause]
-    O1, D1, W1 = O, D, W
+    O1, D1, W1 = O[clause], D[clause], W[clause]
+    #O1, D1, W1 = O, D, W
     crystal.collect_rays(O1, D1, W1)
     
     return 
