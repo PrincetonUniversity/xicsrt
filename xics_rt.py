@@ -22,6 +22,8 @@ CRYSTAL_HEIGHT      = .100
 CRYSTAL_SPACING     = 2.45676 #in angstroms        
 CRYSTAL_CENTER      = CRYSTAL_LOCATION + CRYSTAL_CURVATURE * CRYSTAL_NORMAL
 
+
+
 DETECTOR_LOCATION   = np.array([-8.67295866,     2.12754909,     0.11460174])
 DETECTOR_NORMAL     = np.array([0.06377482,      0.99491214,    -0.07799110])
 DETECTOR_ORIENTATION = np.array([-0.99468769,     0.05704335,    -0.08568812])
@@ -37,7 +39,7 @@ t1 = time.time()
 
 
 pilatus = Detector(DETECTOR_LOCATION, DETECTOR_NORMAL, DETECTOR_ORIENTATION,
-                   195, 1475, .000172)
+                   X_SIZE, Y_SIZE, PIXEL_SIZE)
 
 crystal = SphericalCrystal(CRYSTAL_LOCATION, CRYSTAL_NORMAL, 
                            CRYSTAL_ORIENTATION, CRYSTAL_CURVATURE, 
@@ -52,7 +54,7 @@ temperature is 11 eV, mass number is 112 (Cadmium).
 
 source_position = source_location_bragg(.01, 0, CRYSTAL_LOCATION, CRYSTAL_NORMAL, 
                                   CRYSTAL_CURVATURE, CRYSTAL_SPACING,
-                                  DETECTOR_LOCATION, 4)
+                                  DETECTOR_LOCATION, 3.95)
 
 source_direction = ((CRYSTAL_LOCATION - source_position)/
                     np.linalg.norm((CRYSTAL_LOCATION - source_position) ))
@@ -66,13 +68,13 @@ Start the raytracing code.
 Output detector image to 'new_xics_image.tif'
 """
 
-#raytrace(1, source, pilatus, crystal)
-#pilatus.output_image('ded2.tif')
+raytrace(1, source, pilatus, crystal)
+pilatus.output_image('ded2.tif')
 
 
-raytrace_special(1, source, pilatus, crystal)
-pilatus.output_image('new_detector1.tif')
-crystal.output_image('new_crystal1.tif')
+#raytrace_special(1, source, pilatus, crystal)
+#pilatus.output_image('new_detector1.tif')
+#crystal.output_image('new_crystal1.tif')
 
 
 
