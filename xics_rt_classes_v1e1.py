@@ -24,6 +24,7 @@ class Detector:
         self.height = vertical_pixels
         self.pixel_size = pixel_size
         self.clause = 0
+        self.photon_count = None
         
         def pixel_center(row, column):
             row_center = self.height / 2 - .5
@@ -120,6 +121,7 @@ class Detector:
         numbers = [71510, 287430]
         np.delete(index, numbers)
         print('Rays Collected: ' + str(len(X)))
+        self.photon_count = len(X)
         for number in index:
             row, column = self.pixel_row_column(number)
             self.pixel_array[row][column] += 1  
@@ -394,16 +396,25 @@ class DirectedSource(object):
         self.mass_number = mass_number   # mass number of source material
         
         
-    def random_direction(self):
-        # in spread
-        # spread converted to radians
-        spread_rad = self.spread / 180 * np.pi
-        theta = np.random.uniform(-spread_rad, spread_rad, 1)
-        phi = np.random.uniform(0, 2*np.pi, 1)
-        direction = [np.sin(theta) * np.cos(phi),
-                     np.sin(theta) * np.sin(phi),
-                     np.cos(theta)]
+    def theta(self, direction):
+        angle = np.arccos(direction[2]/np.linalg.norm(direction))
+        return angle    
         
+    
+     
+    def random_direction_new(self):      
+        
+        direction = [np.random.uniform(-.7, .7, 1)[0],
+                     np.random.uniform(-.7, .7, 1)[0],
+                     np.random.uniform(0, 1, 1)[0]]
+        direction = direction/np.linalg.norm(direction)
+        spread_rad = self.spread / 180 * np.pi
+            
+        while (self.theta(direction) > spread_rad):
+            direction = [np.random.uniform(-.7, .7, 1)[0],
+                         np.random.uniform(-.7, .7, 1)[0],
+                         np.random.uniform(0, 1, 1)[0]]
+
         R = ([self.xorientation, self.yorientation, self.direction])
         R = np.transpose(R)
         direction = np.dot(R, direction)
@@ -411,23 +422,8 @@ class DirectedSource(object):
         direction = direction/np.linalg.norm(direction)
         
         return direction.tolist()
-    
-     
-    def random_direction_new(self):
-        direction = np.random.uniform(-1, 1, 3)
-        direction = direction/np.linalg.norm(direction)
-        
-        def theta(direction):
-            angle = np.arccos(direction[0]/np.linalg.norm(direction))
-            return angle
-            
-        while theta(direction) >= self.spread:
-            direction = np.random.uniform(-1, 1, 3)
-            direction = direction/np.linalg.norm(direction)        
-            
-        
-        return direction.tolist()
            
+        
     def random_wavelength(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
@@ -472,6 +468,33 @@ class DirectedSource(object):
         
         return O, D, W
 
+        
+    def generate_rays_new(self,duration):
+
+        number_of_rays = self.intensity * duration 
+        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
+        O = np.array(origin) 
+        
+        ray_list = None
+        ray_list = []
+
+        wavelength_list = None
+        wavelength_list = []
+
+        i = 0
+        for i in range(0, number_of_rays):
+            ray = self.random_direction_new()
+            ray_list.append(ray)
+            
+            wavelength = self.random_wavelength()
+            wavelength_list.append(wavelength)
+            
+            i += 1
+            
+        D = np.array(ray_list)
+        W = np.array(wavelength_list)
+        
+        return O, D, W        
                 
 def raytrace(duration, source, detector, *optics):
     """ Rays are generated from source and then passed through the optics in

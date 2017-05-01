@@ -5,6 +5,8 @@ Created on Fri Apr 28 12:30:38 2017
 @author: James
 """
 import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
 
 def rotation_matrix(axis, theta):
     """
@@ -90,3 +92,44 @@ def source_location_bragg(distance
     #embed()
 
     return source_location    
+    
+    
+def plot_rows(file_name, row, bin):
+    image_array = np.array(Image.open(file_name))
+    
+    min = int(row - bin // 2)
+    max = int(row + bin // 2)
+    
+    row_array = image_array[min]
+    
+    i = 0
+    for i in range(min + 1, max +1):
+        row_array += image_array[i]
+        i += 1
+        
+    plt.figure()
+    plt.plot(row_array, 'k')
+    plt.xlabel('Horizontal Pixels')
+    plt.ylabel('Pixel Counts')
+    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bin) + ')')
+    plt.show()
+    return
+
+    
+def image_height(file_name):
+    # returns percentage of vertical illumination
+    image_array = np.array(Image.open(file_name))
+    test = np.where(image_array > 0)
+    length = len(image_array)
+    percent = (length - 2 * test[0][0]) / length
+    return round(percent, 3) *100
+
+
+def tif_to_gray_scale(file_name, scale):
+    image = Image.open(file_name).convert("L")
+    arr = np.asarray(image) * scale
+    plt.figure()
+    plt.imshow(arr, cmap='gray_r')
+    plt.show()
+    return
+
