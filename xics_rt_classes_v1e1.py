@@ -92,6 +92,7 @@ class Detector:
         test = (distance > 0) & (distance < 10)
         return np.where(test, distance, 0)
       
+        
     def intersect_check(self, O, D, distance):
         test = (distance != 0)
         O = O[test]
@@ -113,13 +114,11 @@ class Detector:
         
         return row, column  
         
-        
+         
     def collect_rays(self, O, D, W):
         X, clause = self.intersect_check(O, D, self.intersect(O, D))
         self.clause = clause
         index = self.center_tree.query(np.array(X))[1]
-        numbers = [71510, 287430]
-        np.delete(index, numbers)
         print('Rays Collected: ' + str(len(X)))
         self.photon_count = len(X)
         for number in index:
@@ -127,10 +126,19 @@ class Detector:
             self.pixel_array[row][column] += 1  
         return
         
+        
     def output_image(self, image_name):
         generated_image = Image.fromarray(self.pixel_array)
         generated_image.save(image_name)        
 
+    
+    def height_illuminated(self, O, D, W):
+        X, clause = self.intersect_check(O, D, self.intersect(O, D))
+        
+        vert = np.dot((X - self.position), self.yorientation)
+
+        
+        return X, vert
         
   
 
@@ -147,12 +155,11 @@ class SphericalCrystal:
                              np.linalg.norm(np.cross(normal, orientation)))
         self.center = self.radius * self.normal + self.location
         self.crystal_spacing = crystal_spacing
-        #self.bragg_angle = bragg_angle
         self.rocking_curve = rocking_curve
         self.reflectivity = reflectivity
         self.width = width
         self.height = height
-        self.pixel_size = self.width / 1001
+        self.pixel_size = self.width / 1000
         self.pixel_width = round(self.width / self.pixel_size)
         self.pixel_height = round(self.height / self.pixel_size)        
         
@@ -184,7 +191,36 @@ class SphericalCrystal:
             
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
         self.center_tree = KDTree(create_center_array())
+        
+        
+    def pixel_center(self, row, column):
+        row_center = self.pixel_height / 2 - .5
+        column_center = self.pixel_width / 2 - .5
             
+        xstep = (column - column_center) * self.pixel_size
+        ystep = (row_center - row) * self.pixel_size
+        center = (self.location + xstep * self.xorientation 
+                                    + ystep * self.yorientation)
+            
+        return center        
+        
+        
+    def create_center_array_new(self):
+        center_array = []
+        i = 0
+        for i in range(0, self.pixel_height):
+            j = 0
+            for j in range(0, self.pixel_width):
+                point = self.pixel_center(i, j)
+                point = point.tolist()
+                
+                center_array.append(point)
+                j += 1
+                
+            i += 1
+            
+        return np.array(center_array)   
+        
         
     def normalize(self, vector):
         value = np.einsum('ij,ij->i', vector, vector) ** .5
@@ -223,6 +259,7 @@ class SphericalCrystal:
         #print(hit)
         return np.where(hit, distance, 0)
         
+        
     def intersect_check(self, O, D, W, distance):
         test = None
         test = (distance != 0) #finds which rays intersect, removes others
@@ -235,14 +272,28 @@ class SphericalCrystal:
         yproj = abs(np.dot(X - self.location, self.yorientation))
         xproj = abs(np.dot(X - self.location, self.xorientation))
         clause = None
-        clause = (xproj <= self.width) & (yproj <= self.height)
+        clause = (xproj <= self.width * .5) & (yproj <= self.height * .5)
         return X[clause], D[clause], W[clause]
     
+
+    def point_on_crystal_check(self, point):
+        max_dist = np.sqrt(self.width**2 + self.height ** 2)
+        
+        displace = point - self.location
+        distance = np.linalg.norm(displace)
+        
+        yproj = abs(np.dot(displace, self.yorientation))
+        xproj = abs(np.dot(displace, self.xorientation))
+        clause = None
+        clause = (distance <= max_dist) & (xproj <= self.width * .5) & (yproj <= self.height * .5)
+        
+        return clause
+        
     def angle_check(self, X, D, norm, W):
         
         # returns vectors that satisfy the bragg condition
         clause = None
-        #print(W)
+        
         bragg_angle = np.arcsin( W / (2 * self.crystal_spacing))
         
         dot = np.einsum('ij,ij->i',D, -1 * norm)[:, np.newaxis]
@@ -251,12 +302,12 @@ class SphericalCrystal:
         angle = (np.pi * .5) - angle
         angle_min = bragg_angle - self.rocking_curve
         angle_max = bragg_angle + self.rocking_curve
-
+        
         clause = (angle <= angle_max) & (angle >= angle_min)
         clause = np.ndarray.flatten(clause)
-        
+
         return X[clause], D[clause], norm[clause], W[clause]
-        #return X, D, norm, W
+
 
 
     def reflect_vectors(self, X, D, W):
@@ -303,7 +354,13 @@ class SphericalCrystal:
         generated_image = Image.fromarray(self.pixel_array)
         generated_image.save(image_name)           
 
+        
+    def height_illuminated(self, O, D, W):
+        X, D, W = self.intersect_check(O, D, W, self.intersect(O, D))
+        
+        vert = np.dot((X - self.location), self.yorientation)
 
+        return X, vert
         
 
 class PointSource(object):
@@ -441,7 +498,7 @@ class DirectedSource(object):
         return rand_wave
         
     
-    def generate_rays(self,duration):
+    def generate_rays(self, duration):
 
         number_of_rays = self.intensity * duration 
         origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
@@ -467,34 +524,7 @@ class DirectedSource(object):
         W = np.array(wavelength_list)
         
         return O, D, W
-
         
-    def generate_rays_new(self,duration):
-
-        number_of_rays = self.intensity * duration 
-        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
-        O = np.array(origin) 
-        
-        ray_list = None
-        ray_list = []
-
-        wavelength_list = None
-        wavelength_list = []
-
-        i = 0
-        for i in range(0, number_of_rays):
-            ray = self.random_direction_new()
-            ray_list.append(ray)
-            
-            wavelength = self.random_wavelength()
-            wavelength_list.append(wavelength)
-            
-            i += 1
-            
-        D = np.array(ray_list)
-        W = np.array(wavelength_list)
-        
-        return O, D, W        
                 
 def raytrace(duration, source, detector, *optics):
     """ Rays are generated from source and then passed through the optics in
@@ -508,9 +538,8 @@ def raytrace(duration, source, detector, *optics):
     
     for optic in optics:
         O, D, W = optic.light(O, D, W)
-        optic.collect_rays(O, D, W)
+        #optic.collect_rays(O, D, W)
         print('Rays from Crystal: ' + str(len(D)))
-    
     detector.collect_rays(O, D, W)
     
     return      

@@ -29,7 +29,7 @@ input['reflectivity']        = 1
 
 input['detector_location']   = np.array([-8.67295866, 2.12754909,  0.11460174])
 input['detector_normal']     = np.array([0.06377482,  0.99491214, -0.07799110])
-input['detector_orientation'] = np.array([-0.99468769,0.05704335, -0.08568812])
+input['detector_orientation']= np.array([-0.99468769,0.05704335, -0.08568812])
 
 input['pixel_size']          = .000172
 
@@ -72,7 +72,7 @@ input['source_direction']= ((input['crystal_location'] - input['source_position'
                     np.linalg.norm((input['crystal_location'] - input['source_position']) ))
 
 input['source_spread']   = 10  #degrees
-input['source_intensity']= 1000000
+input['source_intensity']= 100000
 input['source_temp']     = 11  # in eV
 input['source_mass']     = 112 # in atomic units (Cadmium = 112)
 
