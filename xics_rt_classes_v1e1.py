@@ -159,7 +159,7 @@ class SphericalCrystal:
         self.reflectivity = reflectivity
         self.width = width
         self.height = height
-        self.pixel_size = self.width / 1000
+        self.pixel_size = self.width / 100
         self.pixel_width = round(self.width / self.pixel_size)
         self.pixel_height = round(self.height / self.pixel_size)        
         
@@ -355,12 +355,12 @@ class SphericalCrystal:
         generated_image.save(image_name)           
 
         
-    def height_illuminated(self, O, D, W):
-        X, D, W = self.intersect_check(O, D, W, self.intersect(O, D))
-        
+    def height_illuminated(self, X):
         vert = np.dot((X - self.location), self.yorientation)
-
+        
         return X, vert
+        
+        
         
 
 class PointSource(object):
