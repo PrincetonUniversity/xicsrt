@@ -145,7 +145,8 @@ class Detector:
           
 class SphericalCrystal:
     def __init__(self, location, normal, orientation, radius_of_curvature, 
-                 crystal_spacing, rocking_curve, reflectivity, width, height):
+                 crystal_spacing, rocking_curve, reflectivity, width, height,
+                 pixel_scaling):
         
         self.radius = radius_of_curvature
         self.location = location
@@ -159,7 +160,7 @@ class SphericalCrystal:
         self.reflectivity = reflectivity
         self.width = width
         self.height = height
-        self.pixel_size = self.width / 100
+        self.pixel_size = self.width / pixel_scaling
         self.pixel_width = round(self.width / self.pixel_size)
         self.pixel_height = round(self.height / self.pixel_size)        
         
@@ -277,7 +278,7 @@ class SphericalCrystal:
     
 
     def point_on_crystal_check(self, point):
-        max_dist = np.sqrt(self.width**2 + self.height ** 2)
+        max_dist = np.sqrt((self.width *.5)**2 + (self.height * .5) ** 2)
         
         displace = point - self.location
         distance = np.linalg.norm(displace)
@@ -525,7 +526,102 @@ class DirectedSource(object):
         
         return O, D, W
         
-                
+        
+        
+class UniformAnalyticSource(object):
+    
+    """Point source that will generate rays that uniformly illuminate the
+    crystal. Points are spread on a grid on the crystal. 
+    Directions are then measured from the source location to every point on 
+    the grid on the crystal.
+    """
+    
+    def __init__(self, position, direction, spread, intensity, wavelength, 
+                 temperature, mass_number, crystal):
+        self.position = position
+        self.direction = direction
+        self.spread = spread             # in degrees
+        self.wavelength = wavelength     # in angstroms
+        self.intensity = intensity       # photons per second
+
+        self.xorientation = (np.cross(self.direction, self.position)/ 
+                             np.linalg.norm(np.cross(self.direction, self.position)))
+        self.yorientation = (np.cross(self.xorientation, self.direction) / 
+                             np.linalg.norm(np.cross(self.xorientation,
+                                                     self.direction)))    
+        self.temp = temperature          # in eV
+        self.mass_number = mass_number   # mass number of source material
+        self.crystal = crystal
+        
+        
+    def theta(self, direction):
+        angle = np.arccos(direction[2]/np.linalg.norm(direction))
+        return angle    
+        
+    
+     
+    def uniform_direction_new(self):      
+        
+        v_origin = self.position
+        crystal = self.crystal
+        
+        points_c = crystal.create_center_array_new()
+        v_direc = []
+        for point in points_c:
+            direction = point - v_origin
+            direction = direction/np.linalg.norm(direction)
+            direction = direction.tolist()
+            v_direc.append(direction)
+        
+
+        return v_direc 
+
+        
+    def random_wavelength(self):
+        c = 3.00e18                         # angstroms per sec
+        conv = 931.4940954e6                # eV per atomic u
+        mc2 = self.mass_number * conv       # mass energy in eV     
+        
+        
+        mean_wave = self.wavelength
+        mean_freq =  c / mean_wave
+        
+        sigma = np.sqrt(self.temp / mc2) * mean_freq
+
+        rand_freq = np.random.normal(mean_freq, sigma, 1)
+        rand_wave = c / rand_freq
+        
+        return rand_wave    
+        
+        
+    def generate_rays(self, duration):        
+        ray_list = None
+        ray_list = self.uniform_direction_new()
+        
+        
+        number_of_rays = len(ray_list) 
+        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
+        O = np.array(origin) 
+        
+        wavelength_list = None
+        wavelength_list = []
+        
+        i = 0
+        for i in range(0, number_of_rays):
+
+            wavelength = self.random_wavelength()
+            wavelength_list.append(wavelength)
+            
+            i += 1
+            
+        D = np.array(ray_list)
+        W = np.array(wavelength_list)
+        
+        return O, D, W
+        
+            
+        
+        
 def raytrace(duration, source, detector, *optics):
     """ Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 

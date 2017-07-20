@@ -57,6 +57,7 @@ def source_location(distance
 
 def source_location_bragg(distance
                           ,vert_displace
+                          ,horiz_displace
                           ,crystal_location
                           ,crystal_normal
                           ,crystal_curvature
@@ -72,8 +73,8 @@ def source_location_bragg(distance
     bragg_angle = np.arcsin( wavelength / (2 * crystal_spacing))
     norm_angle = np.pi/2.0 - bragg_angle
 
-
     crystal_center = crystal_location + crystal_curvature * crystal_normal
+    
     meridional_normal = np.cross(crystal_location - crystal_center,
                                  detector_location - crystal_center)
 
@@ -87,7 +88,11 @@ def source_location_bragg(distance
     source_location1 = sol_direction * distance + crystal_location
 
     source_location = source_location1 + vert_displace * meridional_normal
-
+    
+    sagittal_normal = np.cross(sol_direction, meridional_normal)
+    sagittal_normal = sagittal_normal/np.linalg.norm(sagittal_normal)
+    
+    source_location = source_location + horiz_displace * sagittal_normal
     #from IPython import embed
     #embed()
 
