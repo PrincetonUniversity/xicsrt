@@ -32,7 +32,7 @@ X_SIZE              = 195
 Y_SIZE              = 1475
 
 
-t1 = time.time()
+t1 = time.time() 
 
 
 
