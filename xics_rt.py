@@ -26,7 +26,7 @@ input['crystal_center']      = (input['crystal_location']
                                    * input['crystal_normal']))
 input['rocking_curve']       = .000068
 input['reflectivity']        = 1
-input['pixel_scaling']       = 6400
+input['pixel_scaling']       = 1
 
 input['detector_location']   = np.array([-8.67295866, 2.12754909,  0.11460174])
 input['detector_normal']     = np.array([0.06377482,  0.99491214, -0.07799110])
@@ -68,7 +68,7 @@ DirectedSource and PointSource do not require a crystal.
 
 
     
-input['source_position'] = source_location_bragg(0.05, 0, 0,
+input['source_position'] = source_location_bragg(0.09, 0, 0,
                                                  input['crystal_location'],
                                                  input['crystal_normal'], 
                                                  input['crystal_curvature'], 
@@ -80,19 +80,19 @@ input['source_direction']= ((input['crystal_location'] - input['source_position'
                     np.linalg.norm((input['crystal_location'] - input['source_position']) ))
 
 input['source_spread']   = 20  #degrees
-input['source_intensity']= 5000000
+input['source_intensity']= 1000000
 input['source_temp']     = 1100  # in eV
 input['source_mass']     = 112 # in atomic units (Cadmium = 112)
 
 
 
-source = UniformAnalyticSource(input['source_position'], 
+source = DirectedSource(input['source_position'], 
                                input['source_direction'], 
                                input['source_spread'],
                                input['source_intensity'], 
                                input['wavelength'], 
                                input['source_temp'],
-                               input['source_mass'], crystal) 
+                               input['source_mass']) 
 
 
 """
