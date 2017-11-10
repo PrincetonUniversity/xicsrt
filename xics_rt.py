@@ -7,11 +7,15 @@ Created on Thu Apr 27 09:29:37 2017
 
 import numpy as np
 import time
+
+t1 = time.time() 
 from xics_rt_classes_v1e1 import Detector, raytrace, SphericalCrystal
 from xics_rt_classes_v1e1 import DirectedSource, raytrace_special
 from xics_rt_classes_v1e1 import UniformAnalyticSource
 from xics_rt_tools import source_location_bragg
 
+
+print("Took " + str(round(time.time() - t1, 4)) + ' sec: Import Time' )
 input = {}
 input['wavelength']          = 3.95 # in angstroms    
 input['crystal_location']    = np.array([-8.61314000, 3.28703000,  0.08493510])
@@ -26,7 +30,7 @@ input['crystal_center']      = (input['crystal_location']
                                    * input['crystal_normal']))
 input['rocking_curve']       = .000068
 input['reflectivity']        = 1
-input['pixel_scaling']       = 1
+input['pixel_scaling']       = int(1)
 
 input['detector_location']   = np.array([-8.67295866, 2.12754909,  0.11460174])
 input['detector_normal']     = np.array([0.06377482,  0.99491214, -0.07799110])
@@ -37,9 +41,10 @@ input['pixel_size']          = .000172
 input['x_size']              = 195
 input['y_size']              = 1475
 
+print("Took " + str(round(time.time() - t1, 4)) + ' sec: Input Time' )
 
 
-t1 = time.time() 
+
 
 
 
@@ -68,7 +73,7 @@ DirectedSource and PointSource do not require a crystal.
 
 
     
-input['source_position'] = source_location_bragg(0.09, 0, 0,
+input['source_position'] = source_location_bragg(0.09, 0, 0.000006,
                                                  input['crystal_location'],
                                                  input['crystal_normal'], 
                                                  input['crystal_curvature'], 
@@ -80,7 +85,7 @@ input['source_direction']= ((input['crystal_location'] - input['source_position'
                     np.linalg.norm((input['crystal_location'] - input['source_position']) ))
 
 input['source_spread']   = 20  #degrees
-input['source_intensity']= 1000000
+input['source_intensity']= 1000
 input['source_temp']     = 1100  # in eV
 input['source_mass']     = 112 # in atomic units (Cadmium = 112)
 
@@ -94,6 +99,7 @@ source = DirectedSource(input['source_position'],
                                input['source_temp'],
                                input['source_mass']) 
 
+print("Took " + str(round(time.time() - t1, 4)) + ' sec: Class Setup Time' )
 
 """
 Start the raytracing code. 
@@ -101,9 +107,9 @@ Output detector image to 'test.tif'
 """
 
 
-raytrace(1, source, pilatus, crystal)
+raytrace(source, pilatus, crystal)
 
-pilatus.output_image('test.tif')
+pilatus.output_image('plus_offset1.tif')
   
 
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Total Time' )

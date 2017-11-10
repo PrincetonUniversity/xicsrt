@@ -4,11 +4,10 @@ Created on Thu Apr 27 10:05:57 2017
 
 @author: James
 """
-
+import time
 from PIL import Image
 import numpy as np
-from scipy.spatial import KDTree
-
+from scipy.spatial import cKDTree
 
 class Detector:
 
@@ -53,7 +52,7 @@ class Detector:
             return center_array
     
         self.pixel_array = np.zeros((self.height, self.width))
-        self.center_tree = KDTree(create_center_array())
+        self.center_tree = cKDTree(create_center_array())
         
         
     def pixel_corner(self, row, column, corner):
@@ -161,8 +160,8 @@ class SphericalCrystal:
         self.width = width
         self.height = height
         self.pixel_size = self.width / pixel_scaling
-        self.pixel_width = round(self.width / self.pixel_size)
-        self.pixel_height = round(self.height / self.pixel_size)        
+        self.pixel_width = int(round(self.width / self.pixel_size))
+        self.pixel_height = int(round(self.height / self.pixel_size))        
         
         def pixel_center(row, column):
             row_center = self.pixel_height / 2 - .5
@@ -191,7 +190,7 @@ class SphericalCrystal:
             return center_array
             
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
-        self.center_tree = KDTree(create_center_array())
+        self.center_tree = cKDTree(create_center_array())
         
         
     def pixel_center(self, row, column):
@@ -208,10 +207,11 @@ class SphericalCrystal:
         
     def create_center_array_new(self):
         center_array = []
+        
         i = 0
-        for i in range(0, self.pixel_height):
+        for i in range(int(self.pixel_height/4), int(3/4*self.pixel_height)):
             j = 0
-            for j in range(0, self.pixel_width):
+            for j in range(int(self.pixel_width/4), int(3/4*self.pixel_width)):
                 point = self.pixel_center(i, j)
                 point = point.tolist()
                 
@@ -456,32 +456,102 @@ class DirectedSource(object):
         
     def theta(self, direction):
         angle = np.arccos(direction[2]/np.linalg.norm(direction))
+        #print(angle)
         return angle    
         
     
      
     def random_direction_new(self):      
         
-        direction = [np.random.uniform(-.7, .7, 1)[0],
-                     np.random.uniform(-.7, .7, 1)[0],
-                     np.random.uniform(0, 1, 1)[0]]
-        direction = direction/np.linalg.norm(direction)
-        spread_rad = self.spread / 180 * np.pi
-            
-        while (self.theta(direction) > spread_rad):
+        directions = []
+        
+        i = 0
+        for i in range(0, self.intensity):
             direction = [np.random.uniform(-.7, .7, 1)[0],
                          np.random.uniform(-.7, .7, 1)[0],
                          np.random.uniform(0, 1, 1)[0]]
+            direction = direction/np.linalg.norm(direction)
+            spread_rad = self.spread / 180. * np.pi
+        
+            
+            while (self.theta(direction) > spread_rad):
+                direction = [np.random.uniform(-.7, .7, 1)[0],
+                             np.random.uniform(-.7, .7, 1)[0],
+                             np.random.uniform(0, 1, 1)[0]]
+            
+
+            R = ([self.xorientation, self.yorientation, self.direction])
+            R = np.transpose(R)
+
+            direction = np.dot(R, direction)
+            direction = np.ndarray.flatten(direction)      
+            direction = direction/np.linalg.norm(direction)
+    
+            directions.append(direction.tolist())
+            i += 1         
+        
+        D = np.array(directions)
+        return D
+           
+    
+    def random_direction_fortran(self):  
+        from third import f
+        directions = []
+        
+        i = 0
+        for i in range(0,self.intensity):
+            direction = f(1, self.spread/180 * np.pi)
+            direction = direction.flatten()
+
+            R = ([self.xorientation, self.yorientation, self.direction])
+            R = np.transpose(R)
+
+            direction = np.dot(R, direction)
+            direction = np.ndarray.flatten(direction)      
+            direction = direction/np.linalg.norm(direction)
+            
+            directions.append(direction)
+            i += 1        
+        
+        D = np.array(directions)
+        return D  
+    
+    
+    def random_direction_fortran_new(self):  
+        import fourthtest as ft
+        rad_spread = self.spread/180 * np.pi
+        
+        directions = ft.xfunc.testing(self.intensity, rad_spread)
+        new_directions = []
+        
+        i = 0
+        for i in range(0,len(directions)):
+            R = ([self.xorientation, self.yorientation, self.direction])
+            R = np.transpose(R)
+
+            direction = np.dot(R, directions[i])
+
+            direction = np.ndarray.flatten(direction)      
+            direction = direction/np.linalg.norm(direction)
+            new_directions.append(direction.tolist())
+            i += 1          
+            
+        D = np.array(new_directions)
+        return D 
+    
+
+    def random_direction_fortran_newer(self):  
+        import raygenrot as rgr
+        #fortran routine to return rays: generated, rotated, normalized
+        rad_spread = self.spread/180 * np.pi
 
         R = ([self.xorientation, self.yorientation, self.direction])
-        R = np.transpose(R)
-        direction = np.dot(R, direction)
-        direction = np.ndarray.flatten(direction)      
-        direction = direction/np.linalg.norm(direction)
         
-        return direction.tolist()
-           
-        
+        directions = rgr.xfunc.rottest(self.intensity, rad_spread, R)
+        D = np.array(directions)
+        return D      
+    
+    
     def random_wavelength(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
@@ -497,37 +567,48 @@ class DirectedSource(object):
         rand_wave = c / rand_freq
         
         return rand_wave
+    
+        
+    def generate_origin(self):
+        origin = [[self.position[0], self.position[1], self.position[2]]] * self.intensity
+        O = np.array(origin)
+        return O
         
     
-    def generate_rays(self, duration):
-
-        number_of_rays = self.intensity * duration 
-        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
-        O = np.array(origin) 
+    def generate_direction(self):
+        #Ordered Oldest to Newest
+        #D = self.random_direction_new()
+        #D = self.random_direction_fortran()
+        #D = self.random_direction_fortran_new()
+        D = self.random_direction_fortran_newer()
         
-        ray_list = None
-        ray_list = []
+        return D
 
-        wavelength_list = None
-        wavelength_list = []
 
+    def generate_wavelength(self):
+        wavelengths = []
+        
         i = 0
-        for i in range(0, number_of_rays):
-            ray = self.random_direction_new()
-            ray_list.append(ray)
-            
+        for i in range(0, self.intensity):
             wavelength = self.random_wavelength()
-            wavelength_list.append(wavelength)
-            
+            wavelengths.append(wavelength)
             i += 1
             
-        D = np.array(ray_list)
-        W = np.array(wavelength_list)
+        W = np.array(wavelengths)
+        return W
+    
         
+    def generate_rays(self):
+
+        O = self.generate_origin()    
+        D = self.generate_direction()
+        W = self.generate_wavelength()
+
         return O, D, W
         
         
         
+    
 class UniformAnalyticSource(object):
     
     """Point source that will generate rays that uniformly illuminate the
@@ -559,19 +640,20 @@ class UniformAnalyticSource(object):
         return angle    
         
     
-     
     def uniform_direction_new(self):      
         
         v_origin = self.position
         crystal = self.crystal
-        
+        duration = 1
         points_c = crystal.create_center_array_new()
         v_direc = []
-        for point in points_c:
-            direction = point - v_origin
-            direction = direction/np.linalg.norm(direction)
-            direction = direction.tolist()
-            v_direc.append(direction)
+        
+        for i in range(0, duration):
+            for point in points_c:
+                direction = point - v_origin
+                direction = direction/np.linalg.norm(direction)
+                direction = direction.tolist()
+                v_direc.append(direction)
         
 
         return v_direc 
@@ -594,10 +676,9 @@ class UniformAnalyticSource(object):
         return rand_wave    
         
         
-    def generate_rays(self, duration):        
+    def generate_rays(self):        
         ray_list = None
         ray_list = self.uniform_direction_new()
-        
         
         number_of_rays = len(ray_list) 
         origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
@@ -620,24 +701,25 @@ class UniformAnalyticSource(object):
         return O, D, W
         
             
-        
-        
-def raytrace(duration, source, detector, *optics):
+def raytrace(source, detector, *optics):
     """ Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin (O), direction (D), and wavelength (W).
     """
-    
-    O, D, W = source.generate_rays(duration)
+    t2 = time.time()
+    O, D, W = source.generate_rays()
+    print("Took " + str(round(time.time() - t2, 4)) + ' sec: Ray Generation TIme')
     print('Rays Generated: ' + str(len(D)))
-    
-    
+        
     for optic in optics:
+        t2 = time.time()
         O, D, W = optic.light(O, D, W)
+        print("Took " + str(round(time.time() - t2, 4)) + ' sec: Optic Time')
         #optic.collect_rays(O, D, W)
         print('Rays from Crystal: ' + str(len(D)))
+    t2 = time.time()
     detector.collect_rays(O, D, W)
-    
+    print("Took " + str(round(time.time() - t2, 4)) + ' sec: Collection Time')
     return      
         
         
@@ -645,13 +727,14 @@ def raytrace_special(duration, source, detector, crystal):
     """ Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin (O), direction (D), and wavelength (W).
+    
+    This function also lets the crystal collect the rays to allow for the
+    determination of which rays satisfy the bragg condition.
     """
     
     O, D, W = source.generate_rays(duration)
     print('Rays Generated: ' + str(len(D)))
     
-    
-
     O, D, W = crystal.light(O, D, W)
     print('Rays from Crystal: ' + str(len(D)))
     
