@@ -211,11 +211,12 @@ class DirectedSource(object):
         
         i = 0
         for i in range(0, intensity):
-            wavelength = random_wavelength
+            wavelength = random_wavelength()
             append(wavelength)
             i += 1
             
         W = np.array(wavelengths)
+        
         return W
     
         
