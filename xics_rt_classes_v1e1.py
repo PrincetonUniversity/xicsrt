@@ -461,7 +461,7 @@ class DirectedSource(object):
         
     
      
-    def random_direction_new(self):      
+    def random_direction(self):      
         
         directions = []
         
@@ -498,58 +498,34 @@ class DirectedSource(object):
         from third import f
         directions = []
         
+        rad_spread = self.spread/180 * np.pi
+        intensity = self.intensity
+        
+        append = directions.append
+        norm = np.linalg.norm
+        flatten = np.ndarray.flatten
+        dot = np.dot
+        
+        
+        
+        def normalize(direction):
+            return direction/norm(direction)
+        
+        R = ([self.xorientation, self.yorientation, self.direction])
+        R = np.transpose(R)    
+        
         i = 0
-        for i in range(0,self.intensity):
-            direction = f(1, self.spread/180 * np.pi)
-            direction = direction.flatten()
-
-            R = ([self.xorientation, self.yorientation, self.direction])
-            R = np.transpose(R)
-
-            direction = np.dot(R, direction)
-            direction = np.ndarray.flatten(direction)      
-            direction = direction/np.linalg.norm(direction)
-            
-            directions.append(direction)
+        for i in range(0, intensity):
+            direction = f(1, rad_spread)
+            direction = flatten(direction)
+            direction = dot(R, direction) 
+            direction = flatten(direction)
+            direction = normalize(direction)
+            append(direction)
             i += 1        
         
         D = np.array(directions)
         return D  
-    
-    
-    def random_direction_fortran_new(self):  
-        import fourthtest as ft
-        rad_spread = self.spread/180 * np.pi
-        
-        directions = ft.xfunc.testing(self.intensity, rad_spread)
-        new_directions = []
-        
-        i = 0
-        for i in range(0,len(directions)):
-            R = ([self.xorientation, self.yorientation, self.direction])
-            R = np.transpose(R)
-
-            direction = np.dot(R, directions[i])
-
-            direction = np.ndarray.flatten(direction)      
-            direction = direction/np.linalg.norm(direction)
-            new_directions.append(direction.tolist())
-            i += 1          
-            
-        D = np.array(new_directions)
-        return D 
-    
-
-    def random_direction_fortran_newer(self):  
-        import raygenrot as rgr
-        #fortran routine to return rays: generated, rotated, normalized
-        rad_spread = self.spread/180 * np.pi
-
-        R = ([self.xorientation, self.yorientation, self.direction])
-        
-        directions = rgr.xfunc.rottest(self.intensity, rad_spread, R)
-        D = np.array(directions)
-        return D      
     
     
     def random_wavelength(self):
@@ -577,10 +553,8 @@ class DirectedSource(object):
     
     def generate_direction(self):
         #Ordered Oldest to Newest
-        #D = self.random_direction_new()
-        #D = self.random_direction_fortran()
-        #D = self.random_direction_fortran_new()
-        D = self.random_direction_fortran_newer()
+        #D = self.random_direction()
+        D = self.random_direction_fortran()
         
         return D
 
@@ -588,10 +562,14 @@ class DirectedSource(object):
     def generate_wavelength(self):
         wavelengths = []
         
+        intensity = self.intensity
+        append = wavelengths.append
+        random_wavelength = self.random_wavelength
+        
         i = 0
-        for i in range(0, self.intensity):
-            wavelength = self.random_wavelength()
-            wavelengths.append(wavelength)
+        for i in range(0, intensity):
+            wavelength = random_wavelength
+            append(wavelength)
             i += 1
             
         W = np.array(wavelengths)

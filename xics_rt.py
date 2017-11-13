@@ -9,9 +9,10 @@ import numpy as np
 import time
 
 t1 = time.time() 
-from xics_rt_classes_v1e1 import Detector, raytrace, SphericalCrystal
-from xics_rt_classes_v1e1 import DirectedSource, raytrace_special
-from xics_rt_classes_v1e1 import UniformAnalyticSource
+from xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource
+from xics_rt_detectors import Detector
+from xics_rt_optics import SphericalCrystal
+from xics_rt_raytrace import raytrace, raytrace_special
 from xics_rt_tools import source_location_bragg
 
 
