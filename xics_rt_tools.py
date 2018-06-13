@@ -181,37 +181,89 @@ def plot_rows(file_name, row, bin):
     min = int(row - bin // 2)
     max = int(row + bin // 2)
     
-    row_array = image_array[min]
+    row_array = np.array(image_array[min],dtype=np.int32)
     
     i = 0
     for i in range(min + 1, max +1):
-        row_array += image_array[i]
+        row_array += np.array(image_array[i], dtype=np.int32)
         i += 1
         
-    plt.figure()
+    #plt.figure()
+    #print(row_array.T)
     plt.plot(row_array, 'k')
     plt.xlabel('Horizontal Pixels')
     plt.ylabel('Pixel Counts')
     plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bin) + ')')
-    plt.show()
+    #plt.show()
+    return
+
+
+def plot_rows_data(file_name, row, bint, color):
+    image_array = np.array(Image.open(file_name))
+    
+    mint = int(row - bint // 2)
+    maxt = int(row + bint // 2)
+    
+    row_array = (np.array(image_array[mint].T[0],dtype= np.int32) +
+                 np.array(image_array[mint].T[1],dtype= np.int32))
+
+    
+    i = 0
+    for i in range(mint + 1, maxt +1):
+        sample_row0 = np.array(image_array[i].T[0], dtype=np.int32)
+        sample_row1 = np.array(image_array[i].T[1], dtype=np.int32)
+
+        row_array = row_array + sample_row0 + sample_row1
+
+        i += 1
+        
+    #plt.figure()
+
+    #row_new = row_array.T[1]  +  row_array.T[0] 
+
+    #plt.plot(row_new)
+    plt.plot(row_array, 'b')
+
+    plt.xlabel('Horizontal Pixels')
+    plt.ylabel('Pixel Counts')
+    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bint) + ')')
+    #plt.show()
     return
 
 
 def get_rows(file_name, row, bin):
     image_array = np.array(Image.open(file_name))
-    
+
     min = int(row - bin // 2)
     max = int(row + bin // 2)
     
-    row_array = image_array[min]
+    row_array = np.array(image_array[min],dtype=np.int32)
     
     i = 0
     for i in range(min + 1, max +1):
-        row_array += image_array[i]
+        row_array += np.array(image_array[i], dtype=np.int32)
         i += 1
+        
     
     return row_array
 
+
+def get_rows_data(file_name, row, bin):
+    image_array = np.array(Image.open(file_name))
+    image_array = image_array.T
+    print(len(image_array[260]))
+    min = int(row - bin // 2)
+    max = int(row + bin // 2)
+    
+    row_array = np.array(image_array[min],dtype=np.int32)
+    
+    i = 0
+    for i in range(min + 1, max +1):
+        row_array += np.array(image_array[i], dtype=np.int32)
+        i += 1
+        
+    
+    return row_array
 
     
 def image_height(file_name):

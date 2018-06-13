@@ -2,31 +2,45 @@
 """
 Created on Mon Nov 13 10:12:15 2017
 
-@author: James
+@author: James Kring
 """
 import numpy as np   
-        
+from scipy.stats import cauchy        
 
 class PointSource(object):
     
-    """Create a point source object that emitts light of a certain wavelength.
+    """Create a point source object that emits light.
     Emits in four pi steradians.
     Wavelength in angstroms.
     """
     
-    def __init__(self, position, intensity, wavelength, temperature):
-        self.position = position
-        self.wavelength = wavelength
-        self.intensity = intensity #photons per second
-        self.temp = temperature
+    def __init__(self, position, intensity, wavelength, temperature, 
+                 mass_number, linewidth):
+        self.position           = position
+        self.wavelength         = wavelength
+        self.intensity          = intensity #photons per second
+        self.temp               = temperature
+        self.natural_linewidth  = linewidth
+        self.mass_number        = mass_number
+        
         
     def random_direction(self):
-        direction = np.random.uniform(-1, 1, 3)
-        direction = direction/np.linalg.norm(direction)
-        return direction.tolist()
+        directions = []
+        
+        append = directions.append
+        
+        i = 0
+        for i in range(0, self.intensity):
+            direction = np.random.uniform(-1, 1, 3)
+            direction = direction/np.linalg.norm(direction)
+            append(direction)
+            i += 1        
+        
+        D = np.array(directions)
+        return D  
         
         
-    def random_wavelength(self):
+    def random_wavelength_normal(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
         mc2 = self.mass_number * conv       # mass energy in eV     
@@ -39,49 +53,89 @@ class PointSource(object):
 
         rand_freq = np.random.normal(mean_freq, sigma, 1)
         rand_wave = c / rand_freq
+    
         
         return rand_wave
+
+
+    def random_wavelength_cauchy(self):
+
+        fwhm =self.natural_linewidth
+
+        rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = 1)
+        
+        return rand_wave
+    
+
+    def generate_origin(self):
+        origins = []
+        
+        append = origins.append
+        
+        i = 0
+        for i in range(0, self.intensity):
+            origin = [self.position[0], self.position[1], self.position[2]]
+            append(origin)
+            i += 1        
+        
+        O = np.array(origins)
+        return O
         
     
-    def generate_rays(self,duration):
-
-        number_of_rays = self.intensity * duration 
-        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
-        O = np.array(origin) 
+    def generate_direction(self):
+        D = self.random_direction()
         
-        ray_list = None
-        ray_list = []
+        return D
 
-        wavelength_list = None
-        wavelength_list = []
 
+    def generate_wavelength(self):
+        wavelengths = []
+        
+        intensity = self.intensity
+        append = wavelengths.append
+        #random_wavelength = self.random_wavelength_normal
+        random_wavelength = self.random_wavelength_cauchy
+        
         i = 0
-        for i in range(0, number_of_rays):
-            ray = self.random_direction()
-            ray_list.append(ray)
-            
-            wavelength = self.random_wavelength()
-            wavelength_list.append(wavelength)
-            
+        for i in range(0, intensity):
+            wavelength = random_wavelength()
+            append(wavelength)
             i += 1
             
-        D = np.array(ray_list)
-        W = np.array(wavelength_list)
+        W = np.array(wavelengths)
         
-        return O, D, W
+        return W   
+      
 
+    def generate_weight(self):
+        intensity = self.intensity
+
+        w = np.ones(intensity,dtype=np.float64)
+        
+        return w
+    
+    
+    def generate_rays(self):
+
+        O = self.generate_origin()    
+        D = self.generate_direction()
+        W = self.generate_wavelength()
+        w = self.generate_weight()
+
+
+        return O, D, W, w
 
 
 
         
 class DirectedSource(object):
     
-    """Create a directed source object that emitts light of a certain 
-    wavelength in a defined cone. Wavelength in angstroms.
+    """Create a directed source object that emitts light in a defined cone. 
+    Wavelength in angstroms.
     """
     
     def __init__(self, position, direction, spread, intensity, wavelength, 
-                 temperature, mass_number):
+                 temperature, mass_number, linewidth):
         self.position = position
         self.direction = direction
         self.spread = spread             # in degrees
@@ -95,75 +149,45 @@ class DirectedSource(object):
                                                      self.direction)))    
         self.temp = temperature          # in eV
         self.mass_number = mass_number   # mass number of source material
+        self.natural_linewidth = linewidth
         
-        
-    def theta(self, direction):
-        angle = np.arccos(direction[2]/np.linalg.norm(direction))
-        #print(angle)
-        return angle    
-        
-    
-     
-    def random_direction(self):      
-        
-        directions = []
-        
-        i = 0
-        for i in range(0, self.intensity):
-            direction = [np.random.uniform(-.7, .7, 1)[0],
-                         np.random.uniform(-.7, .7, 1)[0],
-                         np.random.uniform(0, 1, 1)[0]]
-            direction = direction/np.linalg.norm(direction)
-            spread_rad = self.spread / 180. * np.pi
-        
-            
-            while (self.theta(direction) > spread_rad):
-                direction = [np.random.uniform(-.7, .7, 1)[0],
-                             np.random.uniform(-.7, .7, 1)[0],
-                             np.random.uniform(0, 1, 1)[0]]
-            
+          
+    def random_direction(self):  
+        from scipy.linalg import sqrtm, inv
 
-            R = ([self.xorientation, self.yorientation, self.direction])
-            R = np.transpose(R)
 
-            direction = np.dot(R, direction)
-            direction = np.ndarray.flatten(direction)      
-            direction = direction/np.linalg.norm(direction)
-    
-            directions.append(direction.tolist())
-            i += 1         
+        def sym(w):
+            return w.dot(inv(sqrtm(w.T.dot(w))))
+
         
-        D = np.array(directions)
-        return D
-           
-    
-    def random_direction_fortran(self):  
-        from third import f
+        def f(theta):
+            z   = np.random.uniform(np.cos(theta),1)
+            phi = np.random.uniform(0, np.pi * 2)
+            x   = np.sqrt(1-z**2) * np.cos(phi)
+            y   = np.sqrt(1-z**2) * np.sin(phi)
+            z   = z
+            
+            return [x, y, z]  
+        
+        
+        R = ([self.xorientation, self.yorientation, self.direction])
+        R = np.transpose(R) 
+        R = sym(R)      
+        
         directions = []
         
         rad_spread = self.spread/180 * np.pi
         intensity = self.intensity
         
         append = directions.append
-        norm = np.linalg.norm
         flatten = np.ndarray.flatten
         dot = np.dot
-        
-        
-        
-        def normalize(direction):
-            return direction/norm(direction)
-        
-        R = ([self.xorientation, self.yorientation, self.direction])
-        R = np.transpose(R)    
-        
+
         i = 0
         for i in range(0, intensity):
-            direction = f(1, rad_spread)
-            direction = flatten(direction)
+            direction = f(rad_spread)
             direction = dot(R, direction) 
             direction = flatten(direction)
-            direction = normalize(direction)
             append(direction)
             i += 1        
         
@@ -171,12 +195,11 @@ class DirectedSource(object):
         return D  
     
     
-    def random_wavelength(self):
+    def random_wavelength_normal(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
         mc2 = self.mass_number * conv       # mass energy in eV     
-        
-        
+                
         mean_wave = self.wavelength
         mean_freq =  c / mean_wave
         
@@ -186,7 +209,14 @@ class DirectedSource(object):
         rand_wave = c / rand_freq
         
         return rand_wave
+
     
+    def random_wavelength_cauchy(self):
+        fwhm = self.natural_linewidth
+        rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = 1)
+    
+        return rand_wave
+
         
     def generate_origin(self):
         origin = [[self.position[0], self.position[1], self.position[2]]] * self.intensity
@@ -195,9 +225,7 @@ class DirectedSource(object):
         
     
     def generate_direction(self):
-        #Ordered Oldest to Newest
-        #D = self.random_direction()
-        D = self.random_direction_fortran()
+        D = self.random_direction()
         
         return D
 
@@ -207,7 +235,8 @@ class DirectedSource(object):
         
         intensity = self.intensity
         append = wavelengths.append
-        random_wavelength = self.random_wavelength
+        #random_wavelength = self.random_wavelength_normal
+        random_wavelength = self.random_wavelength_cauchy
         
         i = 0
         for i in range(0, intensity):
@@ -217,16 +246,25 @@ class DirectedSource(object):
             
         W = np.array(wavelengths)
         
-        return W
-    
+        return W   
+      
+
+    def generate_weight(self):
+        intensity = self.intensity
+
+        w = np.ones(intensity,dtype=np.float64)
         
+        return w
+    
+                
     def generate_rays(self):
 
         O = self.generate_origin()    
         D = self.generate_direction()
         W = self.generate_wavelength()
+        w = self.generate_weight()
 
-        return O, D, W
+        return O, D, W, w
         
         
         
@@ -240,12 +278,12 @@ class UniformAnalyticSource(object):
     """
     
     def __init__(self, position, direction, spread, intensity, wavelength, 
-                 temperature, mass_number, crystal):
+                 temperature, mass_number, linewidth, crystal):
         self.position = position
         self.direction = direction
         self.spread = spread             # in degrees
         self.wavelength = wavelength     # in angstroms
-        self.intensity = intensity       # photons per second
+        self.intensity =  len(crystal.create_center_array_new())
 
         self.xorientation = (np.cross(self.direction, self.position)/ 
                              np.linalg.norm(np.cross(self.direction, self.position)))
@@ -255,6 +293,7 @@ class UniformAnalyticSource(object):
         self.temp = temperature          # in eV
         self.mass_number = mass_number   # mass number of source material
         self.crystal = crystal
+        self.natural_linewidth = linewidth
         
         
     def theta(self, direction):
@@ -277,16 +316,14 @@ class UniformAnalyticSource(object):
                 direction = direction.tolist()
                 v_direc.append(direction)
         
-
-        return v_direc 
+        return np.array(v_direc)
 
         
-    def random_wavelength(self):
+    def random_wavelength_normal(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
         mc2 = self.mass_number * conv       # mass energy in eV     
-        
-        
+                
         mean_wave = self.wavelength
         mean_freq =  c / mean_wave
         
@@ -295,29 +332,229 @@ class UniformAnalyticSource(object):
         rand_freq = np.random.normal(mean_freq, sigma, 1)
         rand_wave = c / rand_freq
         
-        return rand_wave    
+        return rand_wave
+
+    
+    def random_wavelength_cauchy(self):
+        fwhm = self.natural_linewidth
+        rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = 1)
+    
+        return rand_wave
         
+
+    def generate_origin(self):
+        origin = [[self.position[0], self.position[1], self.position[2]]] * self.intensity
+        O = np.array(origin)
+        return O
         
-    def generate_rays(self):        
-        ray_list = None
-        ray_list = self.uniform_direction_new()
+    
+    def generate_direction(self):
+        D = self.uniform_direction_new()
         
-        number_of_rays = len(ray_list) 
-        origin = [[self.position[0], self.position[1], self.position[2]]] * number_of_rays
-        O = np.array(origin) 
+        return D
+
+
+    def generate_wavelength(self):
+        wavelengths = []
         
-        wavelength_list = None
-        wavelength_list = []
+        intensity = self.intensity
+        append = wavelengths.append
+        #random_wavelength = self.random_wavelength_normal
+        random_wavelength = self.random_wavelength_cauchy
         
         i = 0
-        for i in range(0, number_of_rays):
-
-            wavelength = self.random_wavelength()
-            wavelength_list.append(wavelength)
-            
+        for i in range(0, intensity):
+            wavelength = random_wavelength()
+            append(wavelength)
             i += 1
             
-        D = np.array(ray_list)
-        W = np.array(wavelength_list)
+        W = np.array(wavelengths)
         
-        return O, D, W
+        return W   
+      
+
+    def generate_weight(self):
+        intensity = self.intensity
+        w = np.ones(intensity,dtype=np.float64)
+        
+        return w   
+    
+ 
+    def generate_rays(self):
+        O = self.generate_origin()    
+        D = self.generate_direction()
+        W = self.generate_wavelength()
+        w = self.generate_weight()
+
+        return O, D, W, w
+    
+    
+    
+    
+class ExtendedSource:
+    """
+    Planar Source that emits in cone.
+    """
+    
+        
+    def __init__(self, position, normal, orientation, width, 
+                 height, depth, spread, intensity, wavelength, temperature,
+                 mass_number, linewidth):
+        self.position = position
+        self.xorientation = orientation
+        self.yorientation = (np.cross(normal, orientation) / 
+                             np.linalg.norm(np.cross(normal, orientation)))
+        self.normal = normal
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.spread = spread
+        self.intensity = intensity
+        self.wavelength = wavelength
+        self.temp = temperature
+        self.mass_number = mass_number
+        self.natural_linewidth = linewidth
+    
+
+    def random_direction(self):  
+        from scipy.linalg import sqrtm, inv
+
+
+        def sym(w):
+            return w.dot(inv(sqrtm(w.T.dot(w))))
+
+        
+        def f(theta):
+            z   = np.random.uniform(np.cos(theta),1)
+            phi = np.random.uniform(0, np.pi * 2)
+            x   = np.sqrt(1-z**2) * np.cos(phi)
+            y   = np.sqrt(1-z**2) * np.sin(phi)
+            z   = z
+            
+            return [x, y, z]  
+        
+        
+        R = ([self.xorientation, self.yorientation, self.normal])
+        R = np.transpose(R) 
+        R = sym(R)      
+        
+        directions = []
+        
+        rad_spread = self.spread/180 * np.pi
+        intensity = self.intensity
+        
+        append = directions.append
+        flatten = np.ndarray.flatten
+        dot = np.dot
+
+        i = 0
+        for i in range(0, intensity):
+            direction = f(rad_spread)
+            direction = dot(R, direction) 
+            direction = flatten(direction)
+            append(direction)
+            i += 1        
+        
+        D = np.array(directions)
+        return D   
+    
+    
+    def random_wavelength_normal(self):
+        c = 3.00e18                         # angstroms per sec
+        conv = 931.4940954e6                # eV per atomic u
+        mc2 = self.mass_number * conv       # mass energy in eV     
+                
+        mean_wave = self.wavelength
+        mean_freq =  c / mean_wave
+        
+        sigma = np.sqrt(self.temp / mc2) * mean_freq
+        rand_freq = np.random.normal(mean_freq, sigma, 1)
+        rand_wave = c / rand_freq
+        
+        return rand_wave
+
+    
+    def random_wavelength_cauchy(self):
+        fwhm = self.natural_linewidth
+        rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = 1)
+    
+        return rand_wave
+
+
+    def generate_direction(self):
+        D = self.random_direction()
+        
+        return D    
+    
+    def random_origin(self):
+        half_width = self.width/2
+        half_height = self.height/2
+        half_depth = self.depth/2
+        
+        
+        w_offset = np.random.uniform(-1 * half_width, half_width, 1)[0]
+        h_offset = np.random.uniform(-1 * half_height, half_height,1)[0]
+        d_offset = np.random.uniform(-1 * half_depth, half_depth, 1)[0]
+        
+        position = (self.position + w_offset * self.xorientation
+                                  + h_offset * self.yorientation
+                                  + d_offset * self.normal)        
+        
+        return position
+        
+        
+    def generate_origin(self):
+        intensity = self.intensity
+        origins = []
+        
+        append = origins.append
+        
+        i = 0
+        for i in range(0, intensity):
+            origin = self.random_origin()
+            append(origin)
+            i += 1
+            
+            
+        O = np.array(origins)
+        
+        return O
+
+
+    def generate_wavelength(self):
+        wavelengths = []
+        
+        intensity = self.intensity
+        append = wavelengths.append
+        #random_wavelength = self.random_wavelength_normal
+        random_wavelength = self.random_wavelength_cauchy
+        
+        i = 0
+        for i in range(0, intensity):
+            wavelength = random_wavelength()
+            append(wavelength)
+            i += 1
+            
+        W = np.array(wavelengths)
+        
+        return W 
+
+    
+    def generate_weight(self):
+        intensity = self.intensity
+        w = np.ones(intensity,dtype=np.float64)
+        
+        return w
+    
+        
+    def generate_rays(self):
+
+        O = self.generate_origin()    
+        D = self.generate_direction()
+        W = self.generate_wavelength()
+        w = self.generate_weight()
+
+        return O, D, W, w       
+
+
+        

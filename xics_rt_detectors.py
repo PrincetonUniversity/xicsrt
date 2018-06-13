@@ -114,19 +114,21 @@ class Detector:
         return row, column  
         
          
-    def collect_rays(self, O, D, W):
+    def collect_rays(self, O, D, W, w):
         X, clause = self.intersect_check(O, D, self.intersect(O, D))
         self.clause = clause
         index = self.center_tree.query(np.array(X))[1]
         print('Rays Collected: ' + str(len(X)))
         self.photon_count = len(X)
-        for number in index:
-            row, column = self.pixel_row_column(number)
-            self.pixel_array[row][column] += 1  
+
+        for i in range(0, len(index)):
+            row, column = self.pixel_row_column(index[i])
+            self.pixel_array[row][column] += w[i]  
         return
         
         
     def output_image(self, image_name):
+        
         generated_image = Image.fromarray(self.pixel_array)
         generated_image.save(image_name)        
 

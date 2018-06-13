@@ -9,44 +9,74 @@ import numpy as np
 import time
 
 t1 = time.time() 
-from xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource
+from xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource, ExtendedSource
 from xics_rt_detectors import Detector
 from xics_rt_optics import SphericalCrystal
 from xics_rt_raytrace import raytrace, raytrace_special
 from xics_rt_tools import source_location_bragg
 
-
+float64 = np.float64
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Import Time' )
+
+"""
+Input Section
+Contains information about detectors, crystals, sources, etc.
+"""
+
 input = {}
-input['wavelength']          = 3.95 # in angstroms    
-input['crystal_location']    = np.array([-8.61314000, 3.28703000,  0.08493510])
-input['crystal_normal']      = np.array([0.54276416, -0.83674273,  0.07258566])
-input['crystal_orientation'] = np.array([-0.83598556,-0.54654120, -0.04920219])
-input['crystal_curvature']   = 1.45040 
-input['crystal_width']       = .040
-input['crystal_height']      = .100    
-input['crystal_spacing']     = 2.45676 #in angstroms        
+input['wavelength']          = float64(3.9495) # in angstroms    
+input['crystal_location']    = np.array([float64(-8.61314000), float64(3.28703000),  float64(0.08493510)])
+input['crystal_normal']      = np.array([float64(0.54276416), float64(-0.83674273),  float64(0.07258566)])
+input['crystal_orientation'] = np.array([float64(-0.83598556),float64(-0.54654120), float64(-0.04920219)])
+input['crystal_curvature']   = float64(1.45040) 
+input['crystal_width']       = float64(.040)
+input['crystal_height']      = float64(.100)    
+input['crystal_spacing']     = float64(2.456760000) #in angstroms        
 input['crystal_center']      = (input['crystal_location'] 
                                 + (input['crystal_curvature'] 
                                    * input['crystal_normal']))
-input['rocking_curve']       = .000068
+input['rocking_curve']       = float64(.000068) * 2
+#input['rocking_curve']       = float64(.000010)
 input['reflectivity']        = 1
-input['pixel_scaling']       = int(1)
+input['crystal_pixel_scaling']       = int(200)
 
-input['detector_location']   = np.array([-8.67295866, 2.12754909,  0.11460174])
-input['detector_normal']     = np.array([0.06377482,  0.99491214, -0.07799110])
-input['detector_orientation']= np.array([-0.99468769,0.05704335, -0.08568812])
+input['detector_location']   = np.array([float64(-8.67295866), float64(2.12754909), float64(0.11460174)])
+input['detector_normal']     = np.array([float64(0.06377482),  float64(0.99491214), float64(-0.07799110)])
+input['detector_orientation']= np.array([float64(-0.99468769), float64(0.05704335), float64(-0.08568812)])
 
-input['pixel_size']          = .000172
+input['pixel_size']          = float64(.000172)
 
 input['x_size']              = 195
 input['y_size']              = 1475
 
+input['source_position'] = source_location_bragg(float64(.04), 0, 0 ,
+                                                 input['crystal_location'],
+                                                 input['crystal_normal'], 
+                                                 input['crystal_curvature'], 
+                                                 input['crystal_spacing'],
+                                                 input['detector_location'], 
+                                                 input['wavelength'])
+
+input['source_direction']= ((input['crystal_location'] - input['source_position'])/
+                    np.linalg.norm((input['crystal_location'] - input['source_position']) ))
+
+input['source_spread']   = 1 #degrees
+input['source_intensity']= 100000
+
+input['source_temp']     = 5000# in eV
+input['source_mass']     = 112 # in atomic units (Cadmium = 112)
+input['natural_linewidth'] = 0.0037 * 2.5
+
+
+input['source_width']   = .1
+input['source_height']  = .1
+input['source_depth']   = .1 
+input['source_orientation'] = np.cross(np.array([0, 0, 1]), input['source_direction'])
+input['source_orientation'] = input['source_orientation']/np.linalg.norm(input['source_orientation'])
+ 
+
+
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Input Time' )
-
-
-
-
 
 
 pilatus = Detector(input['detector_location'], input['detector_normal'], 
@@ -59,58 +89,95 @@ crystal = SphericalCrystal(input['crystal_location'], input['crystal_normal'],
                            input['crystal_spacing'], input['rocking_curve'], 
                            input['reflectivity'], 
                            input['crystal_width'], input['crystal_height'],
-                           input['pixel_scaling'])
+                           input['crystal_pixel_scaling'])
 
 
 """
 Given the detector and crystal locations, find a source position that satisfies
 the Bragg condition.
-Source output is 5 million rays. 10 degree spread, 3.95 angstrom wavelength,
-temperature is 1100 eV, mass number is 112 (Cadmium).
+Source output is 5 million rays. 1 degree spread, 3.95 angstrom wavelength,
+temperature is 5000 eV, mass number is 112 (Cadmium).
 
 Source is UniformAnalyticSource which requires a crystal argument.
-DirectedSource and PointSource do not require a crystal.
+DirectedSource, ExtendedSource, and PointSource do not require a crystal.
 """
-
-
     
-input['source_position'] = source_location_bragg(0.09, 0, 0.000006,
-                                                 input['crystal_location'],
-                                                 input['crystal_normal'], 
-                                                 input['crystal_curvature'], 
-                                                 input['crystal_spacing'],
-                                                 input['detector_location'], 
-                                                 input['wavelength'])
 
-input['source_direction']= ((input['crystal_location'] - input['source_position'])/
-                    np.linalg.norm((input['crystal_location'] - input['source_position']) ))
-
-input['source_spread']   = 20  #degrees
-input['source_intensity']= 1000
-input['source_temp']     = 1100  # in eV
-input['source_mass']     = 112 # in atomic units (Cadmium = 112)
-
-
-
+"""
+Examples for all different source types are given. 
+"""
 source = DirectedSource(input['source_position'], 
                                input['source_direction'], 
                                input['source_spread'],
                                input['source_intensity'], 
                                input['wavelength'], 
                                input['source_temp'],
-                               input['source_mass']) 
+                               input['source_mass'],
+                               input['natural_linewidth'])
+
+"""
+source = ExtendedSource(input['source_position'], 
+                               input['source_direction'], 
+                               input['source_orientation'],
+                               input['source_width'],
+                               input['source_height'],
+                               input['source_depth'],
+                               input['source_spread'],
+                               input['source_intensity'], 
+                               input['wavelength'], 
+                               input['source_temp'],
+                               input['source_mass'],
+                               input['natural_linewidth']) 
+
+
+
+sourcep = UniformAnalyticSource(input['source_position'], 
+                               input['source_direction'], 
+                               input['source_spread'],
+                               input['source_intensity'], 
+                               input['wavelength'], 
+                               input['source_temp'],
+                               input['source_mass'],
+                               input['natural_linewidth'],
+                               crystal) 
+
+source = PointSource(input['source_position'], 
+                               input['source_intensity'], 
+                               input['wavelength'], 
+                               input['source_temp'],
+                               input['source_mass'],
+                               input['natural_linewidth']) 
+"""
+
 
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Class Setup Time' )
 
+    
 """
-Start the raytracing code. 
-Output detector image to 'test.tif'
+Raytracing can begin.
+In principle, more than one optice can be used in sequence.
 """
-
-
 raytrace(source, pilatus, crystal)
+    
+"""
+Image is output ast test.tif
+"""
+pilatus.output_image(str('test' + '.tif'))
 
-pilatus.output_image('plus_offset1.tif')
-  
 
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Total Time' )
+
+
+"""
+The crystal can also serve a detector for troubleshooting purposes such as 
+making sure the source is directed as it should be.
+To do so requires raytrace_special. The resolution of the crystal produced 
+image depends on the crystal_pixel scaling input.
+
+
+raytrace_special(source_test, pilatus, crystal)
+
+pilatus.output_image(str('rocking_test'+'.tif'))
+crystal.output_image(str('extended_test'+ str(i) + 'crystal.tif'))
+
+"""
