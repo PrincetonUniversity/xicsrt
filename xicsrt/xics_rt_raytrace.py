@@ -21,8 +21,9 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     total_detector = 0
     
     for ii in range(number_of_runs):
+        profiler.start('Raytrace Run')
         print('')
-        print('Starting iteration: {} of {}'.format(ii, number_of_runs))
+        print('Starting iteration: {} of {}'.format(ii+1, number_of_runs))
         profiler.start('Ray Generation')
         O, D, W, w  = source.generate_rays()
         profiler.stop('Ray Generation')
@@ -48,7 +49,8 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         
         total_detector += detector.photon_count
         print(' Rays on Detector:  {:6.4e}'.format(detector.photon_count))    
-
+        profiler.stop('Raytrace Run')
+        
     print('')
     print('Total Rays Generated: {:6.4e}'.format(total_generated))
     print('Total Rays Reflected: {:6.4e}'.format(total_crystal))
@@ -74,6 +76,8 @@ def raytrace_special(source, detector, crystal, number_of_runs=None):
     total_detector = 0
     
     for ii in range(number_of_runs):
+        profiler.start('Raytrace Run')
+        
         profiler.start('Ray Generation')
         O, D, W, w = source.generate_rays()
         profiler.stop('Ray Generation')
@@ -99,6 +103,8 @@ def raytrace_special(source, detector, crystal, number_of_runs=None):
         #clause = detector.clause
         #O1, D1, W1, w1 = O[clause], D[clause], W[clause], w[clause]
         #crystal.collect_rays(O1, D1, W1, w)
+
+        profiler.stop('Raytrace Run')
 
     print('')
     print('Total Rays Generated: {:6.4e}'.format(total_generated))

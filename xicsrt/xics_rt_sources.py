@@ -520,8 +520,6 @@ class ExtendedSource:
         sigma = ( np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J)
                   * self.wavelength )
 
-        print('sigma:', sigma, 'gamma:', gamma)
-
         rand_wave = voigt.voigt_random(gamma, sigma, size)
         rand_wave += self.wavelength
         
