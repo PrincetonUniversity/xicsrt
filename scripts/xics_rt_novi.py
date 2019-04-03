@@ -150,7 +150,7 @@ source_2 = FocusedExtendedSource(
 profiler.stop('Class Setup Time')
 
 #output = raytrace_special(source_2, pilatus, crystal)
-output = raytrace(source_2, pilatus, crystal)
+output = raytrace(source_2, pilatus, crystal, collect_optics=True)
 
 
 print('Exporting detector image.')

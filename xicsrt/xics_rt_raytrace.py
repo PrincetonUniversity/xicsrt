@@ -28,15 +28,16 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         print('Rays Generated: ' + str(len(D)))
         total_generated += D.shape[0]
 
-        profiler.start('Ray Tracing')
         for optic in optics:
-            t2 = time.time()
+            profiler.start('Ray Tracing')
             O, D, W, w = optic.light(O, D, W, w)
-            
-            print("Took " + str(round(time.time() - t2, 4)) + ' sec: Optic Time')
+            profiler.stop('Ray Tracing')
+
+            profiler.start('Collection: Optics')
             if collect_optics:
                 optic.collect_rays(O, D, W, w)
-        profiler.stop('Ray Tracing')
+            profiler.stop('Collection: Optics')
+
             
         print('Rays from Crystal: ' + str(len(D)))
         total_crystal += D.shape[0]
@@ -50,7 +51,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
 
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
     
-    return      
+    return O, D, W, w
         
         
 def raytrace_special(source, detector, crystal, number_of_runs=None):
