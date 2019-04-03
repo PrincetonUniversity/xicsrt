@@ -7,29 +7,49 @@ Created on Mon Nov 13 10:13:39 2017
 from xicsrt.util import profiler
 import time
 
-def raytrace(source, detector, *optics):
+def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None):
     """ Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin (O), direction (D), wavelength (W), and weight (w).
     """
-    t2 = time.time()
-    O, D, W, w  = source.generate_rays()
-    print("Took " + str(round(time.time() - t2, 4)) + ' sec: Ray Generation TIme')
-    start_number = len(D)
-    print('Rays Generated: ' + str(len(D)))
+    
+    if number_of_runs is None: number_of_runs = 1
+    if collect_optics is None: collect_optics = False
+    
+    total_generated = 0
+    total_crystal = 0
+    total_detector = 0
+    
+    for ii in range(number_of_runs):
+        profiler.start('Ray Generation')
+        O, D, W, w  = source.generate_rays()
+        profiler.stop('Ray Generation')
+        start_number = len(D)
+        print('Rays Generated: ' + str(len(D)))
+        total_generated += D.shape[0]
 
-    for optic in optics:
-        t2 = time.time()
-        O, D, W, w = optic.light(O, D, W, w)
-        
-        print("Took " + str(round(time.time() - t2, 4)) + ' sec: Optic Time')
-        #optic.collect_rays(O, D, W)
-        
+        profiler.start('Ray Tracing')
+        for optic in optics:
+            t2 = time.time()
+            O, D, W, w = optic.light(O, D, W, w)
+            
+            print("Took " + str(round(time.time() - t2, 4)) + ' sec: Optic Time')
+            if collect_optics:
+                optic.collect_rays(O, D, W, w)
+        profiler.stop('Ray Tracing')
+            
         print('Rays from Crystal: ' + str(len(D)))
-    t2 = time.time()
-    detector.collect_rays(O, D, W, w)
-    print("Took " + str(round(time.time() - t2, 4)) + ' sec: Collection Time')
-    print('Efficiency: ' + str(round((detector.photon_count/start_number) * 100,5)) + '%')
+        total_crystal += D.shape[0]
+        
+        profiler.start('Collection: Detector')
+        detector.collect_rays(O, D, W, w)
+        profiler.stop('Collection: Detector')
+        
+        total_detector += detector.photon_count
+        print('Rays on Detector: ' + str(detector.photon_count))    
+
+    print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
+    
     return      
         
         
@@ -70,7 +90,7 @@ def raytrace_special(source, detector, crystal, number_of_runs=None):
         crystal.collect_rays(O, D, W, w)
         profiler.stop('Collection: Crystal')
         
-        # Collect only the rays that actually make it to the crystal.
+        # Collect only the rays that actually make it to the detector.
         #clause = detector.clause
         #O1, D1, W1, w1 = O[clause], D[clause], W[clause], w[clause]
         #crystal.collect_rays(O1, D1, W1, w)
