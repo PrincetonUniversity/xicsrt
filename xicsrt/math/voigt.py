@@ -59,8 +59,8 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     gridsize_min = 100
 
     percent = 0.5
-    gauss_hwpm = np.sqrt(2.0*np.log(1.0/percent))*param['sigma']
-    lorentz_hwpm = param['gamma']*np.sqrt(1.0/percent - 1.0)
+    gauss_hwpm = np.sqrt(2.0*np.log(1.0/percent))*sigma
+    lorentz_hwpm = gamma*np.sqrt(1.0/percent - 1.0)
     # This is always larger than the voigt hwpm (half width at percent max).
     hwpm_max = np.sqrt(gauss_hwpm**2 + lorentz_hwpm**2)
 
@@ -68,11 +68,11 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     value = gridsize_min/2*min_spacing
 
     # Far from the peak, a Voigt profile is always less than a Lorentzian.
-    lorentz_cutoff = param['gamma']*np.sqrt(1.0/cutoff - 1.0)
-    base = np.exp(1/value * np.log(lorentz_cutoff/value))
+    lorentz_cutoff = gamma*np.sqrt(1.0/cutoff - 1.0)
+    base = np.exp(1/10 * np.log(lorentz_cutoff/value))
 
     bounds = np.linspace(-value, value, gridsize+1)
-    bounds = bounds*base**np.abs(bounds)
+    bounds = bounds*base**np.abs(bounds/value*10)
     cdf_x = (bounds[:-1]+bounds[1:])/2
         
     # We must used a properly normalized voigt here (intensity=1.0)

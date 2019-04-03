@@ -27,7 +27,6 @@ from xicsrt.xics_rt_optics import SphericalCrystal
 from xicsrt.xics_rt_raytrace import raytrace, raytrace_special
 from xicsrt.xics_rt_tools import source_location_bragg
 
-float64 = np.float64
 profiler.stop('Import Time')
 
 
@@ -45,7 +44,7 @@ input = OrderedDict()
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 input['source_intensity']= int(1e7)
-input['number_of_runs'] = 10
+input['number_of_runs'] = 100
 
 
 # Evetually I should just read all of these numbers directly
@@ -99,13 +98,10 @@ input['source_orientation'] /= np.linalg.norm(input['source_orientation'])
 # This needs to be matched to the source distance and crystal size.
 # At the moment this is too small to fully illuminate the crystal.
 input['source_spread']   = 1.0
-
 # Ion temperature in eV
 input['source_temp']     = 1800
-
 # Argon mass in AMU.
 input['source_mass']     = 39.948
-
 # Naturaly linewith for the Ar16+ w line. Units: 1/s.
 input['natural_linewidth'] = 1.129e+14
 
@@ -113,7 +109,7 @@ input['natural_linewidth'] = 1.129e+14
 # These values are arbitrary for now.
 input['source_width']   = 0.15
 input['source_height']  = 0.75
-input['source_depth']   = 0.0
+input['source_depth']   = 1.0
 
 
 

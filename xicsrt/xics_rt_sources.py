@@ -6,7 +6,7 @@ Created on Mon Nov 13 10:12:15 2017
 """
 import numpy as np   
 from scipy.stats import cauchy        
-import scipy.constants as constants
+import scipy.constants as const
 
 from xicsrt.util import profiler
 from xicsrt.math import voigt
@@ -495,43 +495,72 @@ class ExtendedSource:
           temperature: eV
         """
 
+        # Check for the trivial case.
+        if (self.natural_linewidth  == 0.0 and self.temp == 0.0) :
+            return np.ones(size)*self.wavelength
+        
+        # Check for the Gaussian case.
+        if (self.temp == 0.0):
+            return random_wavelength_normal(size)
+        
+        # Check for the lorentizan case.
+        if (self.natural_linewidth  == 0.0):
+            # I need to update the cauchy routine first.
+            pass
+        
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
-        ev_j = const.physical_constants['electron volt-joule relationship'][0]
+        ev_J = const.physical_constants['electron volt-joule relationship'][0]
         
         # Natural line width.
         gamma = ( self.natural_linewidth * self.wavelength**2
                   / (4 * np.pi * c * 1e10) )
 
         # Doppler broadened line width.
-        sigma = ( np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J * 1e3)
+        sigma = ( np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J)
                   * self.wavelength )
 
-        rand_wave = voigt_random(gamma, sigma, size)
+        print('sigma:', sigma, 'gamma:', gamma)
+
+        rand_wave = voigt.voigt_random(gamma, sigma, size)
         rand_wave += self.wavelength
         
         return rand_wave
 
     
     def random_wavelength_normal(self, size=None):
+        """
+        Units:
+          wavelength: angstroms
+          temperature: eV
+        """
         
-        c = 3.00e18                         # angstroms per sec
-        conv = 931.4940954e6                # eV per atomic u
-        mc2 = self.mass_number * conv       # mass energy in eV     
-                
-        mean_wave = self.wavelength
-        mean_freq =  c / mean_wave
+        c = const.physical_constants['speed of light in vacuum'][0]
+        amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
+        ev_J = const.physical_constants['electron volt-joule relationship'][0]
         
-        sigma = np.sqrt(self.temp / mc2) * mean_freq
-        rand_freq = np.random.normal(mean_freq, sigma, size)
-        rand_wave = c / rand_freq
+        # Doppler broadened line width.
+        sigma = ( np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J)
+                  * self.wavelength )
+
+        rand_wave = np.random.normal(self.wavelength, sigma, size)
         
         return rand_wave
 
     
     def random_wavelength_cauchy(self, size=None):
+
+        # This function needs to be updated to use the same definitions
+        # as random_wavelength_voigt.
+        #
+        # As currently writen natual_linewidth is not used in a way
+        # consistent with physical units.
+        #
+        # It also may make sense to add some sort of cutoff here.
+        # the extreme tails of the distribution are not really useful
+        # for ray tracing.
         fwhm = self.natural_linewidth
-        rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = size)
+        rand_wave = cauchy.rvs(loc=self.wavelength, scale=fwhm, size=size)
     
         return rand_wave
 
@@ -576,7 +605,7 @@ class ExtendedSource:
     def generate_wavelength(self):
         #random_wavelength = self.random_wavelength_normal
         #random_wavelength = self.random_wavelength_cauchy
-        random_wavelength = self.random_wavelength_normal
+        random_wavelength = self.random_wavelength_voigt
         
         wavelength = random_wavelength(self.intensity)
         wavelength = wavelength[:, np.newaxis]
