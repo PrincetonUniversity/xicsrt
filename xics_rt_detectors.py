@@ -121,10 +121,11 @@ class Detector:
         print('Rays Collected: ' + str(len(X)))
         self.photon_count = len(X)
 
-        for i in range(0, len(index)):
-            row, column = self.pixel_row_column(index[i])
-            self.pixel_array[row][column] += w[i]  
-        return
+        for ii in range(0, len(index)):
+            row, column = self.pixel_row_column(index[ii])
+            self.pixel_array[row, column] += w[ii]
+            
+        return self.pixel_array
         
         
     def output_image(self, image_name):

@@ -64,9 +64,9 @@ input['source_spread']   = 1 #degrees
 input['source_intensity']= 100000
 
 input['source_temp']     = 5000# in eV
-input['source_mass']     = 112 # in atomic units (Cadmium = 112)
-input['natural_linewidth'] = 0.0037 * 2.5
-
+input['source_mass']     = 39.948 # in atomic units (Cadmium = 112, Argon = 39.948)
+#input['natural_linewidth'] = 0.0037 * 2.5
+input['natural_linewidth'] = 0.0
 
 input['source_width']   = .1
 input['source_height']  = .1

@@ -1,0 +1,17 @@
+
+
+## -----------------------------------------------------------------------------
+## General filetype exclusions.
+
+## Emacs
+*~
+*#
+
+## Python
+*.pyc
+__pycache__
+
+## System files to ignore.
+*.DS_Store
+/Icon?
+

@@ -11,9 +11,18 @@ from scipy import signal
 import matplotlib.pyplot as plt
           
 class SphericalCrystal:
-    def __init__(self, location, normal, orientation, radius_of_curvature, 
-                 crystal_spacing, rocking_curve, reflectivity, width, height,
-                 pixel_scaling):
+    def __init__(
+            self
+            ,location
+            ,normal
+            ,orientation
+            ,radius_of_curvature 
+            ,crystal_spacing
+            ,rocking_curve
+            ,reflectivity
+            ,width
+            ,height
+            ,pixel_scaling):
         
         self.radius = radius_of_curvature
         self.location = location
@@ -45,21 +54,20 @@ class SphericalCrystal:
             
         def create_center_array():
             center_array = []
-            i = 0
-            for i in range(0, self.pixel_height):
-                j = 0
-                for j in range(0, self.pixel_width):
-                    point = pixel_center(i, j)
+            for ii in range(0, self.pixel_height):
+                for jj in range(0, self.pixel_width):
+                    point = pixel_center(ii, jj)
                     center_array.append(point)
-                    j += 1
-                
-                i += 1
                 
             return center_array
             
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
         self.center_tree = cKDTree(create_center_array())
+
+        # Generate a gaussian rocking curve.
+        # For additional accuracy an arbitrary curve can be loaded here.
         self.rocking_gaussian = signal.gaussian(100, std=22)
+
         
     def pixel_center(self, row, column):
         row_center = self.pixel_height / 2 - .5
@@ -110,26 +118,54 @@ class SphericalCrystal:
         
         
     def intersect(self, O, D):
-        # intersection of ray having origin O and direction D
-        vector = (O - self.center)
+        """
+        This calculation is copied from:
+        https://www.scratchapixel.com/lessons/3d-basic-rendering/
+                minimal-ray-tracer-rendering-simple-shapes/
+                ray-sphere-intersection
+        """
 
-        test = ((np.einsum('ij,ij->i', D, vector)) **2 
-                - np.apply_along_axis(np.linalg.norm, 1, vector) ** 2 + self.radius ** 2)
-        sq = np.sqrt(np.maximum(0, test))
-        
-        
-        a = - np.dot(D, vector[0]) + sq
-        b = - np.dot(D, vector[0]) - sq
+        # TEMPORARY:
+        # Check to see if ray crosses through origin.
+        #distance_center = np.zeros(len(O[:,0]))
+        #for ii in range(len(O)):
+        #    d = (self.location - O[ii])/D[ii]
+        #    distance_center[ii] = d[0]
 
-        distance = np.where((a > 0) & (a > b), a, b) 
+        distance = np.zeros(O.shape[0])
 
-    
-        hit = (test > 0) & (distance > 0)        
+        L = (self.center - O)
+        t_ca = np.einsum('ij,ij->i', L, D)
 
-        return np.where(hit, distance, 0)
+        # If t_ca is less than zero, then there is no intersection.
+        mask = t_ca > 0
+
+        d = np.sqrt(np.einsum('ij,ij->i',L[mask,:] ,L[mask,:]) - t_ca[mask]**2)
+
+        t_hc = np.sqrt(self.radius**2 - d**2)
+
+        t_0 = t_ca - t_hc
+        t_1 = t_ca + t_hc
+
+        distance[mask] = np.where(t_0 > t_1, t_0, t_1)
+
+        return distance
         
         
     def intersect_check(self, O, D, W, w, distance):
+        """
+        Check if ray intesects the optic within the geometrical bounds.
+
+        Programming Notes
+        -----------------
+
+          I am not sure why we need the normal projection check here.
+          The only time that I could see this being useful is if the
+          intersect calculator returned the wrong intersect solution
+          (the otheside of the crystal sphere from the optic).
+          For now I have disabled it -- Novimir 2019-04-01
+        """
+        
         test = None
         test = (distance != 0) #finds which rays intersect, removes others
         O = O[test]
@@ -142,16 +178,12 @@ class SphericalCrystal:
         X = O + D * distance[:,np.newaxis]
         yproj = abs(np.dot(X - self.location, self.yorientation))
         xproj = abs(np.dot(X - self.location, self.xorientation))
-        nproj = abs(np.dot(X - self.location, self.normal))        
- 
-        n_value = (self.radius - (self.radius**2 - (self.height * .5) ** 2) **.5)
-        
-        clause = None
-        clause = ((xproj <= self.width * .5) & (yproj <= self.height * .5) 
-                  & (nproj <= n_value))
-        
-        
 
+        clause = ((xproj <= self.width * .5) & (yproj <= self.height * .5))
+        
+        # nproj = abs(np.dot(X - self.location, self.normal))        
+        # n_value = (self.radius - (self.radius**2 - (self.height * .5) ** 2) **.5)
+        # clause &= (nproj <= n_value)
         
         return X[clause], D[clause], W[clause], w[clause]
     
@@ -186,11 +218,9 @@ class SphericalCrystal:
 
     def adjust_weight(self, w, bragg_angle, angle):
         w_new = []
-        i = 0
-        for i in range(0, len(w)):
-            index       = self.rocking_curve_width(bragg_angle[i][0], angle[i][0])
-            w_new.append(self.rocking_gaussian[index] * w[i])       
-            i += 1
+        for ii in range(0, len(w)):
+            index = self.rocking_curve_width(bragg_angle[ii][0], angle[ii][0])
+            w_new.append(self.rocking_gaussian[index] * w[ii])       
             
         w = np.array(w_new)       
         return w
@@ -216,6 +246,7 @@ class SphericalCrystal:
         clause = np.ndarray.flatten(clause)
         #print(angle[clause])
         #print(bragg_angle[clause])
+        
         w = self.adjust_weight(w[clause], bragg_angle[clause], angle[clause])
 
         return X[clause], D[clause], W[clause], w, norm[clause]
@@ -224,13 +255,16 @@ class SphericalCrystal:
     def reflect_vectors(self, X, D, W, w):
         
         norm = self.normalize(self.center - X)
-        
-        X, D, W, w, norm = self.angle_check(X, D, W, w, norm) #returns the sufficient vectors        
-        
+
+        # Check which vectors meet the Bragg condition (with rocking curve)
+        X, D, W, w, norm = self.angle_check(X, D, W, w, norm)
+
+        # Perform reflection around nermal vector.
         D = D - 2 * np.einsum('ij,ij->i', D, norm)[:, np.newaxis] * norm
         
         return X, D, W, w  
-            
+
+    
     def light(self, O, D, W, w):
 
         X, D, W, w = self.intersect_check(O, D, W, w, self.intersect(O, D))
@@ -251,19 +285,20 @@ class SphericalCrystal:
         return row, column
         
         
-    def collect_rays(self, O, D, W):
+    def collect_rays(self, O, D, W, w):
         X = O
         index = self.center_tree.query(np.array(X))[1]
 
         for number in index:
             row, column = self.pixel_row_column(number)
-            self.pixel_array[row][column] += 1  
+            self.pixel_array[row, column] += 1
+            
         return
 
         
     def output_image(self, image_name):
         generated_image = Image.fromarray(self.pixel_array)
-        generated_image.save(image_name)           
+        generated_image.save(image_name)          
 
         
     def height_illuminated(self, X):
