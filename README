@@ -1,6 +1,18 @@
 
 A raytracing tool for X-Ray Imaging Crystal Spectrometers.
 
+ToDo
+----
+  - Rather that throw away rays, update a mask.
+    This will allow easier optics inspection and should not have any
+    significant performance impact.
+    -- Novi (2019-04-03)
+
+  - Create a superclass for all the optics.  Right now there is a
+    lot of duplicated code. This will also allow the optimization
+    of the FocusedExtendedSource to be applied to all sources.
+    -- Novi (2019-04-03)
+  
 Authors
 -------
   - Novimir Pablant <npablant@pppl.gov>

@@ -118,7 +118,6 @@ class Detector:
         X, clause = self.intersect_check(O, D, self.intersect(O, D))
         self.clause = clause
         index = self.center_tree.query(np.array(X))[1]
-        print('Rays Collected: ' + str(len(X)))
         self.photon_count = len(X)
 
         for ii in range(0, len(index)):

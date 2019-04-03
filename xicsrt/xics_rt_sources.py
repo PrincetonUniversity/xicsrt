@@ -6,7 +6,10 @@ Created on Mon Nov 13 10:12:15 2017
 """
 import numpy as np   
 from scipy.stats import cauchy        
+import scipy.constants as constants
+
 from xicsrt.util import profiler
+from xicsrt.math import voigt
 
 class PointSource(object):
     
@@ -39,8 +42,8 @@ class PointSource(object):
         
         D = np.array(directions)
         return D  
-        
-        
+
+    
     def random_wavelength_normal(self):
         c = 3.00e18                         # angstroms per sec
         conv = 931.4940954e6                # eV per atomic u
@@ -61,7 +64,7 @@ class PointSource(object):
 
     def random_wavelength_cauchy(self):
 
-        fwhm =self.natural_linewidth
+        fwhm = self.natural_linewidth
 
         rand_wave = cauchy.rvs(loc = self.wavelength, scale = fwhm, size = 1)
         
@@ -482,7 +485,33 @@ class ExtendedSource:
         
         D = np.array(directions)
         return D   
-    
+        
+
+    def random_wavelength_voigt(self, size=None):
+        """
+        Units:
+          wavelength: angstroms
+          natural_linewith: 1/s
+          temperature: eV
+        """
+
+        c = const.physical_constants['speed of light in vacuum'][0]
+        amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
+        ev_j = const.physical_constants['electron volt-joule relationship'][0]
+        
+        # Natural line width.
+        gamma = ( self.natural_linewidth * self.wavelength**2
+                  / (4 * np.pi * c * 1e10) )
+
+        # Doppler broadened line width.
+        sigma = ( np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J * 1e3)
+                  * self.wavelength )
+
+        rand_wave = voigt_random(gamma, sigma, size)
+        rand_wave += self.wavelength
+        
+        return rand_wave
+
     
     def random_wavelength_normal(self, size=None):
         
@@ -546,7 +575,8 @@ class ExtendedSource:
 
     def generate_wavelength(self):
         #random_wavelength = self.random_wavelength_normal
-        random_wavelength = self.random_wavelength_cauchy
+        #random_wavelength = self.random_wavelength_cauchy
+        random_wavelength = self.random_wavelength_normal
         
         wavelength = random_wavelength(self.intensity)
         wavelength = wavelength[:, np.newaxis]

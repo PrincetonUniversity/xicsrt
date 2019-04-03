@@ -4,8 +4,8 @@ Created on Mon Nov 13 10:13:39 2017
 
 @author: James
 """
+import logging
 from xicsrt.util import profiler
-import time
 
 def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None):
     """ Rays are generated from source and then passed through the optics in
@@ -21,11 +21,13 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     total_detector = 0
     
     for ii in range(number_of_runs):
+        print('')
+        print('Starting iteration: {} of {}'.format(ii, number_of_runs))
         profiler.start('Ray Generation')
         O, D, W, w  = source.generate_rays()
         profiler.stop('Ray Generation')
         start_number = len(D)
-        print('Rays Generated: ' + str(len(D)))
+        print(' Rays Generated:    {:6.4e}'.format(D.shape[0]))
         total_generated += D.shape[0]
 
         for optic in optics:
@@ -38,8 +40,6 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
                 optic.collect_rays(O, D, W, w)
             profiler.stop('Collection: Optics')
 
-            
-        print('Rays from Crystal: ' + str(len(D)))
         total_crystal += D.shape[0]
         
         profiler.start('Collection: Detector')
@@ -47,8 +47,12 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         profiler.stop('Collection: Detector')
         
         total_detector += detector.photon_count
-        print('Rays on Detector: ' + str(detector.photon_count))    
+        print(' Rays on Detector:  {:6.4e}'.format(detector.photon_count))    
 
+    print('')
+    print('Total Rays Generated: {:6.4e}'.format(total_generated))
+    print('Total Rays Reflected: {:6.4e}'.format(total_crystal))
+    print('Total Rays Detected:  {:6.4e}'.format(total_detector))
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
     
     return O, D, W, w

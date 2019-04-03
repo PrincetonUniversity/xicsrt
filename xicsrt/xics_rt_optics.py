@@ -268,12 +268,13 @@ class SphericalCrystal:
     def light(self, O, D, W, w):
 
         X, D, W, w = self.intersect_check(O, D, W, w, self.intersect(O, D))
-        
-        print('Rays that hit Crystal: ' + str(len(D)))
+
+        print(' Rays on Crystal:   {:6.4e}'.format(D.shape[0]))
         
         O, D, W, w = self.reflect_vectors(X, D, W, w) #new origin and direction
-        
-        #print('Rays from Crystal: ' + str(len(D)))
+
+        print(' Rays from Crystal: {:6.4e}'.format(D.shape[0]))
+
 
         return O, D, W, w
 

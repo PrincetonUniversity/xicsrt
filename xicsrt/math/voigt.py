@@ -33,7 +33,7 @@ def voigt(
     return y
 
 
-def voigt_cdf_tab(gamma, sigma, gridsize=None):
+def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
 
     # This is a numerical method to calculate the cumulative distribution fuction
     # for a voigt profile.  This works reasonably well, but is limited both by
@@ -50,11 +50,13 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None):
     #     calculation that may be faster than the wofz implementation
     #     (at the expense of accuracy.)
     
-    
+
+    if gridsize is None: gridsize = 1000
+    if cutoff is None: cutoff = 1e-5
+        
     # The current scheme works well with a minimum of 100 points.
     # It is possible to go as low as 50 points, but accuracy is not great.
     gridsize_min = 100
-    if gridsize is None: gridsize = 1000
 
     percent = 0.5
     gauss_hwpm = np.sqrt(2.0*np.log(1.0/percent))*param['sigma']
@@ -65,7 +67,6 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None):
     min_spacing = hwpm_max/5.0
     value = gridsize_min/2*min_spacing
 
-    cutoff = 1e-5
     # Far from the peak, a Voigt profile is always less than a Lorentzian.
     lorentz_cutoff = param['gamma']*np.sqrt(1.0/cutoff - 1.0)
     base = np.exp(1/value * np.log(lorentz_cutoff/value))
@@ -117,3 +118,18 @@ def voigt_invcdf_numeric(x, gamma, sigma, gridsize=None):
     cdf_x, cdf = voigt_cdf_tab(gamma, sigma, gridsize)
     y = np.interp(x, cdf, cdf_x, left=-np.inf, right=np.inf)
     return y
+
+
+def voigt_random(gamma, sigma, size, **kwargs):
+    """
+    Draw random samples from a Voigt distribution.
+    
+    The tails of the distribution will be clipped;
+    the clipping level can be adjusted with the cutoff keyword.
+    The default values is 1e-5.
+    """
+    cdf_x, cdf = voigt_cdf_tab(gamma, sigma, **kwargs)
+    random_y = np.random.uniform(np.min(cdf), np.max(cdf), size)
+    random_x = np.interp(random_y, cdf, cdf_x)
+    return random_x
+    
