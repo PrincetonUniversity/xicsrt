@@ -6,8 +6,7 @@ Created on Mon Nov 13 10:12:15 2017
 """
 import numpy as np   
 from scipy.stats import cauchy        
-
-from mirutil import profiler
+from xicsrt.util import profiler
 
 class PointSource(object):
     

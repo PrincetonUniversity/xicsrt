@@ -4,8 +4,7 @@ Created on Mon Nov 13 10:13:39 2017
 
 @author: James
 """
-from mirutil import profiler
-
+from xicsrt.util import profiler
 import time
 
 def raytrace(source, detector, *optics):

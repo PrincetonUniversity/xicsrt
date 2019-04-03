@@ -5,10 +5,10 @@ Created on Thu Apr 27 09:29:37 2017
 @author: James
 """
 
-from mirutil import logging
+import logging
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
-from mirutil import profiler
+from xicsrt.util import profiler
 profiler.startProfiler()
 
 profiler.start('Total Time')
@@ -18,11 +18,11 @@ import numpy as np
 import time
 
 t1 = time.time() 
-from xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource, ExtendedSource, FocusedExtendedSource
-from xics_rt_detectors import Detector
-from xics_rt_optics import SphericalCrystal
-from xics_rt_raytrace import raytrace, raytrace_special
-from xics_rt_tools import source_location_bragg
+from xicsrt.xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource, ExtendedSource, FocusedExtendedSource
+from xicsrt.xics_rt_detectors import Detector
+from xicsrt.xics_rt_optics import SphericalCrystal
+from xicsrt.xics_rt_raytrace import raytrace, raytrace_special
+from xicsrt.xics_rt_tools import source_location_bragg
 
 float64 = np.float64
 profiler.stop('Import Time')
