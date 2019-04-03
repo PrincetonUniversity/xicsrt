@@ -9,11 +9,11 @@ import numpy as np
 import time
 
 t1 = time.time() 
-from xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource, ExtendedSource
-from xics_rt_detectors import Detector
-from xics_rt_optics import SphericalCrystal
-from xics_rt_raytrace import raytrace, raytrace_special
-from xics_rt_tools import source_location_bragg
+from xicsrt.xics_rt_sources import UniformAnalyticSource, DirectedSource, PointSource, ExtendedSource
+from xicsrt.xics_rt_detectors import Detector
+from xicsrt.xics_rt_optics import SphericalCrystal
+from xicsrt.xics_rt_raytrace import raytrace, raytrace_special
+from xicsrt.xics_rt_tools import source_location_bragg
 
 float64 = np.float64
 print("Took " + str(round(time.time() - t1, 4)) + ' sec: Import Time' )
