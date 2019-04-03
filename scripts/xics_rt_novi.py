@@ -6,6 +6,7 @@ Created on Thu Apr 27 09:29:37 2017
 """
 
 import logging
+logging.basicConfig(level=logging.INFO)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 from xicsrt.util import profiler

@@ -33,7 +33,7 @@ def raytrace(source, detector, *optics):
     return      
         
         
-def raytrace_special(source, detector, crystal):
+def raytrace_special(source, detector, crystal, number_of_runs=None):
     """ Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin (O), direction (D), wavelength (W), and weight (w).
@@ -42,11 +42,13 @@ def raytrace_special(source, detector, crystal):
     determination of which rays satisfy the bragg condition.
     """
 
+    if number_of_runs is None: number_of_runs = 1
+    
     total_generated = 0
     total_crystal = 0
     total_detector = 0
     
-    for ii in range(100):
+    for ii in range(number_of_runs):
         profiler.start('Ray Generation')
         O, D, W, w = source.generate_rays()
         profiler.stop('Ray Generation')
