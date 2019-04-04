@@ -713,24 +713,7 @@ class FocusedExtendedSource(ExtendedSource):
         rad_spread = np.radians(self.spread)
         dir_local = f(rad_spread, self.intensity)
 
-        
-        #for ii in range(self.intensity):
-        #    normal = self.focus - origin[ii,:]
-        #    normal /= np.linalg.norm(normal)
-
-        #    # Here it doesn't matter which direction the orientation vectors are
-        #    # as long as they are orthoganal.
-        #    orientation_1 = np.cross(normal, [0,0,1])
-        #    orientation_1 /= np.linalg.norm(orientation_1)
-
-        #    orientation_2 = np.cross(normal, orientation_1)
-        #    orientation_2 /= np.linalg.norm(orientation_2)
-
-        #    R = ([orientation_1, orientation_2, normal])
-        
-        #    direction[ii, :] = np.dot(dir_local[ii,:], R) 
-
-
+        # Generate ray from the origin to the focus.
         normal = self.focus - origin
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
 
@@ -739,12 +722,17 @@ class FocusedExtendedSource(ExtendedSource):
         
         o_2 = np.cross(normal, o_1)
         o_2 = o_2 /  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
+
+        # Here is what the code below would look like if it was
+        # not generalizad to an array of inputs.
+        #    R = ([o_1, o_2, normal])
+        #    direction = np.dot(dir_local, R)
         
         R = np.empty((self.intensity, 3, 3))
         R[:,0,:] = o_1
         R[:,1,:] = o_2
         R[:,2,:] = normal
 
-        direction = np.einsum('ij,ijk->ik',dir_local, R)
+        direction = np.einsum('ij,ijk->ik', dir_local, R)
         
         return direction

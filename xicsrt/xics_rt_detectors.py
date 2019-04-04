@@ -127,10 +127,15 @@ class Detector:
         return self.pixel_array
         
         
-    def output_image(self, image_name):
-        
-        generated_image = Image.fromarray(self.pixel_array)
-        generated_image.save(image_name)        
+    def output_image(self, image_name, rotate=None):
+      
+        if rotate:
+            out_array = np.rot90(self.pixel_array)
+        else:
+            out_array = self.pixel_array
+            
+        generated_image = Image.fromarray(out_array)
+        generated_image.save(image_name)       
 
     
     def height_illuminated(self, O, D, W):

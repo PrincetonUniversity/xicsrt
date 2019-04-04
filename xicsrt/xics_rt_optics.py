@@ -64,10 +64,6 @@ class SphericalCrystal:
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
         self.center_tree = cKDTree(create_center_array())
 
-        # Generate a gaussian rocking curve.
-        # For additional accuracy an arbitrary curve can be loaded here.
-        self.rocking_gaussian = signal.gaussian(100, std=22)
-
         
     def pixel_center(self, row, column):
         row_center = self.pixel_height / 2 - .5
@@ -201,30 +197,50 @@ class SphericalCrystal:
         
         return clause
         
-    
-    def rocking_curve_width(self, bragg_angle, angle):
 
-        rocking_window  =  self.rocking_curve
+    def rocking_curve_adjust_weight(self, w, bragg_angle, angle):
+        """ Weight each ray according to the rocking curve.
+
+        Using this type of weighting method will produce an image much faster
+        than the filter method. There is an issue however that the image
+        no longer follows Poisson statistics.  If the final image is to be used
+        in fitting applications, this method is not reccomented.
+
+        In principal it would be possible to track the statistics separately
+        and generate an images of sigmas. This is a bit complicated, and would
+        require changes in any fitting software to accomodate this extra
+        information. 
+        """
+
+        # Convert from FWHM to sigma.
+        sigma = self.rocking_curve/np.sqrt(2*np.log(2))/2
+
+        # Normalized Gaussian.
+        w = np.exp(-np.power(angle - bragg_angle, 2.) / (2 * sigma**2))
         
-        window_range    = np.linspace(bragg_angle - rocking_window, 
-                                      bragg_angle + rocking_window,
-                                      100)
-        
-        index           = (np.abs(window_range - angle)).argmin()
-
-        
-        return index
-
-
-    def adjust_weight(self, w, bragg_angle, angle):
-        w_new = []
-        for ii in range(0, len(w)):
-            index = self.rocking_curve_width(bragg_angle[ii][0], angle[ii][0])
-            w_new.append(self.rocking_gaussian[index] * w[ii])       
-            
-        w = np.array(w_new)       
         return w
+
     
+    def rocking_curve_filter(self, bragg_angle, angle):
+        """ Treat the rocking curve as a probability distribution and
+        generate a filter mask.
+        
+        This method is much less efficent than using weighting, but
+        ensures that the final image has normal poisson statistics.
+        """
+        
+        # Convert from FWHM to sigma.
+        sigma = self.rocking_curve/np.sqrt(2*np.log(2))/2
+
+        # Normalized Gaussian.
+        p = np.exp(-np.power(angle - bragg_angle, 2.) / (2 * sigma**2))
+
+        test = np.random.uniform(0.0, 1.0, len(angle))
+        mask = p.flatten() > test
+        
+        return mask
+        
+                             
     
     def angle_check(self, X, D, W, w, norm):
         # returns vectors that satisfy the bragg condition
@@ -237,18 +253,32 @@ class SphericalCrystal:
 
         angle = (np.pi * .5) - angle
 
-        angle_min = bragg_angle - self.rocking_curve
-        angle_max = bragg_angle + self.rocking_curve
-
-
-        clause = (angle <= angle_max) & (angle >= angle_min)
-
-        clause = np.ndarray.flatten(clause)
-        #print(angle[clause])
-        #print(bragg_angle[clause])
+        # For a discription of these options see the headers for the
+        # following methods:
+        #  - rocking_curve_adjust_weight
+        #  - rocking_curve_filter
+        use_weight = False
+        use_filter = True
+        if use_weight:
+            # Decide where to cutoff reflections.
+            # In this case once the reflectivity gets below 0.1%.
+            # (This assumes that the rocking curve is gaussian.
+            fraction = 0.001
+            rocking_hwfm = self.rocking_curve/2 * np.sqrt(np.log(1.0/fraction)/np.log(2))
+            
+            print('rocking_hwfw:', rocking_hwfm)
+            angle_min = bragg_angle - rocking_hwfm
+            angle_max = bragg_angle + rocking_hwfm
+            
+            clause = (angle <= angle_max) & (angle >= angle_min)
+            clause = np.ndarray.flatten(clause)
         
-        w = self.adjust_weight(w[clause], bragg_angle[clause], angle[clause])
+            w = self.rocking_curve_adjust_weight(w[clause], bragg_angle[clause], angle[clause])
+        elif use_filter:
+            clause = self.rocking_curve_filter(bragg_angle, angle)
 
+
+        
         return X[clause], D[clause], W[clause], w, norm[clause]
 
 
@@ -297,9 +327,15 @@ class SphericalCrystal:
         return
 
         
-    def output_image(self, image_name):
-        generated_image = Image.fromarray(self.pixel_array)
-        generated_image.save(image_name)          
+    def output_image(self, image_name, rotate=None):
+              
+        if rotate:
+            out_array = np.rot90(self.pixel_array)
+        else:
+            out_array = self.pixel_array
+            
+        generated_image = Image.fromarray(out_array)
+        generated_image.save(image_name)
 
         
     def height_illuminated(self, X):

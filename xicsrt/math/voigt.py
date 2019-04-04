@@ -58,13 +58,13 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     # It is possible to go as low as 50 points, but accuracy is not great.
     gridsize_min = 100
 
-    percent = 0.5
-    gauss_hwpm = np.sqrt(2.0*np.log(1.0/percent))*sigma
-    lorentz_hwpm = gamma*np.sqrt(1.0/percent - 1.0)
-    # This is always larger than the voigt hwpm (half width at percent max).
-    hwpm_max = np.sqrt(gauss_hwpm**2 + lorentz_hwpm**2)
+    fraction = 0.5
+    gauss_hwfm = np.sqrt(2.0*np.log(1.0/fraction))*sigma
+    lorentz_hwfm = gamma*np.sqrt(1.0/fraction - 1.0)
+    # This is always larger than the voigt hwfm (half width at percentile).
+    hwfm_max = np.sqrt(gauss_hwfm**2 + lorentz_hwfm**2)
 
-    min_spacing = hwpm_max/5.0
+    min_spacing = hwfm_max/5.0
     value = gridsize_min/2*min_spacing
 
     # Far from the peak, a Voigt profile is always less than a Lorentzian.

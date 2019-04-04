@@ -44,7 +44,7 @@ input = OrderedDict()
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 input['source_intensity']= int(1e7)
-input['number_of_runs'] = 100
+input['number_of_runs'] = 1000
 
 
 # Evetually I should just read all of these numbers directly
@@ -60,7 +60,13 @@ input['crystal_height']      = 0.1
 input['crystal_spacing']     = 2.456760000 #in angstroms        
 input['crystal_center']      = (input['crystal_location'] 
                                 + (input['crystal_curvature'] * input['crystal_normal']))
-input['rocking_curve']       = 0.000068 * 2
+# Rocking curve FWHM in radians.
+# This is taken from x0h for quarts 1,1,-2,0
+# Darwin Curve, sigma: 48.070 urad
+# Darwin Curve, pi:    14.043 urad
+#
+# Reduce by a factor of 10.
+input['rocking_curve_fwhm']       = 48.070e-6/10
 input['reflectivity']        = 1
 input['crystal_pixel_scaling']       = int(200)
 
@@ -104,7 +110,7 @@ input['source_temp']     = 1800
 input['source_mass']     = 39.948
 # Naturaly linewith for the Ar16+ w line. Units: 1/s.
 input['natural_linewidth'] = 1.129e+14
-
+#input['natural_linewidth'] = 0.0
 
 # These values are arbitrary for now.
 input['source_width']   = 0.15
@@ -129,7 +135,7 @@ crystal = SphericalCrystal(
     ,input['crystal_orientation']
     ,input['crystal_curvature']
     ,input['crystal_spacing']
-    ,input['rocking_curve']
+    ,input['rocking_curve_fwhm']
     ,input['reflectivity'] 
     ,input['crystal_width']
     ,input['crystal_height']
@@ -162,10 +168,10 @@ output = raytrace(
 
 
 print('Exporting detector image.')
-pilatus.output_image('test_detector.tif')
+pilatus.output_image('test_detector.tif', rotate=False)
 
 print('Exporting crystal image.')
-crystal.output_image('test_crystal.tif')
+crystal.output_image('test_crystal.tif', rotate=False)
 
 profiler.stop('Total Time')
 
