@@ -499,14 +499,15 @@ class ExtendedSource:
         if (self.natural_linewidth  == 0.0 and self.temp == 0.0) :
             return np.ones(size)*self.wavelength
         
-        # Check for the Gaussian case.
+        # Check for the Lorentzian case.
         if (self.temp == 0.0):
-            return random_wavelength_normal(size)
-        
-        # Check for the lorentizan case.
-        if (self.natural_linewidth  == 0.0):
             # I need to update the cauchy routine first.
             pass
+        
+        # Check for the Gaussian case.
+        if (self.natural_linewidth  == 0.0):
+            return self.random_wavelength_normal(size)
+
         
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]

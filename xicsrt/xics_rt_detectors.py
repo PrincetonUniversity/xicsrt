@@ -12,8 +12,15 @@ from scipy.spatial import cKDTree
 class Detector:
 
     
-    def __init__(self, position, normal, orientation, horizontal_pixels, 
-                 vertical_pixels, pixel_size):
+    def __init__(
+            self
+            ,position
+            ,normal
+            ,orientation
+            ,horizontal_pixels 
+            ,vertical_pixels
+            ,pixel_size):
+        
         self.position = position
         self.xorientation = orientation
         self.yorientation = (np.cross(normal, orientation) / 
@@ -26,6 +33,8 @@ class Detector:
         self.photon_count = None
         
         def pixel_center(row, column):
+
+            # These variables are labled wrong, but the calculaiton is correct.
             row_center = self.height / 2 - .5
             column_center = self.width / 2 - .5
             
@@ -39,15 +48,10 @@ class Detector:
             
         def create_center_array():
             center_array = []
-            i = 0
             for i in range(0, self.height):
-                j = 0
                 for j in range(0, self.width):
                     point = pixel_center(i, j)
                     center_array.append(point)
-                    j += 1
-            
-                i += 1
             
             return center_array
     
