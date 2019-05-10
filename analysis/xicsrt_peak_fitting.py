@@ -6,9 +6,83 @@ Created on Fri Apr 28 12:30:38 2017
 """
 import numpy as np
 from PIL import Image
+import peakutils
 from scipy.optimize import leastsq
 
 
+class OneGaussianFit():
+    
+    def __init__(self, x, y):
+        self.x                  = x
+        self.y                  = y
+        self.y_fit, self.plsq   = self.one_gaussian_fit() 
+
+        
+    def find_peaks(self):
+        x               = self.x
+        y               = self.y
+        index           = peakutils.indexes(y)
+        return x, y, index
+    
+    
+    def norm(self, x, mean, sd):
+        norm = []
+        for i in range(x.size):
+            norm += [1.0/(sd*np.sqrt(2*np.pi))*np.exp(-(x[i] - mean)**2/(2*sd**2))]
+        return np.array(norm)
+        
+    
+    def res(self, p, y, x): 
+        m1, a1, sd1, off = p
+    
+        y_fit = a1 * self.norm(x, m1, sd1) + off
+        err = y - y_fit
+        return err
+
+
+    def one_gaussian_fit(self):
+        x, y, index = self.find_peaks()
+
+        # Starting Values
+        center1= x[index[0]]
+        scale1 = y[index[0]]
+        offset = y[0]
+        stand_dev1 = 1
+        parameters = [center1, scale1, stand_dev1, offset]
+        p = parameters
+        y_real = y
+        #y_init = p[2] * norm(x, p[0], p[4]) + p[3] * norm(x, p[1], p[5]) + p[6]
+    
+        plsq = leastsq(self.res, p, args = (y_real, x))
+    
+        y_fit = (plsq[0][1] * self.norm(x, plsq[0][0], plsq[0][2]) + plsq[0][3])
+    
+        return y_fit, plsq
+
+
+    def get_individual_gaussians(self):
+        x, y, y_fit, plsq = self.x, self.y, self.y_fit, self.plsq
+        
+        g1 = plsq[0][1] * self.norm(x, plsq[0][0], plsq[0][2]) + plsq[0][3]
+        
+        return x, y, y_fit, g1
+    
+    
+    def integrate_gaussians(self):
+        x, plsq = self.x, self.plsq
+        
+        g1 = plsq[0][1] * self.norm(x, plsq[0][0], plsq[0][2])
+ 
+                
+        int1 = sum(g1)
+
+        time_step = x[1] - x[0]
+        
+        return int1, time_step         
+    
+    
+    
+    
 def rotation_matrix(axis, theta):
     """
     Return the rotation matrix associated with counterclockwise rotation about

@@ -8,7 +8,6 @@ from PIL import Image
 import numpy as np
 from scipy.spatial import cKDTree
 from scipy import signal
-import matplotlib.pyplot as plt
           
 class SphericalCrystal:
     def __init__(
