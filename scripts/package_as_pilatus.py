@@ -7,7 +7,7 @@ import os
 import glob
 import subprocess
 
-path = 'results/ideal_voigt_point_crystal_RC_reduced'
+path = 'results/w7x_ar16_op12b_slab_1500eV'
 
 filename_list = glob.glob(os.path.join(path, 'xicsrt_detector*.tif'))
 

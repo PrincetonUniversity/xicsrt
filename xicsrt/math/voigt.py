@@ -67,9 +67,11 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     min_spacing = hwfm_max/5.0
     value = gridsize_min/2*min_spacing
 
-    # Far from the peak, a Voigt profile is always less than a Lorentzian.
+    # Determine a cutoff value.
     lorentz_cutoff = gamma*np.sqrt(1.0/cutoff - 1.0)
-    base = np.exp(1/10 * np.log(lorentz_cutoff/value))
+    gauss_cutoff = np.sqrt(-1 * sigma**2 * 2 * np.log(cutoff*sigma*np.sqrt(2*np.pi)))
+    value_cutoff = max(lorentz_cutoff, gauss_cutoff)
+    base = np.exp(1/10 * np.log(value_cutoff/value))
 
     bounds = np.linspace(-value, value, gridsize+1)
     bounds = bounds*base**np.abs(bounds/value*10)

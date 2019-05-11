@@ -76,11 +76,17 @@ input['source_mass']     = 39.948
 # in angstroms
 # Line location (angstroms) and naturaly linewith (1/s)
 #Ar16+ w line.
-input['wavelength']          = 3.9492
-input['natural_linewidth'] = 1.129e+14
+#input['wavelength']          = 3.9492
+#input['natural_linewidth'] = 1.129e+14
+#Ar16+ x line.
+input['wavelength']          = 3.9660
+input['natural_linewidth']   = 1.673E+12
+#Ar16+ y line.
+input['wavelength']          = 3.9695
+input['natural_linewidth']   = 3.212E+08
 #Ar16+ z line.
-#input['wavelength']          = 3.9944
-#input['natural_linewidth'] = 4.439E+06
+input['wavelength']          = 3.9944
+input['natural_linewidth']   = 4.439E+06
 #input['natural_linewidth'] = 0.0
 
 config_dict = config.xcSystemConfig(input['system'], input['shot'])
