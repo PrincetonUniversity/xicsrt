@@ -132,15 +132,27 @@ class SphericalCrystal:
         L = (self.center - O)
         t_ca = np.einsum('ij,ij->i', L, D)
 
+        mag_L = np.linalg.norm(L, axis=1)
+
         # If t_ca is less than zero, then there is no intersection.
-        mask = t_ca > 0
+        # Update: James 9/3/2019 
+        #   If O is inside of radius of curvature, t_ca can be zero
+        #   added simple statement to allow source in sphere of curvature
+        
+        
+        if all(mag_L) > self.radius:
+            mask = t_ca > 0
+
+        else:
+            mask = [True]*O.shape[0]
+
 
         d = np.sqrt(np.einsum('ij,ij->i',L[mask,:] ,L[mask,:]) - t_ca[mask]**2)
 
         t_hc = np.sqrt(self.radius**2 - d**2)
 
-        t_0 = t_ca - t_hc
-        t_1 = t_ca + t_hc
+        t_0 = t_ca[mask] - t_hc
+        t_1 = t_ca[mask] + t_hc
 
         distance[mask] = np.where(t_0 > t_1, t_0, t_1)
 
