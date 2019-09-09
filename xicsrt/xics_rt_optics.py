@@ -1,8 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 27 10:05:57 2017
+Edited on Fri Sep 06 11:06:00 2019
 
 @author: James
+@editor: Eugene
+
+Description
+-----------
+The spherical quartz crystal and Highly Oriented Pyrolytic Graphite film (NYI) 
+that reflect X-rays that satisfy the Bragg condition. Optical elements have a
+location and rotation in 3D space, optical properties such as crystal spacing,
+rocking curve, and reflectivity, as well as a height and width.
+
+Edits (2019-09-06)
+---------------------
+Removed a few extra blank lines
+Implemented 'rays' dictionary in place of O,D,W,w
 """
 from PIL import Image
 import numpy as np
@@ -50,7 +64,6 @@ class SphericalCrystal:
             
             return center
             
-            
         def create_center_array():
             center_array = []
             for ii in range(0, self.pixel_height):
@@ -62,7 +75,6 @@ class SphericalCrystal:
             
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
         self.center_tree = cKDTree(create_center_array())
-
         
     def pixel_center(self, row, column):
         row_center = self.pixel_height / 2 - .5
@@ -75,35 +87,25 @@ class SphericalCrystal:
             
         return center        
         
-        
     def create_center_array_new(self):
-        center_array = []
-        
-        i = 0
-        for i in range(int(self.pixel_height/4), int(3/4*self.pixel_height)):
-            j = 0
-            for j in range(int(self.pixel_width/4), int(3/4*self.pixel_width)):
-                point = self.pixel_center(i, j)
+        center_array = [] 
+        #YY:changed i and j to ii and jj to make searching easier
+        for ii in range(int(self.pixel_height/4), int(3/4*self.pixel_height),1):
+            for jj in range(int(self.pixel_width/4), int(3/4*self.pixel_width),1):
+                point = self.pixel_center(ii, jj)
                 point = point.tolist()
-                
                 center_array.append(point)
-                j += 1
-                
-            i += 1
             
         return np.array(center_array)   
-        
         
     def normalize(self, vector):
         value = np.einsum('ij,ij->i', vector, vector) ** .5
         vector_norm = vector / value[:, np.newaxis]
         return vector_norm
     
-    
     def norm(self, vector):
         value = np.einsum('ij,ij->i', vector, vector) ** .5
         return value[:, np.newaxis]        
-            
 
     def wavelength_to_bragg_angle(self, wavelength):
         # wavelength in angstroms
@@ -111,8 +113,7 @@ class SphericalCrystal:
         angle = np.arcsin(wavelength / (2 * self.crystal_spacing))
         return angle
         
-        
-    def intersect(self, O, D):
+    def intersect(self, rays):
         """
         This calculation is copied from:
         https://www.scratchapixel.com/lessons/3d-basic-rendering/
@@ -126,55 +127,53 @@ class SphericalCrystal:
         #for ii in range(len(O)):
         #    d = (self.location - O[ii])/D[ii]
         #    distance_center[ii] = d[0]
+        O = rays['origin']
+        D = rays['direction']
 
         distance = np.zeros(O.shape[0])
-
         L = (self.center - O)
         t_ca = np.einsum('ij,ij->i', L, D)
-
         mag_L = np.linalg.norm(L, axis=1)
 
         # If t_ca is less than zero, then there is no intersection.
         # Update: James 9/3/2019 
         #   If O is inside of radius of curvature, t_ca can be zero
-        #   added simple statement to allow source in sphere of curvature
-        
+        #   added simple statement to allow source in sphere of curvature     
         
         if all(mag_L) > self.radius:
             mask = t_ca > 0
-
         else:
             mask = [True]*O.shape[0]
 
-
         d = np.sqrt(np.einsum('ij,ij->i',L[mask,:] ,L[mask,:]) - t_ca[mask]**2)
-
         t_hc = np.sqrt(self.radius**2 - d**2)
 
         t_0 = t_ca[mask] - t_hc
         t_1 = t_ca[mask] + t_hc
 
         distance[mask] = np.where(t_0 > t_1, t_0, t_1)
-
-        return distance
+        return distance       
         
-        
-    def intersect_check(self, O, D, W, w, distance):
+    def intersect_check(self, rays, distance):
         """
         Check if ray intesects the optic within the geometrical bounds.
 
         Programming Notes
         -----------------
-
-          I am not sure why we need the normal projection check here.
-          The only time that I could see this being useful is if the
-          intersect calculator returned the wrong intersect solution
-          (the otheside of the crystal sphere from the optic).
-          For now I have disabled it -- Novimir 2019-04-01
+        I am not sure why we need the normal projection check here.
+        The only time that I could see this being useful is if the
+        intersect calculator returned the wrong intersect solution
+        (the otheside of the crystal sphere from the optic).
+        For now I have disabled it -- Novimir 2019-04-01
         """
+        O = rays['origin']
+        D = rays['direction']
+        W = rays['wavelength']
+        w = rays['weight']
         
         test = None
         test = (distance != 0) #finds which rays intersect, removes others
+        
         O = O[test]
         D = D[test]
         W = W[test]
@@ -191,9 +190,9 @@ class SphericalCrystal:
         # nproj = abs(np.dot(X - self.location, self.normal))        
         # n_value = (self.radius - (self.radius**2 - (self.height * .5) ** 2) **.5)
         # clause &= (nproj <= n_value)
-        
-        return X[clause], D[clause], W[clause], w[clause]
-    
+        rays = {'origin': O[clause], 'direction': D[clause], 
+                'wavelength': W[clause], 'weight': w[clause], 'mask':[]}
+        return X[clause], rays 
 
     def point_on_crystal_check(self, point):
         max_dist = np.sqrt((self.width *.5)**2 + (self.height * .5) ** 2)
@@ -208,9 +207,9 @@ class SphericalCrystal:
         
         return clause
         
-
-    def rocking_curve_adjust_weight(self, w, bragg_angle, angle):
-        """ Weight each ray according to the rocking curve.
+    def rocking_curve_adjust_weight(self, rays, bragg_angle, angle):
+        """ 
+        Weight each ray according to the rocking curve.
 
         Using this type of weighting method will produce an image much faster
         than the filter method. There is an issue however that the image
@@ -222,18 +221,18 @@ class SphericalCrystal:
         require changes in any fitting software to accomodate this extra
         information. 
         """
+        w = rays['weight']
 
         # Convert from FWHM to sigma.
         sigma = self.rocking_curve/np.sqrt(2*np.log(2))/2
 
         # Normalized Gaussian.
         w = np.exp(-np.power(angle - bragg_angle, 2.) / (2 * sigma**2))
-        
         return w
 
-    
     def rocking_curve_filter(self, bragg_angle, angle):
-        """ Treat the rocking curve as a probability distribution and
+        """ 
+        Treat the rocking curve as a probability distribution and
         generate a filter mask.
         
         This method is much less efficent than using weighting, but
@@ -251,9 +250,10 @@ class SphericalCrystal:
         
         return mask
         
-                             
-    
-    def angle_check(self, X, D, W, w, norm):
+    def angle_check(self, X, rays, norm):
+        D = rays['direction']
+        W = rays['wavelength']
+        w = rays['weight']
         # returns vectors that satisfy the bragg condition
         clause = None
         bragg_angle = np.arcsin( W / (2 * self.crystal_spacing))
@@ -287,57 +287,45 @@ class SphericalCrystal:
             w = self.rocking_curve_adjust_weight(w[clause], bragg_angle[clause], angle[clause])
         elif use_filter:
             clause = self.rocking_curve_filter(bragg_angle, angle)
+            
+        rays = {'origin': X[clause], 'direction': D[clause], 
+                'wavelength': W[clause], 'weight': w[clause], 'mask':[]}
+        return rays, norm[clause]
 
-
-        
-        return X[clause], D[clause], W[clause], w, norm[clause]
-
-
-    def reflect_vectors(self, X, D, W, w):
-        
+    def reflect_vectors(self, X, rays):
         norm = self.normalize(self.center - X)
 
         # Check which vectors meet the Bragg condition (with rocking curve)
-        X, D, W, w, norm = self.angle_check(X, D, W, w, norm)
+        rays, norm = self.angle_check(X, rays, norm)
 
         # Perform reflection around nermal vector.
+        D = rays['direction']
         D = D - 2 * np.einsum('ij,ij->i', D, norm)[:, np.newaxis] * norm
+        rays['direction'] = D
         
-        return X, D, W, w  
+        return rays 
 
-    
-    def light(self, O, D, W, w):
-
-        X, D, W, w = self.intersect_check(O, D, W, w, self.intersect(O, D))
-
-        print(' Rays on Crystal:   {:6.4e}'.format(D.shape[0]))
-        
-        O, D, W, w = self.reflect_vectors(X, D, W, w) #new origin and direction
-
-        print(' Rays from Crystal: {:6.4e}'.format(D.shape[0]))
-
-
-        return O, D, W, w
-
+    def light(self, rays):
+        X, rays = self.intersect_check(rays, self.intersect(rays))
+        print(' Rays on Crystal:   {:6.4e}'.format(rays['direction'].shape[0]))        
+        rays = self.reflect_vectors(X, rays) #new origin and direction
+        print(' Rays from Crystal: {:6.4e}'.format(rays['direction'].shape[0]))     
+        return rays
 
     def pixel_row_column(self, pixel_number):
         row = int(pixel_number // self.pixel_width)
         column = pixel_number - (row * self.pixel_width)
+        return row, column        
 
-        return row, column
-        
-        
-    def collect_rays(self, O, D, W, w):
-        X = O
+    def collect_rays(self, rays):
+        X = rays['origin']
         index = self.center_tree.query(np.array(X))[1]
 
         for number in index:
             row, column = self.pixel_row_column(number)
             self.pixel_array[row, column] += 1
-            
         return
 
-        
     def output_image(self, image_name, rotate=None):
               
         if rotate:
@@ -347,10 +335,8 @@ class SphericalCrystal:
             
         generated_image = Image.fromarray(out_array)
         generated_image.save(image_name)
-
         
     def height_illuminated(self, X):
         vert = np.dot((X - self.location), self.yorientation)
-        
         return X, vert
         

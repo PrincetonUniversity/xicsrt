@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Nov 13 10:12:15 2017
+Edited on Fri Sep 06 11:46:40 2019
 
 @author: James Kring
+@editor: Eugene
 """
 
 import numpy as np   
@@ -58,8 +60,9 @@ class GenericSource:
         # Definition:
         #   O: origin of ray
         #   D: direction of ray
-        #   Wavelength: wavelength of ray
-        
+        #   W: wavelength of ray
+        #   w: relative weight of ray (UNUSED)
+        #   m: mask applied to each ray
         
         profiler.start('generate_origin')
         O = self.generate_origin()
@@ -70,14 +73,19 @@ class GenericSource:
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        wavelength = self.generate_wavelength()
+        W = self.generate_wavelength()
         profiler.stop('generate_wavelength')
 
         profiler.start('generate_weight')
-        weight = self.generate_weight()
+        w = self.generate_weight()
         profiler.stop('generate_weight')
         
-        return O, D, wavelength, weight
+        profiler.start('generate_mask')
+        m = self.generate_mask()
+        profiler.stop('generate_mask')
+        
+        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask':m}      
+        return rays
      
     
     def generate_origin(self):
@@ -92,23 +100,18 @@ class GenericSource:
                   + np.einsum('i,j', w_offset, self.xorientation)
                   + np.einsum('i,j', h_offset, self.yorientation)
                   + np.einsum('i,j', d_offset, self.normal))
-        
         return origin
-
 
     def generate_direction(self, origin):
         normal = self.make_normal()
         D = self.random_direction(origin, normal)
-        
         return D
-
 
     def make_normal(self):
         empty_array = np.empty((self.intensity, 3))
         empty_array[:,:] = self.normal
         normal = empty_array
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
-
         return normal
     
     def random_direction(self, origin, normal):  
@@ -148,9 +151,7 @@ class GenericSource:
         R[:,2,:] = normal
 
         direction = np.einsum('ij,ijk->ik', dir_local, R)
-        
         return direction
-    
 
     def generate_wavelength(self):
         #random_wavelength = self.random_wavelength_normal
@@ -159,9 +160,7 @@ class GenericSource:
         
         wavelength = random_wavelength(self.intensity)
         wavelength = wavelength[:, np.newaxis]
-        
         return wavelength
-    
 
     def random_wavelength_voigt(self, size=None):
         """
@@ -199,9 +198,7 @@ class GenericSource:
 
         rand_wave = voigt.voigt_random(gamma, sigma, size)
         rand_wave += self.wavelength
-        
         return rand_wave
-
 
     def random_wavelength_normal(self, size=None):
         """
@@ -219,9 +216,7 @@ class GenericSource:
                   * self.wavelength )
 
         rand_wave = np.random.normal(self.wavelength, sigma, size)
-        
         return rand_wave
-
     
     def random_wavelength_cauchy(self, size=None):
 
@@ -236,16 +231,19 @@ class GenericSource:
         # for ray tracing.
         fwhm = self.natural_linewidth
         rand_wave = cauchy.rvs(loc=self.wavelength, scale=fwhm, size=size)
-    
         return rand_wave
+    
+    #weight and mask are not yet implemented
 
     def generate_weight(self):
         intensity = self.intensity
         w = np.ones((intensity,1), dtype=np.float64)
-        
         return w
-
-
+    
+    def generate_mask(self):
+        intensity = self.intensity
+        m = np.ones((intensity,1), dtype=np.float64)
+        return m
 
 class FocusedExtendedSource(GenericSource):
 
@@ -288,7 +286,8 @@ class FocusedExtendedSource(GenericSource):
         # Definition:
         #   O: origin of ray
         #   D: direction of ray
-        #   Wavelength: wavelength of ray
+        #   W: wavelength of ray
+        #   w: weight of ray (UNUSED)
         
         profiler.start('generate_origin')
         O = super().generate_origin()
@@ -299,14 +298,19 @@ class FocusedExtendedSource(GenericSource):
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        wavelength = super().generate_wavelength()
+        W = super().generate_wavelength()
         profiler.stop('generate_wavelength')
         
         profiler.start('generate_weight')
-        weight = super().generate_weight()
+        w = super().generate_weight()
         profiler.stop('generate_weight')
         
-        return O, D, wavelength, weight
+        profiler.start('generate_mask')
+        m = super().generate_mask()
+        profiler.stop('generate_mask')
+        
+        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask': m}      
+        return rays
     
     def generate_direction(self, origin):
         normal = self.make_normal_focused(origin)
@@ -320,9 +324,6 @@ class FocusedExtendedSource(GenericSource):
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
         
         return normal
- 
-    
-
 
 class ExtendedSource(GenericSource):
 
@@ -358,9 +359,6 @@ class ExtendedSource(GenericSource):
             ,linewidth=linewidth
             )
 
-
- 
-
 class DirectedSource(GenericSource):
 
     
@@ -391,8 +389,7 @@ class DirectedSource(GenericSource):
             ,mass_number=mass_number
             ,linewidth=linewidth
             )    
-
-        
+     
     def get_orientation(self):
         self.orientation = (np.cross(self.normal, self.position)/ 
                              np.linalg.norm(np.cross(self.normal, self.position)))       

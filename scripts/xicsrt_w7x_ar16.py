@@ -6,14 +6,18 @@ Authors
 -------
   - Novimir Pablant <npablant@pppl.gov>
   - James Kring <jdk0026@tigermail.auburn.edu>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
 
 Description
 -----------
+This script loads up all of the initial parameters and object classes needed to
+execute the xicsrt raytracing pipeline
 """
 
-# This is only needed since I have not actually installed xicsrt.
+# This is only needed since I have not actually installed xicsrt
 import sys
-sys.path.append('/u/npablant/code/mirproject/xicsrt')
+sys.path.append('/Users/Eugene/PPPL_python_project1')
+sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code')             #YVY: Changed filepath
 
 # Start Logging
 import logging
@@ -24,11 +28,10 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 from xicsrt.util import profiler
 profiler.startProfiler()
 
-
 profiler.start('Total Time')
 profiler.start('Import Time')
 
-# Begin normal imports.
+# Begin normal imports
 import numpy as np
 from collections import OrderedDict
 
@@ -42,7 +45,7 @@ from xicsrt.xics_rt_raytrace import raytrace, raytrace_special
 from xicsrt.xics_rt_tools import source_location_bragg
 
 # MirPyIDL imports
-from mirfusion.xics.analysis.idl import config
+import mirutil.hdf5
 
 profiler.stop('Import Time')
 
@@ -67,17 +70,17 @@ input['shot'] = 180707017
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 input['source_intensity']= int(1e7)
-input['number_of_runs'] = 1000
+input['number_of_runs'] = 10
 
 
 # Argon mass in AMU.
 input['source_mass']     = 39.948
 
 # in angstroms
-# Line location (angstroms) and naturaly linewith (1/s)
+# Line location (angstroms) and natural linewith (1/s)
 #Ar16+ w line.
 input['wavelength']          = 3.9492
-input['natural_linewidth'] = 1.129e+14
+input['natural_linewidth']   = 1.129e+14
 #Ar16+ x line.
 #input['wavelength']          = 3.9660
 #input['natural_linewidth']   = 1.673E+12
@@ -89,7 +92,8 @@ input['natural_linewidth'] = 1.129e+14
 #input['natural_linewidth']   = 4.439E+06
 #input['natural_linewidth'] = 0.0
 
-config_dict = config.xcSystemConfig(input['system'], input['shot'])
+config_dict = mirutil.hdf5.hdf5ToDict(
+        '/Users/Eugene/PPPL_python_project1/xics_rt_code/w7x_ar16_180707017_geometry.hdf5')
 
 input['crystal_location']    = config_dict['CRYSTAL_LOCATION']
 input['crystal_normal']      = config_dict['CRYSTAL_NORMAL']
@@ -100,13 +104,14 @@ input['crystal_width']       = 0.04
 input['crystal_height']      = 0.1  
 input['crystal_center']      = (input['crystal_location'] 
                                 + (input['crystal_curvature'] * input['crystal_normal']))
+
 # Rocking curve FWHM in radians.
-# This is taken from x0h for quarts 1,1,-2,0
+# This is taken from x0h for quartz 1,1,-2,0
 # Darwin Curve, sigma: 48.070 urad
 # Darwin Curve, pi:    14.043 urad
-input['rocking_curve_fwhm']       = 48.070e-6
-input['reflectivity']        = 1
-input['crystal_pixel_scaling']       = int(200)
+input['rocking_curve_fwhm']    = 48.070e-6
+input['reflectivity']          = 1
+input['crystal_pixel_scaling'] = int(200)
 
 input['detector_location']    = config_dict['DETECTOR_LOCATION']
 input['detector_normal']      = config_dict['DETECTOR_NORMAL']
@@ -116,6 +121,13 @@ input['pixel_size']          = 0.000172
 input['x_size']              = int(config_dict['X_SIZE'])
 input['y_size']              = int(config_dict['Y_SIZE'])
 
+#YY NOTE: Right now the source location is defined relative to the spherical
+#crystal. The project parameters have changed, and now the rays start at the 
+#souce, bounce off of a graphite mirror (HOPG),  then the crystal, and finally
+#hit the detector. We should change this block of code to position the source
+#relative to the graphite, and then add code to position the graphite relative
+#to the crystal.
+#Remove this comment once the graphite object is implemented
 input['source_position'] = source_location_bragg(
     # Distance from Crystal
     3.5,
@@ -156,7 +168,7 @@ input['source_depth']   = 1.0
 profiler.start('Class Setup Time')
 
 pilatus = Detector(
-    input['detector_location']
+     input['detector_location']
     ,input['detector_normal']
     ,input['detector_orientation']
     ,input['x_size']
@@ -164,7 +176,7 @@ pilatus = Detector(
     ,input['pixel_size'])
 
 crystal = SphericalCrystal(
-    input['crystal_location']
+     input['crystal_location']
     ,input['crystal_normal']
     ,input['crystal_orientation']
     ,input['crystal_curvature']
@@ -174,9 +186,20 @@ crystal = SphericalCrystal(
     ,input['crystal_width']
     ,input['crystal_height']
     ,input['crystal_pixel_scaling'])
-    
+
+#
+#graphite = ReflectorGraphite(
+#    input['graphite_location']
+#   ,input['graphite_normal']
+#   ,input['graphite_orientation']
+#   ,input['graphite_reflectivity']
+#   ,input['graphite_width']
+#   ,input['graphite_height']
+#   ,input['graphite_pixel_scaling'])
+#
+
 source = FocusedExtendedSource(
-    input['source_position']
+     input['source_position']
     ,input['source_direction']
     ,input['source_orientation']
     ,input['source_width']
@@ -207,10 +230,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    #output = raytrace_special(source, pilatus, crystal)
+    #output = raytrace_special(source, pilatus, graphite, crystal)
     output = raytrace(
         source
         ,pilatus
+#       ,graphite        
         ,crystal
         ,number_of_runs=input['number_of_runs']
         ,collect_optics=True)
