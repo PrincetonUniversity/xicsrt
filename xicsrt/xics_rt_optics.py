@@ -12,11 +12,6 @@ The spherical quartz crystal and Highly Oriented Pyrolytic Graphite film (NYI)
 that reflect X-rays that satisfy the Bragg condition. Optical elements have a
 location and rotation in 3D space, optical properties such as crystal spacing,
 rocking curve, and reflectivity, as well as a height and width.
-
-Edits (2019-09-06)
----------------------
-Removed a few extra blank lines
-Implemented 'rays' dictionary in place of O,D,W,w
 """
 from PIL import Image
 import numpy as np
@@ -89,7 +84,6 @@ class SphericalCrystal:
         
     def create_center_array_new(self):
         center_array = [] 
-        #YY:changed i and j to ii and jj to make searching easier
         for ii in range(int(self.pixel_height/4), int(3/4*self.pixel_height),1):
             for jj in range(int(self.pixel_width/4), int(3/4*self.pixel_width),1):
                 point = self.pixel_center(ii, jj)
@@ -298,10 +292,10 @@ class SphericalCrystal:
         # Check which vectors meet the Bragg condition (with rocking curve)
         rays, norm = self.angle_check(X, rays, norm)
 
-        # Perform reflection around nermal vector.
+        # Perform reflection around nermal vector. These lines can be optimized
+        # more, as they are generating a new array D which takes up mem/speed
         D = rays['direction']
-        D = D - 2 * np.einsum('ij,ij->i', D, norm)[:, np.newaxis] * norm
-        rays['direction'] = D
+        D[:] = D - 2 * np.einsum('ij,ij->i', D, norm)[:, np.newaxis] * norm
         
         return rays 
 

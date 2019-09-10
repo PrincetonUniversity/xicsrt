@@ -10,11 +10,6 @@ Description
 -----------
 The detector object collects rays and compiles them into a .tif image. It has
 a position and rotation in 3D space, as well as a height and width.
-
-Edits (2019-09-06)
----------------------
-Removed a few extra blank lines
-Implemented 'rays' dictionary in place of O,D,W,w
 """
 from PIL import Image
 import numpy as np
