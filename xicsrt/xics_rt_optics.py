@@ -137,8 +137,8 @@ class SphericalCrystal:
         if all(mag_L) > self.radius:
             mask = t_ca > 0
         else:
-            mask = [True]*O.shape[0]
-
+            mask = [True] * O.shape[0]
+        
         d = np.sqrt(np.einsum('ij,ij->i',L[mask,:] ,L[mask,:]) - t_ca[mask]**2)
         t_hc = np.sqrt(self.radius**2 - d**2)
 
@@ -146,7 +146,7 @@ class SphericalCrystal:
         t_1 = t_ca[mask] + t_hc
 
         distance[mask] = np.where(t_0 > t_1, t_0, t_1)
-        return distance       
+        return distance
         
     def intersect_check(self, rays, distance):
         """
@@ -162,31 +162,23 @@ class SphericalCrystal:
         """
         O = rays['origin']
         D = rays['direction']
-        W = rays['wavelength']
-        w = rays['weight']
+        m = rays['mask']
         
-        test = None
-        test = (distance != 0) #finds which rays intersect, removes others
-        
-        O = O[test]
-        D = D[test]
-        W = W[test]
-        w = w[test]
-        
-        distance = distance[test]
-        
-        X = O + D * distance[:,np.newaxis]
-        yproj = abs(np.dot(X - self.location, self.yorientation))
-        xproj = abs(np.dot(X - self.location, self.xorientation))
+        test = (distance != 0) #finds which rays intersect
+        m[m] &= test
+                
+        X = np.zeros(O.shape, dtype=np.float64)
+        X[m] = O[m] + D[m] * distance[m,np.newaxis]
+        yproj = abs(np.dot(X[m] - self.location, self.yorientation))
+        xproj = abs(np.dot(X[m] - self.location, self.xorientation))
 
         clause = ((xproj <= self.width * .5) & (yproj <= self.height * .5))
+        m[m] &= clause
         
         # nproj = abs(np.dot(X - self.location, self.normal))        
         # n_value = (self.radius - (self.radius**2 - (self.height * .5) ** 2) **.5)
         # clause &= (nproj <= n_value)
-        rays = {'origin': O[clause], 'direction': D[clause], 
-                'wavelength': W[clause], 'weight': w[clause], 'mask':[]}
-        return X[clause], rays 
+        return X, rays 
 
     def point_on_crystal_check(self, point):
         max_dist = np.sqrt((self.width *.5)**2 + (self.height * .5) ** 2)
@@ -247,14 +239,14 @@ class SphericalCrystal:
     def angle_check(self, X, rays, norm):
         D = rays['direction']
         W = rays['wavelength']
-        w = rays['weight']
+#       w = rays['weight']
+        m = rays['mask']
         # returns vectors that satisfy the bragg condition
-        clause = None
-        bragg_angle = np.arcsin( W / (2 * self.crystal_spacing))
+        # only perform check on rays that have intersected the crystal
+        bragg_angle = np.arcsin( W[m] / (2 * self.crystal_spacing))
 
-        dot = np.einsum('ij,ij->i',D, -1 * norm)[:, np.newaxis]
-        
-        angle = np.arccos(dot/self.norm(D))
+        dot = np.einsum('ij,ij->i',D[m], -1 * norm[m])[:, np.newaxis]
+        angle = np.arccos(dot/self.norm(D[m]))
 
         angle = (np.pi * .5) - angle
 
@@ -262,29 +254,27 @@ class SphericalCrystal:
         # following methods:
         #  - rocking_curve_adjust_weight
         #  - rocking_curve_filter
-        use_weight = False
+#       use_weight = False
         use_filter = True
-        if use_weight:
+#        if use_weight:
             # Decide where to cutoff reflections.
             # In this case once the reflectivity gets below 0.1%.
             # (This assumes that the rocking curve is gaussian.
-            fraction = 0.001
-            rocking_hwfm = self.rocking_curve/2 * np.sqrt(np.log(1.0/fraction)/np.log(2))
-            
-            print('rocking_hwfw:', rocking_hwfm)
-            angle_min = bragg_angle - rocking_hwfm
-            angle_max = bragg_angle + rocking_hwfm
-            
-            clause = (angle <= angle_max) & (angle >= angle_min)
-            clause = np.ndarray.flatten(clause)
-        
-            w = self.rocking_curve_adjust_weight(w[clause], bragg_angle[clause], angle[clause])
-        elif use_filter:
+#            fraction = 0.001
+#            rocking_hwfm = self.rocking_curve/2 * np.sqrt(np.log(1.0/fraction)/np.log(2))
+#            
+#            print('rocking_hwfw:', rocking_hwfm)
+#            angle_min = bragg_angle - rocking_hwfm
+#            angle_max = bragg_angle + rocking_hwfm
+#            
+#            clause = (angle <= angle_max) & (angle >= angle_min)
+#            clause = np.ndarray.flatten(clause)
+#        
+#            w = self.rocking_curve_adjust_weight(w[clause], bragg_angle[clause], angle[clause])
+        if use_filter:
             clause = self.rocking_curve_filter(bragg_angle, angle)
-            
-        rays = {'origin': X[clause], 'direction': D[clause], 
-                'wavelength': W[clause], 'weight': w[clause], 'mask':[]}
-        return rays, norm[clause]
+            m[m] &= clause
+        return rays, norm
 
     def reflect_vectors(self, X, rays):
         norm = self.normalize(self.center - X)
@@ -300,10 +290,12 @@ class SphericalCrystal:
         return rays 
 
     def light(self, rays):
+        D = rays['direction']
+        m = rays['mask']
         X, rays = self.intersect_check(rays, self.intersect(rays))
-        print(' Rays on Crystal:   {:6.4e}'.format(rays['direction'].shape[0]))        
+        print(' Rays on Crystal:   {:6.4e}'.format(D[m].shape[0]))        
         rays = self.reflect_vectors(X, rays) #new origin and direction
-        print(' Rays from Crystal: {:6.4e}'.format(rays['direction'].shape[0]))     
+        print(' Rays from Crystal: {:6.4e}'.format(D[m].shape[0]))     
         return rays
 
     def pixel_row_column(self, pixel_number):
@@ -313,7 +305,9 @@ class SphericalCrystal:
 
     def collect_rays(self, rays):
         X = rays['origin']
-        index = self.center_tree.query(np.array(X))[1]
+        m = rays['mask']
+        index = self.center_tree.query(np.array(X[m]))[1]
+        self.photon_count = len(X[m])
 
         for number in index:
             row, column = self.pixel_row_column(number)

@@ -70,7 +70,7 @@ input['shot'] = 180707017
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 input['source_intensity']= int(1e7)
-input['number_of_runs'] = 10
+input['number_of_runs'] = 1
 
 
 # Argon mass in AMU.
@@ -93,7 +93,7 @@ input['natural_linewidth']   = 1.129e+14
 #input['natural_linewidth'] = 0.0
 
 config_dict = mirutil.hdf5.hdf5ToDict(
-        '/Users/Eugene/PPPL_python_project1/xics_rt_code/w7x_ar16_180707017_geometry.hdf5')
+        '/Users/Eugene/PPPL_python_project1/w7x_ar16_180707017_geometry.hdf5')
 
 input['crystal_location']    = config_dict['CRYSTAL_LOCATION']
 input['crystal_normal']      = config_dict['CRYSTAL_NORMAL']

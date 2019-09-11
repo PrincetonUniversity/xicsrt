@@ -84,7 +84,7 @@ class GenericSource:
         m = self.generate_mask()
         profiler.stop('generate_mask')
         
-        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask':m}      
+        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask': m}      
         return rays
      
     
@@ -242,7 +242,7 @@ class GenericSource:
     
     def generate_mask(self):
         intensity = self.intensity
-        m = np.ones((intensity,1), dtype=np.float64)
+        m = np.ones((intensity), dtype=np.bool)
         return m
 
 class FocusedExtendedSource(GenericSource):

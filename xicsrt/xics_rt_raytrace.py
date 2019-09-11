@@ -46,7 +46,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
                 optic.collect_rays(rays)
             profiler.stop('Collection: Optics')
 
-        total_crystal += rays['direction'].shape[0]
+        total_crystal += optic.photon_count
         
         profiler.start('Collection: Detector')
         detector.collect_rays(rays)

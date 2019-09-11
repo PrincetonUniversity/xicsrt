@@ -92,24 +92,32 @@ class Detector:
     def intersect(self, rays):
         O = rays['origin']
         D = rays['direction']
-        distance = np.dot((self.position - O), self.normal)/np.dot(D, self.normal)
+        m = rays['mask']
+        
+        distance = np.zeros(O.shape[0])
+        distance[m] = np.dot((self.position - O[m]), self.normal)/np.dot(D[m], self.normal)
+        
         test = (distance > 0) & (distance < 10)
-        return np.where(test, distance, 0)
+        distance = np.where(test, distance, 0)
+        return distance
         
     def intersect_check(self, rays, distance):
         O = rays['origin']
         D = rays['direction']
+        m = rays['mask']
+        
         test = (distance != 0)
-        O = O[test]
-        D = D[test]
-        distance = distance[test]
+        m &= test
         
-        X = O + D * distance[:,np.newaxis]
-        yproj = abs(np.dot(X - self.position, self.yorientation))
-        xproj = abs(np.dot(X - self.position, self.xorientation)) 
+        X = np.zeros(O.shape, dtype=np.float64)
+        X[m] = O[m] + D[m] * distance[m,np.newaxis]
         
-        clause = (xproj <= .5 * self.width * self.pixel_size) & (yproj <= .5 * self.height * self.pixel_size)        
-        return X[clause], clause
+        yproj = abs(np.dot(X[m] - self.position, self.yorientation))
+        xproj = abs(np.dot(X[m] - self.position, self.xorientation))
+        
+        clause = ((xproj <= self.width * .5) & (yproj <= self.height * .5))
+        m[m] &= clause
+        return X, m
 
     def pixel_row_column(self, pixel_number):
         row = int(pixel_number // self.width)
@@ -117,10 +125,11 @@ class Detector:
         return row, column  
         
     def collect_rays(self, rays):
+        m = rays['mask']
         X, clause = self.intersect_check(rays, self.intersect(rays))
         self.clause = clause
-        index = self.center_tree.query(np.array(X))[1]
-        self.photon_count = len(X)
+        index = self.center_tree.query(np.array(X[m]))[1]
+        self.photon_count = len(X[m])
 
         w = rays['weight']
         for ii in range(0, len(index)):
