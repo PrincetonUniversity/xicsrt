@@ -40,8 +40,8 @@ class Detector:
         
         def pixel_center(row, column):
             # These variables are labled wrong, but the calculaiton is correct.
-            row_center = self.height / 2 - .5
-            column_center = self.width / 2 - .5
+            row_center = (self.height - 1) / 2
+            column_center = (self.width - 1) / 2
             
             xstep = (column - column_center) * self.pixel_size
             ystep = (row_center - row) * self.pixel_size
@@ -94,8 +94,8 @@ class Detector:
         D = rays['direction']
         m = rays['mask']
         
-        distance = np.zeros(O.shape[0])
-        distance[m] = np.dot((self.position - O[m]), self.normal)/np.dot(D[m], self.normal)
+        distance = np.zeros(m.shape, dtype=np.float64)
+        distance[m] = np.dot((self.position - O[m]), self.normal) / np.dot(D[m], self.normal)
         
         test = (distance > 0) & (distance < 10)
         distance = np.where(test, distance, 0)
@@ -106,30 +106,30 @@ class Detector:
         D = rays['direction']
         m = rays['mask']
         
-        test = (distance != 0)
-        m &= test
-        
         X = np.zeros(O.shape, dtype=np.float64)
+        xproj = np.zeros(m.shape, dtype=np.float64)
+        yproj = np.zeros(m.shape, dtype=np.float64)
+        
+        #X is the 3D point where the ray intersects the crystal
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
         
-        yproj = abs(np.dot(X[m] - self.position, self.yorientation))
-        xproj = abs(np.dot(X[m] - self.position, self.xorientation))
-        
-        clause = ((xproj <= self.width * .5) & (yproj <= self.height * .5))
-        m[m] &= clause
-        return X, m
+        #find which rays hit detector, update mask to remove those that don't    
+        xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
+        yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
+        m[m] &= ((xproj[m] <= self.width * self.pixel_size / 2) & (
+                yproj[m] <= self.height * self.pixel_size / 2))
+        return X
 
     def pixel_row_column(self, pixel_number):
         row = int(pixel_number // self.width)
         column = pixel_number - (row * self.width)
-        return row, column  
+        return row, column
         
     def collect_rays(self, rays):
         m = rays['mask']
-        X, clause = self.intersect_check(rays, self.intersect(rays))
-        self.clause = clause
-        index = self.center_tree.query(np.array(X[m]))[1]
-        self.photon_count = len(X[m])
+        X = self.intersect_check(rays, self.intersect(rays))
+        index = self.center_tree.query(X[m])[1]
+        self.photon_count = len(m[m])
 
         w = rays['weight']
         for ii in range(0, len(index)):
@@ -139,7 +139,6 @@ class Detector:
         return self.pixel_array
         
     def output_image(self, image_name, rotate=None):
-
         if rotate:
             out_array = np.rot90(self.pixel_array)
         else:
@@ -147,9 +146,3 @@ class Detector:
             
         generated_image = Image.fromarray(out_array)
         generated_image.save(image_name)       
-    
-    def height_illuminated(self, rays):
-        X, clause = self.intersect_check(rays, self.intersect(rays))
-        vert = np.dot((X - self.position), self.yorientation)
-        return X, vert
-        

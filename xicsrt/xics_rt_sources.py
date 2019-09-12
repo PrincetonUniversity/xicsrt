@@ -19,7 +19,6 @@ class GenericSource:
     """
     Source class to hold basic functions for each source type
     """
-    
     def __init__(
             self
             # location and orientation information
@@ -90,11 +89,9 @@ class GenericSource:
     
     def generate_origin(self):
         # generic origin for isotropic rays
-        
         w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.intensity)
         h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.intensity)
         d_offset = np.random.uniform(-1 * self.depth/2, self.depth/2, self.intensity)        
-
                 
         origin = (self.position
                   + np.einsum('i,j', w_offset, self.xorientation)
@@ -116,7 +113,6 @@ class GenericSource:
     
     def random_direction(self, origin, normal):  
         # Pulled from Novi's FocusedExtendedSource
-    
         def f(theta, number):
             output = np.empty((number, 3))
             
@@ -126,19 +122,16 @@ class GenericSource:
             output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
             output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
             output[:,2]   = z
-            
             return output
         
         direction = np.empty(origin.shape)
-        
         rad_spread = np.radians(self.spread)
         dir_local = f(rad_spread, self.intensity)
 
         o_1 = np.cross(normal, [0,0,1])
-        o_1 = o_1 /  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
-        
+        o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2 = np.cross(normal, o_1)
-        o_2 = o_2 /  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
+        o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
 
         # Here is what the code below would look like if it was
         # not generalizad to an array of inputs.
@@ -157,9 +150,7 @@ class GenericSource:
         #random_wavelength = self.random_wavelength_normal
         #random_wavelength = self.random_wavelength_cauchy
         random_wavelength = self.random_wavelength_voigt
-        
         wavelength = random_wavelength(self.intensity)
-        wavelength = wavelength[:, np.newaxis]
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -169,21 +160,17 @@ class GenericSource:
           natural_linewith: 1/s
           temperature: eV
         """
-
         # Check for the trivial case.
         if (self.natural_linewidth  == 0.0 and self.temp == 0.0) :
             return np.ones(size)*self.wavelength
-        
         # Check for the Lorentzian case.
         if (self.temp == 0.0):
             # I need to update the cauchy routine first.
             pass
-        
         # Check for the Gaussian case.
         if (self.natural_linewidth  == 0.0):
             return self.random_wavelength_normal(size)
 
-        
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
         ev_J = const.physical_constants['electron volt-joule relationship'][0]
@@ -206,7 +193,6 @@ class GenericSource:
           wavelength: angstroms
           temperature: eV
         """
-        
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
         ev_J = const.physical_constants['electron volt-joule relationship'][0]
@@ -219,7 +205,6 @@ class GenericSource:
         return rand_wave
     
     def random_wavelength_cauchy(self, size=None):
-
         # This function needs to be updated to use the same definitions
         # as random_wavelength_voigt.
         #
@@ -233,8 +218,7 @@ class GenericSource:
         rand_wave = cauchy.rvs(loc=self.wavelength, scale=fwhm, size=size)
         return rand_wave
     
-    #weight and mask are not yet implemented
-
+    #weight is not yet implemented
     def generate_weight(self):
         intensity = self.intensity
         w = np.ones((intensity,1), dtype=np.float64)
@@ -246,8 +230,6 @@ class GenericSource:
         return m
 
 class FocusedExtendedSource(GenericSource):
-
-    
     def __init__(
             self
             ,position=None
@@ -326,8 +308,6 @@ class FocusedExtendedSource(GenericSource):
         return normal
 
 class ExtendedSource(GenericSource):
-
-    
     def __init__(
             self
             ,position=None
@@ -360,8 +340,6 @@ class ExtendedSource(GenericSource):
             )
 
 class DirectedSource(GenericSource):
-
-    
     def __init__(
             self
             ,position=None

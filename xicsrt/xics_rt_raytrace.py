@@ -117,4 +117,4 @@ def raytrace_special(source, detector, crystal, number_of_runs=None):
     print('Total Rays Reflected: {:6.4e}'.format(total_crystal))
     print('Total Rays Detected:  {:6.4e}'.format(total_detector))
         
-    return rays
+    return rays, debug_variable

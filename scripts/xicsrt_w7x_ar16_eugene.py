@@ -72,7 +72,6 @@ input['shot'] = 180707017
 input['source_intensity']= int(1e7)
 input['number_of_runs'] = 1
 
-
 # Argon mass in AMU.
 input['source_mass']     = 39.948
 
@@ -150,20 +149,16 @@ input['source_direction'] /=  np.linalg.norm(input['source_direction'])
 input['source_orientation'] = np.cross(np.array([0, 0, 1]), input['source_direction'])
 input['source_orientation'] /= np.linalg.norm(input['source_orientation'])
 
-
 # Angular spread of source in degrees.
 # This needs to be matched to the source distance and crystal size.
 input['source_spread']   = 1.0
 # Ion temperature in eV
 input['source_temp']     = 1000
 
-
 # These values are arbitrary for now.
 input['source_width']   = 0.15
 input['source_height']  = 0.75
 input['source_depth']   = 1.0
-
-
 
 profiler.start('Class Setup Time')
 
@@ -193,6 +188,9 @@ crystal = SphericalCrystal(
 #   ,input['graphite_normal']
 #   ,input['graphite_orientation']
 #   ,input['graphite_reflectivity']
+#   ,inpur['graphite_mosaic_spread']
+#   ,input['graphite_crystal_spacing']
+#   ,input['graphite_rocking_curve_fwhm']
 #   ,input['graphite_width']
 #   ,input['graphite_height']
 #   ,input['graphite_pixel_scaling'])
@@ -229,7 +227,6 @@ if __name__ == '__main__':
         ,type=str)    
     args = parser.parse_args()
 
-    
     #output = raytrace_special(source, pilatus, graphite, crystal)
     output = raytrace(
         source
@@ -238,9 +235,6 @@ if __name__ == '__main__':
         ,crystal
         ,number_of_runs=input['number_of_runs']
         ,collect_optics=True)
-
-
-    
 
     # Create the output path if needed.
     if args.path:
