@@ -17,27 +17,18 @@ from scipy.spatial import cKDTree
 
 
 class Detector:
+    def __init__(self, detector_input, general_input):
+        self.position       = detector_input['detector_position']
+        self.normal         = detector_input['detector_normal']
+        self.xorientation   = detector_input['detector_orientation']
+        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
+                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.width          = detector_input['horizontal_pixels']
+        self.height         = detector_input['vertical_pixels']
+        self.pixel_size     = detector_input['pixel_size']
+        self.photon_count   = None
+        np.random.seed(general_input['random_seed'])
 
-    def __init__(
-            self
-            ,position
-            ,normal
-            ,orientation
-            ,horizontal_pixels 
-            ,vertical_pixels
-            ,pixel_size):
-        
-        self.position = position
-        self.xorientation = orientation
-        self.yorientation = (np.cross(normal, orientation) / 
-                             np.linalg.norm(np.cross(normal, orientation)))
-        self.normal = normal
-        self.width  = horizontal_pixels
-        self.height = vertical_pixels
-        self.pixel_size = pixel_size
-        self.clause = 0
-        self.photon_count = None
-        
         def pixel_center(row, column):
             # These variables are labled wrong, but the calculaiton is correct.
             row_center = (self.height - 1) / 2

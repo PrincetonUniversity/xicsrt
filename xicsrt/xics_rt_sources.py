@@ -19,44 +19,25 @@ class GenericSource:
     """
     Source class to hold basic functions for each source type
     """
-    def __init__(
-            self
-            # location and orientation information
-            ,position=None
-            ,normal=None
-            ,orientation=None
-            # physical dimensions of source
-            ,width =None
-            ,height=None
-            ,depth=None
-            # physical properties of source
-            ,spread=None
-            ,intensity=None
-            ,wavelength=None
-            ,temperature=None
-            ,mass_number=None
-            ,linewidth=None
-            ):
-        
-        self.position = position
-        self.xorientation = orientation
-        self.yorientation = (np.cross(normal, orientation) / 
-                             np.linalg.norm(np.cross(normal, orientation)))
-        self.normal = normal
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.spread = spread
-        self.intensity = intensity
-        self.wavelength = wavelength
-        self.temp = temperature
-        self.mass_number = mass_number
-        self.natural_linewidth = linewidth
-
-
+    def __init__(self, source_input, general_input):
+        self.position       = source_input['source_position']
+        self.normal         = source_input['source_direction']
+        self.xorientation   = source_input['source_orientation']
+        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
+                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.width          = source_input['source_width']
+        self.height         = source_input['source_height']
+        self.depth          = source_input['source_depth']
+        self.spread         = source_input['source_spread']
+        self.intensity      = source_input['source_intensity']
+        self.mass_number    = source_input['source_mass']   
+        self.temp           = source_input['source_temp']
+        self.wavelength     = source_input['wavelength']
+        self.linewidth      = source_input['linewidth']
+        np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
-        # Definition:
+        # Definitions:
         #   O: origin of ray
         #   D: direction of ray
         #   W: wavelength of ray
@@ -105,13 +86,12 @@ class GenericSource:
         return D
 
     def make_normal(self):
-        empty_array = np.empty((self.intensity, 3))
-        empty_array[:,:] = self.normal
-        normal = empty_array
-        normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
+        array = np.empty((self.intensity, 3))
+        array[:] = self.normal
+        normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
         return normal
-    
-    def random_direction(self, origin, normal):  
+        
+    def random_direction(self, origin, normal):
         # Pulled from Novi's FocusedExtendedSource
         def f(theta, number):
             output = np.empty((number, 3))
@@ -127,22 +107,17 @@ class GenericSource:
         direction = np.empty(origin.shape)
         rad_spread = np.radians(self.spread)
         dir_local = f(rad_spread, self.intensity)
-
+        
         o_1 = np.cross(normal, [0,0,1])
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2 = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
-
-        # Here is what the code below would look like if it was
-        # not generalizad to an array of inputs.
-        #    R = ([o_1, o_2, normal])
-        #    direction = np.dot(dir_local, R)
         
         R = np.empty((self.intensity, 3, 3))
         R[:,0,:] = o_1
         R[:,1,:] = o_2
         R[:,2,:] = normal
-
+        
         direction = np.einsum('ij,ijk->ik', dir_local, R)
         return direction
 
@@ -161,14 +136,14 @@ class GenericSource:
           temperature: eV
         """
         # Check for the trivial case.
-        if (self.natural_linewidth  == 0.0 and self.temp == 0.0) :
+        if (self.linewidth  == 0.0 and self.temp == 0.0):
             return np.ones(size)*self.wavelength
         # Check for the Lorentzian case.
         if (self.temp == 0.0):
             # I need to update the cauchy routine first.
             pass
         # Check for the Gaussian case.
-        if (self.natural_linewidth  == 0.0):
+        if (self.linewidth  == 0.0):
             return self.random_wavelength_normal(size)
 
         c = const.physical_constants['speed of light in vacuum'][0]
@@ -176,7 +151,7 @@ class GenericSource:
         ev_J = const.physical_constants['electron volt-joule relationship'][0]
         
         # Natural line width.
-        gamma = ( self.natural_linewidth * self.wavelength**2
+        gamma = ( self.linewidth * self.wavelength**2
                   / (4 * np.pi * c * 1e10) )
 
         # Doppler broadened line width.
@@ -214,7 +189,7 @@ class GenericSource:
         # It also may make sense to add some sort of cutoff here.
         # the extreme tails of the distribution are not really useful
         # for ray tracing.
-        fwhm = self.natural_linewidth
+        fwhm = self.linewidth
         rand_wave = cauchy.rvs(loc=self.wavelength, scale=fwhm, size=size)
         return rand_wave
     
@@ -230,39 +205,24 @@ class GenericSource:
         return m
 
 class FocusedExtendedSource(GenericSource):
-    def __init__(
-            self
-            ,position=None
-            ,normal=None
-            ,orientation=None
-            ,width =None
-            ,height=None
-            ,depth=None
-            ,spread=None
-            ,intensity=None
-            ,wavelength=None
-            ,temperature=None
-            ,mass_number=None
-            ,linewidth=None
-            ,focus=None
-            ):
-        
-        super().__init__(
-            position=position
-            ,normal=normal
-            ,orientation=orientation
-            ,width =width 
-            ,height=height
-            ,depth=depth
-            ,spread=spread
-            ,intensity=intensity
-            ,wavelength=wavelength
-            ,temperature=temperature
-            ,mass_number=mass_number
-            ,linewidth=linewidth
-            )
-
-        self.focus = focus  
+    def __init__(self, source_input, general_input):
+        #super().__init__()
+        self.position       = source_input['source_position']
+        self.normal         = source_input['source_direction']
+        self.xorientation   = source_input['source_orientation']
+        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
+                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.width          = source_input['source_width']
+        self.height         = source_input['source_height']
+        self.depth          = source_input['source_depth']
+        self.spread         = source_input['source_spread']
+        self.intensity      = source_input['source_intensity']
+        self.temp           = source_input['source_temp']
+        self.mass_number    = source_input['source_mass']
+        self.wavelength     = source_input['source_wavelength']                                         
+        self.linewidth      = source_input['source_linewidth']
+        self.focus = source_input['source_target'] 
+        np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
         # Definition:
@@ -297,14 +257,12 @@ class FocusedExtendedSource(GenericSource):
     def generate_direction(self, origin):
         normal = self.make_normal_focused(origin)
         D = super().random_direction(origin, normal)
-        
         return D
     
     def make_normal_focused(self, origin):
         # Generate ray from the origin to the focus.
         normal = self.focus - origin
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
-        
         return normal
 
 class ExtendedSource(GenericSource):
