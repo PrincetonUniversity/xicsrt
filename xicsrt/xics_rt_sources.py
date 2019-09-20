@@ -21,7 +21,7 @@ class GenericSource:
     """
     def __init__(self, source_input, general_input):
         self.position       = source_input['source_position']
-        self.normal         = source_input['source_direction']
+        self.normal         = source_input['source_normal']
         self.xorientation   = source_input['source_orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
@@ -208,7 +208,7 @@ class FocusedExtendedSource(GenericSource):
     def __init__(self, source_input, general_input):
         #super().__init__()
         self.position       = source_input['source_position']
-        self.normal         = source_input['source_direction']
+        self.normal         = source_input['source_normal']
         self.xorientation   = source_input['source_orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
@@ -221,7 +221,7 @@ class FocusedExtendedSource(GenericSource):
         self.mass_number    = source_input['source_mass']
         self.wavelength     = source_input['source_wavelength']                                         
         self.linewidth      = source_input['source_linewidth']
-        self.focus = source_input['source_target'] 
+        self.focus          = source_input['source_target'] 
         np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):

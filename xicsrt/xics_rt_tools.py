@@ -7,6 +7,7 @@ Created on Fri Apr 28 12:30:38 2017
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import leastsq
 
 def rotation_matrix(axis, theta):
@@ -73,8 +74,7 @@ def source_location_bragg(distance
     norm_angle = np.pi/2.0 - bragg_angle
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     
-    meridional_normal = np.cross(crystal_location - crystal_center,
-                                 detector_location - crystal_center)
+    meridional_normal = np.cross(-crystal_normal, detector_location - crystal_center)
     meridional_normal /= np.linalg.norm(meridional_normal)
 
     rot_mat = rotation_matrix(meridional_normal, norm_angle)
@@ -88,7 +88,66 @@ def source_location_bragg(distance
     sagittal_normal /= np.linalg.norm(sagittal_normal)
     
     source_location += horiz_displace * sagittal_normal
-    return source_location    
+    return source_location
+
+def setup_beam_scenario(c_spacing
+                       ,g_spacing
+                       ,wavelength
+                       ,distance_s_g
+                       ,distance_g_c
+                       ,c_curvature):
+    """
+    An idealized scenario with a source, an HOPG, a crystal, and a detector
+    The source is placed at [0, 0, 0] and faces the HOPG
+    The detector is placed at a fixed distance from the crystal and faces it
+    The source sits along the HOPG bragg angle
+    The detector sits along the crystal bragg angle
+    
+    s = source / g = graphite / c = crystal / d = detector
+    """
+    bragg_g = np.arcsin(wavelength / (2 * g_spacing))
+    bragg_c = np.arcsin(wavelength / (2 * c_spacing))
+    distance_c_d = np.sin(bragg_c) / c_curvature
+    
+    s_position      = np.array([0, 0, 0], dtype = np.float64)
+    s_normal        = np.array([1, 0, 0], dtype = np.float64)
+    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    
+    #create a path vector that connects the centers of all optical elements
+    path_vector     = np.array([1, 0, 0], dtype = np.float64)
+    
+    #define graphite position and normal relative to source
+    g_position      = s_position + (path_vector * distance_s_g)
+    g_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    g_cross         = np.cross(g_orientation, path_vector)  
+    g_normal        = (g_cross * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
+    
+    #reflect the path vector off of the graphite
+    path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
+    
+    #define crystal position and normal relative to graphite
+    c_position      = g_position + (path_vector * distance_g_c)
+    c_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    c_cross         = np.cross(c_orientation, path_vector)  
+    c_normal        = (c_cross * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
+    
+    #reflect the path vector off of the crystal
+    path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
+
+    #define detector position and normal relative to crystal
+    d_position      = c_position + (path_vector * distance_c_d)
+    d_orientation   = np.array([0, 1, 0], dtype = np.float64)
+    d_normal        = -path_vector
+    
+    #for focused extended sources, target them towards the graphite position    
+    s_target = g_position
+    
+    scenario_output = [s_position, s_normal, s_orientation,
+                       g_position, g_normal, g_orientation,
+                       c_position, c_normal, c_orientation,
+                       d_position, d_normal, d_orientation,
+                       s_target]
+    return  scenario_output
 
 def plot_rows(file_name, row, bin):
     import matplotlib.pyplot as plt

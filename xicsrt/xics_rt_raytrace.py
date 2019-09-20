@@ -64,10 +64,8 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     print('Total Rays on Crystal:{:6.4e}'.format(total_crystal))
     print('Total Rays Detected:  {:6.4e}'.format(total_detector))
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
-    
     return rays
-        
-        
+
 def raytrace_special(source, detector, crystal, number_of_runs=None):
     """
     Rays are generated from source and then passed through the optics in

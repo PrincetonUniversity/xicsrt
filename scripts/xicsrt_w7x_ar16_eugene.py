@@ -13,7 +13,7 @@ Description
 This script loads up all of the initial parameters and object classes needed to
 execute the xicsrt raytracing pipeline
 """
-
+#%% IMPORTS
 # This is only needed since I have not actually installed xicsrt
 import sys
 sys.path.append('/Users/Eugene/PPPL_python_project1')
@@ -33,6 +33,8 @@ profiler.start('Import Time')
 
 # Begin normal imports
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from collections import OrderedDict
 
 import os
@@ -42,14 +44,14 @@ from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
-from xicsrt.xics_rt_tools import source_location_bragg
+from xicsrt.xics_rt_tools import source_location_bragg, setup_beam_scenario
 
 # MirPyIDL imports
 import mirutil.hdf5
 
 profiler.stop('Import Time')
 
-
+#%% INPUTS
 """
 Input Section
 Contains information about detectors, crystals, sources, etc.
@@ -72,7 +74,7 @@ general_input['shot'] = 180707017
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 source_input['source_intensity']= int(1e7)
-general_input['number_of_runs'] = 10
+general_input['number_of_runs'] = 1
 
 # Argon mass in AMU.
 source_input['source_mass']     = 39.948
@@ -93,7 +95,7 @@ source_input['source_linewidth']    = 1.129e+14
 #input['natural_linewidth']   = 4.439E+06
 #input['natural_linewidth'] = 0.0
 
-#Load spherical crystal properties from hdf5 file
+# Load spherical crystal properties from hdf5 file
 config_dict = mirutil.hdf5.hdf5ToDict(
         '/Users/Eugene/PPPL_python_project1/w7x_ar16_180707017_geometry.hdf5')
 
@@ -107,8 +109,8 @@ crystal_input['crystal_normal']         = config_dict['CRYSTAL_NORMAL']
 crystal_input['crystal_orientation']    = config_dict['CRYSTAL_ORIENTATION']
 crystal_input['crystal_curvature']      = config_dict['CRYSTAL_CURVATURE']
 crystal_input['crystal_spacing']        = config_dict['CRYSTAL_SPACING']
-crystal_input['crystal_width']          = 0.04
-crystal_input['crystal_height']         = 0.10 
+crystal_input['crystal_width']          = 0.10
+crystal_input['crystal_height']         = 0.04
 crystal_input['crystal_center']         = (crystal_input['crystal_position'] 
                                         + (crystal_input['crystal_curvature'] 
                                         *  crystal_input['crystal_normal']))
@@ -116,19 +118,19 @@ crystal_input['crystal_reflectivity']   = 1
 crystal_input['crystal_rocking_curve']  = 48.070e-6
 crystal_input['crystal_pixel_scaling']  = int(200)
 
-#Load mosaic graphite properties
+# Load mosaic graphite properties
 graphite_input['graphite_position']          = config_dict['CRYSTAL_LOCATION']
 graphite_input['graphite_normal']            = config_dict['CRYSTAL_NORMAL']
 graphite_input['graphite_orientation']       = config_dict['CRYSTAL_ORIENTATION']
-graphite_input['graphite_width']             = 0.04
+graphite_input['graphite_width']             = 0.06
 graphite_input['graphite_height']            = 0.10
 graphite_input['graphite_reflectivity']      = 1
-graphite_input['graphite_mosaic_spread']     = 0.1
+graphite_input['graphite_mosaic_spread']     = 0.5
 graphite_input['graphite_crystal_spacing']   = 3.35
 graphite_input['graphite_rocking_curve']     = 48.070e-6
 graphite_input['graphite_pixel_scaling']     = int(200)
 
-#Load detector properties
+# Load detector properties
 detector_input['detector_position']     = config_dict['DETECTOR_LOCATION']
 detector_input['detector_normal']       = config_dict['DETECTOR_NORMAL']
 detector_input['detector_orientation']  = config_dict['DETECTOR_ORIENTATION']
@@ -137,37 +139,11 @@ detector_input['pixel_size']            = 0.000172
 detector_input['horizontal_pixels']     = int(config_dict['X_SIZE'])
 detector_input['vertical_pixels']       = int(config_dict['Y_SIZE'])
 
-"""
- YY NOTE: Right now the source location is defined relative to the spherical
- crystal. The project parameters have changed, and now the rays start at the 
- source, bounce off of a graphite mirror (HOPG),  then the crystal, and finally
- hit the detector. We should change this block of code to position the source
- relative to the graphite, and then add code to position the graphite relative
- to the crystal.
-"""
-
-source_input['source_position'] = source_location_bragg(
-    # Distance from Crystal
-    3.5,
-    # Offset in meridional direction (typically vertical).
-    0,
-    # Offset in sagital direction (typically horizontal).
-    0,
-    crystal_input['crystal_position'],
-    crystal_input['crystal_normal'], 
-    crystal_input['crystal_curvature'], 
-    crystal_input['crystal_spacing'],
-    detector_input['detector_position'], 
-    source_input['source_wavelength'])
-source_input['source_target'] = crystal_input['crystal_position']
-
-source_input['source_direction'] = (crystal_input['crystal_position'] - source_input['source_position'])
-source_input['source_direction'] /=  np.linalg.norm(source_input['source_direction'])
-
-# This direction is rather abitrary and is not (in general)
-# in the meridional direction.
-source_input['source_orientation'] = np.cross(np.array([0, 0, 1]), source_input['source_direction'])
-source_input['source_orientation'] /= np.linalg.norm(source_input['source_orientation'])
+# Load source properties
+source_input['source_position']     = np.array([0, 0, 0])
+source_input['source_normal']       = np.array([0, 1, 0])
+source_input['source_orientation']  = np.array([0, 0, 1])
+source_input['source_target']       = crystal_input['crystal_position']
 
 # Angular spread of source in degrees.
 # This needs to be matched to the source distance and crystal size.
@@ -177,9 +153,45 @@ source_input['source_temp']     = 1000
 
 # These values are arbitrary for now.
 source_input['source_width']   = 0.15
-source_input['source_height']  = 0.75
-source_input['source_depth']   = 1.0
+source_input['source_height']  = 0.15
+source_input['source_depth']   = 0.01
 
+#%% SCENARIO
+"""
+source_input['source_position'] = source_location_bragg(
+    # Distance from Crystal
+    3.5,
+    # Offset in meridional direction (typically vertical).
+    0,
+    # Offset in sagital direction (typically horizontal).
+    0,
+    graphite_input['graphite_position'],
+    graphite_input['graphite_normal'], 
+    0, 
+    graphite_input['graphite_crystal_spacing'],
+    detector_input['detector_position'], 
+    source_input['source_wavelength'])
+source_input['source_target'] = crystal_input['crystal_position']
+
+source_input['source_normal'] = (crystal_input['crystal_position'] - source_input['source_position'])
+source_input['source_normal'] /=  np.linalg.norm(source_input['source_normal'])
+
+# This direction is rather abitrary and is not (in general)
+# in the meridional direction.
+source_input['source_orientation'] = np.cross(np.array([0, 0, 1]), source_input['source_normal'])
+source_input['source_orientation'] /= np.linalg.norm(source_input['source_orientation'])
+"""
+# Set up an ideal beam scenario
+[source_input['source_position']    , source_input['source_normal']     , source_input['source_orientation']    , 
+ graphite_input['graphite_position'], graphite_input['graphite_normal'] , graphite_input['graphite_orientation'],
+ crystal_input['crystal_position']  , crystal_input['crystal_normal']   , crystal_input['crystal_orientation']  ,
+ detector_input['detector_position'], detector_input['detector_normal'] , detector_input['detector_orientation'], 
+ source_input['source_target']] = setup_beam_scenario(
+        crystal_input['crystal_spacing'],
+        graphite_input['graphite_crystal_spacing'],
+        source_input['source_wavelength'], 1, 1, crystal_input['crystal_curvature'])
+
+#%% SETUP
 #pipe all of the configuration settings into their respective objects
 profiler.start('Class Setup Time')
 
@@ -190,6 +202,61 @@ source      = FocusedExtendedSource(source_input, general_input)
 
 profiler.stop('Class Setup Time')
 
+#%% VISUALIZATION
+# Use MatPlotLib Plot3D to visualize the setup
+profiler.start('Initial Visualization Time')
+
+#setup plot axes
+fig=plt.figure()
+ax=fig.gca(projection='3d')
+ax.set_xlim( 0, 2)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+
+#setup variables
+s_position = source_input['source_position']
+g_position = graphite_input['graphite_position']
+c_position = crystal_input['crystal_position']
+d_position = detector_input['detector_position']
+
+s_normal = source_input['source_normal']
+g_normal = graphite_input['graphite_normal']
+c_normal = crystal_input['crystal_normal']
+d_normal = detector_input['detector_normal']
+
+#the line connecting the centers of all optical elements
+beamline = np.zeros([3,4], dtype = np.float64)
+beamline[:,0] = s_position
+beamline[:,1] = g_position
+beamline[:,2] = c_position
+beamline[:,3] = d_position
+
+#plot everything
+ax.scatter(s_position[0], s_position[1], s_position[2], color = "yellow")
+ax.scatter(g_position[0], g_position[1], g_position[2], color = "grey")
+ax.scatter(c_position[0], c_position[1], c_position[2], color = "cyan")
+ax.scatter(d_position[0], d_position[1], d_position[2], color = "red")
+
+ax.quiver(s_position[0], s_position[1], s_position[2],
+          s_normal[0]  , s_normal[1]  , s_normal[2]  ,
+          length = 0.1 , color = "yellow", normalize = True)
+ax.quiver(g_position[0], g_position[1], g_position[2],
+          g_normal[0]  , g_normal[1]  , g_normal[2]  ,
+          length = 0.1 , color = "grey", normalize = True)
+ax.quiver(c_position[0], c_position[1], c_position[2],
+          c_normal[0]  , c_normal[1]  , c_normal[2]  ,
+          length = 0.1 , color = "cyan", normalize = True)
+ax.quiver(d_position[0], d_position[1], d_position[2],
+          d_normal[0]  , d_normal[1]  , d_normal[2]  ,
+          length = 0.1 , color = "red", normalize = True)
+ax.plot3D(beamline[0,:], beamline[1,:], beamline[2,:], "black")
+
+print("X-Ray Optics Visualization")
+#plt.show()
+profiler.stop('Initial Visualization Time')
+
+#%% RAYTRACE
+# Begin Raytracing
 import sys
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -209,7 +276,7 @@ if __name__ == '__main__':
         source
         ,pilatus
         ,graphite        
-#       ,crystal
+        ,crystal
         ,number_of_runs = general_input['number_of_runs']
         ,collect_optics = True)
 
@@ -242,8 +309,25 @@ if __name__ == '__main__':
     print('Exporting crystal image:  {}'.format(filepath))
     crystal.output_image(filepath, rotate=False)
 
-    profiler.stop('Total Time')
 
-    profiler.stopProfiler()
-    print('')
-    profiler.report()
+"""
+#%% OUTPUT
+#Add the rays to the previous Axes3D plot
+print("Generating Ray Plot...")
+
+profiler.start('Final Visualization Time')
+
+origin = output['origin']
+direct = output['direction']
+ax.quiver(origin[:,0], origin[:,1], origin[:,2],
+          direct[:,0], direct[:,1], direct[:,1],
+          length = 0.1 , color = "green", normalize = True)
+    
+plt.show()
+profiler.stop('Final Visualization Time')
+"""
+#%% REPORT
+profiler.stop('Total Time')
+profiler.stopProfiler()
+print('')
+profiler.report()

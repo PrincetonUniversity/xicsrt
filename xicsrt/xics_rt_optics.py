@@ -115,8 +115,8 @@ class SphericalCrystal:
         mag_L = np.linalg.norm(L, axis=1)
         
         # If t_ca is less than zero, then there is no intersection
-        # Use mask to only perform calculations on rays that hit the crystal   
-        m[m] &= ((t_ca > 0) & (mag_L > self.radius))
+        # Use mask to only perform calculations on rays that hit the crystal 
+        #m &= ((t_ca > 0) & (mag_L > self.radius))
         
         #d is the impact parameter between a ray and center of curvature
         d[m]    = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
@@ -124,8 +124,8 @@ class SphericalCrystal:
         
         t_0[m] = t_ca[m] - t_hc[m]
         t_1[m] = t_ca[m] + t_hc[m]
-
-        distance[m] = np.where(t_0 > t_1, t_0, t_1)
+        
+        distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
         return distance
         
     def intersect_check(self, rays, distance):
@@ -337,21 +337,6 @@ class MosaicGraphite:
         #convert a list of vectors into a list of their magnitudes
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
         return magnitude
-    
-    def vector_rotate(self, a, b, theta):
-        #rotate vector a around vector b by an angle theta (radians)
-        #accepts long lists of vectors using einsum instead of dot
-        
-        #project a onto b, return parallel and perpendicular component vectors
-        proj_para = b * np.einsum('ij,ij->i', a, b) / np.einsum('ij,ij->i', b, b)
-        proj_perp = a - proj_para
-        
-        #define and normalize the unit vector w, perpendicular to a and b
-        w = self.normalize(np.cross(b, proj_perp))
-        
-        #return the final rotated vector c
-        c = proj_para + (proj_perp * np.cos(theta)) + (self.norm(proj_perp) * w * np.sin(theta))
-        return c
 
     def intersect(self, rays):
         #test to see if a ray intersects the mirror plane
@@ -383,12 +368,6 @@ class MosaicGraphite:
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
         return X, rays
-    
-    """
-    NOTE: Mosaic spreading needs to be implemented somewhere here. Without
-    mosaic spreading, the graphite mirror will behave like a regular crystal
-    plane mirror.
-    """
     
     def rocking_curve_filter(self, incident_angle, bragg_angle):
         # Convert from FWHM to sigma.
@@ -449,8 +428,8 @@ class MosaicGraphite:
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the crystal
         bragg_angle[m] = np.arcsin( W[m] / (2 * self.crystal_spacing))
-        dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
-        incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
+        dot[m] = np.einsum('ij,ij->i', self.normalize(D[m]), -1 * norm[m])
+        incident_angle[m] = (np.pi / 2) - np.arccos(dot[m])
         
         #check which rays satisfy bragg, update mask to remove those that don't
         m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
@@ -485,8 +464,8 @@ class MosaicGraphite:
         D = rays['direction']
         m = rays['mask']
         
-        norm = np.zeros(X.shape, dtype=np.float64)
-        norm[m] = self.normalize(self.center - X[m])
+        norm    = np.zeros(X.shape, dtype=np.float64)
+        norm[:] = self.normal
         
         # Check which vectors meet the Bragg condition (with rocking curve)
         rays, lite_norm = self.angle_check(X, rays, norm)
