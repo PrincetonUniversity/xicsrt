@@ -14,6 +14,8 @@ This script loads up all of the initial parameters and object classes needed to
 execute the xicsrt raytracing pipeline
 """
 #%% IMPORTS
+print('Importing Packages...')
+
 # This is only needed since I have not actually installed xicsrt
 import sys
 sys.path.append('/Users/Eugene/PPPL_python_project1')
@@ -44,7 +46,9 @@ from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
+from xicsrt.xics_rt_tools import bragg_angle
 from xicsrt.xics_rt_tools import source_location_bragg, setup_beam_scenario
+from xicsrt.xics_rt_tools import setup_crystal_test, setup_graphite_test
 
 # MirPyIDL imports
 import mirutil.hdf5
@@ -56,44 +60,41 @@ profiler.stop('Import Time')
 Input Section
 Contains information about detectors, crystals, sources, etc.
 
-Crystal and detector parameters are taken from the W7-X Op1.2 calibration.
-This can be found in the file w7x_ar16.cerdata for shot 180707017.
+Crystal and detector parameters are taken from the W7-X Op1.2 calibration
+This can be found in the file w7x_ar16.cerdata for shot 180707017
 """
+print('Initializing Variables...')
+profiler.start('Input Setup Time')
+
 general_input   = OrderedDict()
 source_input    = OrderedDict()
 crystal_input   = OrderedDict()
 graphite_input  = OrderedDict()
 detector_input  = OrderedDict()
 
+# Set up general properties about the raytracer, including random seed
+# Possible scenarios include 'LEGACY', 'BEAM', 'CRYSTAL', GRAPHITE'
 general_input['ideal_geometry'] = True
+general_input['backwards_raytrace'] = False
 general_input['random_seed'] = 123456
+general_input['scenario'] = 'BEAM'
 general_input['system'] = 'w7x_ar16'
 general_input['shot'] = 180707017
 
-# Number of rays to launch.
+# Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 source_input['source_intensity']= int(1e7)
 general_input['number_of_runs'] = 1
 
-# Argon mass in AMU.
-source_input['source_mass']     = 39.948
+# Xenon mass in AMU
+source_input['source_mass']     = 131.293
 
-# in angstroms
 # Line location (angstroms) and natural linewith (1/s)
-#Ar16+ w line.
-source_input['source_wavelength']   = 3.9492
+# Xe44+ w line
+# Additional information on Xenon spectral lines can be found on nist.gov
+source_input['source_wavelength']   = 2.7203
 source_input['source_linewidth']    = 1.129e+14
-#Ar16+ x line.
-#input['wavelength']          = 3.9660
-#input['natural_linewidth']   = 1.673E+12
-#Ar16+ y line.
-#input['wavelength']          = 3.9695
-#input['natural_linewidth']   = 3.212E+08
-#Ar16+ z line.
-#input['wavelength']          = 3.9944
-#input['natural_linewidth']   = 4.439E+06
-#input['natural_linewidth'] = 0.0
 
 # Load spherical crystal properties from hdf5 file
 config_dict = mirutil.hdf5.hdf5ToDict(
@@ -104,30 +105,33 @@ config_dict = mirutil.hdf5.hdf5ToDict(
 # Darwin Curve, sigma: 48.070 urad
 # Darwin Curve, pi:    14.043 urad
 
+# Graphite Rocking Curve FWHM in radians
+# Taken from XOP: 8765 urad
+
 crystal_input['crystal_position']       = config_dict['CRYSTAL_LOCATION']
 crystal_input['crystal_normal']         = config_dict['CRYSTAL_NORMAL']
 crystal_input['crystal_orientation']    = config_dict['CRYSTAL_ORIENTATION']
-crystal_input['crystal_curvature']      = config_dict['CRYSTAL_CURVATURE']
-crystal_input['crystal_spacing']        = config_dict['CRYSTAL_SPACING']
+
+crystal_input['crystal_curvature']      = 1.200
+crystal_input['crystal_spacing']        = 1.70578
 crystal_input['crystal_width']          = 0.10
 crystal_input['crystal_height']         = 0.04
-crystal_input['crystal_center']         = (crystal_input['crystal_position'] 
-                                        + (crystal_input['crystal_curvature'] 
-                                        *  crystal_input['crystal_normal']))
+
 crystal_input['crystal_reflectivity']   = 1
-crystal_input['crystal_rocking_curve']  = 48.070e-6
+crystal_input['crystal_rocking_curve']  = 90.30e-6
 crystal_input['crystal_pixel_scaling']  = int(200)
 
 # Load mosaic graphite properties
 graphite_input['graphite_position']          = config_dict['CRYSTAL_LOCATION']
 graphite_input['graphite_normal']            = config_dict['CRYSTAL_NORMAL']
 graphite_input['graphite_orientation']       = config_dict['CRYSTAL_ORIENTATION']
+
 graphite_input['graphite_width']             = 0.06
 graphite_input['graphite_height']            = 0.10
 graphite_input['graphite_reflectivity']      = 1
 graphite_input['graphite_mosaic_spread']     = 0.5
 graphite_input['graphite_crystal_spacing']   = 3.35
-graphite_input['graphite_rocking_curve']     = 48.070e-6
+graphite_input['graphite_rocking_curve']     = 8765e-6
 graphite_input['graphite_pixel_scaling']     = int(200)
 
 # Load detector properties
@@ -145,54 +149,136 @@ source_input['source_normal']       = np.array([0, 1, 0])
 source_input['source_orientation']  = np.array([0, 0, 1])
 source_input['source_target']       = crystal_input['crystal_position']
 
-# Angular spread of source in degrees.
-# This needs to be matched to the source distance and crystal size.
+# Angular spread of source in degrees
+# This needs to be matched to the source distance and crystal size
 source_input['source_spread']   = 1.0
 # Ion temperature in eV
 source_input['source_temp']     = 1000
 
-# These values are arbitrary for now.
-source_input['source_width']   = 0.15
-source_input['source_height']  = 0.15
-source_input['source_depth']   = 0.01
+# These values are arbitrary for now. Set to 0.0 for point source
+source_input['source_width']   = 0.1
+source_input['source_height']  = 0.1
+source_input['source_depth']   = 0.0
+
+profiler.stop('Input Setup Time')
 
 #%% SCENARIO
 """
-source_input['source_position'] = source_location_bragg(
-    # Distance from Crystal
-    3.5,
-    # Offset in meridional direction (typically vertical).
-    0,
-    # Offset in sagital direction (typically horizontal).
-    0,
-    graphite_input['graphite_position'],
-    graphite_input['graphite_normal'], 
-    0, 
-    graphite_input['graphite_crystal_spacing'],
-    detector_input['detector_position'], 
-    source_input['source_wavelength'])
-source_input['source_target'] = crystal_input['crystal_position']
-
-source_input['source_normal'] = (crystal_input['crystal_position'] - source_input['source_position'])
-source_input['source_normal'] /=  np.linalg.norm(source_input['source_normal'])
-
-# This direction is rather abitrary and is not (in general)
-# in the meridional direction.
-source_input['source_orientation'] = np.cross(np.array([0, 0, 1]), source_input['source_normal'])
-source_input['source_orientation'] /= np.linalg.norm(source_input['source_orientation'])
+Each of these scenarios corresponds to a script located in xics_rt_tools.py 
+which assembles the optical elements into a specific configuration based on
+input parameters
 """
-# Set up an ideal beam scenario
-[source_input['source_position']    , source_input['source_normal']     , source_input['source_orientation']    , 
- graphite_input['graphite_position'], graphite_input['graphite_normal'] , graphite_input['graphite_orientation'],
- crystal_input['crystal_position']  , crystal_input['crystal_normal']   , crystal_input['crystal_orientation']  ,
- detector_input['detector_position'], detector_input['detector_normal'] , detector_input['detector_orientation'], 
- source_input['source_target']] = setup_beam_scenario(
-        crystal_input['crystal_spacing'],
+print('Arranging Scenarios...')
+profiler.start('Scenario Setup Time')
+
+# Analytical solutions for spectrometer geometry involving crystal focus
+crystal_bragg   = bragg_angle(source_input['source_wavelength'], crystal_input['crystal_spacing'])
+meridional_focus= crystal_input['crystal_curvature'] * np.sin(crystal_bragg)
+saggital_focus  = - meridional_focus / np.cos(2 * crystal_bragg)
+
+if general_input['scenario'] == 'LEGACY':
+    #Set up a legacy beamline scenario
+    source_input['source_position'] = source_location_bragg(
+        # Distance from Crystal
+        3.5,
+        # Offset in meridional direction (typically vertical).
+        0,
+        # Offset in sagital direction (typically horizontal).
+        0,
+        graphite_input['graphite_position'],
+        graphite_input['graphite_normal'], 
+        0, 
         graphite_input['graphite_crystal_spacing'],
-        source_input['source_wavelength'], 1, 1, crystal_input['crystal_curvature'])
+        detector_input['detector_position'],
+        source_input['source_wavelength'])
+    
+    source_input['source_target'] = crystal_input['crystal_position']
+    source_input['source_normal'] = (crystal_input['crystal_position'] - source_input['source_position'])
+    source_input['source_normal'] /=  np.linalg.norm(source_input['source_normal'])
+
+    # This direction is rather abitrary and is not (in general)
+    # in the meridional direction.
+    source_input['source_orientation'] = np.cross(np.array([0, 0, 1]), source_input['source_normal'])
+    source_input['source_orientation'] /= np.linalg.norm(source_input['source_orientation'])
+
+elif general_input['scenario'] == 'BEAM':
+    # Set up a beamline test scenario
+    [source_input['source_position']        ,
+     source_input['source_normal']          , 
+     source_input['source_orientation']     ,
+     graphite_input['graphite_position']    ,
+     graphite_input['graphite_normal']      ,
+     graphite_input['graphite_orientation'] ,
+     crystal_input['crystal_position']      ,
+     crystal_input['crystal_normal']        ,
+     crystal_input['crystal_orientation']   ,
+     detector_input['detector_position']    ,
+     detector_input['detector_normal']      ,
+     detector_input['detector_orientation'] , 
+     source_input['source_target']] = setup_beam_scenario(
+            crystal_input['crystal_spacing'], 
+            graphite_input['graphite_crystal_spacing'],
+            1, saggital_focus, meridional_focus,
+            source_input['source_wavelength'],
+            general_input['backwards_raytrace'])
+
+elif general_input['scenario'] == 'CRYSTAL':
+    # Set up a crystal test scenario
+    [source_input['source_position']        ,
+     source_input['source_normal']          ,
+     source_input['source_orientation']     , 
+     crystal_input['crystal_position']      ,
+     crystal_input['crystal_normal']        ,
+     crystal_input['crystal_orientation']   ,
+     detector_input['detector_position']    ,
+     detector_input['detector_normal']      ,
+     detector_input['detector_orientation'] , 
+     source_input['source_target']] = setup_crystal_test(
+            crystal_input['crystal_spacing'], 
+            5, 1, source_input['source_wavelength'])
+    
+    graphite_input['graphite_position']     = crystal_input['crystal_position']
+    graphite_input['graphite_normal']       = crystal_input['crystal_normal']
+    graphite_input['graphite_orientation']  = crystal_input['crystal_orientation']
+
+elif general_input['scenario'] == 'GRAPHITE':
+    # Set up a graphite test scenario
+    [source_input['source_position']        ,
+     source_input['source_normal']          ,
+     source_input['source_orientation']     , 
+     graphite_input['graphite_position']    ,
+     graphite_input['graphite_normal']      ,
+     graphite_input['graphite_orientation'] ,
+     detector_input['detector_position']    ,
+     detector_input['detector_normal']      ,
+     detector_input['detector_orientation'] , 
+     source_input['source_target']] = setup_graphite_test(
+            graphite_input['graphite_crystal_spacing'], 
+            5, 1, source_input['source_wavelength'])
+    
+    crystal_input['crystal_position']       = graphite_input['graphite_position']
+    crystal_input['crystal_normal']         = graphite_input['graphite_normal']
+    crystal_input['crystal_orientation']    = graphite_input['graphite_orientation']
+    
+# Backwards raytracing involves swapping the source and detector
+if general_input['backwards_raytrace']:
+    swap_position   = source_input['source_position']
+    swap_orientation= source_input['source_orientation']
+    swap_normal     = source_input['source_normal']
+    
+    source_input['source_position']    = detector_input['detector_position']
+    source_input['source_orientation'] = detector_input['detector_orientation']
+    source_input['source_normal']      = detector_input['detector_normal']
+    
+    detector_input['detector_position']     = swap_position
+    detector_input['detector_orientation']  = swap_orientation
+    detector_input['detector_normal']       = swap_normal
+    
+profiler.stop('Scenario Setup Time')
 
 #%% SETUP
-#pipe all of the configuration settings into their respective objects
+# Pipe all of the configuration settings into their respective objects
+print('Configuring Optics...')
 profiler.start('Class Setup Time')
 
 pilatus     = Detector(detector_input, general_input)
@@ -204,59 +290,110 @@ profiler.stop('Class Setup Time')
 
 #%% VISUALIZATION
 # Use MatPlotLib Plot3D to visualize the setup
-profiler.start('Initial Visualization Time')
+print('Plotting Visualization...')
+profiler.start('Initial Visual Time')
 
-#setup plot axes
-fig=plt.figure()
-ax=fig.gca(projection='3d')
-ax.set_xlim( 0, 2)
-ax.set_ylim(-1, 1)
-ax.set_zlim(-1, 1)
+# Setup plot axes
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.set_xlim(0,3.5)
+ax.set_ylim(-2, 2)
+ax.set_zlim(-2, 2)
 
-#setup variables
-s_position = source_input['source_position']
-g_position = graphite_input['graphite_position']
-c_position = crystal_input['crystal_position']
-d_position = detector_input['detector_position']
+# Setup variables
+position = np.zeros([3,4], dtype = np.float64)
+normal   = np.zeros([3,4], dtype = np.float64)
+orient_x = np.zeros([3,4], dtype = np.float64)
+orient_y = np.zeros([3,4], dtype = np.float64)
+width    = np.zeros([4], dtype = np.float64)
+height   = np.zeros([4], dtype = np.float64)
 
-s_normal = source_input['source_normal']
-g_normal = graphite_input['graphite_normal']
-c_normal = crystal_input['crystal_normal']
-d_normal = detector_input['detector_normal']
+# Define variables
+#for slicing puposes, each optical element now has a number
+#source = 0, graphite = 1, crystal = 2, detector = 3
+position[:,0] = source_input['source_position']
+position[:,1] = graphite_input['graphite_position']
+position[:,2] = crystal_input['crystal_position']
+position[:,3] = detector_input['detector_position']
 
-#the line connecting the centers of all optical elements
+normal[:,0] = source_input['source_normal']
+normal[:,1] = graphite_input['graphite_normal']
+normal[:,2] = crystal_input['crystal_normal']
+normal[:,3] = detector_input['detector_normal']
+
+orient_x[:,0] = source_input['source_orientation']
+orient_x[:,1] = graphite_input['graphite_orientation']
+orient_x[:,2] = crystal_input['crystal_orientation']
+orient_x[:,3] = detector_input['detector_orientation']
+
+orient_y[:,0] = np.cross(normal[:,0], orient_x[:,0]) 
+orient_y[:,1] = np.cross(normal[:,1], orient_x[:,1]) 
+orient_y[:,2] = np.cross(normal[:,2], orient_x[:,2]) 
+orient_y[:,3] = np.cross(normal[:,3], orient_x[:,3])
+
+width[0] = source_input['source_width']
+width[1] = graphite_input['graphite_width'] 
+width[2] = crystal_input['crystal_width']
+width[3] = detector_input['pixel_size'] * detector_input['horizontal_pixels']
+
+height[0] = source_input['source_height']
+height[1] = graphite_input['graphite_height']
+height[2] = crystal_input['crystal_height']
+height[3] = detector_input['pixel_size'] * detector_input['vertical_pixels']
+
+# Create Bounding Boxes
+# 3D coordinates of the four corners of each optical element 
+corners = np.zeros([3,4,4], dtype = np.float64)
+
+corners[:,0,:] = (position[:,:] - (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))   
+corners[:,1,:] = (position[:,:] + (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))   
+corners[:,2,:] = (position[:,:] + (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))  
+corners[:,3,:] = (position[:,:] - (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))   
+
+# The line connecting the centers of all optical elements
 beamline = np.zeros([3,4], dtype = np.float64)
-beamline[:,0] = s_position
-beamline[:,1] = g_position
-beamline[:,2] = c_position
-beamline[:,3] = d_position
+
+if general_input['backwards_raytrace'] is False:
+    beamline[:,:] = position[:,:]
+
+elif general_input['backwards_raytrace'] is True:
+    beamline[:,0] = position[:,3]
+    beamline[:,1] = position[:,1]
+    beamline[:,2] = position[:,2]
+    beamline[:,3] = position[:,0]
 
 #plot everything
-ax.scatter(s_position[0], s_position[1], s_position[2], color = "yellow")
-ax.scatter(g_position[0], g_position[1], g_position[2], color = "grey")
-ax.scatter(c_position[0], c_position[1], c_position[2], color = "cyan")
-ax.scatter(d_position[0], d_position[1], d_position[2], color = "red")
+ax.scatter(position[0,0], position[1,0], position[2,0], color = "yellow")
+ax.scatter(position[0,1], position[1,1], position[2,1], color = "grey")
+ax.scatter(position[0,2], position[1,2], position[2,2], color = "cyan")
+ax.scatter(position[0,3], position[1,3], position[2,3], color = "red")
 
-ax.quiver(s_position[0], s_position[1], s_position[2],
-          s_normal[0]  , s_normal[1]  , s_normal[2]  ,
-          length = 0.1 , color = "yellow", normalize = True)
-ax.quiver(g_position[0], g_position[1], g_position[2],
-          g_normal[0]  , g_normal[1]  , g_normal[2]  ,
-          length = 0.1 , color = "grey", normalize = True)
-ax.quiver(c_position[0], c_position[1], c_position[2],
-          c_normal[0]  , c_normal[1]  , c_normal[2]  ,
-          length = 0.1 , color = "cyan", normalize = True)
-ax.quiver(d_position[0], d_position[1], d_position[2],
-          d_normal[0]  , d_normal[1]  , d_normal[2]  ,
-          length = 0.1 , color = "red", normalize = True)
+ax.quiver(position[0,0], position[1,0], position[2,0],
+          normal[0,0]  , normal[1,0]  , normal[2,0]  ,
+          color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
+ax.quiver(position[0,1], position[1,1], position[2,1],
+          normal[0,1]  , normal[1,1]  , normal[2,1]  ,
+          color = "grey", length = 0.1, arrow_length_ratio = 0.1)
+ax.quiver(position[0,2], position[1,2], position[2,2],
+          normal[0,2]  , normal[1,2]  , normal[2,2]  ,
+          color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
+ax.quiver(position[0,3], position[1,3], position[2,3],
+          normal[0,3]  , normal[1,3]  , normal[2,3]  ,
+          color = "red", length = 0.1 , arrow_length_ratio = 0.1)
 ax.plot3D(beamline[0,:], beamline[1,:], beamline[2,:], "black")
 
+ax.scatter(corners[0,:,0], corners[1,:,0], corners[2,:,0], color = "yellow")
+ax.scatter(corners[0,:,1], corners[1,:,1], corners[2,:,1], color = "grey")
+ax.scatter(corners[0,:,2], corners[1,:,2], corners[2,:,2], color = "cyan")
+ax.scatter(corners[0,:,3], corners[1,:,3], corners[2,:,3], color = "red")
+
 print("X-Ray Optics Visualization")
-#plt.show()
-profiler.stop('Initial Visualization Time')
+plt.show()
+profiler.stop('Initial Visual Time')
 
 #%% RAYTRACE
 # Begin Raytracing
+print('Beginning Raytracing...')
 import sys
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -270,15 +407,24 @@ if __name__ == '__main__':
         ,help='The path to store the results.'
         ,type=str)    
     args = parser.parse_args()
-
-    #output = raytrace_special(source, pilatus, graphite, crystal)
-    output = raytrace(
-        source
-        ,pilatus
-        ,graphite        
-        ,crystal
-        ,number_of_runs = general_input['number_of_runs']
-        ,collect_optics = True)
+    
+    if general_input['backwards_raytrace'] is False:
+        output = raytrace(
+            source
+            ,pilatus
+            ,graphite        
+            ,crystal
+            ,number_of_runs = general_input['number_of_runs']
+            ,collect_optics = True)
+        
+    elif general_input['backwards_raytrace'] is True:
+        output = raytrace(
+            source
+            ,pilatus
+            ,crystal        
+            ,graphite
+            ,number_of_runs = general_input['number_of_runs']
+            ,collect_optics = True)
 
     # Create the output path if needed.
     if args.path:
@@ -309,22 +455,22 @@ if __name__ == '__main__':
     print('Exporting crystal image:  {}'.format(filepath))
     crystal.output_image(filepath, rotate=False)
 
-
-"""
 #%% OUTPUT
 #Add the rays to the previous Axes3D plot
+"""
 print("Generating Ray Plot...")
 
-profiler.start('Final Visualization Time')
+profiler.start('Final Visual Time')
 
 origin = output['origin']
 direct = output['direction']
 ax.quiver(origin[:,0], origin[:,1], origin[:,2],
-          direct[:,0], direct[:,1], direct[:,1],
-          length = 0.1 , color = "green", normalize = True)
+          direct[:,0], direct[:,1], direct[:,2],
+          length = 0.1, arrow_length_ratio = 0.1 , color = "green",
+          normalize = True)
     
 plt.show()
-profiler.stop('Final Visualization Time')
+profiler.stop('Final Visual Time')
 """
 #%% REPORT
 profiler.stop('Total Time')

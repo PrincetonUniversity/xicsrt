@@ -54,7 +54,7 @@ class SphericalCrystal:
                 for jj in range(0, self.pixel_width):
                     point = pixel_center(ii, jj)
                     center_array.append(point)
-                
+            
             return center_array
             
         self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
@@ -110,13 +110,13 @@ class SphericalCrystal:
         
         #distance traveled by the ray before hitting the optic
         #this calculation is performed for all rays, mask regardless
-        L     = (self.center - O)
+        L     = self.center - O
         t_ca  = np.einsum('ij,ij->i', L, D)
         mag_L = np.linalg.norm(L, axis=1)
         
         # If t_ca is less than zero, then there is no intersection
-        # Use mask to only perform calculations on rays that hit the crystal 
-        #m &= ((t_ca > 0) & (mag_L > self.radius))
+        # Use mask to only perform calculations on rays that hit the crystal
+        #m[m] &= ((t_ca[m] >= 0) & (mag_L[m] >= self.radius))
         
         #d is the impact parameter between a ray and center of curvature
         d[m]    = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
@@ -307,8 +307,8 @@ class MosaicGraphite:
         self.center_tree = cKDTree(create_center_array())
     
     def pixel_center(self, row, column):
-        row_center = self.pixel_height / 2 - .5
-        column_center = self.pixel_width / 2 - .5
+        row_center = (self.pixel_height - 1) / 2 
+        column_center = (self.pixel_width - 1) / 2 
             
         xstep = (column - column_center) * self.pixel_size
         ystep = (row_center - row) * self.pixel_size

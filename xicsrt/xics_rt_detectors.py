@@ -47,7 +47,7 @@ class Detector:
                     point = pixel_center(i, j)
                     center_array.append(point)
             return center_array
-    
+        
         self.pixel_array = np.zeros((self.height, self.width))
         self.center_tree = cKDTree(create_center_array())
                 
