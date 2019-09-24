@@ -64,6 +64,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     print('Total Rays on Crystal:{:6.4e}'.format(total_crystal))
     print('Total Rays Detected:  {:6.4e}'.format(total_detector))
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
+    print('')
     return rays
 
 def raytrace_special(source, detector, crystal, number_of_runs=None):
@@ -72,8 +73,8 @@ def raytrace_special(source, detector, crystal, number_of_runs=None):
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin, direction, wavelength, and weight.
     
-    This function also lets the crystal collect the rays to allow for the
-    determination of which rays satisfy the bragg condition.
+    This function also lets optical elements collect rays determine which rays
+    satisfy the bragg condition.
     """
 
     if number_of_runs is None: number_of_runs = 1

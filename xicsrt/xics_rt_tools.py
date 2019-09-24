@@ -40,9 +40,11 @@ def source_location(distance
                     ,crystal_spacing
                     ,detector_location
                     ,wavelength):
-    # Returns the source location that satisfies the bragg condition met by the
-    # detector. Allows for a vertical displacement above and below the 
-    # meridional plane
+    """
+    Returns the source location that satisfies the bragg condition met by the
+    detector. Allows for a vertical displacement above and below the 
+    meridional plane
+    """
     
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     meridional_normal = np.cross(crystal_location - crystal_center,
@@ -121,38 +123,59 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
-    
+    path_vector    /= np.linalg.norm(path_vector)
+
     #define graphite position and normal relative to source
     g_position      = s_position + (path_vector * distance_s_g)
     g_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    
     g_cross         = np.cross(g_orientation, path_vector)  
+    g_cross        /= np.linalg.norm(g_cross)
+    
     g_orientation   = np.cross(path_vector, g_cross)
+    g_orientation  /= np.linalg.norm(g_orientation)
+    
     g_normal        = (g_cross * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
+    g_normal       /= np.linalg.norm(g_normal)
     
     #path_vector, g_cross, and g_orientation form an XYZ basis
     
     #reflect the path vector off of the graphite
     path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
+    path_vector    /= np.linalg.norm(path_vector)
     
     #define crystal position and normal relative to graphite
     c_position      = g_position + (path_vector * distance_g_c)
     c_orientation   = np.array([0, 0, 1], dtype = np.float64)
+
     c_cross         = np.cross(c_orientation, path_vector)  
+    c_cross        /= np.linalg.norm(c_cross)
+    
     c_orientation   = np.cross(path_vector, c_cross)
+    c_orientation  /= np.linalg.norm(c_orientation)
+    
     c_normal        = (c_cross * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
+    c_normal       /= np.linalg.norm(c_normal)
     
     #path_vector, c_cross, and c_orientation form an XYZ basis
     
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
+    path_vector    /= np.linalg.norm(path_vector)
 
     #define detector position and normal relative to crystal
     d_position      = c_position + (path_vector * distance_c_d)
     d_orientation   = np.array([0, 1, 0], dtype = np.float64)
+    
     d_cross         = np.cross(d_orientation, path_vector)  
+    d_cross        /= np.linalg.norm(d_cross)
+    
     d_normal        = -path_vector
-    d_orientation   = np.cross(path_vector, d_cross)
+    d_normal       /= np.linalg.norm(d_normal)
 
+    d_orientation   = np.cross(path_vector, d_cross)
+    d_orientation  /= np.linalg.norm(d_orientation)
+    
     #path_vector, d_cross, and d_orientation form an XYZ basis
     
     if backwards_raytrace is False:
