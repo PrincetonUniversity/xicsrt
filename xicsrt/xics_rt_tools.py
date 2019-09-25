@@ -103,20 +103,17 @@ def source_location_bragg(distance
 
 def setup_beam_scenario(c_spacing ,g_spacing ,
                         distance_s_g ,distance_g_c, distance_c_d,
-                        wavelength, backwards_raytrace):
-#                        g_offset, g_tilt,
-#                        c_offset, c_tilt,
-#                        d_offset, d_tilt):
-    """
-    An idealized scenario with a source, an HOPG, a crystal, and a detector
-    The source is placed at [0, 0, 0] and faces the HOPG
-    The detector is placed at a fixed distance from the crystal and faces it
-    The source sits along the HOPG bragg angle
-    The detector sits along the crystal bragg angle
-    """
+                        wavelength, backwards_raytrace,
+                        g_offset, g_tilt,
+                        c_offset, c_tilt,
+                        d_offset, d_tilt):
+    ## An idealized scenario with a source, an HOPG, a crystal, and a detector
+    
     bragg_g = bragg_angle(wavelength, g_spacing)
     bragg_c = bragg_angle(wavelength, c_spacing)
     
+    ## Source Placement
+    #souce is placed at origin by default and aimed along the X axis
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
     s_orientation   = np.array([0, 0, 1], dtype = np.float64)
@@ -124,7 +121,8 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
     path_vector    /= np.linalg.norm(path_vector)
-
+    
+    ## Graphite Placement
     #define graphite position and normal relative to source
     g_position      = s_position + (path_vector * distance_s_g)
     g_orientation   = np.array([0, 0, 1], dtype = np.float64)
@@ -138,12 +136,17 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     g_normal        = (g_cross * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
     g_normal       /= np.linalg.norm(g_normal)
     
-    #path_vector, g_cross, and g_orientation form an XYZ basis
+    #path_vector, g_cross, and g_orientation form a 3D basis
+    #create a transformation matrix that converts from g_space to xyz_space
+    #use the matrix to transform the g_offset vector into an xyz offset
+    g_basis         = np.transpose(np.array([path_vector, g_cross, g_orientation]))
+    g_position     += np.linalg.inv(g_basis).dot(g_offset)
     
     #reflect the path vector off of the graphite
     path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
     path_vector    /= np.linalg.norm(path_vector)
     
+    ## Crystal Placement
     #define crystal position and normal relative to graphite
     c_position      = g_position + (path_vector * distance_g_c)
     c_orientation   = np.array([0, 0, 1], dtype = np.float64)
@@ -157,12 +160,17 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     c_normal        = (c_cross * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
     c_normal       /= np.linalg.norm(c_normal)
     
-    #path_vector, c_cross, and c_orientation form an XYZ basis
+    #path_vector, c_cross, and c_orientation form a 3D basis
+    #create a transformation matrix that converts from c_space to xyz_space
+    #use the matrix to transform the c_offset vector into xyz
+    c_basis         = np.transpose(np.array([path_vector, c_cross, c_orientation]))
+    c_position     += np.linalg.inv(c_basis).dot(c_offset)
     
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
     path_vector    /= np.linalg.norm(path_vector)
-
+    
+    ## Detector Placement
     #define detector position and normal relative to crystal
     d_position      = c_position + (path_vector * distance_c_d)
     d_orientation   = np.array([0, 1, 0], dtype = np.float64)
@@ -176,7 +184,11 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     d_orientation   = np.cross(path_vector, d_cross)
     d_orientation  /= np.linalg.norm(d_orientation)
     
-    #path_vector, d_cross, and d_orientation form an XYZ basis
+    #path_vector, d_cross, and d_orientation form a 3D basis
+    #create a transformation matrix that converts from d_space to xyz_space
+    #use the matrix to transform the d_offset vector into xyz
+    d_basis         = np.transpose(np.array([path_vector, d_cross, d_orientation]))
+    d_position     += np.linalg.inv(d_basis).dot(d_offset)
     
     if backwards_raytrace is False:
         s_target = g_position
