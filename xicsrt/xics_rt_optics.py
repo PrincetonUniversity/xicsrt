@@ -271,7 +271,7 @@ class MosaicGraphite:
         self.xorientation   = graphite_input['graphite_orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.crystal_spacing= graphite_input['graphite_crystal_spacing']
+        self.crystal_spacing= graphite_input['graphite_spacing']
         self.rocking_curve  = graphite_input['graphite_rocking_curve']
         self.reflectivity   = graphite_input['graphite_reflectivity']
         self.mosaic_spread  = graphite_input['graphite_mosaic_spread']

@@ -176,11 +176,9 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
     direct = output['direction']
     m      = output['mask']
     
-    print(len(m[m]))
     #to avoid plotting too many rays, randomly cull rays until there are 1000
     if len(origin[m]) > 1000:
         m[m] &= (np.random.randint(0, len(origin[m])) < 1000)
-    print(len(m[m]))
     
     plt, ax = visualize_layout(general_input, source_input, graphite_input, 
                                crystal_input, detector_input)

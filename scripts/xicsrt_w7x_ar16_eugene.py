@@ -134,7 +134,7 @@ graphite_input['graphite_width']             = 0.06
 graphite_input['graphite_height']            = 0.10
 graphite_input['graphite_reflectivity']      = 1
 graphite_input['graphite_mosaic_spread']     = 0.5
-graphite_input['graphite_crystal_spacing']   = 3.35
+graphite_input['graphite_spacing']           = 3.35
 graphite_input['graphite_rocking_curve']     = 8765e-6
 graphite_input['graphite_pixel_scaling']     = int(200)
 
@@ -192,13 +192,13 @@ if general_input['scenario'] == 'LEGACY':
         graphite_input['graphite_position'],
         graphite_input['graphite_normal'], 
         0, 
-        graphite_input['graphite_crystal_spacing'],
+        graphite_input['graphite_spacing'],
         detector_input['detector_position'],
         source_input['source_wavelength'])
     
     source_input['source_target'] = crystal_input['crystal_position']
     source_input['source_normal'] = (crystal_input['crystal_position'] - source_input['source_position'])
-    source_input['source_normal'] /=  np.linalg.norm(source_input['source_normal'])
+    source_input['source_normal']/=  np.linalg.norm(source_input['source_normal'])
 
     #This direction is rather abitrary and is not (in general)
     #in the meridional direction.
@@ -221,7 +221,7 @@ elif general_input['scenario'] == 'BEAM':
      detector_input['detector_orientation'] , 
      source_input['source_target']] = setup_beam_scenario(
      crystal_input['crystal_spacing'], 
-     graphite_input['graphite_crystal_spacing'],
+     graphite_input['graphite_spacing'],
      1,                                     #source-graphite distance
      crystal_input['saggit_focus'],         #graphite-crystal distance
      crystal_input['meridi_focus'],         #crystal-detector distance
@@ -266,7 +266,7 @@ elif general_input['scenario'] == 'GRAPHITE':
      detector_input['detector_normal']      ,
      detector_input['detector_orientation'] , 
      source_input['source_target']] = setup_graphite_test(
-            graphite_input['graphite_crystal_spacing'], 
+            graphite_input['graphite_spacing'], 
             5, 1, source_input['source_wavelength'])
     
     crystal_input['crystal_position']       = graphite_input['graphite_position']

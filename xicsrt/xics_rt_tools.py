@@ -31,6 +31,23 @@ def rotation_matrix(axis, theta):
     return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
                      [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
                      [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+    
+def vector_rotate(a, b, theta):
+    ## Rotate vector a around vector b by an angle theta (radians)
+    
+    #project a onto b, return parallel and perpendicular component vectors
+    proj_para = b * np.dot(a, b) / np.dot(b, b)
+    proj_perp = a - proj_para
+    
+    #define and normalize the unit vector w, perpendicular to a and b
+    w  = np.cross(b, proj_perp)
+    if (np.linalg.norm(w) != 0): 
+        w /= np.linalg.norm(w)
+    
+    #return the final rotated vector c
+    c = proj_para + (proj_perp * np.cos(theta)) + (
+            np.linalg.norm(proj_perp) * w * np.sin(theta))
+    return c
 
 def source_location(distance
                     ,vert_displace
@@ -114,91 +131,114 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis
-    s_position      = np.array([0, 0, 0], dtype = np.float64)
-    s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    s_position  = np.array([0, 0, 0], dtype = np.float64)
+    s_normal    = np.array([1, 0, 0], dtype = np.float64)
+    s_z_vector  = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
-    path_vector     = np.array([1, 0, 0], dtype = np.float64)
-    path_vector    /= np.linalg.norm(path_vector)
+    path_vector = np.array([1, 0, 0], dtype = np.float64)
+    path_vector/= np.linalg.norm(path_vector)
     
     ## Graphite Placement
-    #define graphite position and normal relative to source
-    g_position      = s_position + (path_vector * distance_s_g)
-    g_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    #define graphite position, normal, and basis relative to source
+    g_position  = s_position + (path_vector * distance_s_g)
+    g_z_vector  = np.array([0, 0, 1], dtype = np.float64)
     
-    g_cross         = np.cross(g_orientation, path_vector)  
-    g_cross        /= np.linalg.norm(g_cross)
+    g_y_vector  = np.cross(g_z_vector, path_vector)  
+    g_y_vector /= np.linalg.norm(g_y_vector)
     
-    g_orientation   = np.cross(path_vector, g_cross)
-    g_orientation  /= np.linalg.norm(g_orientation)
+    g_z_vector  = np.cross(path_vector, g_y_vector)
+    g_z_vector /= np.linalg.norm(g_z_vector)
     
-    g_normal        = (g_cross * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
-    g_normal       /= np.linalg.norm(g_normal)
+    g_x_vector  = np.cross(g_y_vector, g_z_vector)
+    g_x_vector /= np.linalg.norm(g_x_vector)
     
-    #path_vector, g_cross, and g_orientation form a 3D basis
-    #create a transformation matrix that converts from g_space to xyz_space
-    #use the matrix to transform the g_offset vector into an xyz offset
-    g_basis         = np.transpose(np.array([path_vector, g_cross, g_orientation]))
-    g_position     += np.linalg.inv(g_basis).dot(g_offset)
+    #graphite normal is positioned to best reflect X-Rays according to Bragg
+    g_normal    = (g_y_vector * np.cos(bragg_g)) - (g_x_vector * np.sin(bragg_g))
+    g_normal   /= np.linalg.norm(g_normal)
     
     #reflect the path vector off of the graphite
-    path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
-    path_vector    /= np.linalg.norm(path_vector)
+    path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
+    path_vector/= np.linalg.norm(path_vector)
     
     ## Crystal Placement
-    #define crystal position and normal relative to graphite
-    c_position      = g_position + (path_vector * distance_g_c)
-    c_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    #define crystal position, normal, and basis relative to graphite
+    c_position  = g_position + (path_vector * distance_g_c)
+    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
 
-    c_cross         = np.cross(c_orientation, path_vector)  
-    c_cross        /= np.linalg.norm(c_cross)
+    c_y_vector  = np.cross(c_z_vector, path_vector)  
+    c_y_vector /= np.linalg.norm(c_y_vector)
     
-    c_orientation   = np.cross(path_vector, c_cross)
-    c_orientation  /= np.linalg.norm(c_orientation)
+    c_z_vector  = np.cross(path_vector, c_y_vector)
+    c_z_vector /= np.linalg.norm(c_z_vector)
     
-    c_normal        = (c_cross * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
-    c_normal       /= np.linalg.norm(c_normal)
+    c_x_vector  = np.cross(c_y_vector, c_z_vector)
+    c_x_vector /= np.linalg.norm(c_x_vector)
     
-    #path_vector, c_cross, and c_orientation form a 3D basis
-    #create a transformation matrix that converts from c_space to xyz_space
-    #use the matrix to transform the c_offset vector into xyz
-    c_basis         = np.transpose(np.array([path_vector, c_cross, c_orientation]))
-    c_position     += np.linalg.inv(c_basis).dot(c_offset)
+    #crystal normal is positioned to best reflect X-Rays according to Bragg
+    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
+    c_normal   /= np.linalg.norm(c_normal)
     
     #reflect the path vector off of the crystal
-    path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
-    path_vector    /= np.linalg.norm(path_vector)
+    path_vector-= 2 * np.dot(path_vector, c_normal) * c_normal
+    path_vector/= np.linalg.norm(path_vector)
     
     ## Detector Placement
-    #define detector position and normal relative to crystal
-    d_position      = c_position + (path_vector * distance_c_d)
-    d_orientation   = np.array([0, 1, 0], dtype = np.float64)
+    #define detector position, normal, and basis relative to crystal
+    d_position  = c_position + (path_vector * distance_c_d)
+    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
     
-    d_cross         = np.cross(d_orientation, path_vector)  
-    d_cross        /= np.linalg.norm(d_cross)
+    d_y_vector  = np.cross(d_z_vector, path_vector)  
+    d_y_vector /= np.linalg.norm(d_y_vector)
     
-    d_normal        = -path_vector
-    d_normal       /= np.linalg.norm(d_normal)
+    d_z_vector  = np.cross(path_vector, d_y_vector)
+    d_z_vector /= np.linalg.norm(d_z_vector)
+    
+    d_x_vector  = np.cross(d_y_vector, d_z_vector)
+    d_x_vector /= np.linalg.norm(d_x_vector)
+    
+    #detector normal faces crystal
+    d_normal    = -path_vector
+    d_normal   /= np.linalg.norm(d_normal)
+    
+    """
+    Optical elements' x_vectors, y_vectors, z_vectors form 3D bases
+    Use the bases to create transformation matrices that use vector math to
+    convert g_offset, c_offset, d_offset to XYZ offsets
+    """
+    ## Offset and Tilt Vector Math
+    #create bases
+    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
+    c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
+    d_basis     = np.transpose(np.array([d_x_vector, d_y_vector, d_z_vector]))
+    
+    #offset using vector transformation matrix
+    g_position += g_basis.dot(np.transpose(g_offset))
+    c_position += c_basis.dot(np.transpose(c_offset))
+    d_position += d_basis.dot(np.transpose(d_offset))
+    
+    #tilt using lots of vector rotations (WARNING! Non-commutative operations)
+    g_normal    = vector_rotate(g_normal, g_x_vector, g_tilt[0])
+    g_normal    = vector_rotate(g_normal, g_y_vector, g_tilt[1])
+    g_normal    = vector_rotate(g_normal, g_z_vector, g_tilt[2])
 
-    d_orientation   = np.cross(path_vector, d_cross)
-    d_orientation  /= np.linalg.norm(d_orientation)
+    c_normal    = vector_rotate(c_normal, c_x_vector, c_tilt[0])
+    c_normal    = vector_rotate(c_normal, c_y_vector, c_tilt[1])
+    c_normal    = vector_rotate(c_normal, c_z_vector, c_tilt[2])
     
-    #path_vector, d_cross, and d_orientation form a 3D basis
-    #create a transformation matrix that converts from d_space to xyz_space
-    #use the matrix to transform the d_offset vector into xyz
-    d_basis         = np.transpose(np.array([path_vector, d_cross, d_orientation]))
-    d_position     += np.linalg.inv(d_basis).dot(d_offset)
+    d_normal    = vector_rotate(d_normal, d_x_vector, d_tilt[0])
+    d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
+    d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
     
     if backwards_raytrace is False:
         s_target = g_position
     elif backwards_raytrace is True:
         s_target = c_position
     
-    scenario_output = [s_position, s_normal, s_orientation,
-                       g_position, g_normal, g_orientation,
-                       c_position, c_normal, c_orientation,
-                       d_position, d_normal, d_orientation,
+    scenario_output = [s_position, s_normal, s_z_vector,
+                       g_position, g_normal, g_z_vector,
+                       c_position, c_normal, c_z_vector,
+                       d_position, d_normal, d_z_vector,
                        s_target]
     return  scenario_output
 
@@ -218,9 +258,9 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d, wavelength):
     
     #define crystal position and normal relative to source
     c_position      = s_position + (path_vector * distance_s_c)
-    c_orientation   = np.array([0, 0, 1], dtype = np.float64)
-    c_cross         = np.cross(c_orientation, path_vector)  
-    c_normal        = (c_cross * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
+    c_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    c_y_vector      = np.cross(c_z_vector, path_vector)  
+    c_normal        = (c_y_vector * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
     
     #for focused extended sources, target them towards the crystal position    
     s_target = c_position
@@ -230,12 +270,12 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d, wavelength):
 
     #define detector position and normal relative to crystal
     d_position      = c_position + (path_vector * distance_c_d)
-    d_orientation   = np.array([0, 1, 0], dtype = np.float64)
+    d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
     
     scenario_output = [s_position, s_normal, s_orientation,
-                       c_position, c_normal, c_orientation,
-                       d_position, d_normal, d_orientation,
+                       c_position, c_normal, c_z_vector,
+                       d_position, d_normal, d_z_vector,
                        s_target]
     return  scenario_output
 
@@ -255,9 +295,9 @@ def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
     
     #define crystal position and normal relative to source
     g_position      = s_position + (path_vector * distance_s_g)
-    g_orientation   = np.array([0, 0, 1], dtype = np.float64)
-    g_cross         = np.cross(g_orientation, path_vector)  
-    g_normal        = (g_cross * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
+    g_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    g_y_vector      = np.cross(g_z_vector, path_vector)  
+    g_normal        = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
     
     #for focused extended sources, target them towards the crystal position    
     s_target = g_position
@@ -267,12 +307,12 @@ def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
 
     #define detector position and normal relative to crystal
     d_position      = g_position + (path_vector * distance_g_d)
-    d_orientation   = np.array([0, 1, 0], dtype = np.float64)
+    d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
     
     scenario_output = [s_position, s_normal, s_orientation,
-                       g_position, g_normal, g_orientation,
-                       d_position, d_normal, d_orientation,
+                       g_position, g_normal, g_z_vector,
+                       d_position, d_normal, d_z_vector,
                        s_target]
     return  scenario_output
 
