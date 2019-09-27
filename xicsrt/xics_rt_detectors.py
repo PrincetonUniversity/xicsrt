@@ -34,10 +34,10 @@ class Detector:
             row_center = (self.height - 1) / 2
             column_center = (self.width - 1) / 2
             
-            xstep = (column - column_center) * self.pixel_size
-            ystep = (row_center - row) * self.pixel_size
-            center = (self.position + xstep * self.xorientation 
-                                    + ystep * self.yorientation)          
+            xstep   = (column - column_center)* self.pixel_size
+            ystep   = (row_center - row)      * self.pixel_size
+            center  = (self.position  + xstep * self.xorientation 
+                                      + ystep * self.yorientation)          
             return center
 
         def create_center_array():

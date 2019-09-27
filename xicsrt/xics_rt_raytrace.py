@@ -31,7 +31,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         profiler.start('Ray Generation')
         rays = source.generate_rays()
         profiler.stop('Ray Generation')
-        
+                
         print(' Rays Generated:    {:6.4e}'.format(rays['direction'].shape[0]))
         total_generated += rays['direction'].shape[0]
 

@@ -83,7 +83,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     #crystal optical properties [Float64]
     crystal_bragg = crystal_input['crystal_bragg']
     meridi_focus  = crystal_input['meridi_focus']
-    saggit_focus  = crystal_input['saggit_focus']
+    sagitt_focus  = crystal_input['sagitt_focus']
     
     ## Create Bounding Boxes
     #3D coordinates of the four corners of each optical element 
@@ -126,8 +126,8 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     #meridi_line[3D Coodinates, Point Number], 2 points (one above, one below)
     meridi_line[:,0] = position[:,2] + meridi_focus * inbound_vector + 0.1 * orient_x[:,2]
     meridi_line[:,1] = position[:,2] + meridi_focus * inbound_vector - 0.1 * orient_x[:,2]
-    saggit_line[:,0] = position[:,2] + saggit_focus * inbound_vector + 0.1 *   normal[:,2]
-    saggit_line[:,1] = position[:,2] + saggit_focus * inbound_vector - 0.1 *   normal[:,2]
+    saggit_line[:,0] = position[:,2] + sagitt_focus * inbound_vector + 0.1 *   normal[:,2]
+    saggit_line[:,1] = position[:,2] + sagitt_focus * inbound_vector - 0.1 *   normal[:,2]
     
     ## Plot everything
     #position points
@@ -177,8 +177,9 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
     m      = output['mask']
     
     #to avoid plotting too many rays, randomly cull rays until there are 1000
-    if len(origin[m]) > 1000:
-        m[m] &= (np.random.randint(0, len(origin[m])) < 1000)
+    if len(m[m]) > 1000:
+        cutter = np.random.randint(0, len(m[m]), len(m))
+        m[m] &= (cutter[m] < 1000)
     
     plt, ax = visualize_layout(general_input, source_input, graphite_input, 
                                crystal_input, detector_input)

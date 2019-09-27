@@ -77,18 +77,22 @@ detector_input  = OrderedDict()
 
 ## Set up general properties about the raytracer, including random seed
 # Possible scenarios include 'LEGACY', 'BEAM', 'CRYSTAL', GRAPHITE'
-general_input['ideal_geometry'] = True
+general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
-general_input['random_seed'] = 123456
-general_input['scenario'] = 'BEAM'
-general_input['system'] = 'w7x_ar16'
-general_input['shot'] = 180707017
+general_input['do_visualizations']  = True
+general_input['random_seed']        = 123456
+general_input['scenario']           = 'BEAM'
+general_input['system']             = 'w7x_ar16'
+general_input['shot']               = 180707017
+
+# Temperature that the optical elements will be cooled to (kelvin)
+general_input['xics_temp'] = 273.0
 
 # Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
-source_input['source_intensity']= int(1e7)
-general_input['number_of_runs'] = 1
+source_input['source_intensity']    = int(1e6)
+general_input['number_of_runs']     = 1
 
 # Xenon mass in AMU
 source_input['source_mass']     = 131.293
@@ -118,30 +122,35 @@ crystal_input['crystal_orientation']    = config_dict['CRYSTAL_ORIENTATION']
 
 crystal_input['crystal_curvature']      = 1.200
 crystal_input['crystal_spacing']        = 1.70578
-crystal_input['crystal_width']          = 0.10
-crystal_input['crystal_height']         = 0.04
+crystal_input['crystal_width']          = 0.60
+crystal_input['crystal_height']         = 0.08
 
 crystal_input['crystal_reflectivity']   = 1
 crystal_input['crystal_rocking_curve']  = 90.30e-6
 crystal_input['crystal_pixel_scaling']  = int(200)
 
-## Load mosaic graphite properties
-graphite_input['graphite_position']          = config_dict['CRYSTAL_LOCATION']
-graphite_input['graphite_normal']            = config_dict['CRYSTAL_NORMAL']
-graphite_input['graphite_orientation']       = config_dict['CRYSTAL_ORIENTATION']
+crystal_input['crystal_therm_expand']   = 5.9e-6
 
-graphite_input['graphite_width']             = 0.06
-graphite_input['graphite_height']            = 0.10
-graphite_input['graphite_reflectivity']      = 1
-graphite_input['graphite_mosaic_spread']     = 0.5
-graphite_input['graphite_spacing']           = 3.35
-graphite_input['graphite_rocking_curve']     = 8765e-6
-graphite_input['graphite_pixel_scaling']     = int(200)
+## Load mosaic graphite properties
+graphite_input['graphite_position']         = config_dict['CRYSTAL_LOCATION']
+graphite_input['graphite_normal']           = config_dict['CRYSTAL_NORMAL']
+graphite_input['graphite_orientation']      = config_dict['CRYSTAL_ORIENTATION']
+
+graphite_input['graphite_width']            = 0.06
+graphite_input['graphite_height']           = 0.25
+graphite_input['graphite_reflectivity']     = 1
+graphite_input['graphite_mosaic_spread']    = 0.5
+graphite_input['graphite_spacing']          = 3.35
+graphite_input['graphite_rocking_curve']    = 8765e-6
+graphite_input['graphite_pixel_scaling']    = int(200)
+
+graphite_input['graphite_therm_expand']     = 20e-6
 
 ## Load detector properties
 detector_input['detector_position']     = config_dict['DETECTOR_LOCATION']
 detector_input['detector_normal']       = config_dict['DETECTOR_NORMAL']
 detector_input['detector_orientation']  = config_dict['DETECTOR_ORIENTATION']
+
 
 detector_input['pixel_size']            = 0.000172
 detector_input['horizontal_pixels']     = int(config_dict['X_SIZE'])
@@ -178,7 +187,7 @@ profiler.start('Scenario Setup Time')
 # Analytical solutions for spectrometer geometry involving crystal focus
 crystal_input['crystal_bragg'] = bragg_angle(source_input['source_wavelength'], crystal_input['crystal_spacing'])
 crystal_input['meridi_focus']  = crystal_input['crystal_curvature'] * np.sin(crystal_input['crystal_bragg'])
-crystal_input['saggit_focus']  = - crystal_input['meridi_focus'] / np.cos(2 * crystal_input['crystal_bragg'])
+crystal_input['sagitt_focus']  = - crystal_input['meridi_focus'] / np.cos(2 * crystal_input['crystal_bragg'])
 
 ## Set up a legacy beamline scenario
 if general_input['scenario'] == 'LEGACY':
@@ -223,7 +232,7 @@ elif general_input['scenario'] == 'BEAM':
      crystal_input['crystal_spacing'], 
      graphite_input['graphite_spacing'],
      1,                                     #source-graphite distance
-     crystal_input['saggit_focus'],         #graphite-crystal distance
+     crystal_input['sagitt_focus'],         #graphite-crystal distance
      crystal_input['meridi_focus'],         #crystal-detector distance
      source_input['source_wavelength'],
      general_input['backwards_raytrace'],
@@ -287,6 +296,12 @@ if general_input['backwards_raytrace']:
     detector_input['detector_orientation']  = swap_orientation
     detector_input['detector_normal']       = swap_normal
     
+## Simulate linear thermal expansion
+# This is calculated AFTER spectrometer geometry setup to simulate non-ideal conditions
+if general_input['ideal_geometry'] is False:
+    crystal_input['crystal_spacing']   *= 1 + crystal_input['crystal_therm_expand']   * (general_input['xics_temp'] - 273)
+    graphite_input['graphite_spacing'] *= 1 + graphite_input['graphite_therm_expand'] * (general_input['xics_temp'] - 273)
+    
 profiler.stop('Scenario Setup Time')
 time.sleep(0.1)
 #%% SETUP
@@ -303,12 +318,13 @@ profiler.stop('Class Setup Time')
 time.sleep(0.1)
 #%% VISUALIZATION
 ## Use MatPlotLib Plot3D to visualize the setup
-print('Plotting Visualization...')
 profiler.start('Initial Visual Time')
 
-plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
-                            crystal_input, detector_input)
-plt1.show()
+if general_input['do_visualizations'] is True:
+    print('Plotting Visualization...')
+    plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
+                                 crystal_input, detector_input)
+    plt1.show()
 
 profiler.stop('Initial Visual Time')
 time.sleep(0.1)
@@ -329,23 +345,40 @@ if __name__ == '__main__':
         ,type=str)    
     args = parser.parse_args()
     
-    if general_input['backwards_raytrace'] is False:
+    if general_input['scenario'] == 'BEAM':
+        if general_input['backwards_raytrace'] is False:
+            output = raytrace(
+                source
+                ,pilatus
+                ,graphite        
+                ,crystal
+                ,number_of_runs = general_input['number_of_runs']
+                ,collect_optics = True)
+            
+        if general_input['backwards_raytrace'] is True:
+            output = raytrace(
+                source
+                ,pilatus
+                ,crystal        
+                ,graphite
+                ,number_of_runs = general_input['number_of_runs']
+                ,collect_optics = True)
+            
+    if general_input['scenario'] == 'CRYSTAL':
         output = raytrace(
-            source
-            ,pilatus
-            ,graphite        
-            ,crystal
-            ,number_of_runs = general_input['number_of_runs']
-            ,collect_optics = True)
+                source
+                ,pilatus
+                ,crystal
+                ,number_of_runs = general_input['number_of_runs']
+                ,collect_optics = True)
         
-    elif general_input['backwards_raytrace'] is True:
+    if general_input['scenario'] == 'GRAPHITE':
         output = raytrace(
-            source
-            ,pilatus
-            ,crystal        
-            ,graphite
-            ,number_of_runs = general_input['number_of_runs']
-            ,collect_optics = True)
+                source
+                ,pilatus
+                ,graphite
+                ,number_of_runs = general_input['number_of_runs']
+                ,collect_optics = True)
     
     time.sleep(0.5)
 ## Create the output path if needed
@@ -383,13 +416,14 @@ time.sleep(0.1)
 #%% OUTPUT
 ## Add the rays to the previous Axes3D plot
 
-print("Plotting Rays...")
-
 profiler.start('Final Visual Time')
-plt2, ax2 = visualize_vectors(output, general_input, source_input, 
-                              graphite_input, crystal_input, detector_input)
-    
-plt2.show()
+
+if general_input['do_visualizations'] is True:
+    print("Plotting Rays...")
+    plt2, ax2 = visualize_vectors(output, general_input, source_input, 
+                                  graphite_input, crystal_input, detector_input)
+    plt2.show()
+
 profiler.stop('Final Visual Time')
 
 time.sleep(0.1)

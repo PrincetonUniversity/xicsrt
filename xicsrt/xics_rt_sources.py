@@ -222,25 +222,25 @@ class FocusedExtendedSource(GenericSource):
            w: weight of ray (UNUSED)
         """
         
-        profiler.start('generate_origin')
+        profiler.start('Generate Origin')
         O = super().generate_origin()
-        profiler.stop('generate_origin')
+        profiler.stop('Generate Origin')
 
-        profiler.start('generate_direction')
+        profiler.start('Generate Direction')
         D = self.generate_direction(O)
-        profiler.stop('generate_direction')
+        profiler.stop('Generate Direction')
 
-        profiler.start('generate_wavelength')
+        profiler.start('Generate Wavelength')
         W = super().generate_wavelength()
-        profiler.stop('generate_wavelength')
+        profiler.stop('Generate Wavelength')
         
-        profiler.start('generate_weight')
+        profiler.start('Generate Weight')
         w = super().generate_weight()
-        profiler.stop('generate_weight')
+        profiler.stop('Generate Weight')
         
-        profiler.start('generate_mask')
+        profiler.start('Generate Mask')
         m = super().generate_mask()
-        profiler.stop('generate_mask')
+        profiler.stop('Generate Mask')
         
         rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask': m}      
         return rays

@@ -67,7 +67,7 @@ class SphericalCrystal:
         xstep = (column - column_center) * self.pixel_size
         ystep = (row_center - row) * self.pixel_size
         center = (self.position + xstep * self.xorientation 
-                                    + ystep * self.yorientation)
+                                + ystep * self.yorientation)
             
         return center        
         
@@ -116,7 +116,7 @@ class SphericalCrystal:
         
         # If t_ca is less than zero, then there is no intersection
         # Use mask to only perform calculations on rays that hit the crystal
-        m[m] &= ((t_ca[m] >= 0) & (mag_L[m] >= self.radius))
+#        m[m] &= ((t_ca[m] >= 0) & (mag_L[m] >= self.radius))
         
         #d is the impact parameter between a ray and center of curvature
         d[m]    = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
