@@ -34,7 +34,6 @@ def rotation_matrix(axis, theta):
     
 def vector_rotate(a, b, theta):
     ## Rotate vector a around vector b by an angle theta (radians)
-    
     #project a onto b, return parallel and perpendicular component vectors
     proj_para = b * np.dot(a, b) / np.dot(b, b)
     proj_perp = a - proj_para
@@ -160,7 +159,6 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     #reflect the path vector off of the graphite
     path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
     path_vector/= np.linalg.norm(path_vector)
-    
     ## Crystal Placement
     #define crystal position, normal, and basis relative to graphite
     c_position  = g_position + (path_vector * distance_g_c)

@@ -7,6 +7,7 @@ Edited on Fri Sep 06 11:37:11 2019
 @editor: Eugene
 """
 from xicsrt.util import profiler
+from copy import deepcopy
 
 def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None):
     """ 
@@ -28,8 +29,12 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         print('')
         print('Starting iteration: {} of {}'.format(ii+1, number_of_runs))
         
+        # Rays history resets after every run and only returns on the last one
+        rays_history = []
+        
         profiler.start('Ray Generation')
         rays = source.generate_rays()
+        rays_history.append(deepcopy(rays))
         profiler.stop('Ray Generation')
                 
         print(' Rays Generated:    {:6.4e}'.format(rays['direction'].shape[0]))
@@ -38,6 +43,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         for optic in optics:
             profiler.start('Ray Tracing')
             rays = optic.light(rays)
+            rays_history.append(deepcopy(rays))
             profiler.stop('Ray Tracing')
 
             profiler.start('Collection: Optics')
@@ -65,7 +71,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     print('Total Rays Detected:  {:6.4e}'.format(total_detector))
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
     print('')
-    return rays
+    return rays_history
 
 def raytrace_special(source, detector, crystal, number_of_runs=None):
     """

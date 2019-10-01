@@ -36,19 +36,19 @@ profiler.start('Import Time')
 
 ## Begin normal imports
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from collections import OrderedDict
 
 import os
 import argparse
 import time
+import csv
 
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_vectors
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
+from xicsrt.xics_rt_model import analytical_model
 from xicsrt.xics_rt_tools import bragg_angle
 from xicsrt.xics_rt_tools import source_location_bragg, setup_beam_scenario
 from xicsrt.xics_rt_tools import setup_crystal_test, setup_graphite_test
@@ -74,11 +74,17 @@ source_input    = OrderedDict()
 crystal_input   = OrderedDict()
 graphite_input  = OrderedDict()
 detector_input  = OrderedDict()
+config_input    = OrderedDict()
+
+## Set up general properties about the configuration file
+# Possible modes include 'APPEND', 'CLEAR', 'RUN'
+config_input['mode']        = 'APPEND'
+config_input['file_name']   = 'config_test.csv'
 
 ## Set up general properties about the raytracer, including random seed
-# Possible scenarios include 'LEGACY', 'BEAM', 'CRYSTAL', GRAPHITE'
+# Possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', GRAPHITE'
 general_input['ideal_geometry']     = True
-general_input['backwards_raytrace'] = False
+general_input['backwards_raytrace'] = True
 general_input['do_visualizations']  = True
 general_input['random_seed']        = 123456
 general_input['scenario']           = 'BEAM'
@@ -122,8 +128,8 @@ crystal_input['crystal_orientation']    = config_dict['CRYSTAL_ORIENTATION']
 
 crystal_input['crystal_curvature']      = 1.200
 crystal_input['crystal_spacing']        = 1.70578
-crystal_input['crystal_width']          = 0.60
-crystal_input['crystal_height']         = 0.08
+crystal_input['crystal_width']          = 0.600
+crystal_input['crystal_height']         = 0.080
 
 crystal_input['crystal_reflectivity']   = 1
 crystal_input['crystal_rocking_curve']  = 90.30e-6
@@ -136,8 +142,8 @@ graphite_input['graphite_position']         = config_dict['CRYSTAL_LOCATION']
 graphite_input['graphite_normal']           = config_dict['CRYSTAL_NORMAL']
 graphite_input['graphite_orientation']      = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['graphite_width']            = 0.06
-graphite_input['graphite_height']           = 0.25
+graphite_input['graphite_width']            = 0.060
+graphite_input['graphite_height']           = 0.250
 graphite_input['graphite_reflectivity']     = 1
 graphite_input['graphite_mosaic_spread']    = 0.5
 graphite_input['graphite_spacing']          = 3.35
@@ -169,8 +175,8 @@ source_input['source_spread']   = 1.0
 source_input['source_temp']     = 1000
 
 #These values are arbitrary for now. Set to 0.0 for point source
-source_input['source_width']   = 0.1
-source_input['source_height']  = 0.1
+source_input['source_width']   = 0.0
+source_input['source_height']  = 0.0
 source_input['source_depth']   = 0.0
 
 profiler.stop('Input Setup Time')
@@ -215,7 +221,7 @@ if general_input['scenario'] == 'LEGACY':
     source_input['source_orientation'] /= np.linalg.norm(source_input['source_orientation'])
 
 ## Set up a beamline test scenario
-elif general_input['scenario'] == 'BEAM':
+elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL':
     [source_input['source_position']        ,
      source_input['source_normal']          , 
      source_input['source_orientation']     ,
@@ -304,9 +310,22 @@ if general_input['ideal_geometry'] is False:
     
 profiler.stop('Scenario Setup Time')
 time.sleep(0.1)
+#%% CONFIGURATION
+# Perform changes to the configuration file if requested
+""" EXPERIMENTAL
+if config_input['mode'] == 'APPEND':
+    configuration = [source_input, graphite_input, crystal_input, detector_input]
+    csv_columns = ['KEY','VALUE']
+    with open(config_input['file_name'], "w") as csvfile:
+        csvwriter = csv.DictWriter(csvfile, fieldnames = csv_columns)
+        csvwriter.writeheader()
+    for data in configuration:
+        csvwriter.writerow(data)
+"""
+
 #%% SETUP
 ## Pipe all of the configuration settings into their respective objects
-print('Configuring Optics...')
+print('Setting Up Optics...')
 profiler.start('Class Setup Time')
 
 pilatus     = Detector(detector_input, general_input)
@@ -379,6 +398,11 @@ if __name__ == '__main__':
                 ,graphite
                 ,number_of_runs = general_input['number_of_runs']
                 ,collect_optics = True)
+        
+    if general_input['scenario'] == 'MODEL':
+        output = analytical_model(source, crystal, graphite, pilatus, 
+                                  source_input, graphite_input, crystal_input,
+                                  detector_input, general_input)
     
     time.sleep(0.5)
 ## Create the output path if needed
@@ -420,9 +444,11 @@ profiler.start('Final Visual Time')
 
 if general_input['do_visualizations'] is True:
     print("Plotting Rays...")
-    plt2, ax2 = visualize_vectors(output, general_input, source_input, 
-                                  graphite_input, crystal_input, detector_input)
-    plt2.show()
+    for ii in range(len(output)):
+        plt2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
+                                      graphite_input, crystal_input, 
+                                      detector_input)
+        plt2.show()
 
 profiler.stop('Final Visual Time')
 
