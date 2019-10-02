@@ -20,10 +20,10 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     ## Setup plot and axes
     fig = plt.figure()
     ax  = fig.gca(projection='3d')
-    """
-    ax.set_xlim(0,3.5)
+    
+    ax.set_xlim( 0, 4)
     ax.set_ylim(-2, 2)
-    """
+    
     ax.set_zlim(-1, 1)
     plt.title("X-Ray Optics Layout")
     
@@ -191,3 +191,37 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
               normalize = True)
     
     return plt, ax
+
+def visualize_model(rays_history, rays_metadata, general_input, source_input,
+                    graphite_input, crystal_input, detector_input):
+    ## Do all of the steps as before, but also add the ray history
+    # Rays that miss have their length extended to 10 and turn red
+    # Rays that hit have accurate length and turn green
+    plt, ax = visualize_layout(general_input, source_input, graphite_input, 
+                               crystal_input, detector_input)    
+    
+    for ii in range(len(rays_history)):
+        origin  = rays_history[ii]['origin']
+        direct  = rays_history[ii]['direction']
+        dist    = rays_metadata[ii]['distance']
+        
+        for jj in range(len(origin)):
+                if dist[jj] == 0:
+                    dist[jj] = 10
+                    ax.quiver(origin[jj,0], origin[jj,1], origin[jj,2],
+                              direct[jj,0], direct[jj,1], direct[jj,2],
+                              length = dist[jj], arrow_length_ratio = 0.01, 
+                              color = "red", normalize = True)
+                else:
+                    ax.quiver(origin[jj,0], origin[jj,1], origin[jj,2],
+                              direct[jj,0], direct[jj,1], direct[jj,2],
+                              length = dist[jj], arrow_length_ratio = 0.01, 
+                              color = "green", normalize = True)
+                    
+    return plt, ax
+
+
+
+
+
+    

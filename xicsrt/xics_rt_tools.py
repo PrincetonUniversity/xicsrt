@@ -240,7 +240,9 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
                        s_target]
     return  scenario_output
 
-def setup_crystal_test(c_spacing, distance_s_c, distance_c_d, wavelength):
+def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
+                       wavelength, backwards_raytrace,
+                       c_offset, c_tilt):
     """
     An idealized scenario involving a source, crystal, and detector
     Designed to probe the crystal's properties and check for bugs
@@ -254,11 +256,22 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d, wavelength):
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
     
-    #define crystal position and normal relative to source
-    c_position      = s_position + (path_vector * distance_s_c)
-    c_z_vector      = np.array([0, 0, 1], dtype = np.float64)
-    c_y_vector      = np.cross(c_z_vector, path_vector)  
-    c_normal        = (c_y_vector * np.cos(bragg_c)) - (path_vector * np.sin(bragg_c))
+    #define crystal position, normal, and basis relative to graphite
+    c_position  = s_position + (path_vector * distance_s_c)
+    c_z_vector  = np.array([0, 0, 0], dtype = np.float64)
+    
+    c_y_vector  = np.cross(c_z_vector, path_vector)  
+    c_y_vector /= np.linalg.norm(c_y_vector)
+    
+    c_z_vector  = np.cross(path_vector, c_y_vector)
+    c_z_vector /= np.linalg.norm(c_z_vector)
+    
+    c_x_vector  = np.cross(c_y_vector, c_z_vector)
+    c_x_vector /= np.linalg.norm(c_x_vector)
+    
+    #crystal normal is positioned to best reflect X-Rays according to Bragg
+    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
+    c_normal   /= np.linalg.norm(c_normal)
     
     #for focused extended sources, target them towards the crystal position    
     s_target = c_position
@@ -266,10 +279,28 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d, wavelength):
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
 
-    #define detector position and normal relative to crystal
-    d_position      = c_position + (path_vector * distance_c_d)
-    d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
-    d_normal        = -path_vector
+    #define detector position, normal, and basis relative to crystal
+    d_position  = c_position + (path_vector * distance_c_d)
+    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
+    
+    d_y_vector  = np.cross(d_z_vector, path_vector)  
+    d_y_vector /= np.linalg.norm(d_y_vector)
+    
+    d_z_vector  = np.cross(path_vector, d_y_vector)
+    d_z_vector /= np.linalg.norm(d_z_vector)
+    
+    d_x_vector  = np.cross(d_y_vector, d_z_vector)
+    d_x_vector /= np.linalg.norm(d_x_vector)
+    
+    #detector normal faces crystal
+    d_normal    = -path_vector
+    d_normal   /= np.linalg.norm(d_normal)
+    
+    #offset vector math
+    c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
+    c_position += c_basis.dot(np.transpose(c_offset))
+    c_z_vector    = vector_rotate(c_z_vector, c_normal, c_tilt)
+    
     
     scenario_output = [s_position, s_normal, s_orientation,
                        c_position, c_normal, c_z_vector,
