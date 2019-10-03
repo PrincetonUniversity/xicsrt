@@ -83,11 +83,11 @@ config_input['file_name']   = 'config_test.csv'
 ## Set up general properties about the raytracer, including random seed
 # Possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', GRAPHITE'
 general_input['ideal_geometry']     = True
-general_input['backwards_raytrace'] = False
+general_input['backwards_raytrace'] = True
 general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
-general_input['random_seed']        = 123456
-general_input['scenario']           = 'BEAM'
+general_input['random_seed']        = 1234567
+general_input['scenario']           = 'MODEL'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -194,6 +194,7 @@ profiler.start('Scenario Setup Time')
 crystal_input['crystal_bragg'] = bragg_angle(source_input['source_wavelength'], crystal_input['crystal_spacing'])
 crystal_input['meridi_focus']  = crystal_input['crystal_curvature'] * np.sin(crystal_input['crystal_bragg'])
 crystal_input['sagitt_focus']  = - crystal_input['meridi_focus'] / np.cos(2 * crystal_input['crystal_bragg'])
+graphite_input['graphite_bragg'] = bragg_angle(source_input['source_wavelength'], graphite_input['graphite_spacing'])
 
 ## Set up a legacy beamline scenario
 if general_input['scenario'] == 'LEGACY':
@@ -424,7 +425,7 @@ time.sleep(0.1)
 profiler.start('Final Visual Time')
 
 if general_input['do_visualizations'] is True:
-    print("Plotting Rays...")
+    print("Plotting Results...")
     
     if general_input['scenario'] == 'MODEL':
         plt2, ax2 = visualize_model(output, metadata, general_input, source_input, 
@@ -434,6 +435,7 @@ if general_input['do_visualizations'] is True:
             plt2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
                                           graphite_input, crystal_input, detector_input)
     plt2.show()
+    
 
 profiler.stop('Final Visual Time')
 
@@ -443,4 +445,36 @@ profiler.stop('Total Time')
 profiler.stopProfiler()
 print('')
 time.sleep(0.5)
+if general_input['scenario'] == 'MODEL':    
+    # models also come with metadata, print that out
+    print('')
+    print('Analytical Model Results')
+    
+    if general_input['backwards_raytrace'] is True:
+        print('Header  |  Crystal Bragg | Crystal Dist | Graphite Bragg | Graphite Dist')
+        print('Setup   |  {:6.6} deg   | {:6.6} m   | {:6.6} deg    | {:6.6} m'.format(
+            crystal_input['crystal_bragg'] * 180 / np.pi,
+            np.linalg.norm(crystal_input['crystal_position'] - source_input['source_position']),
+            graphite_input['graphite_bragg'] * 180 / np.pi,
+            np.linalg.norm(graphite_input['graphite_position'] - crystal_input['crystal_position']),
+            np.linalg.norm(detector_input['detector_position'] - graphite_input['graphite_position'])))
+        
+        for jj in range(len(metadata[0]['distance'])):
+            if   metadata[0]['distance'][jj] == 10.0 or metadata[0]['distance'][jj] == 0.0:
+                print('Ray {}   |  [MISSED]      | [MISSED]     | [MISSED]       | [MISSED]'.format(jj))
+                
+            elif metadata[1]['distance'][jj] == 10.0 or metadata[1]['distance'][jj] == 0.0:
+                print('Ray {}   |  {:6.6} deg   | {:6.6} m   | [MISSED]       | [MISSED]'.format(
+                    jj,
+                    float(metadata[0]['incident_angle'][jj]) * 180 / np.pi,
+                    float(metadata[0]['distance'][jj])))  
+                
+            else:
+                print('Ray {}   |  {:6.6} deg   | {:6.6} m   | {:6.6} deg    | {:6.6} m'.format(
+                    jj,
+                    float(metadata[0]['incident_angle'][jj]) * 180 / np.pi,
+                    float(metadata[0]['distance'][jj]),
+                    float(metadata[1]['incident_angle'][jj]) * 180 / np.pi,
+                    float(metadata[1]['distance'][jj])))  
+
 profiler.report()

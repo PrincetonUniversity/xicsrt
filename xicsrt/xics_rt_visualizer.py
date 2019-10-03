@@ -111,14 +111,19 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     crystal_center  =(crystal_input['crystal_curvature'] 
                     * crystal_input['crystal_normal']
                     + crystal_input['crystal_position'])
+    
+    rowland_center =(crystal_input['crystal_curvature'] / 2
+                    * crystal_input['crystal_normal']
+                    + crystal_input['crystal_position'])
+    
     #crystal_circle[Point Number, 3D Coordinates], 36 evenly-spaced points
     crystal_circle  = crystal_input['crystal_curvature'] * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     crystal_circle += crystal_center
     
-    rowland_circle  = crystal_input['crystal_curvature'] * np.cos(crystal_bragg) * (
+    rowland_circle  = crystal_input['crystal_curvature'] * 0.5 * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
-    rowland_circle += crystal_center
+    rowland_circle += rowland_center
     
     ## The crystal's saggital and meridional foci
     inbound_vector = position[1,:] - position[2,:]
