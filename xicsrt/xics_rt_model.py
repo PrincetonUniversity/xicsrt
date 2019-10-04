@@ -75,34 +75,34 @@ def analytical_model(source, crystal, graphite, detector,
     #source = 0, graphite = 1, crystal = 2, detector = 3
     
     #position[Optical Element Number, 3D Coordinates]
-    position[0,:] = source_input['source_position']
-    position[1,:] = graphite_input['graphite_position']
-    position[2,:] = crystal_input['crystal_position']
-    position[3,:] = detector_input['detector_position']
+    position[0,:] = source_input['position']
+    position[1,:] = graphite_input['position']
+    position[2,:] = crystal_input['position']
+    position[3,:] = detector_input['position']
     #normal[Optical Element Number, 3D Coordinates]
-    normal[0,:] = source_input['source_normal']
-    normal[1,:] = graphite_input['graphite_normal']
-    normal[2,:] = crystal_input['crystal_normal']
-    normal[3,:] = detector_input['detector_normal']
+    normal[0,:] = source_input['normal']
+    normal[1,:] = graphite_input['normal']
+    normal[2,:] = crystal_input['normal']
+    normal[3,:] = detector_input['normal']
     #orient_x[Optical Element Number, 3D Coordinates]
-    orient_x[0,:] = source_input['source_orientation']
-    orient_x[1,:] = graphite_input['graphite_orientation']
-    orient_x[2,:] = crystal_input['crystal_orientation']
-    orient_x[3,:] = detector_input['detector_orientation']
+    orient_x[0,:] = source_input['orientation']
+    orient_x[1,:] = graphite_input['orientation']
+    orient_x[2,:] = crystal_input['orientation']
+    orient_x[3,:] = detector_input['orientation']
     #orient_y[Optical Element Number, 3D Coordinates]
     orient_y[0,:] = np.cross(normal[0,:], orient_x[0,:]) 
     orient_y[1,:] = np.cross(normal[1,:], orient_x[1,:]) 
     orient_y[2,:] = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:] = np.cross(normal[3,:], orient_x[3,:])
     #width[Optical Element Number]
-    width[0] = source_input['source_width'] * 0.8
-    width[1] = graphite_input['graphite_width'] * 0.8
-    width[2] = crystal_input['crystal_width'] * 0.8
+    width[0] = source_input['width'] * 0.8
+    width[1] = graphite_input['width'] * 0.8
+    width[2] = crystal_input['width'] * 0.8
     width[3] = detector_input['pixel_size'] * detector_input['horizontal_pixels'] * 0.8
     #height[Optical Element Number]
-    height[0] = source_input['source_height'] * 0.8
-    height[1] = graphite_input['graphite_height'] * 0.8
-    height[2] = crystal_input['crystal_height'] * 0.8
+    height[0] = source_input['height'] * 0.8
+    height[1] = graphite_input['height'] * 0.8
+    height[2] = crystal_input['height'] * 0.8
     height[3] = detector_input['pixel_size'] * detector_input['vertical_pixels'] * 0.8
     
     ## Generate initial target points for each optical element
@@ -123,11 +123,11 @@ def analytical_model(source, crystal, graphite, detector,
     if general_input['backwards_raytrace'] is True:
         #launch the rays from source to crystal
         rays = generate_rays(position[0,:], targets[2,:,:], 
-                             source_input['source_wavelength'])
+                             source_input['wavelength'])
     if general_input['backwards_raytrace'] is False:
         #launch the rays from source to graphite
         rays = generate_rays(position[0,:], targets[1,:,:], 
-                             source_input['source_wavelength'])
+                             source_input['wavelength'])
     rays_history.append(deepcopy(rays))
     
     # launch the rays at the first optical element
@@ -150,11 +150,11 @@ def analytical_model(source, crystal, graphite, detector,
         if general_input['backwards_raytrace'] is True:
             #launch the rays from crystal to graphite
             rays = generate_rays(position[2,:], targets[1,:,:], 
-                                 source_input['source_wavelength'])
+                                 source_input['wavelength'])
         if general_input['backwards_raytrace'] is False:
             #launch the rays from graphite to crystal
             rays = generate_rays(position[1,:], targets[2,:,:], 
-                                 source_input['source_wavelength'])
+                                 source_input['wavelength'])
         rays_history.append(deepcopy(rays))
         rays_metadata.append(compute_metadata(norm, rays, rays_history))
     
@@ -178,11 +178,11 @@ def analytical_model(source, crystal, graphite, detector,
         if general_input['backwards_raytrace'] is True:
             #launch the rays from graphite to detector
             rays = generate_rays(position[1,:], targets[3,:,:], 
-                                 source_input['source_wavelength'])
+                                 source_input['wavelength'])
         if general_input['backwards_raytrace'] is False:
             #launch the rays from crystal to detector
             rays = generate_rays(position[2,:], targets[3,:,:], 
-                                 source_input['source_wavelength'])
+                                 source_input['wavelength'])
         norm = np.ones([9,3], dtype = np.float64) * detector.normal
         rays_history.append(deepcopy(rays))
         rays_metadata.append(compute_metadata(norm, rays, rays_history))

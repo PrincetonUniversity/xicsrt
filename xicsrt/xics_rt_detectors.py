@@ -18,9 +18,9 @@ from scipy.spatial import cKDTree
 
 class Detector:
     def __init__(self, detector_input, general_input):
-        self.position       = detector_input['detector_position']
-        self.normal         = detector_input['detector_normal']
-        self.xorientation   = detector_input['detector_orientation']
+        self.position       = detector_input['position']
+        self.normal         = detector_input['normal']
+        self.xorientation   = detector_input['orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
         self.width          = detector_input['horizontal_pixels']
@@ -101,7 +101,7 @@ class Detector:
         xproj = np.zeros(m.shape, dtype=np.float64)
         yproj = np.zeros(m.shape, dtype=np.float64)
         
-        #X is the 3D point where the ray intersects the crystal
+        #X is the 3D point where the ray intersects the detector
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
         
         #find which rays hit detector, update mask to remove those that don't    
@@ -109,7 +109,16 @@ class Detector:
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         m[m] &= ((xproj[m] <= self.width * self.pixel_size / 2) & (
                 yproj[m] <= self.height * self.pixel_size / 2))
-        return X
+        return X, rays
+    
+    def light(self, rays):
+        O = rays['origin']
+        D = rays['direction']
+        m = rays['mask']
+        X, rays = self.intersect_check(rays, self.intersect(rays))
+        print(' Rays on Detector:  {:6.4e}'.format(D[m].shape[0]))
+        O[m] = X[m]
+        return rays
 
     def pixel_row_column(self, pixel_number):
         row = int(pixel_number // self.width)
@@ -117,8 +126,8 @@ class Detector:
         return row, column
         
     def collect_rays(self, rays):
+        X = rays['origin']
         m = rays['mask']
-        X = self.intersect_check(rays, self.intersect(rays))
         index = self.center_tree.query(X[m])[1]
         self.photon_count = len(m[m])
 

@@ -51,37 +51,37 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     #source = 0, graphite = 1, crystal = 2, detector = 3
     
     #position[Optical Element Number, 3D Coordinates]
-    position[0,:] = source_input['source_position']
-    position[1,:] = graphite_input['graphite_position']
-    position[2,:] = crystal_input['crystal_position']
-    position[3,:] = detector_input['detector_position']
+    position[0,:] = source_input['position']
+    position[1,:] = graphite_input['position']
+    position[2,:] = crystal_input['position']
+    position[3,:] = detector_input['position']
     #normal[Optical Element Number, 3D Coordinates]
-    normal[0,:] = source_input['source_normal']
-    normal[1,:] = graphite_input['graphite_normal']
-    normal[2,:] = crystal_input['crystal_normal']
-    normal[3,:] = detector_input['detector_normal']
+    normal[0,:] = source_input['normal']
+    normal[1,:] = graphite_input['normal']
+    normal[2,:] = crystal_input['normal']
+    normal[3,:] = detector_input['normal']
     #orient_x[Optical Element Number, 3D Coordinates]
-    orient_x[0,:] = source_input['source_orientation']
-    orient_x[1,:] = graphite_input['graphite_orientation']
-    orient_x[2,:] = crystal_input['crystal_orientation']
-    orient_x[3,:] = detector_input['detector_orientation']
+    orient_x[0,:] = source_input['orientation']
+    orient_x[1,:] = graphite_input['orientation']
+    orient_x[2,:] = crystal_input['orientation']
+    orient_x[3,:] = detector_input['orientation']
     #orient_y[Optical Element Number, 3D Coordinates]
     orient_y[0,:] = np.cross(normal[0,:], orient_x[0,:]) 
     orient_y[1,:] = np.cross(normal[1,:], orient_x[1,:]) 
     orient_y[2,:] = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:] = np.cross(normal[3,:], orient_x[3,:])
     #width[Optical Element Number]
-    width[0] = source_input['source_width']
-    width[1] = graphite_input['graphite_width'] 
-    width[2] = crystal_input['crystal_width']
+    width[0] = source_input['width']
+    width[1] = graphite_input['width'] 
+    width[2] = crystal_input['width']
     width[3] = detector_input['pixel_size'] * detector_input['horizontal_pixels']
     #height[Optical Element Number]
-    height[0] = source_input['source_height']
-    height[1] = graphite_input['graphite_height']
-    height[2] = crystal_input['crystal_height']
+    height[0] = source_input['height']
+    height[1] = graphite_input['height']
+    height[2] = crystal_input['height']
     height[3] = detector_input['pixel_size'] * detector_input['vertical_pixels']
     #crystal optical properties [Float64]
-    crystal_bragg = crystal_input['crystal_bragg']
+    crystal_bragg = crystal_input['bragg']
     meridi_focus  = crystal_input['meridi_focus']
     sagitt_focus  = crystal_input['sagitt_focus']
     
@@ -108,20 +108,20 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
         
     ## The crystal's radius of curvature and Rowland circle
     #crystal_center[3D Coodrinates]
-    crystal_center  =(crystal_input['crystal_curvature'] 
-                    * crystal_input['crystal_normal']
-                    + crystal_input['crystal_position'])
+    crystal_center  =(crystal_input['curvature'] 
+                    * crystal_input['normal']
+                    + crystal_input['position'])
     
-    rowland_center =(crystal_input['crystal_curvature'] / 2
-                    * crystal_input['crystal_normal']
-                    + crystal_input['crystal_position'])
+    rowland_center  =(crystal_input['curvature'] / 2
+                    * crystal_input['normal']
+                    + crystal_input['position'])
     
     #crystal_circle[Point Number, 3D Coordinates], 36 evenly-spaced points
-    crystal_circle  = crystal_input['crystal_curvature'] * (
+    crystal_circle  = crystal_input['curvature'] * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     crystal_circle += crystal_center
     
-    rowland_circle  = crystal_input['crystal_curvature'] * 0.5 * (
+    rowland_circle  = crystal_input['curvature'] * 0.5 * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     rowland_circle += rowland_center
     
@@ -224,9 +224,3 @@ def visualize_model(rays_history, rays_metadata, general_input, source_input,
                               color = "green", normalize = True)
                     
     return plt, ax
-
-
-
-
-
-    

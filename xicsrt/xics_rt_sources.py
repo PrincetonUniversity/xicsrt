@@ -17,20 +17,20 @@ from xicsrt.math import voigt
 class GenericSource:
     #Source class to hold basic functions for each source type
     def __init__(self, source_input, general_input):
-        self.position       = source_input['source_position']
-        self.normal         = source_input['source_normal']
-        self.xorientation   = source_input['source_orientation']
+        self.position       = source_input['position']
+        self.normal         = source_input['normal']
+        self.xorientation   = source_input['orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.width          = source_input['source_width']
-        self.height         = source_input['source_height']
-        self.depth          = source_input['source_depth']
-        self.spread         = source_input['source_spread']
-        self.intensity      = source_input['source_intensity']
-        self.mass_number    = source_input['source_mass']   
-        self.temp           = source_input['source_temp']
-        self.wavelength     = source_input['source_wavelength']
-        self.linewidth      = source_input['source_linewidth']
+        self.width          = source_input['width']
+        self.height         = source_input['height']
+        self.depth          = source_input['depth']
+        self.spread         = source_input['spread']
+        self.intensity      = source_input['intensity']
+        self.mass_number    = source_input['mass']   
+        self.temp           = source_input['temp']
+        self.wavelength     = source_input['wavelength']
+        self.linewidth      = source_input['linewidth']
         np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
@@ -198,19 +198,19 @@ class FocusedExtendedSource(GenericSource):
     def __init__(self, source_input, general_input):
         super().__init__(source_input, general_input)
         
-        self.position       = source_input['source_position']
-        self.normal         = source_input['source_normal']
-        self.xorientation   = source_input['source_orientation']
-        self.width          = source_input['source_width']
-        self.height         = source_input['source_height']
-        self.depth          = source_input['source_depth']
-        self.spread         = source_input['source_spread']
-        self.intensity      = source_input['source_intensity']
-        self.temp           = source_input['source_temp']
-        self.mass_number    = source_input['source_mass']
-        self.wavelength     = source_input['source_wavelength']                                         
-        self.linewidth      = source_input['source_linewidth']
-        self.focus          = source_input['source_target'] 
+        self.position       = source_input['position']
+        self.normal         = source_input['normal']
+        self.xorientation   = source_input['orientation']
+        self.width          = source_input['width']
+        self.height         = source_input['height']
+        self.depth          = source_input['depth']
+        self.spread         = source_input['spread']
+        self.intensity      = source_input['intensity']
+        self.temp           = source_input['temp']
+        self.mass_number    = source_input['mass']
+        self.wavelength     = source_input['wavelength']                                         
+        self.linewidth      = source_input['linewidth']
+        self.focus          = source_input['target'] 
         np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
@@ -260,19 +260,19 @@ class DirectedSource(GenericSource):
     def __init__(self, source_input, general_input):
         super().__init__(source_input, general_input)
         
-        self.position        = source_input['source_position']
-        self.normal         = source_input['source_normal']
+        self.position       = source_input['position']
+        self.normal         = source_input['normal']
         self.orientation    = (np.cross(self.normal, self.position)/ 
                                np.linalg.norm(np.cross(self.normal, self.position)))
         self.width          = 0
         self.height         = 0
         self.depth          = 0
-        self.spread         = source_input['source_spread']
-        self.intensity      = source_input['source_intensity']
-        self.wavelength     = source_input['source_wavelength'] 
-        self.temperature    = source_input['source_temp']
-        self.mass_number    = source_input['source_mass']
-        self.linewidth      = source_input['source_linewidth']
+        self.spread         = source_input['spread']
+        self.intensity      = source_input['intensity']
+        self.wavelength     = source_input['wavelength'] 
+        self.temperature    = source_input['temp']
+        self.mass_number    = source_input['mass']
+        self.linewidth      = source_input['linewidth']
      
     def get_orientation(self):
         self.orientation = (np.cross(self.normal, self.position)/ 

@@ -57,11 +57,11 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
                 total_graphite += optic.photon_count
 
         profiler.start('Collection: Detector')
+        rays = detector.light(rays)
         detector.collect_rays(rays)
         profiler.stop('Collection: Detector')
         
         total_detector += detector.photon_count
-        print(' Rays on Detector:  {:6.4e}'.format(detector.photon_count))    
         profiler.stop('Raytrace Run')
         
     print('')
