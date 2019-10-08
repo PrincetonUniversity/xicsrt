@@ -58,6 +58,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
 
         profiler.start('Collection: Detector')
         rays = detector.light(rays)
+        rays_history.append(deepcopy(rays))
         detector.collect_rays(rays)
         profiler.stop('Collection: Detector')
         

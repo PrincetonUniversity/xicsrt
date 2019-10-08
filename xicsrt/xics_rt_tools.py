@@ -228,7 +228,7 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
     d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
     
-    if backwards_raytrace is False:
+    if   backwards_raytrace is False:
         s_target = g_position
     elif backwards_raytrace is True:
         s_target = c_position
@@ -341,6 +341,25 @@ def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
     
     scenario_output = [s_position, s_normal, s_orientation,
                        g_position, g_normal, g_z_vector,
+                       d_position, d_normal, d_z_vector,
+                       s_target]
+    return  scenario_output
+
+def setup_source_test(distance_s_d):
+    """
+    A source and a detector, nothing else. Useful for debugging sources
+    """
+    s_position      = np.array([0, 0, 0], dtype = np.float64)
+    s_normal        = np.array([1, 0, 0], dtype = np.float64)
+    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+        
+    d_position      = s_position + (s_normal * distance_s_d)
+    d_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    d_normal        = -s_normal
+    
+    s_target = d_position
+    
+    scenario_output = [s_position, s_normal, s_z_vector,
                        d_position, d_normal, d_z_vector,
                        s_target]
     return  scenario_output

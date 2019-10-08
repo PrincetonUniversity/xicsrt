@@ -31,7 +31,8 @@ class GenericOptic:
         self.height         = optic_input['height']
         self.pixel_size     = self.width / optic_input['pixel_scaling']
         self.pixel_width    = int(round(self.width / self.pixel_size))
-        self.pixel_height   = int(round(self.height / self.pixel_size))     
+        self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.bragg_checks   = general_input['do_bragg_checks']
         np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
@@ -89,7 +90,7 @@ class GenericOptic:
         #X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
         
-        #find which rays hit the optic, update mask to remove misses   
+        #find which rays hit the optic, update mask to remove misses
         xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
@@ -111,7 +112,8 @@ class GenericOptic:
         dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
-        m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
+        if self.bragg_checks == True:
+            m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
         return rays, norm
     
     def reflect_vectors(self, X, rays, norm):
@@ -124,7 +126,7 @@ class GenericOptic:
         
         # Perform reflection around normal vector, creating new rays with new
         # origin O = X and new direction D
-        O[m]  = X[m]
+        O[:]  = X[:]
         D[m] -= 2 * np.einsum('ij,ij->i', D[m], norm[m])[:, np.newaxis] * norm[m]
         
         return rays

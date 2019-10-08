@@ -49,7 +49,7 @@ from xicsrt.xics_rt_raytrace import raytrace
 from xicsrt.xics_rt_model import analytical_model
 from xicsrt.xics_rt_tools import bragg_angle
 from xicsrt.xics_rt_tools import source_location_bragg, setup_beam_scenario
-from xicsrt.xics_rt_tools import setup_crystal_test, setup_graphite_test
+from xicsrt.xics_rt_tools import setup_crystal_test, setup_graphite_test, setup_source_test
 
 ## MirPyIDL imports
 import mirutil.hdf5
@@ -80,33 +80,40 @@ config_input['mode']        = 'APPEND'
 config_input['file_name']   = 'config_test.csv'
 
 ## Set up general properties about the raytracer, including random seed
-# Possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', GRAPHITE'
+# set ideal_geometry to False to enable offsets, tilts, and thermal expand
+# set backwards_raytrace to True to swap the detector and source
+# set do_visualizations to toggle the visualizations on or off
+# set do_savefiles to toggle whether the program saves .tif files
+# set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
+# change the random seed to alter the random numbers generated
+# Possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
 general_input['ideal_geometry']     = True
-general_input['backwards_raytrace'] = True
+general_input['backwards_raytrace'] = False
 general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
+general_input['do_bragg_checks']    = True
 general_input['random_seed']        = 1234567
 general_input['scenario']           = 'BEAM'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
 # Temperature that the optical elements will be cooled to (kelvin)
-general_input['xics_temp'] = 273.0
+general_input['xics_temp']          = 273.0
 
 # Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
-source_input['intensity']    = int(1e6)
+source_input['intensity']           = int(1e6)
 general_input['number_of_runs']     = 1
 
 # Xenon mass in AMU
-source_input['mass']     = 131.293
+source_input['mass']                = 131.293
 
 # Line location (angstroms) and natural linewith (1/s)
 # Xe44+ w line
 # Additional information on Xenon spectral lines can be found on nist.gov
-source_input['wavelength']   = 2.7203
-source_input['linewidth']    = 1.129e+14
+source_input['wavelength']          = 2.7203
+source_input['linewidth']           = 1.129e+14
 
 """
 Rocking curve FWHM in radians
@@ -121,62 +128,63 @@ Taken from XOP: 8765 urad
 config_dict = mirutil.hdf5.hdf5ToDict(
         '/Users/Eugene/PPPL_python_project1/w7x_ar16_180707017_geometry.hdf5')
 
-crystal_input['position']       = config_dict['CRYSTAL_LOCATION']
-crystal_input['normal']         = config_dict['CRYSTAL_NORMAL']
-crystal_input['orientation']    = config_dict['CRYSTAL_ORIENTATION']
+crystal_input['position']           = config_dict['CRYSTAL_LOCATION']
+crystal_input['normal']             = config_dict['CRYSTAL_NORMAL']
+crystal_input['orientation']        = config_dict['CRYSTAL_ORIENTATION']
 
-crystal_input['curvature']      = 1.200
-crystal_input['spacing']        = 1.70578
-crystal_input['width']          = 0.600
-crystal_input['height']         = 0.080
+crystal_input['width']              = 0.600
+crystal_input['height']             = 0.080
+crystal_input['curvature']          = 1.200
 
-crystal_input['reflectivity']   = 1
-crystal_input['rocking_curve']  = 90.30e-6
-crystal_input['pixel_scaling']  = int(200)
+crystal_input['spacing']            = 1.70578
+crystal_input['reflectivity']       = 1
+crystal_input['rocking_curve']      = 90.30e-6
+crystal_input['pixel_scaling']      = int(200)
 
-crystal_input['therm_expand']   = 5.9e-6
+crystal_input['therm_expand']       = 5.9e-6
 
 ## Load mosaic graphite properties
-graphite_input['position']         = config_dict['CRYSTAL_LOCATION']
-graphite_input['normal']           = config_dict['CRYSTAL_NORMAL']
-graphite_input['orientation']      = config_dict['CRYSTAL_ORIENTATION']
+graphite_input['position']          = config_dict['CRYSTAL_LOCATION']
+graphite_input['normal']            = config_dict['CRYSTAL_NORMAL']
+graphite_input['orientation']       = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['width']            = 0.060
-graphite_input['height']           = 0.250
-graphite_input['reflectivity']     = 1
-graphite_input['mosaic_spread']    = 0.5
-graphite_input['spacing']          = 3.35
-graphite_input['rocking_curve']    = 8765e-6
-graphite_input['pixel_scaling']    = int(200)
+graphite_input['width']             = 0.060
+graphite_input['height']            = 0.250
 
-graphite_input['therm_expand']     = 20e-6
+graphite_input['reflectivity']      = 1
+graphite_input['mosaic_spread']     = 0.5
+graphite_input['spacing']           = 3.35
+graphite_input['rocking_curve']     = 8765e-6
+graphite_input['pixel_scaling']     = int(200)
+
+graphite_input['therm_expand']      = 20e-6
 
 ## Load detector properties
-detector_input['position']     = config_dict['DETECTOR_LOCATION']
-detector_input['normal']       = config_dict['DETECTOR_NORMAL']
-detector_input['orientation']  = config_dict['DETECTOR_ORIENTATION']
+detector_input['position']          = config_dict['DETECTOR_LOCATION']
+detector_input['normal']            = config_dict['DETECTOR_NORMAL']
+detector_input['orientation']       = config_dict['DETECTOR_ORIENTATION']
 
 
-detector_input['pixel_size']            = 0.000172
-detector_input['horizontal_pixels']     = int(config_dict['X_SIZE'])
-detector_input['vertical_pixels']       = int(config_dict['Y_SIZE'])
+detector_input['pixel_size']        = 0.000172
+detector_input['horizontal_pixels'] = int(config_dict['X_SIZE'])
+detector_input['vertical_pixels']   = int(config_dict['Y_SIZE'])
 
 ## Load source properties
-source_input['position']     = np.array([0, 0, 0])
-source_input['normal']       = np.array([0, 1, 0])
-source_input['orientation']  = np.array([0, 0, 1])
-source_input['target']       = crystal_input['position']
+source_input['position']            = np.array([0, 0, 0])
+source_input['normal']              = np.array([0, 1, 0])
+source_input['orientation']         = np.array([0, 0, 1])
+source_input['target']              = crystal_input['position']
 
 #Angular spread of source in degrees
 #This needs to be matched to the source distance and crystal size
-source_input['spread']   = 1.0
+source_input['spread']              = 1.0
 #Ion temperature in eV
-source_input['temp']     = 1000
+source_input['temp']                = 1000
 
 #These values are arbitrary for now. Set to 0.0 for point source
-source_input['width']   = 0.0
-source_input['height']  = 0.0
-source_input['depth']   = 0.0
+source_input['width']               = 0.1
+source_input['height']              = 0.1
+source_input['depth']               = 0.0
 
 profiler.stop('Input Setup Time')
 
@@ -238,8 +246,8 @@ elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL'
      crystal_input['spacing'], 
      graphite_input['spacing'],
      1,                                     #source-graphite distance
-     crystal_input['sagitt_focus'],         #graphite-crystal distance
-     crystal_input['meridi_focus'],         #crystal-detector distance
+     crystal_input['sagitt_focus']        , #graphite-crystal distance
+     crystal_input['meridi_focus']        , #crystal-detector distance
      source_input['wavelength']           ,
      general_input['backwards_raytrace']  ,
      np.array([0,0,0], dtype = np.float64), #graphite offset (meters)
@@ -292,6 +300,16 @@ elif general_input['scenario'] == 'GRAPHITE':
     crystal_input['position']       = graphite_input['position']
     crystal_input['normal']         = graphite_input['normal']
     crystal_input['orientation']    = graphite_input['orientation']
+    
+## Set up a source test scenario
+elif general_input['scenario'] == 'SOURCE':
+    [source_input['position']      ,
+     source_input['normal']        ,
+     source_input['orientation']   , 
+     detector_input['position']    ,
+     detector_input['normal']      ,
+     detector_input['orientation'] , 
+     source_input['target']] = setup_source_test(1)
     
 ## Backwards raytracing involves swapping the source and detector
 if general_input['backwards_raytrace']:
@@ -377,6 +395,11 @@ if __name__ == '__main__':
                 ,number_of_runs = general_input['number_of_runs']
                 ,collect_optics = True)
         
+    if general_input['scenario'] == 'SOURCE':
+        output = raytrace(source, pilatus
+                ,number_of_runs = general_input['number_of_runs']
+                ,collect_optics = True)
+        
     if general_input['scenario'] == 'MODEL':
         output, metadata = analytical_model(source, crystal, graphite, pilatus, 
                                             source_input, graphite_input, 
@@ -433,9 +456,7 @@ if general_input['do_visualizations'] is True:
                                           graphite_input, crystal_input, detector_input)
     plt2.show()
     
-
 profiler.stop('Final Visual Time')
-
 
 #%% REPORT
 profiler.stop('Total Time')

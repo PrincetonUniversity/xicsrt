@@ -21,8 +21,8 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     fig = plt.figure()
     ax  = fig.gca(projection='3d')
     
-    ax.set_xlim( 0, 4)
-    ax.set_ylim(-2, 2)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
     
     ax.set_zlim(-1, 1)
     plt.title("X-Ray Optics Layout")
@@ -121,6 +121,10 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     crystal_circle += crystal_center
     
+    tangent_circle    = crystal_input['curvature'] * np.cos(crystal_bragg) * (
+            (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
+    tangent_circle   += crystal_center
+    
     rowland_circle  = crystal_input['curvature'] * 0.5 * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     rowland_circle += rowland_center
@@ -140,6 +144,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
     ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
     ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
+    ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
     
     #normal vectors
     ax.quiver(position[0,0], position[0,1], position[0,2],
@@ -166,6 +171,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     
     #circles
     ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
+    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
     ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
     
     #foci
@@ -189,11 +195,11 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
     plt, ax = visualize_layout(general_input, source_input, graphite_input, 
                                crystal_input, detector_input)
     plt.title("X-Ray Raytracing Results")    
-    
+
     ax.quiver(origin[m,0], origin[m,1], origin[m,2],
               direct[m,0], direct[m,1], direct[m,2],
-              length = 1.0, arrow_length_ratio = 0.1 , color = "green",
-              normalize = True)
+              length = 1.0, arrow_length_ratio = 0.01, 
+              color = "green", normalize = True)
     
     return plt, ax
 

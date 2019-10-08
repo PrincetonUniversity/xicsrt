@@ -117,7 +117,7 @@ class Detector:
         m = rays['mask']
         X, rays = self.intersect_check(rays, self.intersect(rays))
         print(' Rays on Detector:  {:6.4e}'.format(D[m].shape[0]))
-        O[m] = X[m]
+        O[:] = X[:]
         return rays
 
     def pixel_row_column(self, pixel_number):
