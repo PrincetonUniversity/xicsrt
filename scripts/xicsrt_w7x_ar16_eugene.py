@@ -41,15 +41,16 @@ from collections import OrderedDict
 import os
 import argparse
 
-from xicsrt.xics_rt_visualizer import visualize_layout, visualize_vectors, visualize_model
+from xicsrt.xics_rt_visualizer import visualize_layout, visualize_vectors
+from xicsrt.xics_rt_visualizer import visualize_model, visualize_images
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
 from xicsrt.xics_rt_model import analytical_model
-from xicsrt.xics_rt_tools import bragg_angle
-from xicsrt.xics_rt_tools import source_location_bragg, setup_beam_scenario
-from xicsrt.xics_rt_tools import setup_crystal_test, setup_graphite_test, setup_source_test
+from xicsrt.xics_rt_tools import bragg_angle, source_location_bragg
+from xicsrt.xics_rt_tools import setup_beam_scenario, setup_crystal_test
+from xicsrt.xics_rt_tools import setup_graphite_test, setup_source_test
 
 ## MirPyIDL imports
 import mirutil.hdf5
@@ -80,20 +81,26 @@ config_input['mode']        = 'APPEND'
 config_input['file_name']   = 'config_test.csv'
 
 ## Set up general properties about the raytracer, including random seed
-# set ideal_geometry to False to enable offsets, tilts, and thermal expand
-# set backwards_raytrace to True to swap the detector and source
-# set do_visualizations to toggle the visualizations on or off
-# set do_savefiles to toggle whether the program saves .tif files
-# set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
-# change the random seed to alter the random numbers generated
-# Possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
+"""
+set ideal_geometry to False to enable offsets, tilts, and thermal expand
+set backwards_raytrace to True to swap the detector and source
+set do_visualizations to toggle the visualizations on or off
+set do_savefiles to toggle whether the program saves .tif files
+set do_image_analysis to toggle whether the visualizer performs .tif analysis
+set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
+set do_simple_bragg to True to make all Rocking curves into step functions
+change the random seed to alter the random numbers generated
+possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
+"""
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
-general_input['do_visualizations']  = True
+general_input['do_visualizations']  = False
 general_input['do_savefiles']       = True
+general_input['do_image_analysis']  = False
 general_input['do_bragg_checks']    = True
+general_input['do_simple_bragg']    = False
 general_input['random_seed']        = 1234567
-general_input['scenario']           = 'BEAM'
+general_input['scenario']           = 'GRAPHITE'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -133,7 +140,7 @@ crystal_input['normal']             = config_dict['CRYSTAL_NORMAL']
 crystal_input['orientation']        = config_dict['CRYSTAL_ORIENTATION']
 
 crystal_input['width']              = 0.600
-crystal_input['height']             = 0.080
+crystal_input['height']             = 0.040
 crystal_input['curvature']          = 1.200
 
 crystal_input['spacing']            = 1.70578
@@ -152,7 +159,7 @@ graphite_input['width']             = 0.060
 graphite_input['height']            = 0.250
 
 graphite_input['reflectivity']      = 1
-graphite_input['mosaic_spread']     = 0.5
+graphite_input['mosaic_spread']     = 2.0
 graphite_input['spacing']           = 3.35
 graphite_input['rocking_curve']     = 8765e-6
 graphite_input['pixel_scaling']     = int(200)
@@ -202,6 +209,10 @@ crystal_input['bragg'] = bragg_angle(source_input['wavelength'], crystal_input['
 crystal_input['meridi_focus']  = crystal_input['curvature'] * np.sin(crystal_input['bragg'])
 crystal_input['sagitt_focus']  = - crystal_input['meridi_focus'] / np.cos(2 * crystal_input['bragg'])
 graphite_input['bragg'] = bragg_angle(source_input['wavelength'], graphite_input['spacing'])
+crystal_input['effective_width'] = (2 * crystal_input['meridi_focus'] *
+        np.sin(graphite_input['rocking_curve'] / 2) * (
+        1 / np.sin(crystal_input['bragg'] + graphite_input['rocking_curve'] / 2) +
+        1 / np.sin(crystal_input['bragg'] - graphite_input['rocking_curve'] / 2)))
 
 ## Set up a legacy beamline scenario
 if general_input['scenario'] == 'LEGACY':
@@ -271,12 +282,12 @@ elif general_input['scenario'] == 'CRYSTAL':
      detector_input['orientation']  , 
      source_input['target']] = setup_crystal_test(
      crystal_input['spacing']       , 
-     crystal_input['sagitt_focus']  ,
-     crystal_input['meridi_focus']  ,
-     source_input['wavelength'],
+     crystal_input['sagitt_focus']+1, #source-crystal distance
+     crystal_input['meridi_focus']  , #crystal-detector distance
+     source_input['wavelength']     ,
      general_input['backwards_raytrace'],
      np.array([0,0,0], dtype = np.float64), #crystal offset (meters)
-     90 * np.pi / 180) #crystal tilt (radians)
+     00 * np.pi / 180)                      #crystal tilt (radians)
     
     graphite_input['position']     = crystal_input['position']
     graphite_input['normal']       = crystal_input['normal']
@@ -295,7 +306,7 @@ elif general_input['scenario'] == 'GRAPHITE':
      detector_input['orientation'] , 
      source_input['target']] = setup_graphite_test(
             graphite_input['spacing'], 
-            5, 1, source_input['wavelength'])
+            1, 1, source_input['wavelength'])
     
     crystal_input['position']       = graphite_input['position']
     crystal_input['normal']         = graphite_input['normal']
@@ -448,13 +459,18 @@ if general_input['do_visualizations'] is True:
     print("Plotting Results...")
     
     if general_input['scenario'] == 'MODEL':
-        plt2, ax2 = visualize_model(output, metadata, general_input, source_input, 
+        fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
                                     graphite_input, crystal_input, detector_input)
     else:
         for ii in range(len(output)):
-            plt2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
+            fig2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
                                           graphite_input, crystal_input, detector_input)
-    plt2.show()
+    fig2.show()
+    
+if general_input['do_image_analysis'] is True:
+    fig3, ax3 = visualize_images()
+    fig3.show()
+    input('Press [Enter]')
     
 profiler.stop('Final Visual Time')
 
