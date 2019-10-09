@@ -6,6 +6,9 @@ Edited on Fri Sep 06 11:37:11 2019
 @author: James
 @editor: Eugene
 """
+import numpy as np
+import logging
+
 from xicsrt.util import profiler
 from copy import deepcopy
 
@@ -71,6 +74,10 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     print('Total Rays on Crystal:{:6.4e}'.format(total_crystal))
     print('Total Rays Detected:  {:6.4e}'.format(total_detector))
     print('Efficiency: {:6.4f}%'.format(total_detector/total_generated * 100))
+    print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
+        total_detector / total_generated,
+        np.sqrt(total_detector) / total_generated,
+        total_detector / total_generated * 100))
     print('')
     return rays_history
 
