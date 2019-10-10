@@ -258,7 +258,7 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     
     #define crystal position, normal, and basis relative to graphite
     c_position  = s_position + (path_vector * distance_s_c)
-    c_z_vector  = np.array([0, 0, 0], dtype = np.float64)
+    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
     
     c_y_vector  = np.cross(c_z_vector, path_vector)  
     c_y_vector /= np.linalg.norm(c_y_vector)
@@ -274,7 +274,10 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     c_normal   /= np.linalg.norm(c_normal)
     
     #for focused extended sources, target them towards the crystal position    
-    s_target = c_position
+    #s_target = c_position
+    
+    #alternatively, target them towards where the graphite would be in the beam
+    s_target = path_vector * 1
     
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
@@ -300,7 +303,6 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
     c_position += c_basis.dot(np.transpose(c_offset))
     c_z_vector    = vector_rotate(c_z_vector, c_normal, c_tilt)
-    
     
     scenario_output = [s_position, s_normal, s_orientation,
                        c_position, c_normal, c_z_vector,

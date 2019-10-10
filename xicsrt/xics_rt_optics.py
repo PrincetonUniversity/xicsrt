@@ -33,6 +33,7 @@ class GenericOptic:
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
         self.bragg_checks   = general_input['do_bragg_checks']
+        self.simple_bragg   = general_input['do_simple_bragg']
         np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
@@ -68,14 +69,17 @@ class GenericOptic:
         return magnitude 
 
     def rocking_curve_filter(self, incident_angle, bragg_angle):
-        # Convert from FWHM to sigma.
-        sigma = self.rocking_curve/np.sqrt(2 * np.log(2)) / 2
-        
-        # Normalized Gaussian.
-        p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
-        
-        test = np.random.uniform(0.0, 1.0, len(incident_angle))
-        mask = p.flatten() > test
+        if self.simple_bragg is True:
+            # Step Function
+            mask = (abs(incident_angle - bragg_angle) <= self.rocking_curve)
+        else:
+            # Convert from FWHM to sigma.
+            sigma = self.rocking_curve/np.sqrt(2 * np.log(2)) / 2
+            
+            # Normalized Gaussian
+            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
+            test = np.random.uniform(0.0, 1.0, len(incident_angle))
+            mask = p.flatten() > test
         return mask
     
     def intersect_check(self, rays, distance):

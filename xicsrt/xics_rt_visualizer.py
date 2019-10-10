@@ -14,6 +14,7 @@ a 3D visualization of the X-Ray optics setup using matplotlib Axes3D
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from PIL import Image
 
 def visualize_layout(general_input, source_input, graphite_input, crystal_input,
                      detector_input):
@@ -21,10 +22,10 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     fig = plt.figure()
     ax  = fig.gca(projection='3d')
     
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
-    
-    ax.set_zlim(-1, 1)
+    scale = 2
+    ax.set_xlim(0, 2 * scale)
+    ax.set_ylim(-scale, scale)
+    ax.set_zlim(-scale, scale)
     plt.title("X-Ray Optics Layout")
     
     ## Setup variables, described below
@@ -208,7 +209,7 @@ def visualize_model(rays_history, rays_metadata, general_input, source_input,
     ## Do all of the steps as before, but also add the ray history
     # Rays that miss have their length extended to 10 and turn red
     # Rays that hit have accurate length and turn green
-    plt, ax = visualize_layout(general_input, source_input, graphite_input, 
+    fig, ax = visualize_layout(general_input, source_input, graphite_input, 
                                crystal_input, detector_input)    
     
     for ii in range(len(rays_history)):
@@ -229,4 +230,58 @@ def visualize_model(rays_history, rays_metadata, general_input, source_input,
                               length = dist[jj], arrow_length_ratio = 0.01, 
                               color = "green", normalize = True)
                     
-    return plt, ax
+    return fig, ax
+
+def visualize_images():
+    ## Open and intialize images
+    g_image = Image.open('xicsrt_graphite.tif')
+    c_image = Image.open('xicsrt_crystal.tif')
+    d_image = Image.open('xicsrt_detector.tif')
+    
+    g_array = np.array(g_image)
+    c_array = np.transpose(np.array(c_image))
+    d_array = np.array(d_image)
+    
+    ## Create visualization plot and subplots
+    fig, ax = plt.subplots(nrows = 2, ncols = 6)
+    
+    ## Plot numpy arrays as images with logarithmic grayscale colormap
+    ax[1,0].imshow(g_array, cmap = 'gray')
+    ax[1,0].axis('off')
+    ax[0,1].axis('off')
+    
+    ax[1,2].imshow(c_array, cmap = 'gray')
+    ax[1,2].axis('off')
+    ax[0,3].axis('off')
+    
+    ax[1,4].imshow(d_array, cmap = 'gray')
+    ax[1,4].axis('off')
+    ax[0,5].axis('off')
+    
+    ## Plot Vertical histograms
+    g_x = np.linspace(0, g_array.shape[1], num = g_array.shape[1])
+    g_y = np.sum(g_array, axis = 0, dtype = int)
+    ax[0,0].bar(g_x, g_y, width = 1.0)
+    
+    c_x = np.linspace(0, c_array.shape[1], num = c_array.shape[1])
+    c_y = np.sum(c_array, axis = 0, dtype = int)
+    ax[0,2].bar(c_x, c_y, width = 1.0)
+    
+    d_x = np.linspace(0, d_array.shape[1], num = d_array.shape[1])
+    d_y = np.sum(d_array, axis = 0, dtype = int)
+    ax[0,4].bar(d_x, d_y, width = 1.0)
+    
+    ## Plot Horizontal histograms
+    g_x = np.linspace(0, g_array.shape[0], num = g_array.shape[0])
+    g_y = np.sum(g_array, axis = 1, dtype = int)
+    ax[1,1].barh(g_x, g_y, height = 1.0)
+    
+    c_x = np.linspace(0, c_array.shape[0], num = c_array.shape[0])
+    c_y = np.sum(c_array, axis = 1, dtype = int)
+    ax[1,3].barh(c_x, c_y, height = 1.0)
+    
+    d_x = np.linspace(0, d_array.shape[0], num = d_array.shape[0])
+    d_y = np.sum(d_array, axis = 1, dtype = int)
+    ax[1,5].barh(d_x, d_y, height = 1.0)
+    
+    return fig, ax
