@@ -22,10 +22,10 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     fig = plt.figure()
     ax  = fig.gca(projection='3d')
     
-    ax.set_xlim(0, 2)
-    ax.set_ylim(-1, 1)
-    
-    ax.set_zlim(-1, 1)
+    scale = 2
+    ax.set_xlim(0, 2 * scale)
+    ax.set_ylim(-scale, scale)
+    ax.set_zlim(-scale, scale)
     plt.title("X-Ray Optics Layout")
     
     ## Setup variables, described below
@@ -143,9 +143,9 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     #position points
     ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
     ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
-#    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
+    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
     ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-#    ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+    ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
     
     #normal vectors
     ax.quiver(position[0,0], position[0,1], position[0,2],
@@ -154,9 +154,9 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     ax.quiver(position[1,0], position[1,1], position[1,2],
               normal[1,0]  , normal[1,1]  , normal[1,2]  ,
               color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-#    ax.quiver(position[2,0], position[2,1], position[2,2],
-#              normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-#              color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
+    ax.quiver(position[2,0], position[2,1], position[2,2],
+              normal[2,0]  , normal[2,1]  , normal[2,2]  ,
+              color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
     ax.quiver(position[3,0], position[3,1], position[3,2],
               normal[3,0]  , normal[3,1]  , normal[3,2]  ,
               color = "red", length = 0.1 , arrow_length_ratio = 0.1)
@@ -167,17 +167,17 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     #bounding boxes
     ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
     ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
-#    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
+    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
     ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
     
     #circles
-    #ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-    #ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-    #ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
+    ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
+    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
+    ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
     
     #foci
-#    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-#    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
+    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
     
     return plt, ax
     

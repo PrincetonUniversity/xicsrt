@@ -94,13 +94,13 @@ possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
 """
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
-general_input['do_visualizations']  = False
+general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
-general_input['do_image_analysis']  = False
+general_input['do_image_analysis']  = True
 general_input['do_bragg_checks']    = True
 general_input['do_simple_bragg']    = False
 general_input['random_seed']        = 1234567
-general_input['scenario']           = 'GRAPHITE'
+general_input['scenario']           = 'BEAM'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -110,8 +110,8 @@ general_input['xics_temp']          = 273.0
 # Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
-source_input['intensity']           = int(1e6)
-general_input['number_of_runs']     = 1
+source_input['intensity']           = int(1e7)
+general_input['number_of_runs']     = 10
 
 # Xenon mass in AMU
 source_input['mass']                = 131.293
@@ -139,8 +139,8 @@ crystal_input['position']           = config_dict['CRYSTAL_LOCATION']
 crystal_input['normal']             = config_dict['CRYSTAL_NORMAL']
 crystal_input['orientation']        = config_dict['CRYSTAL_ORIENTATION']
 
-crystal_input['width']              = 0.600
-crystal_input['height']             = 0.040
+crystal_input['width']              = 0.040
+crystal_input['height']             = 0.050
 crystal_input['curvature']          = 1.200
 
 crystal_input['spacing']            = 1.70578
@@ -155,11 +155,11 @@ graphite_input['position']          = config_dict['CRYSTAL_LOCATION']
 graphite_input['normal']            = config_dict['CRYSTAL_NORMAL']
 graphite_input['orientation']       = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['width']             = 0.060
-graphite_input['height']            = 0.250
+graphite_input['width']             = 0.030
+graphite_input['height']            = 0.040
 
 graphite_input['reflectivity']      = 1
-graphite_input['mosaic_spread']     = 2.0
+graphite_input['mosaic_spread']     = 0.5
 graphite_input['spacing']           = 3.35
 graphite_input['rocking_curve']     = 8765e-6
 graphite_input['pixel_scaling']     = int(200)
@@ -170,7 +170,6 @@ graphite_input['therm_expand']      = 20e-6
 detector_input['position']          = config_dict['DETECTOR_LOCATION']
 detector_input['normal']            = config_dict['DETECTOR_NORMAL']
 detector_input['orientation']       = config_dict['DETECTOR_ORIENTATION']
-
 
 detector_input['pixel_size']        = 0.000172
 detector_input['horizontal_pixels'] = int(config_dict['X_SIZE'])
@@ -191,7 +190,7 @@ source_input['temp']                = 1000
 #These values are arbitrary for now. Set to 0.0 for point source
 source_input['width']               = 0.1
 source_input['height']              = 0.1
-source_input['depth']               = 0.0
+source_input['depth']               = 0.1
 
 profiler.stop('Input Setup Time')
 
@@ -257,7 +256,7 @@ elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL'
      crystal_input['spacing'], 
      graphite_input['spacing'],
      1,                                     #source-graphite distance
-     crystal_input['sagitt_focus']        , #graphite-crystal distance
+     8.500,                                 #graphite-crystal distance
      crystal_input['meridi_focus']        , #crystal-detector distance
      source_input['wavelength']           ,
      general_input['backwards_raytrace']  ,
@@ -470,7 +469,7 @@ if general_input['do_visualizations'] is True:
 if general_input['do_image_analysis'] is True:
     fig3, ax3 = visualize_images()
     fig3.show()
-    input('Press [Enter]')
+    input('Press [Enter] to close the image analysis window...')
     
 profiler.stop('Final Visual Time')
 
