@@ -19,5 +19,5 @@ def voigt_physical(intensity, location, sigma, gamma):
     """
     u = (x-location)/np.sqrt(2)/sigma
     a = gamma/np.sqrt(2)/sigma
-    y = voight(a, u) / np.sqrt(2*np.pi)/sigma * intensity
+    y = voigt(a, u) / np.sqrt(2*np.pi)/sigma * intensity
     return y

@@ -95,7 +95,7 @@ general_input['xics_temp'] = 273.0
 # Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
-source_input['intensity']    = int(5e7)
+source_input['intensity']    = int(1e7)
 general_input['number_of_runs']     = 1
 
 # Xenon mass in AMU
@@ -129,6 +129,8 @@ crystal_input['normal']         = config_dict['CRYSTAL_NORMAL']
 crystal_input['orientation']    = config_dict['CRYSTAL_ORIENTATION']
 
 crystal_input['curvature']      = 1.200
+#crystal_input['curvature']      = 2.400
+
 crystal_input['spacing']        = 1.70578
 crystal_input['width']          = 0.200
 crystal_input['height']         = 0.200
@@ -147,7 +149,7 @@ graphite_input['orientation']      = config_dict['CRYSTAL_ORIENTATION']
 graphite_input['width']            = 0.05
 graphite_input['height']           = 0.50
 graphite_input['reflectivity']     = 1
-graphite_input['mosaic_spread']    = 2.0
+graphite_input['mosaic_spread']    = 0.0
 graphite_input['spacing']          = 3.35
 graphite_input['rocking_curve']    = 8765e-6
 #graphite_input['_rocking_curve']    = 1e-1
@@ -180,7 +182,7 @@ source_input['target']       = crystal_input['position']
 
 #Angular spread of source in degrees
 #This needs to be matched to the source distance and crystal size
-source_input['spread']   = 4.0
+source_input['spread']   = 2.0
 #Ion temperature in eV
 source_input['temp']     = 0
 
@@ -235,8 +237,15 @@ if general_input['scenario'] == 'LEGACY':
     source_input['orientation'] = np.cross(np.array([0, 0, 1]), source_input['normal'])
     source_input['orientation'] /= np.linalg.norm(source_input['orientation'])
 
+
 ## Set up a beamline test scenario
 elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL':
+    total_distance = 5.0
+    dist_crystal_detector = crystal_input['meridi_focus']
+    #dist_graphite_crystal = crystal_input['sagitt_focus']
+    dist_graphite_crystal = 3.5
+    dist_source_graphite = total_distance - dist_graphite_crystal
+
     [source_input['position']        ,
      source_input['normal']          ,
      source_input['orientation']     ,
@@ -252,17 +261,17 @@ elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL'
      source_input['target']] = setup_beam_scenario(
      crystal_input['spacing'],
      graphite_input['spacing'],
-     1,                                     #source-graphite distance
-     crystal_input['sagitt_focus'],         #graphite-crystal distance
-     crystal_input['meridi_focus'],         #crystal-detector distance
+     dist_source_graphite,                  # source-graphite distance
+     dist_graphite_crystal,                 # graphite-crystal distance
+     dist_crystal_detector,                 # crystal-detector distance
      source_input['wavelength'],
      general_input['backwards_raytrace'],
-     np.array([0,0,0], dtype = np.float64), #graphite offset (meters)
-     np.array([0,0,0], dtype = np.float64), #graphite tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #crystal offset (meters)
-     np.array([0,0,0], dtype = np.float64), #crystal tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #detector offset (meters)
-     np.array([0,0,0], dtype = np.float64), #detector tilt (radians)
+     np.array([0,0,0], dtype = np.float64), # graphite offset (meters)
+     np.array([0,0,0], dtype = np.float64), # graphite tilt (radians)
+     np.array([0,0,0], dtype = np.float64), # crystal offset (meters)
+     np.array([0,0,0], dtype = np.float64), # crystal tilt (radians)
+     np.array([0,0,0], dtype = np.float64), # detector offset (meters)
+     np.array([0,0,0], dtype = np.float64), # detector tilt (radians)
      )
 
 ## Set up a crystal test scenario
