@@ -164,13 +164,13 @@ detector_input['normal']       = config_dict['DETECTOR_NORMAL']
 detector_input['orientation']  = config_dict['DETECTOR_ORIENTATION']
 
 
-#detector_input['pixel_size']            = 0.000172
-#detector_input['horizontal_pixels']     = int(config_dict['X_SIZE'])
-#detector_input['vertical_pixels']       = int(config_dict['Y_SIZE'])
+detector_input['pixel_size']            = 0.000172
+detector_input['horizontal_pixels']     = int(config_dict['X_SIZE'])
+detector_input['vertical_pixels']       = int(config_dict['Y_SIZE'])
 
-detector_input['pixel_size']            = 0.001
-detector_input['horizontal_pixels']     = int(500)
-detector_input['vertical_pixels']       = int(500)
+#detector_input['pixel_size']            = 0.001
+#detector_input['horizontal_pixels']     = int(500)
+#detector_input['vertical_pixels']       = int(500)
 
 detector_input['width'] = detector_input['horizontal_pixels']*detector_input['pixel_size']
 detector_input['height'] = detector_input['vertical_pixels']*detector_input['pixel_size']

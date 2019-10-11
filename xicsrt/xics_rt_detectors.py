@@ -29,16 +29,18 @@ class Detector(TraceObject):
         self.xorientation   = detector_input['orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.width          = detector_input['horizontal_pixels']
-        self.height         = detector_input['vertical_pixels']
+        self.width          = detector_input['width']
+        self.height         = detector_input['height']
+        self.pixels_horiz   = detector_input['horizontal_pixels']
+        self.pixels_vert    = detector_input['vertical_pixels']
         self.pixel_size     = detector_input['pixel_size']
         self.photon_count   = None
         np.random.seed(general_input['random_seed'])
 
         def pixel_center(row, column):
             # These variables are labled wrong, but the calculaiton is correct.
-            row_center = (self.height - 1) / 2
-            column_center = (self.width - 1) / 2
+            row_center = (self.pixels_vert - 1) / 2
+            column_center = (self.pixels_horiz - 1) / 2
             
             xstep   = (column - column_center)* self.pixel_size
             ystep   = (row_center - row)      * self.pixel_size
@@ -48,18 +50,18 @@ class Detector(TraceObject):
 
         def create_center_array():
             center_array = []
-            for i in range(0, self.height):
-                for j in range(0, self.width):
+            for i in range(0, self.pixels_vert):
+                for j in range(0, self.pixels_horiz):
                     point = pixel_center(i, j)
                     center_array.append(point)
             return center_array
         
-        self.pixel_array = np.zeros((self.height, self.width))
+        self.pixel_array = np.zeros((self.pixels_vert, self.pixels_horiz))
         self.center_tree = cKDTree(create_center_array())
                 
     def pixel_corner(self, row, column, corner):
-        row_center = self.height / 2 - .5
-        column_center = self.width / 2 - .5
+        row_center = self.pixels_vert / 2 - .5
+        column_center = self.pixels_horiz / 2 - .5
         
         xstep = (column - column_center) * self.pixel_size
         ystep = (row_center - row) * self.pixel_size
@@ -113,8 +115,8 @@ class Detector(TraceObject):
         #find which rays hit detector, update mask to remove those that don't    
         xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
-        m[m] &= ((xproj[m] <= self.width * self.pixel_size / 2) & (
-                yproj[m] <= self.height * self.pixel_size / 2))
+        m[m] &= ((xproj[m] <= self.pixels_horiz * self.pixel_size / 2) & (
+                yproj[m] <= self.pixels_vert * self.pixel_size / 2))
         return X, rays
     
     def light(self, rays):
@@ -127,8 +129,8 @@ class Detector(TraceObject):
         return rays
 
     def pixel_row_column(self, pixel_number):
-        row = int(pixel_number // self.width)
-        column = pixel_number - (row * self.width)
+        row = int(pixel_number // self.pixels_horiz)
+        column = pixel_number - (row * self.pixels_horiz)
         return row, column
         
     def collect_rays(self, rays):
