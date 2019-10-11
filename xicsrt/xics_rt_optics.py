@@ -16,9 +16,16 @@ rocking curve, and reflectivity, as well as a height and width.
 from PIL import Image
 import numpy as np
 from scipy.spatial import cKDTree
-         
-class GenericOptic:
+
+from xicsrt.xics_rt_objects import TraceObject
+
+class GenericOptic(TraceObject):
     def __init__(self, optic_input, general_input):
+        super().__init__(
+            optic_input['position']
+            ,optic_input['normal']
+            ,optic_input['orientation'])
+
         self.position       = optic_input['position']
         self.normal         = optic_input['normal']
         self.xorientation   = optic_input['orientation']

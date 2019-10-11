@@ -164,8 +164,8 @@ class GeometryObject():
         else:
             ray_external = ray_local
 
-        ray_external.origin = self.point_to_external(ray_external.origin)
-        ray_external.vector = self.vector_to_external(ray_external.vector)
+        ray_external['origin'] = self.point_to_external(ray_external['origin'])
+        ray_external['direction'] = self.vector_to_external(ray_external['direction'])
         return ray_external
 
 
@@ -175,8 +175,8 @@ class GeometryObject():
         else:
             ray_local = ray_external
 
-        ray_local.origin = self.point_to_local(ray_local.origin)
-        ray_local.vector = self.vector_to_local(ray_local.vector)
+        ray_local['origin'] = self.point_to_local(ray_local['origin'])
+        ray_local['direction'] = self.vector_to_local(ray_local['direction'])
         return ray_local
 
 
@@ -188,12 +188,28 @@ class GeometryObject():
         return self.vector_to_local(point_external - self.origin)
 
 
-    def vector_to_external(self, vector_local):
-        return np.dot(self.orientation.transpose(), vector_local)
+    def vector_to_external(self, vector):
+        vector = self.to_ndarray(vector)
+        if vector.ndim == 2:
+            vector[:] = np.einsum('ij,ki->kj', self.orientation, vector)
+        elif vector.ndim == 1:
+            vector[:] = np.einsum('ij,i->j', self.orientation, vector)
+        else:
+            raise Exception('vector.ndim must be 1 or 2')
+
+        return vector
 
 
-    def vector_to_local(self, vector_external):
-        return np.dot(self.orientation, vector_external)
+    def vector_to_local(self, vector):
+        vector = self.to_ndarray(vector)
+        if vector.ndim == 2:
+            vector[:] = np.einsum('ji,ki->kj', self.orientation, vector)
+        elif vector.ndim == 1:
+            vector[:] = np.einsum('ji,i->j', self.orientation, vector)
+        else:
+            raise Exception('vector.ndim must be 1 or 2')
+
+        return vector
 
 
     def aim_to_point(self, aim_point, xaxis=None):
@@ -210,7 +226,28 @@ class GeometryObject():
             self.set_default_xaxis()
 
 
+    def to_ndarray(self, vector_in):
+        if not isinstance(vector_in, np.ndarray):
+            vector_in = np.array(vector_in, dtype=float)
+        return vector_in
+
+
+    def to_vector_array(self, vector_in):
+        """
+        Convert a vector to a numpy vector array (if needed).
+        """
+        vector_in = self.to_ndarray(vector_in)
+
+        if vector_in.ndim < 2:
+            return vector_in[None, :]
+        else:
+            return vector_in
+
+
 class TraceObject(GeometryObject):
+    """
+    An object to use for raytracing.
+    """
 
     def trace(self, ray):
         """
@@ -233,11 +270,6 @@ class TraceLocalObject(TraceObject):
         """
         Trace the given input ray through the system and return the output ray.
         """
-
-        if not ray_external.isValid():
-            print('Invalid ray.')
-            # This needs to be changed to something more readable.
-            raise Exception
 
         ray = self.ray_to_local(ray_external)
         ray = self.trace_local(ray)

@@ -14,9 +14,16 @@ import scipy.constants as const
 from xicsrt.util import profiler
 from xicsrt.math import voigt
 
-class GenericSource:
+from xicsrt.xics_rt_objects import TraceObject
+
+class GenericSource(TraceObject):
     #Source class to hold basic functions for each source type
     def __init__(self, source_input, general_input):
+        super().__init__(
+            source_input['position']
+            ,source_input['normal']
+            ,source_input['orientation'])
+
         self.position       = source_input['position']
         self.normal         = source_input['normal']
         self.xorientation   = source_input['orientation']
@@ -262,8 +269,6 @@ class DirectedSource(GenericSource):
         
         self.position       = source_input['position']
         self.normal         = source_input['normal']
-        self.orientation    = (np.cross(self.normal, self.position)/ 
-                               np.linalg.norm(np.cross(self.normal, self.position)))
         self.width          = 0
         self.height         = 0
         self.depth          = 0
@@ -273,7 +278,3 @@ class DirectedSource(GenericSource):
         self.temperature    = source_input['temp']
         self.mass_number    = source_input['mass']
         self.linewidth      = source_input['linewidth']
-     
-    def get_orientation(self):
-        self.orientation = (np.cross(self.normal, self.position)/ 
-                             np.linalg.norm(np.cross(self.normal, self.position)))       

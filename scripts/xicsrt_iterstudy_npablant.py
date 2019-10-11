@@ -83,6 +83,7 @@ config_input    = OrderedDict()
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
 general_input['do_bragg_checks']    = True
+general_input['do_simple_bragg']    = False
 general_input['do_visualizations']  = False
 general_input['random_seed']        = 123456
 general_input['scenario']           = 'BEAM'
