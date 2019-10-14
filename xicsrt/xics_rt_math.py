@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import numpy as np
 from scipy.special import wofz
 
@@ -17,7 +17,7 @@ def voigt_physical(intensity, location, sigma, gamma):
     """
     The voigt function in physical parameters.
     """
-    u = (x-location)/np.sqrt(2)/sigma
-    a = gamma/np.sqrt(2)/sigma
-    y = voigt(a, u) / np.sqrt(2*np.pi)/sigma * intensity
+    u = (x - location) / np.sqrt(2) / sigma
+    a = gamma / np.sqrt(2) / sigma
+    y = voigt(a, u) / np.sqrt(2 * np.pi) / sigma * intensity
     return y

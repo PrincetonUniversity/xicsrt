@@ -88,19 +88,19 @@ set do_visualizations to toggle the visualizations on or off
 set do_savefiles to toggle whether the program saves .tif files
 set do_image_analysis to toggle whether the visualizer performs .tif analysis
 set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
-set do_simple_bragg to True to make all Rocking curves into step functions
 change the random seed to alter the random numbers generated
 possible scenarios include 'MODEL', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
+possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 """
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
 general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
-general_input['do_image_analysis']  = True
+general_input['do_image_analysis']  = False
 general_input['do_bragg_checks']    = True
-general_input['do_simple_bragg']    = False
 general_input['random_seed']        = 1234567
 general_input['scenario']           = 'BEAM'
+general_input['rocking_curve_type'] = 'FILE'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -111,7 +111,7 @@ general_input['xics_temp']          = 273.0
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
 source_input['intensity']           = int(1e7)
-general_input['number_of_runs']     = 10
+general_input['number_of_runs']     = 1
 
 # Xenon mass in AMU
 source_input['mass']                = 131.293
@@ -143,12 +143,15 @@ crystal_input['width']              = 0.040
 crystal_input['height']             = 0.050
 crystal_input['curvature']          = 1.200
 
-crystal_input['spacing']            = 1.70578
+crystal_input['spacing']            = 1.7059
 crystal_input['reflectivity']       = 1
 crystal_input['rocking_curve']      = 90.30e-6
 crystal_input['pixel_scaling']      = int(200)
 
 crystal_input['therm_expand']       = 5.9e-6
+crystal_input['sigma_data']         = '../xicsrt/rocking_curve_germanium_sigma.txt'
+crystal_input['pi_data']            = '../xicsrt/rocking_curve_germanium_pi.txt'
+crystal_input['mix_factor']         = 1.0
 
 ## Load mosaic graphite properties
 graphite_input['position']          = config_dict['CRYSTAL_LOCATION']
@@ -165,6 +168,9 @@ graphite_input['rocking_curve']     = 8765e-6
 graphite_input['pixel_scaling']     = int(200)
 
 graphite_input['therm_expand']      = 20e-6
+graphite_input['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.txt'
+graphite_input['pi_data']           = '../xicsrt/rocking_curve_graphite_pi.txt'
+graphite_input['mix_factor']        = 1.0
 
 ## Load detector properties
 detector_input['position']          = config_dict['DETECTOR_LOCATION']
@@ -174,7 +180,10 @@ detector_input['orientation']       = config_dict['DETECTOR_ORIENTATION']
 detector_input['pixel_size']        = 0.000172
 detector_input['horizontal_pixels'] = int(config_dict['X_SIZE'])
 detector_input['vertical_pixels']   = int(config_dict['Y_SIZE'])
-
+detector_input['width']             = (detector_input['horizontal_pixels'] 
+                                    * detector_input['pixel_size'])
+detector_input['height']            = (detector_input['vertical_pixels'] 
+                                    * detector_input['pixel_size'])
 ## Load source properties
 source_input['position']            = np.array([0, 0, 0])
 source_input['normal']              = np.array([0, 1, 0])

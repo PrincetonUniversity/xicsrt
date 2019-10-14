@@ -39,8 +39,12 @@ class GenericOptic(TraceObject):
         self.pixel_size     = self.width / optic_input['pixel_scaling']
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.sigma_data     = optic_input['sigma_data']
+        self.pi_data        = optic_input['pi_data']
+        self.mix_factor     = optic_input['mix_factor']
         self.bragg_checks   = general_input['do_bragg_checks']
-        self.simple_bragg   = general_input['do_simple_bragg']
+        self.rocking_type   = general_input['rocking_curve_type']
+
         np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
@@ -76,17 +80,48 @@ class GenericOptic(TraceObject):
         return magnitude 
 
     def rocking_curve_filter(self, incident_angle, bragg_angle):
-        if self.simple_bragg is True:
+        if self.rocking_type == "STEP":
             # Step Function
             mask = (abs(incident_angle - bragg_angle) <= self.rocking_curve)
-        else:
-            # Convert from FWHM to sigma.
-            sigma = self.rocking_curve/np.sqrt(2 * np.log(2)) / 2
             
-            # Normalized Gaussian
+        elif self.rocking_type == "GAUSS":
+            # Convert from FWHM to sigma.
+            sigma = self.rocking_curve / np.sqrt(2 * np.log(2)) / 2
+            
+            # evaluate rocking curve reflectivity value for each ray
             p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
+            
+            # give each ray a random number and compare that number to the reflectivity 
+            # curves to decide whether the ray reflects or not.         
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
             mask = p.flatten() > test
+            
+        elif self.rocking_type == "FILE":
+            # read datafiles and extract points
+            sigma_data  = np.loadtxt(self.sigma_data, dtype = np.float64)
+            pi_data     = np.loadtxt(self.pi_data, dtype = np.float64)
+            
+            # convert data from arcsec to rad
+            sigma_data[:,0] *= np.pi / (180 * 3600)
+            pi_data[:,0]    *= np.pi / (180 * 3600)
+            
+            # evaluate rocking curve reflectivity value for each incident ray
+            sigma_curve = np.zeros(len(incident_angle), dtype = np.float64)
+            pi_curve    = np.zeros(len(incident_angle), dtype = np.float64)
+            
+            sigma_curve = np.interp((incident_angle - bragg_angle), 
+                                    sigma_data[:,0], sigma_data[:,1], 
+                                    left = 0.0, right = 0.0)
+            
+            pi_curve    = np.interp((incident_angle - bragg_angle), 
+                                    pi_data[:,0], pi_data[:,1], 
+                                    left = 0.0, right = 0.0)
+            
+            # give each ray a random number and compare that number to the reflectivity 
+            # curves to decide whether the ray reflects or not. Use mix factor.
+            test = np.random.uniform(0.0, 1.0, len(incident_angle))
+            mask = self.mix_factor * sigma_curve + (1 - self.mix_factor) * pi_curve >= test
+            
         return mask
     
     def intersect_check(self, rays, distance):
@@ -187,7 +222,10 @@ class SphericalCrystal(GenericOptic):
         self.center         = self.radius * self.normal + self.position
         self.pixel_size     = self.width / crystal_input['pixel_scaling']
         self.pixel_width    = int(round(self.width / self.pixel_size))
-        self.pixel_height   = int(round(self.height / self.pixel_size))     
+        self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.sigma_data     = crystal_input['sigma_data']
+        self.pi_data        = crystal_input['pi_data']
+        self.mix_factor     = crystal_input['mix_factor']
         np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
@@ -287,6 +325,9 @@ class MosaicGraphite(GenericOptic):
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
         self.center         = self.position
+        self.sigma_data     = graphite_input['sigma_data']
+        self.pi_data        = graphite_input['pi_data']
+        self.mix_factor     = graphite_input['mix_factor']
         np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):

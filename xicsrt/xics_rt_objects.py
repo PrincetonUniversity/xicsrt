@@ -11,9 +11,7 @@ A set of base objects for xicsrt.
 
 import numpy as np
 import scipy as sp
-
 import xicsrt.math
-
 
 class RayArray(dict):
     """
@@ -25,7 +23,6 @@ class RayArray(dict):
 
         if 'origin' in self and 'direction' in self:
             self.initialize()
-
 
     def initialize(self):
         """
@@ -52,7 +49,6 @@ class RayArray(dict):
         if not isinstance(self['wavelength'], np.ndarray):
             self['wavelength'] = np.array(self['wavelength'])
 
-
     def __getattribute__(self, key):
         """
         Setup shortcuts for the basic ray properties.
@@ -67,7 +63,6 @@ class RayArray(dict):
             return self['mask']
         else:
             return super().__getattribute__(key)
-
 
     def __setattr__(self, key, value):
         """
@@ -85,7 +80,6 @@ class RayArray(dict):
         else:
             super().__setattr(key, value)
 
-
     def copy(self):
         # Do this explicitly to avoid any unnecessary object creation.
         ray_new = GeometryObject(
@@ -97,17 +91,14 @@ class RayArray(dict):
 
         return ray_new
 
-
-
 class GeometryObject():
     """
     The base class for any geometrical objects used in XICSRT.
     """
-
     def __init__(self
-            ,origin=None
-            ,zaxis=None
-            ,xaxis=None
+            ,origin = None
+            ,zaxis  = None
+            ,xaxis  = None
             ):
 
         if origin is None:
@@ -132,13 +123,11 @@ class GeometryObject():
         else:
             raise AttributeError()
 
-
     def set_orientation(self, zaxis, xaxis=None):
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)
 
         self.orientation = np.array([xaxis, np.cross(zaxis, xaxis), zaxis])
-
 
     def get_default_xaxis(self, zaxis):
         """
@@ -157,7 +146,6 @@ class GeometryObject():
 
         return xaxis
 
-
     def ray_to_external(self, ray_local, copy=False):
         if copy:
             ray_external = ray_local.copy()
@@ -167,7 +155,6 @@ class GeometryObject():
         ray_external['origin'] = self.point_to_external(ray_external['origin'])
         ray_external['direction'] = self.vector_to_external(ray_external['direction'])
         return ray_external
-
 
     def ray_to_local(self, ray_external, copy=False):
         if copy:
@@ -179,14 +166,11 @@ class GeometryObject():
         ray_local['direction'] = self.vector_to_local(ray_local['direction'])
         return ray_local
 
-
     def point_to_external(self, point_local):
         return self.vector_to_external(point_local) + self.origin
 
-
     def point_to_local(self, point_external):
         return self.vector_to_local(point_external - self.origin)
-
 
     def vector_to_external(self, vector):
         vector = self.to_ndarray(vector)
@@ -199,7 +183,6 @@ class GeometryObject():
 
         return vector
 
-
     def vector_to_local(self, vector):
         vector = self.to_ndarray(vector)
         if vector.ndim == 2:
@@ -210,7 +193,6 @@ class GeometryObject():
             raise Exception('vector.ndim must be 1 or 2')
 
         return vector
-
 
     def aim_to_point(self, aim_point, xaxis=None):
         """
@@ -225,12 +207,10 @@ class GeometryObject():
         else:
             self.set_default_xaxis()
 
-
     def to_ndarray(self, vector_in):
         if not isinstance(vector_in, np.ndarray):
             vector_in = np.array(vector_in, dtype=float)
         return vector_in
-
 
     def to_vector_array(self, vector_in):
         """
@@ -242,7 +222,6 @@ class GeometryObject():
             return vector_in[None, :]
         else:
             return vector_in
-
 
 class TraceObject(GeometryObject):
     """
@@ -256,7 +235,6 @@ class TraceObject(GeometryObject):
         """
 
         return ray
-
 
 class TraceLocalObject(TraceObject):
     """
@@ -276,7 +254,6 @@ class TraceLocalObject(TraceObject):
         ray = self.ray_to_external(ray)
 
         return ray
-
 
     def trace_local(self, ray):
         """
