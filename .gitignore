@@ -1,7 +1,13 @@
-
-
 ## -----------------------------------------------------------------------------
 ## General filetype exclusions.
+
+## Large image files
+*.tif
+*.fits
+*.png
+*.bmp
+*.jpg
+*.jpeg
 
 ## Emacs
 *~
