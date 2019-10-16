@@ -10,8 +10,10 @@ Authors
 
 Description
 -----------
-This script loads up all of the initial parameters and object classes needed to
-execute the xicsrt raytracing pipeline
+This script manages the xicsrt_input.txt input file. It comes with a default 
+set of variables and direct access to the scenario generator xics_rt_scenarios.
+While it can't directly run ray-traces, it is nonetheless a vital part of the 
+ray-tracing pipeline.
 """
 #%% IMPORTS
 print('Importing Packages...')
@@ -38,24 +40,25 @@ profiler.start('Import Time')
 import numpy as np
 from collections import OrderedDict
 
-import os
-import argparse
+import json
 
-from xicsrt.xics_rt_visualizer import visualize_layout, visualize_vectors
-from xicsrt.xics_rt_visualizer import visualize_model, visualize_images
-from xicsrt.xics_rt_sources import FocusedExtendedSource
-from xicsrt.xics_rt_detectors import Detector
-from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace import raytrace
-from xicsrt.xics_rt_model import analytical_model
-from xicsrt.xics_rt_tools import bragg_angle, source_location_bragg
-from xicsrt.xics_rt_tools import setup_beam_scenario, setup_crystal_test
-from xicsrt.xics_rt_tools import setup_graphite_test, setup_source_test
+from xicsrt.xics_rt_scenarios import bragg_angle, source_location_bragg
+from xicsrt.xics_rt_scenarios import setup_beam_scenario, setup_crystal_test
+from xicsrt.xics_rt_scenarios import setup_graphite_test, setup_source_test
 
 ## MirPyIDL imports
 import mirutil.hdf5
 
 profiler.stop('Import Time')
+#%% OPEN
+"""
+Check to see if xicsrt_input.json exists. If no, create it. If yes, read it.
+"""
+try:
+    with open('xicsrt_input.json', 'r') as input_file:
+        xicsrt_input = json.load(input_file)
+except FileNotFoundError:
+    xicsrt_input = []
 
 #%% INPUTS
 """
@@ -96,7 +99,7 @@ general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
 general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
-general_input['do_image_analysis']  = False
+general_input['do_image_analysis']  = True
 general_input['do_bragg_checks']    = True
 general_input['random_seed']        = 1234567
 general_input['scenario']           = 'BEAM'
@@ -140,7 +143,7 @@ crystal_input['normal']             = config_dict['CRYSTAL_NORMAL']
 crystal_input['orientation']        = config_dict['CRYSTAL_ORIENTATION']
 
 crystal_input['width']              = 0.040
-crystal_input['height']             = 0.050
+crystal_input['height']             = 0.010
 crystal_input['curvature']          = 1.200
 
 crystal_input['spacing']            = 1.7059
@@ -264,7 +267,7 @@ elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL'
      source_input['target']] = setup_beam_scenario(
      crystal_input['spacing'], 
      graphite_input['spacing'],
-     1,                                     #source-graphite distance
+     1.000,                                 #source-graphite distance
      8.500,                                 #graphite-crystal distance
      crystal_input['meridi_focus']        , #crystal-detector distance
      source_input['wavelength']           ,
@@ -290,7 +293,7 @@ elif general_input['scenario'] == 'CRYSTAL':
      detector_input['orientation']  , 
      source_input['target']] = setup_crystal_test(
      crystal_input['spacing']       , 
-     crystal_input['sagitt_focus']+1, #source-crystal distance
+     8.500 + 1.000                  , #source-crystal distance
      crystal_input['meridi_focus']  , #crystal-detector distance
      source_input['wavelength']     ,
      general_input['backwards_raytrace'],
@@ -352,171 +355,45 @@ if general_input['ideal_geometry'] is False:
     
 profiler.stop('Scenario Setup Time')
 
-#%% SETUP
-## Pipe all of the configuration settings into their respective objects
-print('Setting Up Optics...')
-profiler.start('Class Setup Time')
+#%% SAVE
+# Convert all numpy arrays into json-recognizable lists
+print('Saving Dictionaries...')
+profiler.start('Dictionary Save Time')
+source_input['position'] = source_input['position'].tolist()
+source_input['normal'] = source_input['normal'].tolist()
+source_input['orientation'] = source_input['orientation'].tolist()
+source_input['target'] = source_input['target'].tolist()
 
-pilatus     = Detector(detector_input, general_input)
-crystal     = SphericalCrystal(crystal_input, general_input)
-graphite    = MosaicGraphite(graphite_input, general_input)
-source      = FocusedExtendedSource(source_input, general_input)
+crystal_input['position'] = crystal_input['position'].tolist()
+crystal_input['normal'] = crystal_input['normal'].tolist()
+crystal_input['orientation'] = crystal_input['orientation'].tolist()
 
-profiler.stop('Class Setup Time')
+graphite_input['position'] = graphite_input['position'].tolist()
+graphite_input['normal'] = graphite_input['normal'].tolist()
+graphite_input['orientation'] = graphite_input['orientation'].tolist()
 
-#%% VISUALIZATION
-## Use MatPlotLib Plot3D to visualize the setup
-profiler.start('Initial Visual Time')
+detector_input['position'] = detector_input['position'].tolist()
+detector_input['normal'] = detector_input['normal'].tolist()
+detector_input['orientation'] = detector_input['orientation'].tolist()
 
-if general_input['do_visualizations'] is True:
-    print('Plotting Visualization...')
-    plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
-                                 crystal_input, detector_input)
-    plt1.show()
+# Compact all inputs into a single input dictionary named save_input
+# save_input represents one configuration
+save_input = dict()
+save_input['general_input'] = general_input
+save_input['source_input'] = source_input
+save_input['crystal_input'] = crystal_input
+save_input['graphite_input'] = graphite_input
+save_input['detector_input'] = detector_input
 
-profiler.stop('Initial Visual Time')
+# Append save_input to xicsrt_input
+xicsrt_input.append(save_input)
 
-#%% RAYTRACE
-## Begin Raytracing
-print('Beginning Raytracing...')
-import sys
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--suffix'
-        ,help='A suffix to add to the end of the image name.'
-        ,type=str)
-    parser.add_argument(
-        '--path'
-        ,default=''
-        ,help='The path to store the results.'
-        ,type=str)    
-    args = parser.parse_args()
-    
-    if general_input['scenario'] == 'BEAM':
-        if general_input['backwards_raytrace'] is False:
-            output = raytrace(source, pilatus, graphite, crystal
-                ,number_of_runs = general_input['number_of_runs']
-                ,collect_optics = True)
-            
-        if general_input['backwards_raytrace'] is True:
-            output = raytrace(source, pilatus, crystal, graphite
-                ,number_of_runs = general_input['number_of_runs']
-                ,collect_optics = True)
-            
-    if general_input['scenario'] == 'CRYSTAL':
-        output = raytrace(source, pilatus, crystal
-                ,number_of_runs = general_input['number_of_runs']
-                ,collect_optics = True)
-        
-    if general_input['scenario'] == 'GRAPHITE':
-        output = raytrace(source, pilatus, graphite
-                ,number_of_runs = general_input['number_of_runs']
-                ,collect_optics = True)
-        
-    if general_input['scenario'] == 'SOURCE':
-        output = raytrace(source, pilatus
-                ,number_of_runs = general_input['number_of_runs']
-                ,collect_optics = True)
-        
-    if general_input['scenario'] == 'MODEL':
-        output, metadata = analytical_model(source, crystal, graphite, pilatus, 
-                                            source_input, graphite_input, 
-                                            crystal_input, detector_input, 
-                                            general_input)
+# Save the dictionary
+with open('xicsrt_input.json', 'w') as input_file:
+        json.dump(xicsrt_input ,input_file, indent = 1, sort_keys = True)
 
-## Create the output path if needed
-    if general_input['do_savefiles'] is True:
-        if args.path:
-            if not os.path.exists(args.path):
-               os.mkdir(args.path)
-                        
-        #create detector image file
-        filename = 'xicsrt_detector'
-        if args.suffix:
-            filename += '_'+args.suffix
-        filename += '.tif'
-        filepath = os.path.join(args.path, filename)
-        print('Exporting detector image: {}'.format(filepath))
-        pilatus.output_image(filepath, rotate=False)
-        
-        #create graphite image file
-        filename = 'xicsrt_graphite'
-        if args.suffix:
-            filename += '_'+args.suffix
-        filename += '.tif'
-        filepath = os.path.join(args.path, filename)
-        print('Exporting graphite image: {}'.format(filepath))
-        graphite.output_image(filepath, rotate=False)
-        
-        #create crystal image file
-        filename = 'xicsrt_crystal'
-        if args.suffix:
-            filename += '_'+args.suffix
-        filename += '.tif'
-        filepath = os.path.join(args.path, filename)
-        print('Exporting crystal image:  {}'.format(filepath))
-        crystal.output_image(filepath, rotate=False)
+profiler.stop('Dictionary Save Time')
 
-#%% OUTPUT
-## Add the rays to the previous Axes3D plot
-
-profiler.start('Final Visual Time')
-
-if general_input['do_visualizations'] is True:
-    print("Plotting Results...")
-    
-    if general_input['scenario'] == 'MODEL':
-        fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
-                                    graphite_input, crystal_input, detector_input)
-    else:
-        for ii in range(len(output)):
-            fig2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
-                                          graphite_input, crystal_input, detector_input)
-    fig2.show()
-    
-if general_input['do_image_analysis'] is True:
-    fig3, ax3 = visualize_images()
-    fig3.show()
-    input('Press [Enter] to close the image analysis window...')
-    
-profiler.stop('Final Visual Time')
-
-#%% REPORT
+print('Done!')
 profiler.stop('Total Time')
-profiler.stopProfiler()
-print('')
-
-if general_input['scenario'] == 'MODEL':    
-    # models also come with metadata, print that out
-    print('')
-    print('Analytical Model Results')
-    
-    if general_input['backwards_raytrace'] is True:
-        print('Header  |  Crystal Bragg | Crystal Dist | Graphite Bragg | Graphite Dist')
-        print('Setup   |  {:6.6} deg   | {:6.6} m   | {:6.6} deg    | {:6.6} m'.format(
-            crystal_input['bragg'] * 180 / np.pi,
-            np.linalg.norm(crystal_input['position'] - source_input['position']),
-            graphite_input['bragg'] * 180 / np.pi,
-            np.linalg.norm(graphite_input['position'] - crystal_input['position']),
-            np.linalg.norm(detector_input['position'] - graphite_input['position'])))
-        
-        for jj in range(len(metadata[0]['distance'])):
-            if   metadata[0]['distance'][jj] == 10.0 or metadata[0]['distance'][jj] == 0.0:
-                print('Ray {}   |  [MISSED]      | [MISSED]     | [MISSED]       | [MISSED]'.format(jj))
-                
-            elif metadata[1]['distance'][jj] == 10.0 or metadata[1]['distance'][jj] == 0.0:
-                print('Ray {}   |  {:6.6} deg   | {:6.6} m   | [MISSED]       | [MISSED]'.format(
-                    jj,
-                    float(metadata[0]['incident_angle'][jj]) * 180 / np.pi,
-                    float(metadata[0]['distance'][jj])))  
-                
-            else:
-                print('Ray {}   |  {:6.6} deg   | {:6.6} m   | {:6.6} deg    | {:6.6} m'.format(
-                    jj,
-                    float(metadata[0]['incident_angle'][jj]) * 180 / np.pi,
-                    float(metadata[0]['distance'][jj]),
-                    float(metadata[1]['incident_angle'][jj]) * 180 / np.pi,
-                    float(metadata[1]['distance'][jj])))  
-
 profiler.report()
