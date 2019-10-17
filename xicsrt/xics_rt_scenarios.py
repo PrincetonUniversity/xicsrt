@@ -4,22 +4,21 @@ Created on Fri Apr 28 12:30:38 2017
 
 @author: James
 """
-from xicsrt.xics_rt_math import bragg_angle, vector_rotate
+from xicsrt.xics_rt_math import bragg_angle, vector_rotate, rotation_matrix
 import numpy as np
 
-def source_location(distance
-                    ,vert_displace
-                    ,crystal_location
-                    ,crystal_normal
-                    ,crystal_curvature
-                    ,crystal_spacing
-                    ,detector_location
-                    ,wavelength):
+def source_location(distance, vert_displace, source_input, detector_input, crystal_input):
     """
     Returns the source location that satisfies the bragg condition met by the
     detector. Allows for a vertical displacement above and below the 
     meridional plane
     """
+    crystal_location = crystal_input['position']
+    crystal_normal = crystal_input['normal']
+    crystal_curvature = crystal_input['curvature']
+    crystal_spacing = crystal_input['spacing']
+    detector_location = detector_input['position']
+    wavelength = source_input['wavelength']
     
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     meridional_normal = np.cross(crystal_location - crystal_center,
@@ -39,23 +38,21 @@ def source_location(distance
     
     return source_location
 
-def source_location_bragg(distance
-                          ,vert_displace
-                          ,horiz_displace
-                          ,crystal_location
-                          ,crystal_normal
-                          ,crystal_curvature
-                          ,crystal_spacing
-                          ,detector_location
-                          ,wavelength):
+def source_location_bragg(source_input, crystal_input, detector_input,
+                          distance ,vert_displace ,horiz_displace):
     """
     Returns the source on the meridional plane that meets the Bragg condition
     for the given wavelength. Allows for a vertical displacement above and 
     below the meridional plane.
     """
 
-    bragg_c = bragg_angle(wavelength, crystal_spacing)
-    norm_angle = np.pi/2.0 - bragg_c
+    crystal_location = crystal_input['position']
+    crystal_normal = crystal_input['normal']
+    crystal_curvature = crystal_input['curvature']
+    crystal_bragg = crystal_input['bragg']
+    detector_location = detector_input['position']
+
+    norm_angle = np.pi/2.0 - crystal_bragg
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     
     meridional_normal = np.cross(-crystal_normal, detector_location - crystal_center)
@@ -72,20 +69,22 @@ def source_location_bragg(distance
     sagittal_normal /= np.linalg.norm(sagittal_normal)
     
     source_location += horiz_displace * sagittal_normal
-    return source_location
+    
+    source_input['position'] = source_location
+    return source_input, crystal_input, detector_input,
 
 # s = source / g = graphite / c = crystal / d = detector
 
-def setup_beam_scenario(c_spacing ,g_spacing ,
+def setup_beam_scenario(general_input, source_input, graphite_input, 
+                        crystal_input, detector_input,
                         distance_s_g ,distance_g_c, distance_c_d,
-                        wavelength, backwards_raytrace,
                         g_offset, g_tilt,
                         c_offset, c_tilt,
                         d_offset, d_tilt):
     ## An idealized scenario with a source, an HOPG, a crystal, and a detector
-    
-    bragg_g = bragg_angle(wavelength, g_spacing)
-    bragg_c = bragg_angle(wavelength, c_spacing)
+    #unpack variables
+    bragg_c = crystal_input['bragg']
+    bragg_g = graphite_input['bragg']
     
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis
@@ -187,30 +186,40 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
     d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
     
-    if   backwards_raytrace is False:
+    if   general_input['backwards_raytrace'] is False:
         s_target = g_position
-    elif backwards_raytrace is True:
+    elif general_input['backwards_raytrace'] is True:
         s_target = c_position
     
-    scenario_output = [s_position, s_normal, s_z_vector,
-                       g_position, g_normal, g_z_vector,
-                       c_position, c_normal, c_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    ## Repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    graphite_input['position']      = g_position
+    graphite_input['normal']        = g_normal
+    graphite_input['orientation']   = g_z_vector
+    crystal_input['position']       = c_position
+    crystal_input['normal']         = c_normal
+    crystal_input['orientation']    = c_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
-                       wavelength, backwards_raytrace,
+    return  general_input, source_input, graphite_input, crystal_input, detector_input
+
+def setup_crystal_test(source_input, crystal_input, detector_input,
+                       distance_s_c, distance_c_d,
                        c_offset, c_tilt):
     """
     An idealized scenario involving a source, crystal, and detector
     Designed to probe the crystal's properties and check for bugs
     """
-    bragg_c = bragg_angle(wavelength, c_spacing)
+    bragg_c = crystal_input['bragg']
     
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
@@ -263,22 +272,31 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     c_position += c_basis.dot(np.transpose(c_offset))
     c_z_vector    = vector_rotate(c_z_vector, c_normal, c_tilt)
     
-    scenario_output = [s_position, s_normal, s_orientation,
-                       c_position, c_normal, c_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    # repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    crystal_input['position']       = c_position
+    crystal_input['normal']         = c_normal
+    crystal_input['orientation']    = c_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
+    return source_input, crystal_input, detector_input
+
+def setup_graphite_test(source_input, graphite_input, detector_input,
+                        distance_s_g, distance_g_d):
     """
     An idealized scenario involving a source, HOPG, and detector
     Designed to probe the crystal's properties and check for bugs
     """
-    bragg_g = bragg_angle(wavelength, g_spacing)
+    bragg_g = graphite_input['bragg']
     
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
@@ -300,13 +318,21 @@ def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
     d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
     
-    scenario_output = [s_position, s_normal, s_orientation,
-                       g_position, g_normal, g_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    # repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    graphite_input['position']      = g_position
+    graphite_input['normal']        = g_normal
+    graphite_input['orientation']   = g_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_source_test(distance_s_d):
+    return  source_input, graphite_input, detector_input
+
+def setup_source_test(source_input, detector_input, distance_s_d):
     """
     A source and a detector, nothing else. Useful for debugging sources
     """
@@ -320,7 +346,12 @@ def setup_source_test(distance_s_d):
     
     s_target = d_position
     
-    scenario_output = [s_position, s_normal, s_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    #repack vectors
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
+    return  source_input, detector_input

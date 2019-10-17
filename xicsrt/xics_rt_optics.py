@@ -42,7 +42,8 @@ class GenericOptic(TraceObject):
         self.sigma_data     = optic_input['sigma_data']
         self.pi_data        = optic_input['pi_data']
         self.mix_factor     = optic_input['mix_factor']
-        self.bragg_checks   = general_input['do_bragg_checks']
+        self.bragg_checks   = general_input['do_bragg_checks'] and optic_input['do_miss_checks']
+        self.miss_checks    = general_input['do_miss_checks'] and optic_input['do_miss_checks']
         self.rocking_type   = general_input['rocking_curve_type']
 
         np.random.seed(general_input['random_seed'])
@@ -139,7 +140,8 @@ class GenericOptic(TraceObject):
         #find which rays hit the optic, update mask to remove misses
         xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
-        m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
+        if self.miss_checks is True:
+            m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
         return X, rays
     
     def angle_check(self, X, rays, norm):
@@ -158,7 +160,7 @@ class GenericOptic(TraceObject):
         dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
-        if self.bragg_checks == True:
+        if self.bragg_checks is True:
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
         return rays, norm
     
@@ -293,7 +295,6 @@ class SphericalCrystal(GenericOptic):
         m = rays['mask']
         norm = np.zeros(X.shape, dtype=np.float64)
         norm[m] = self.normalize(self.center - X[m])
-        
         return norm
 
     def light(self, rays):

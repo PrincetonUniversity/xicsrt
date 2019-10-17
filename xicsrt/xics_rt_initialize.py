@@ -25,19 +25,18 @@ import argparse
 import json
 import os
 import numpy as np
-from collections import OrderedDict
 
-from xicsrt.xics_rt_visualizer import visualize_layout, visualize_vectors
-from xicsrt.xics_rt_visualizer import visualize_model, visualize_images
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
 from xicsrt.xics_rt_model import analytical_model
+from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
+
 profiler.stop('Import Time')
 
 #%% LOAD
-# Set up OrederedDicts
+# Set up dictionaries
 profiler.start('Load Time')
 try:
     with open('../scripts/xicsrt_input.json', 'r') as input_file:
@@ -46,13 +45,7 @@ except FileNotFoundError:
     print('Input file xicsrt_input.json does not exist')
     print('Run xicsrt_w7x_ar16_eugene.py to generate input file')
     sys.exit()
-"""
-general_input   = xicsrt_input['general_input']
-source_input    = xicsrt_input['source_input']
-crystal_input   = xicsrt_input['crystal_input']
-graphite_input  = xicsrt_input['graphite_input']
-detector_input  = xicsrt_input['detector_input']
-"""
+
 # Deconvert all lists back into numpy arrays
 # I swear all this nesting is worth it
 for configuration in range(len(xicsrt_input)):
@@ -61,22 +54,8 @@ for configuration in range(len(xicsrt_input)):
             if type(xicsrt_input[configuration][element][key]) is list:
                 xicsrt_input[configuration][element][key] = np.array(
                         xicsrt_input[configuration][element][key])
-
 profiler.stop('Load Time')
 
-#%% VISUALIZATION
-## Use MatPlotLib Plot3D to visualize the setup
-"""
-profiler.start('Initial Visual Time')
-
-if general_input['do_visualizations'] is True:
-    print('Plotting Visualization...')
-    plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
-                                 crystal_input, detector_input)
-    plt1.show()
-
-profiler.stop('Initial Visual Time')
-"""
 #%% RAYTRACE
 ## Begin Raytracing
 print('Beginning Raytracing...')
@@ -102,28 +81,37 @@ if __name__ == '__main__':
     
     # loop through each configuration in the configuration input file
     for jj in range(len(xicsrt_input)):
-        # input the dictionaries from xicsrt_input
+        ## Input Dictionaries
         general_input   = xicsrt_input[jj]['general_input']
         source_input    = xicsrt_input[jj]['source_input']
         crystal_input   = xicsrt_input[jj]['crystal_input']
         graphite_input  = xicsrt_input[jj]['graphite_input']
         detector_input  = xicsrt_input[jj]['detector_input']
         
-        # pipe all of the configuration settings into their respective objects
+        ## Initial Visualization
+        profiler.start('Initial Visual Time')
+        if general_input['do_visualizations'] is True:
+            print('')
+            print('Plotting Visualization for Configuration: {} of {}'.format(
+                jj + 1, len(xicsrt_input)))
+            plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
+                                         crystal_input, detector_input)
+            plt1.show()
+        profiler.stop('Initial Visual Time')
+        
+        ## Object Setup
         print('')
-        print('Setting Up Optics for Configuration: {} of {}...'.format(
+        print('Setting Up Optics for Configuration: {} of {}'.format(
                 jj + 1, len(xicsrt_input)))
         
         profiler.start('Class Setup Time')
-
         pilatus     = Detector(detector_input, general_input)
         crystal     = SphericalCrystal(crystal_input, general_input)
         graphite    = MosaicGraphite(graphite_input, general_input)
         source      = FocusedExtendedSource(source_input, general_input)
-
         profiler.stop('Class Setup Time')
 
-        #raytrace runs
+        ## Raytrace Runs
         if general_input['scenario'] == 'BEAM':
             if general_input['backwards_raytrace'] is False:
                 output, rays_count = raytrace(source, pilatus, graphite, crystal
@@ -158,6 +146,23 @@ if __name__ == '__main__':
             
         for key in rays_total:
             rays_total[key] += rays_count[key]
+        
+        ## Final Visualization
+        profiler.start('Final Visual Time')
+        if general_input['do_visualizations'] is True:
+            print('')
+            print('Plotting Results for Configuration: {} of {}'.format(
+                    jj + 1, len(xicsrt_input)))
+    
+            if general_input['scenario'] == 'MODEL':
+                fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
+                                            graphite_input, crystal_input, detector_input)
+            else:
+                for ii in range(len(output)):
+                    fig2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
+                                                  graphite_input, crystal_input, detector_input)
+            fig2.show()
+        profiler.stop('Final Visual Time')
             
     # after all raytrace runs for all configurations, report the ray totals
     print('')
@@ -207,32 +212,12 @@ if __name__ == '__main__':
 #%% OUTPUT
 ## Add the rays to the previous Axes3D plot
 """
-profiler.start('Final Visual Time')
-
-if general_input['do_visualizations'] is True:
-    print("Plotting Results...")
-    
-    if general_input['scenario'] == 'MODEL':
-        fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
-                                    graphite_input, crystal_input, detector_input)
-    else:
-        for ii in range(len(output)):
-            fig2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
-                                          graphite_input, crystal_input, detector_input)
-    fig2.show()
-    
 if general_input['do_image_analysis'] is True:
     fig3, ax3 = visualize_images()
     fig3.show()
     input('Press [Enter] to close the image analysis window...')
-    
-profiler.stop('Final Visual Time')
 """
 #%% REPORT
-profiler.stop('Total Time')
-profiler.stopProfiler()
-print('')
-
 if general_input['scenario'] == 'MODEL':    
     # models also come with metadata, print that out
     print('')
@@ -263,6 +248,9 @@ if general_input['scenario'] == 'MODEL':
                     float(metadata[0]['incident_angle'][jj]) * 180 / np.pi,
                     float(metadata[0]['distance'][jj]),
                     float(metadata[1]['incident_angle'][jj]) * 180 / np.pi,
-                    float(metadata[1]['distance'][jj])))  
+                    float(metadata[1]['distance'][jj])))
 
+profiler.stop('Total Time')
+profiler.stopProfiler()
+print('')
 profiler.report()

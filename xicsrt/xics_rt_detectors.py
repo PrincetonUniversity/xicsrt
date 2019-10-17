@@ -34,6 +34,7 @@ class Detector(TraceObject):
         self.pixels_horiz   = detector_input['horizontal_pixels']
         self.pixels_vert    = detector_input['vertical_pixels']
         self.pixel_size     = detector_input['pixel_size']
+        self.miss_checks    = general_input['do_miss_checks'] and detector_input['do_miss_checks']
         self.photon_count   = None
         np.random.seed(general_input['random_seed'])
 
@@ -115,8 +116,9 @@ class Detector(TraceObject):
         #find which rays hit detector, update mask to remove those that don't    
         xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
-        m[m] &= ((xproj[m] <= self.pixels_horiz * self.pixel_size / 2) & (
-                yproj[m] <= self.pixels_vert * self.pixel_size / 2))
+        if self.miss_checks is True:
+            m[m] &= ((xproj[m] <= self.pixels_horiz * self.pixel_size / 2) & (
+                    yproj[m] <= self.pixels_vert * self.pixel_size / 2))
         return X, rays
     
     def light(self, rays):
