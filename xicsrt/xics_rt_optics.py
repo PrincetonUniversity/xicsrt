@@ -36,6 +36,7 @@ class GenericOptic(TraceObject):
         self.reflectivity   = optic_input['reflectivity']
         self.width          = optic_input['width']
         self.height         = optic_input['height']
+        self.depth          = 0.0
         self.pixel_size     = self.width / optic_input['pixel_scaling']
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))

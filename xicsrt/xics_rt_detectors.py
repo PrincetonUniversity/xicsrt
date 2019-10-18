@@ -31,6 +31,7 @@ class Detector(TraceObject):
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
         self.width          = detector_input['width']
         self.height         = detector_input['height']
+        self.depth          = 0
         self.pixels_horiz   = detector_input['horizontal_pixels']
         self.pixels_vert    = detector_input['vertical_pixels']
         self.pixel_size     = detector_input['pixel_size']
