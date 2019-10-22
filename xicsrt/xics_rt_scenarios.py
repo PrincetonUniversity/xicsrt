@@ -242,10 +242,10 @@ def setup_crystal_test(source_input, crystal_input, detector_input,
     c_normal   /= np.linalg.norm(c_normal)
     
     #for focused extended sources, target them towards the crystal position    
-    #s_target = c_position
+    s_target = c_position
     
     #alternatively, target them towards where the graphite would be in the beam
-    s_target = path_vector * 1
+    #s_target = path_vector * 1
     
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal

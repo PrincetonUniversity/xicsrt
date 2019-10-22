@@ -27,6 +27,7 @@ import os
 import numpy as np
 
 from xicsrt.xics_rt_sources import FocusedExtendedSource
+from xicsrt.xics_rt_plasmas import CubicPlasma
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
@@ -58,7 +59,7 @@ profiler.stop('Load Time')
 
 #%% RAYTRACE
 ## Begin Raytracing
-print('Beginning Raytracing...')
+print('Initializing Ray-Tracer...')
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -83,6 +84,7 @@ if __name__ == '__main__':
     for jj in range(len(xicsrt_input)):
         ## Input Dictionaries
         general_input   = xicsrt_input[jj]['general_input']
+        plasma_input    = xicsrt_input[jj]['plasma_input']
         source_input    = xicsrt_input[jj]['source_input']
         crystal_input   = xicsrt_input[jj]['crystal_input']
         graphite_input  = xicsrt_input[jj]['graphite_input']
@@ -109,9 +111,15 @@ if __name__ == '__main__':
         crystal     = SphericalCrystal(crystal_input, general_input)
         graphite    = MosaicGraphite(graphite_input, general_input)
         source      = FocusedExtendedSource(source_input, general_input)
+        plasma      = CubicPlasma(plasma_input, general_input)
         profiler.stop('Class Setup Time')
 
         ## Raytrace Runs
+        if general_input['scenario'] == 'PLASMA':
+            output, rays_count = raytrace(plasma, pilatus, graphite, crystal
+                    ,number_of_runs = general_input['number_of_runs']
+                    ,collect_optics = True)
+        
         if general_input['scenario'] == 'BEAM':
             if general_input['backwards_raytrace'] is False:
                 output, rays_count = raytrace(source, pilatus, graphite, crystal
@@ -153,7 +161,7 @@ if __name__ == '__main__':
             print('')
             print('Plotting Results for Configuration: {} of {}'.format(
                     jj + 1, len(xicsrt_input)))
-    
+
             if general_input['scenario'] == 'MODEL':
                 fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
                                             graphite_input, crystal_input, detector_input)

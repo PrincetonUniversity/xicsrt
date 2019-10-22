@@ -42,7 +42,7 @@ class GenericOptic(TraceObject):
         self.sigma_data     = optic_input['sigma_data']
         self.pi_data        = optic_input['pi_data']
         self.mix_factor     = optic_input['mix_factor']
-        self.bragg_checks   = general_input['do_bragg_checks'] and optic_input['do_miss_checks']
+        self.bragg_checks   = general_input['do_bragg_checks'] and optic_input['do_bragg_checks']
         self.miss_checks    = general_input['do_miss_checks'] and optic_input['do_miss_checks']
         self.rocking_type   = general_input['rocking_curve_type']
 

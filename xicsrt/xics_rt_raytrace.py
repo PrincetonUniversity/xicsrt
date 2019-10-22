@@ -19,6 +19,12 @@ def raytrace(source, detector, *optics,  number_of_runs=None, collect_optics=Non
     if number_of_runs is None: number_of_runs = 1
     if collect_optics is None: collect_optics = False
     
+    rays_count = dict()
+    rays_count['total_generated']  = 0
+    rays_count['total_graphite']   = 0
+    rays_count['total_crystal']    = 0
+    rays_count['total_detector']   = 0
+    
     for ii in range(number_of_runs):
         profiler.start('Raytrace Run')
         print('')
@@ -26,11 +32,6 @@ def raytrace(source, detector, *optics,  number_of_runs=None, collect_optics=Non
         
         # Rays history resets after every run and only returns on the last one
         rays_history = []
-        rays_count = dict()
-        rays_count['total_generated']  = 0
-        rays_count['total_graphite']   = 0
-        rays_count['total_crystal']    = 0
-        rays_count['total_detector']   = 0
             
         profiler.start('Ray Generation')
         rays = source.generate_rays()

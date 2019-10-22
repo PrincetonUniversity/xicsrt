@@ -41,36 +41,28 @@ class GenericSource(TraceObject):
         np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
-        """
-         Definitions:
-           O: origin of ray
-           D: direction of ray
-           W: wavelength of ray
-           w: relative weight of ray (UNUSED)
-           m: mask applied to each ray
-        """
+        rays = dict()
         
         profiler.start('generate_origin')
-        O = self.generate_origin()
+        rays['origin'] = self.generate_origin()
         profiler.stop('generate_origin')
 
         profiler.start('generate_direction')
-        D = self.generate_direction(O)
+        rays['direction'] = self.generate_direction(rays['origin'])
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        W = self.generate_wavelength()
+        rays['wavelength'] = self.generate_wavelength()
         profiler.stop('generate_wavelength')
 
         profiler.start('generate_weight')
-        w = self.generate_weight()
+        rays['weight'] = self.generate_weight()
         profiler.stop('generate_weight')
         
         profiler.start('generate_mask')
-        m = self.generate_mask()
+        rays['mask'] = self.generate_mask()
         profiler.stop('generate_mask')
         
-        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask': m}      
         return rays
      
     
@@ -215,9 +207,9 @@ class FocusedExtendedSource(GenericSource):
         self.intensity      = source_input['intensity']
         self.temp           = source_input['temp']
         self.mass_number    = source_input['mass']
-        self.wavelength     = source_input['wavelength']                                         
+        self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
-        self.focus          = source_input['target'] 
+        self.focus          = source_input['target']
         np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
@@ -228,28 +220,28 @@ class FocusedExtendedSource(GenericSource):
            W: wavelength of ray
            w: weight of ray (UNUSED)
         """
+        rays = dict()
         
         profiler.start('Generate Origin')
-        O = super().generate_origin()
+        rays['origin'] = super().generate_origin()
         profiler.stop('Generate Origin')
 
         profiler.start('Generate Direction')
-        D = self.generate_direction(O)
+        rays['direction'] = self.generate_direction(rays['origin'])
         profiler.stop('Generate Direction')
 
         profiler.start('Generate Wavelength')
-        W = super().generate_wavelength()
+        rays['wavelength'] = super().generate_wavelength()
         profiler.stop('Generate Wavelength')
         
         profiler.start('Generate Weight')
-        w = super().generate_weight()
+        rays['weight'] = super().generate_weight()
         profiler.stop('Generate Weight')
         
         profiler.start('Generate Mask')
-        m = super().generate_mask()
+        rays['mask'] = super().generate_mask()
         profiler.stop('Generate Mask')
         
-        rays = {'origin': O, 'direction': D, 'wavelength': W, 'weight': w, 'mask': m}      
         return rays
     
     def generate_direction(self, origin):
