@@ -97,7 +97,7 @@ if __name__ == '__main__':
             print('Plotting Visualization for Configuration: {} of {}'.format(
                 jj + 1, len(xicsrt_input)))
             plt1, ax1 = visualize_layout(general_input, source_input, graphite_input, 
-                                         crystal_input, detector_input)
+                                         crystal_input, detector_input, plasma_input)
             plt1.show()
         profiler.stop('Initial Visual Time')
         
@@ -105,13 +105,14 @@ if __name__ == '__main__':
         print('')
         print('Setting Up Optics for Configuration: {} of {}'.format(
                 jj + 1, len(xicsrt_input)))
+        np.random.seed(general_input['random_seed'])
         
         profiler.start('Class Setup Time')
-        pilatus     = Detector(detector_input, general_input)
-        crystal     = SphericalCrystal(crystal_input, general_input)
-        graphite    = MosaicGraphite(graphite_input, general_input)
-        source      = FocusedExtendedSource(source_input, general_input)
-        plasma      = CubicPlasma(plasma_input, general_input)
+        pilatus     = Detector(detector_input)
+        crystal     = SphericalCrystal(crystal_input)
+        graphite    = MosaicGraphite(graphite_input)
+        source      = FocusedExtendedSource(source_input)
+        plasma      = CubicPlasma(plasma_input)
         profiler.stop('Class Setup Time')
 
         ## Raytrace Runs
@@ -163,12 +164,16 @@ if __name__ == '__main__':
                     jj + 1, len(xicsrt_input)))
 
             if general_input['scenario'] == 'MODEL':
-                fig2, ax2 = visualize_model(output, metadata, general_input, source_input, 
-                                            graphite_input, crystal_input, detector_input)
+                fig2, ax2 = visualize_model(output, metadata, general_input, 
+                                            source_input, graphite_input, 
+                                            crystal_input, detector_input,
+                                            plasma_input)
             else:
                 for ii in range(len(output)):
-                    fig2, ax2 = visualize_vectors(output[ii], general_input, source_input, 
-                                                  graphite_input, crystal_input, detector_input)
+                    fig2, ax2 = visualize_vectors(output[ii], general_input, 
+                                                  source_input, graphite_input,
+                                                  crystal_input, detector_input,
+                                                  plasma_input)
             fig2.show()
         profiler.stop('Final Visual Time')
             

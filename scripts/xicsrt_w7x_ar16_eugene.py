@@ -96,11 +96,8 @@ general_input['backwards_raytrace'] = False
 general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
 general_input['do_image_analysis']  = True
-general_input['do_bragg_checks']    = True
-general_input['do_miss_checks']     = True
 general_input['random_seed']        = 1234567
 general_input['scenario']           = 'PLASMA'
-general_input['rocking_curve_type'] = 'STEP'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -118,9 +115,10 @@ plasma_input['position']            = np.array([0, 0, 0])
 plasma_input['normal']              = np.array([0, 1, 0])
 plasma_input['orientation']         = np.array([0, 0, 1])
 plasma_input['target']              = np.array([1, 0, 0])    
-plasma_input['dimensions']          = np.array([0.1, 0.1, 0.1])
+plasma_input['width']               = 0.1
+plasma_input['height']              = 0.1
+plasma_input['depth']               = 0.1
        
-plasma_input['volume']              = 0.1 ** 3
 plasma_input['space_resolution']    = 0.01 ** 3
 plasma_input['time_resolution']     = 0.01
 plasma_input['bundle_count']        = 1000
@@ -185,14 +183,15 @@ crystal_input['mix_factor']         = 1.0
 
 crystal_input['do_bragg_checks']    = True
 crystal_input['do_miss_checks']     = True
+crystal_input['rocking_curve_type'] = "FILE"
 
 ## Load mosaic graphite properties --------------------------------------------
 graphite_input['position']          = config_dict['CRYSTAL_LOCATION']
 graphite_input['normal']            = config_dict['CRYSTAL_NORMAL']
 graphite_input['orientation']       = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['width']             = 0.030
-graphite_input['height']            = 0.040
+graphite_input['width']             = 0.30
+graphite_input['height']            = 0.40
 
 graphite_input['reflectivity']      = 1
 graphite_input['mosaic_spread']     = 0.5
@@ -205,8 +204,9 @@ graphite_input['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.tx
 graphite_input['pi_data']           = '../xicsrt/rocking_curve_graphite_pi.txt'
 graphite_input['mix_factor']        = 1.0
 
-graphite_input['do_bragg_checks']   = False
+graphite_input['do_bragg_checks']   = True
 graphite_input['do_miss_checks']    = True
+graphite_input['rocking_curve_type']= "FILE"
 
 ## Load detector properties
 detector_input['position']          = config_dict['DETECTOR_LOCATION']
@@ -266,7 +266,7 @@ if general_input['scenario'] == 'LEGACY':
 elif general_input['scenario'] == 'PLASMA':
     [general_input, plasma_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(
      general_input, plasma_input, graphite_input, crystal_input, detector_input,
-     1.000,                                 #source-graphite distance
+     2.000,                                 #source-graphite distance
      crystal_input['sagitt_focus'],         #graphite-crystal distance
      crystal_input['meridi_focus']        , #crystal-detector distance
      np.array([0,0,0], dtype = np.float64), #graphite offset (meters)
@@ -354,7 +354,6 @@ plasma_input['position']        = plasma_input['position'].tolist()
 plasma_input['normal']          = plasma_input['normal'].tolist()
 plasma_input['orientation']     = plasma_input['orientation'].tolist()
 plasma_input['target']          = plasma_input['target'].tolist()
-plasma_input['dimensions']      = plasma_input['dimensions'].tolist()
 
 source_input['position']        = source_input['position'].tolist()
 source_input['normal']          = source_input['normal'].tolist()

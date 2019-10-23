@@ -12,13 +12,13 @@ from scipy.stats import cauchy
 import scipy.constants as const
 
 from xicsrt.util import profiler
-from xicsrt.math import voigt
+from xicsrt.tool import voigt
 
 from xicsrt.xics_rt_objects import TraceObject
 
 class GenericSource(TraceObject):
     #Source class to hold basic functions for each source type
-    def __init__(self, source_input, general_input):
+    def __init__(self, source_input):
         super().__init__(
             source_input['position']
             ,source_input['normal']
@@ -38,7 +38,6 @@ class GenericSource(TraceObject):
         self.temp           = source_input['temp']
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
-        np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
         rays = dict()
@@ -194,8 +193,8 @@ class GenericSource(TraceObject):
         return m
 
 class FocusedExtendedSource(GenericSource):
-    def __init__(self, source_input, general_input):
-        super().__init__(source_input, general_input)
+    def __init__(self, source_input):
+        super().__init__(source_input)
         
         self.position       = source_input['position']
         self.normal         = source_input['normal']
@@ -210,7 +209,6 @@ class FocusedExtendedSource(GenericSource):
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
         self.focus          = source_input['target']
-        np.random.seed(general_input['random_seed'])
 
     def generate_rays(self):
         """

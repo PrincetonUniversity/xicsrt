@@ -11,7 +11,7 @@ A set of base objects for xicsrt.
 
 import numpy as np
 import scipy as sp
-import xicsrt.math
+import xicsrt.tool
 
 class RayArray(dict):
     """

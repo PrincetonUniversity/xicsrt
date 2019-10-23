@@ -17,7 +17,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
 def visualize_layout(general_input, source_input, graphite_input, crystal_input,
-                     detector_input):
+                     detector_input, plasma_input):
     ## Setup plot and axes
     fig = plt.figure()
     ax  = fig.gca(projection='3d')
@@ -25,16 +25,16 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     plt.title("X-Ray Optics Layout")
     
     ## Setup variables, described below
-    position = np.zeros([4,3], dtype = np.float64)
-    normal   = np.zeros([4,3], dtype = np.float64)
-    orient_x = np.zeros([4,3], dtype = np.float64)
-    orient_y = np.zeros([4,3], dtype = np.float64)
-    width    = np.zeros([4], dtype = np.float64)[:,np.newaxis]
-    height   = np.zeros([4], dtype = np.float64)[:,np.newaxis]
+    position = np.zeros([5,3], dtype = np.float64)
+    normal   = np.zeros([5,3], dtype = np.float64)
+    orient_x = np.zeros([5,3], dtype = np.float64)
+    orient_y = np.zeros([5,3], dtype = np.float64)
+    width    = np.zeros([5], dtype = np.float64)[:,np.newaxis]
+    height   = np.zeros([5], dtype = np.float64)[:,np.newaxis]
     
-    corners = np.zeros([4,5,3], dtype = np.float64)
+    corners = np.zeros([5,5,3], dtype = np.float64)
     
-    beamline = np.zeros([4,3], dtype = np.float64)
+    beamline = np.zeros([5,3], dtype = np.float64)
     
     circle_points   = np.linspace(0, np.pi * 2, 36)[:,np.newaxis]
     crystal_circle  = np.zeros([36,3], dtype = np.float64)
@@ -45,38 +45,44 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     
     ## Define variables
     #for slicing puposes, each optical element now has a number
-    #source = 0, graphite = 1, crystal = 2, detector = 3
+    #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     
     #position[Optical Element Number, 3D Coordinates]
     position[0,:] = source_input['position']
     position[1,:] = graphite_input['position']
     position[2,:] = crystal_input['position']
     position[3,:] = detector_input['position']
+    position[4,:] = plasma_input['position']
     #normal[Optical Element Number, 3D Coordinates]
     normal[0,:] = source_input['normal']
     normal[1,:] = graphite_input['normal']
     normal[2,:] = crystal_input['normal']
     normal[3,:] = detector_input['normal']
+    normal[4,:] = plasma_input['normal']
     #orient_x[Optical Element Number, 3D Coordinates]
     orient_x[0,:] = source_input['orientation']
     orient_x[1,:] = graphite_input['orientation']
     orient_x[2,:] = crystal_input['orientation']
     orient_x[3,:] = detector_input['orientation']
+    orient_x[4,:] = plasma_input['orientation']
     #orient_y[Optical Element Number, 3D Coordinates]
     orient_y[0,:] = np.cross(normal[0,:], orient_x[0,:]) 
     orient_y[1,:] = np.cross(normal[1,:], orient_x[1,:]) 
     orient_y[2,:] = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:] = np.cross(normal[3,:], orient_x[3,:])
+    orient_y[4,:] = np.cross(normal[4,:], orient_x[4,:])
     #width[Optical Element Number]
     width[0] = source_input['width']
     width[1] = graphite_input['width'] 
     width[2] = crystal_input['width']
-    width[3] = detector_input['pixel_size'] * detector_input['horizontal_pixels']
+    width[3] = detector_input['width']
+    width[4] = plasma_input['width']
     #height[Optical Element Number]
     height[0] = source_input['height']
     height[1] = graphite_input['height']
     height[2] = crystal_input['height']
-    height[3] = detector_input['pixel_size'] * detector_input['vertical_pixels']
+    height[3] = detector_input['height']
+    height[4] = plasma_input['height']
     #crystal optical properties [Float64]
     crystal_bragg = crystal_input['bragg']
     meridi_focus  = crystal_input['meridi_focus']
@@ -141,15 +147,15 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
         scale = abs(position[0,0] - position[2,0])
         
         #position points
-        ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
+        ax.scatter(position[4,0], position[4,1], position[4,2], color = "yellow")
         ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
         ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
         ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
         ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
         
         #normal vectors
-        ax.quiver(position[0,0], position[0,1], position[0,2],
-                  normal[0,0]  , normal[0,1]  , normal[0,2]  ,
+        ax.quiver(position[4,0], position[4,1], position[4,2],
+                  normal[4,0]  , normal[4,1]  , normal[4,2]  ,
                   color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
         ax.quiver(position[1,0], position[1,1], position[1,2],
                   normal[1,0]  , normal[1,1]  , normal[1,2]  ,
@@ -162,7 +168,8 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
                   color = "red", length = 0.1 , arrow_length_ratio = 0.1)
         
         #beamline
-        ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
+        beamline[0,:] = beamline[4,:]
+        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
         
         #bounding boxes
         ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
@@ -205,7 +212,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
                   color = "red", length = 0.1 , arrow_length_ratio = 0.1)
         
         #beamline
-        ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
+        ax.plot3D(beamline[:3,0], beamline[:3,1], beamline[:3,2], "black")
         
         #bounding boxes
         ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
@@ -316,7 +323,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     return plt, ax
     
 def visualize_vectors(output, general_input, source_input, graphite_input,
-                      crystal_input, detector_input):
+                      crystal_input, detector_input, plasma_input):
     ## Do all of the steps as before, but also add the output rays
     origin = output['origin']
     direct = output['direction']
@@ -328,7 +335,7 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
         m[m] &= (cutter[m] < 1000)
     
     plt, ax = visualize_layout(general_input, source_input, graphite_input, 
-                               crystal_input, detector_input)
+                               crystal_input, detector_input, plasma_input)
     plt.title("X-Ray Raytracing Results")    
 
     ax.quiver(origin[m,0], origin[m,1], origin[m,2],
@@ -339,12 +346,12 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
     return plt, ax
 
 def visualize_model(rays_history, rays_metadata, general_input, source_input,
-                    graphite_input, crystal_input, detector_input):
+                    graphite_input, crystal_input, detector_input, plasma_input):
     ## Do all of the steps as before, but also add the ray history
     # Rays that miss have their length extended to 10 and turn red
     # Rays that hit have accurate length and turn green
     fig, ax = visualize_layout(general_input, source_input, graphite_input, 
-                               crystal_input, detector_input)    
+                               crystal_input, detector_input, plasma_input)    
     
     for ii in range(len(rays_history)):
         origin  = rays_history[ii]['origin']

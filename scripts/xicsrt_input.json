@@ -22,12 +22,13 @@
    "pi_data": "../xicsrt/rocking_curve_germanium_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    3.3627049341008117,
+    4.362704934100812,
     2.6157278617691926,
     0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
    "sagitt_focus": 3.524827208879884,
    "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
    "spacing": 1.7059,
@@ -50,7 +51,7 @@
    ],
    "pixel_size": 0.000172,
    "position": [
-    2.5052593127783416,
+    3.5052593127783416,
     3.040257093075433,
     0.0
    ],
@@ -59,15 +60,12 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_bragg_checks": true,
    "do_image_analysis": true,
-   "do_miss_checks": true,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
-   "number_of_runs": 1,
+   "number_of_runs": 10,
    "random_seed": 1234567,
-   "rocking_curve_type": "STEP",
    "scenario": "PLASMA",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -75,9 +73,9 @@
   },
   "graphite_input": {
    "bragg": 0.4180891409075741,
-   "do_bragg_checks": false,
+   "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04,
+   "height": 0.4,
    "mix_factor": 1.0,
    "mosaic_spread": 0.5,
    "normal": [
@@ -93,24 +91,22 @@
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    1.0,
+    2.0,
     0.0,
     0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 0.008765,
+   "rocking_curve_type": "FILE",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
    "spacing": 3.35,
    "therm_expand": 2e-05,
-   "width": 0.03
+   "width": 0.3
   },
   "plasma_input": {
    "bundle_count": 1000,
-   "dimensions": [
-    0.1,
-    0.1,
-    0.1
-   ],
+   "depth": 0.1,
+   "height": 0.1,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -129,17 +125,17 @@
     0.0
    ],
    "space_resolution": 1.0000000000000002e-06,
-   "spread": 1.0,
+   "spread": 2.0,
    "target": [
-    1.0,
+    2.0,
     0.0,
     0.0
    ],
    "temp": 1000,
    "time_resolution": 0.01,
-   "volume": 0.0010000000000000002,
    "volume_partitioning": false,
-   "wavelength": 2.7203
+   "wavelength": 2.7203,
+   "width": 0.1
   },
   "source_input": {
    "depth": 0.05,

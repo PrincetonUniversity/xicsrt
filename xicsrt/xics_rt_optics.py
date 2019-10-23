@@ -20,7 +20,7 @@ from scipy.spatial import cKDTree
 from xicsrt.xics_rt_objects import TraceObject
 
 class GenericOptic(TraceObject):
-    def __init__(self, optic_input, general_input):
+    def __init__(self, optic_input):
         super().__init__(
             optic_input['position']
             ,optic_input['normal']
@@ -42,11 +42,9 @@ class GenericOptic(TraceObject):
         self.sigma_data     = optic_input['sigma_data']
         self.pi_data        = optic_input['pi_data']
         self.mix_factor     = optic_input['mix_factor']
-        self.bragg_checks   = general_input['do_bragg_checks'] and optic_input['do_bragg_checks']
-        self.miss_checks    = general_input['do_miss_checks'] and optic_input['do_miss_checks']
-        self.rocking_type   = general_input['rocking_curve_type']
-
-        np.random.seed(general_input['random_seed'])
+        self.bragg_checks   = optic_input['do_bragg_checks']
+        self.miss_checks    = optic_input['do_miss_checks']
+        self.rocking_type   = optic_input['rocking_curve_type']
         
         def pixel_center(row, column):
             row_center = self.pixel_height / 2 - .5
@@ -206,8 +204,8 @@ class GenericOptic(TraceObject):
 
       
 class SphericalCrystal(GenericOptic):
-    def __init__(self, crystal_input, general_input):
-        super().__init__(crystal_input, general_input)
+    def __init__(self, crystal_input):
+        super().__init__(crystal_input)
         
         self.__name__       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
@@ -228,7 +226,6 @@ class SphericalCrystal(GenericOptic):
         self.sigma_data     = crystal_input['sigma_data']
         self.pi_data        = crystal_input['pi_data']
         self.mix_factor     = crystal_input['mix_factor']
-        np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
             row_center = self.pixel_height / 2 - .5
@@ -307,8 +304,8 @@ class SphericalCrystal(GenericOptic):
         return rays      
 
 class MosaicGraphite(GenericOptic):
-    def __init__(self, graphite_input, general_input):
-        super().__init__(graphite_input, general_input)
+    def __init__(self, graphite_input):
+        super().__init__(graphite_input)
         
         self.__name__       = 'MosaicGraphite'
         self.position       = graphite_input['position']
@@ -329,7 +326,6 @@ class MosaicGraphite(GenericOptic):
         self.sigma_data     = graphite_input['sigma_data']
         self.pi_data        = graphite_input['pi_data']
         self.mix_factor     = graphite_input['mix_factor']
-        np.random.seed(general_input['random_seed'])
         
         def pixel_center(row, column):
             row_center = self.pixel_height / 2 - .5

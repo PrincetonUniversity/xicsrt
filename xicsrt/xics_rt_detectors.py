@@ -18,7 +18,7 @@ from scipy.spatial import cKDTree
 from xicsrt.xics_rt_objects import TraceObject
 
 class Detector(TraceObject):
-    def __init__(self, detector_input, general_input):
+    def __init__(self, detector_input):
         super().__init__(
             detector_input['position']
             ,detector_input['normal']
@@ -34,9 +34,8 @@ class Detector(TraceObject):
         self.pixels_horiz   = detector_input['horizontal_pixels']
         self.pixels_vert    = detector_input['vertical_pixels']
         self.pixel_size     = detector_input['pixel_size']
-        self.miss_checks    = general_input['do_miss_checks'] and detector_input['do_miss_checks']
+        self.miss_checks    = detector_input['do_miss_checks']
         self.photon_count   = None
-        np.random.seed(general_input['random_seed'])
 
         def pixel_center(row, column):
             # These variables are labled wrong, but the calculaiton is correct.
