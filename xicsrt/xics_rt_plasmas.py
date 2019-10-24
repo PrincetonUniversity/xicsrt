@@ -17,6 +17,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
+from xicsrt.xics_rt_math    import cart2cyl#, cart2pol, cart2flux
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_objects import TraceObject
 
@@ -70,7 +71,7 @@ class GenericPlasma(TraceObject):
         #create ray dictionary
         rays                = dict()
         rays['origin']      = np.zeros([1,3], dtype = np.float64)
-        rays['direction']   = np.zeros([1,3], dtype = np.float64)
+        rays['direction']   = np.ones( [1,3], dtype = np.float64)
         rays['wavelength']  = np.ones( [1], dtype=np.float64)
         rays['weight']      = np.ones( [1], dtype=np.float64)
         rays['mask']        = np.ones( [1], dtype=np.bool)
@@ -83,7 +84,7 @@ class GenericPlasma(TraceObject):
             source_input['position']    = bundle_input['position'][ii]
             source_input['temp']        = bundle_input['temp'][ii]
             source_input['intensity']   = int(bundle_input['emissivity'][ii]
-                * self.chronon_size * self.voxel_size * self.solid_angle)            
+                * self.chronon_size * self.voxel_size * self.solid_angle)
             
             #constants
             source_input['width'], source_input['height'], source_input['depth'] = [np.power(self.voxel_size, 1/3)] * 3
@@ -100,15 +101,15 @@ class GenericPlasma(TraceObject):
             bundled_rays = source.generate_rays()
             
             #append bundled rays together to form a single ray dictionary
-            rays['origin'] = np.append(rays['origin'], bundled_rays['origin'], axis = 0)
-            rays['direction'] = np.append(rays['direction'], bundled_rays['direction'], axis = 0)
-            rays['wavelength'] = np.append(rays['wavelength'], bundled_rays['wavelength'])
-            rays['weight'] = np.append(rays['weight'], bundled_rays['weight'])
-            rays['mask'] = np.append(rays['mask'], bundled_rays['mask'])
-            """
-            for key in rays:
-                rays[key] = np.append(rays[key], bundled_rays[key], axis = 0)
-            """
+            if len(rays['mask']) >= 1e7:
+                print('Ray-Bundle Generation Halted: Too Many Rays')
+                break
+            else:
+                rays['origin']      = np.append(rays['origin'],      bundled_rays['origin'], axis = 0)
+                rays['direction']   = np.append(rays['direction'],   bundled_rays['direction'], axis = 0)
+                rays['wavelength']  = np.append(rays['wavelength'],  bundled_rays['wavelength'])
+                rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
+                rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
             profiler.stop("Ray Bundle Generation")
                 
         return rays
@@ -117,30 +118,18 @@ class CubicPlasma(GenericPlasma):
     def __init__(self, plasma_input):
         super().__init__(plasma_input)
         
-        self.plasma_input   = plasma_input
         self.position       = plasma_input['position']
         self.normal         = plasma_input['normal']
         self.xorientation   = plasma_input['orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.target         = plasma_input['target']
         
         self.width          = plasma_input['width']
         self.height         = plasma_input['height']
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
-        self.solid_angle    = plasma_input['spread'] * (np.pi ** 2) / 180 
-        self.voxel_size     = plasma_input['space_resolution']
-        self.chronon_size   = plasma_input['time_resolution']
         self.bundle_count   = plasma_input['bundle_count']
-        
-        self.mass_number    = plasma_input['mass']   
-        self.temp           = plasma_input['temp']
-        self.wavelength     = plasma_input['wavelength']
-        self.linewidth      = plasma_input['linewidth']
-        
-        self.partitioning   = plasma_input['volume_partitioning']
-        
+                
     def cubic_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
         w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.bundle_count)
@@ -167,6 +156,56 @@ class CubicPlasma(GenericPlasma):
         bundle_input = self.setup_bundles()
         ## Populate that list with ray bundle parameters, like locations
         bundle_input = self.cubic_bundle_generate(bundle_input)
+        ## Use the list to generate ray sources
+        rays = self.create_sources(bundle_input)
+        return rays
+
+class CylindricalPlasma(GenericPlasma):
+    def __init__(self, plasma_input):
+        super().__init__(plasma_input)
+        
+        self.position       = plasma_input['position']
+        self.normal         = plasma_input['normal']
+        self.xorientation   = plasma_input['orientation']
+        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
+                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        
+        self.width          = plasma_input['width']
+        self.height         = plasma_input['height']
+        self.depth          = plasma_input['depth']
+        self.volume         = self.width * self.height * self.depth
+        self.bundle_count   = plasma_input['bundle_count']
+                
+    def cylindrical_bundle_generate(self, bundle_input):
+        #create a long list containing random points within the cube's dimensions
+        w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.bundle_count)
+        h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
+        d_offset = np.random.uniform(-1 * self.depth/2, self.depth/2, self.bundle_count)        
+                
+        bundle_input['position'][:] = (self.position
+                  + np.einsum('i,j', w_offset, self.xorientation)
+                  + np.einsum('i,j', h_offset, self.yorientation)
+                  + np.einsum('i,j', d_offset, self.normal))
+        
+        #convert from cartesian coordinates to cylindrical coordinates [radius, azimuth, height]
+        #NOTE: cylinder is rotated on its side such that height = w_offset || xorientation
+        radius, azimuth, height = cart2cyl(d_offset, h_offset, w_offset)
+        
+        #evaluate temperature at each point
+        #plasma cylinder temperature falls off as a function of radius
+        bundle_input['temp']         = self.temp / radius
+        
+        #evaluate emissivity at each point
+        #plasma cylinder emissivity falls off as a function of radius
+        bundle_input['emissivity']   = 1e12 / radius
+        
+        return bundle_input
+
+    def generate_rays(self):
+        ## Create an empty list of ray bundles
+        bundle_input = self.setup_bundles()
+        ## Populate that list with ray bundle parameters, like locations
+        bundle_input = self.cylindrical_bundle_generate(bundle_input)
         ## Use the list to generate ray sources
         rays = self.create_sources(bundle_input)
         return rays

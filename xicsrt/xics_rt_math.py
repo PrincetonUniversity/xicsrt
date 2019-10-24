@@ -62,6 +62,15 @@ def vector_rotate(a, b, theta):
             np.linalg.norm(proj_perp) * w * np.sin(theta))
     return c
 
+def cart2cyl(x, y, z):
+    #convert cartesian coordinates -> cylindirical coordinates
+    r       = np.sqrt(np.power(x,2) + np.power(y,2))
+    theta   = np.arctan2(y, x)
+    h       = z
+    
+    return r, theta, h
+    
+
 def plot_rows(file_name, row, bin):
     
     image_array = np.array(Image.open(file_name))

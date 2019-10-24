@@ -121,7 +121,7 @@ plasma_input['depth']               = 0.1
        
 plasma_input['space_resolution']    = 0.01 ** 3
 plasma_input['time_resolution']     = 0.01
-plasma_input['bundle_count']        = 1000
+plasma_input['bundle_count']        = 100
 
 plasma_input['spread']              = 2.0       #Angular spread (degrees)
 plasma_input['temp']                = 1000      #Ion temperature (eV)
@@ -190,8 +190,8 @@ graphite_input['position']          = config_dict['CRYSTAL_LOCATION']
 graphite_input['normal']            = config_dict['CRYSTAL_NORMAL']
 graphite_input['orientation']       = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['width']             = 0.30
-graphite_input['height']            = 0.40
+graphite_input['width']             = 0.030
+graphite_input['height']            = 0.040
 
 graphite_input['reflectivity']      = 1
 graphite_input['mosaic_spread']     = 0.5

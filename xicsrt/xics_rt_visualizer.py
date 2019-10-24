@@ -340,7 +340,7 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
 
     ax.quiver(origin[m,0], origin[m,1], origin[m,2],
               direct[m,0], direct[m,1], direct[m,2],
-              length = 1.0, arrow_length_ratio = 0.01, 
+              length = 0.01, arrow_length_ratio = 0.01, 
               color = "green", normalize = True)
     
     return plt, ax

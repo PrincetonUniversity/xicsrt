@@ -27,7 +27,7 @@ import os
 import numpy as np
 
 from xicsrt.xics_rt_sources import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas import CubicPlasma
+from xicsrt.xics_rt_plasmas import CubicPlasma, CylindricalPlasma
 from xicsrt.xics_rt_detectors import Detector
 from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace import raytrace
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         crystal     = SphericalCrystal(crystal_input)
         graphite    = MosaicGraphite(graphite_input)
         source      = FocusedExtendedSource(source_input)
-        plasma      = CubicPlasma(plasma_input)
+        plasma      = CylindricalPlasma(plasma_input)
         profiler.stop('Class Setup Time')
 
         ## Raytrace Runs
