@@ -72,6 +72,7 @@ print('Initializing Variables...')
 profiler.start('Input Setup Time')
 
 general_input   = OrderedDict()
+scenario_input  = OrderedDict()
 plasma_input    = OrderedDict()
 source_input    = OrderedDict()
 graphite_input  = OrderedDict()
@@ -93,11 +94,11 @@ possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 """
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
-general_input['do_visualizations']  = True
+general_input['do_visualizations']  = False
 general_input['do_savefiles']       = True
-general_input['do_image_analysis']  = True
+general_input['do_image_analysis']  = False
 general_input['random_seed']        = 1234567
-general_input['scenario']           = 'PLASMA'
+general_input['scenario']           = 'BEAM'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -234,15 +235,40 @@ input parameters
 print('Arranging Scenarios...')
 profiler.start('Scenario Setup Time')
 
-# Analytical solutions for spectrometer geometry involving crystal focus
-crystal_input['bragg'] = bragg_angle(source_input['wavelength'], crystal_input['spacing'])
-crystal_input['meridi_focus']  = crystal_input['curvature'] * np.sin(crystal_input['bragg'])
-crystal_input['sagitt_focus']  = - crystal_input['meridi_focus'] / np.cos(2 * crystal_input['bragg'])
-graphite_input['bragg'] = bragg_angle(source_input['wavelength'], graphite_input['spacing'])
-crystal_input['effective_width'] = (crystal_input['sagitt_focus'] *
-        np.sin(crystal_input['rocking_curve'] / 2) * (
-        1 / np.sin(crystal_input['bragg'] + crystal_input['rocking_curve'] / 2) +
-        1 / np.sin(crystal_input['bragg'] - crystal_input['rocking_curve'] / 2)))
+## Populate scenario_input dictionary -----------------------------------------
+# Analytical solutions for spectrometer geometry involving crystal focus 
+scenario_input['crystal_bragg']     = bragg_angle(source_input['wavelength'],
+                                                  crystal_input['spacing'])
+scenario_input['graphite_bragg']    = bragg_angle(source_input['wavelength'],
+                                                  graphite_input['spacing'])
+scenario_input['meridi_focus']      = crystal_input['curvature'] * np.sin(
+                                      scenario_input['crystal_bragg'])
+scenario_input['sagitt_focus']      = - scenario_input['meridi_focus'] / np.cos(
+                                      2 * scenario_input['crystal_bragg'])
+
+scenario_input['source_graphite_dist']  = 2
+scenario_input['graphite_crystal_dist'] = 8.5
+scenario_input['crystal_detector_dist'] = scenario_input['meridi_focus']
+scenario_input['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
+scenario_input['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
+scenario_input['crystal_offset']        = np.array([0,0,0], dtype = np.float64)
+scenario_input['crystal_tilt']          = np.array([0,0,0], dtype = np.float64)
+scenario_input['detector_offset']       = np.array([0,0,0], dtype = np.float64)
+scenario_input['detector_tilt']         = np.array([0,0,0], dtype = np.float64)
+
+# Feed input dictionaries to scenatio_input
+scenario_input['general_input']         = general_input
+scenario_input['plasma_input']          = plasma_input
+scenario_input['source_input']          = source_input
+scenario_input['graphite_input']        = graphite_input
+scenario_input['crystal_input']         = crystal_input
+scenario_input['detector_input']        = detector_input
+
+# Metadata Calculations
+# Size of bands on crystal [mm]
+scenario_input['effective_width']       = (crystal_input['curvature'] * 
+              graphite_input['width'] * np.sin(scenario_input['graphite_bragg']
+              ) / (scenario_input['graphite_crystal_dist'] - 0.911)) * 1000
 
 ## Set up a legacy beamline scenario ------------------------------------------
 if general_input['scenario'] == 'LEGACY':
@@ -264,43 +290,15 @@ if general_input['scenario'] == 'LEGACY':
 
 ## Set up a plasma test scenario ----------------------------------------------
 elif general_input['scenario'] == 'PLASMA':
-    [general_input, plasma_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(
-     general_input, plasma_input, graphite_input, crystal_input, detector_input,
-     2.000,                                 #source-graphite distance
-     crystal_input['sagitt_focus'],         #graphite-crystal distance
-     crystal_input['meridi_focus']        , #crystal-detector distance
-     np.array([0,0,0], dtype = np.float64), #graphite offset (meters)
-     np.array([0,0,0], dtype = np.float64), #graphite tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #crystal offset (meters)
-     np.array([0,0,0], dtype = np.float64), #crystal tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #detector offset (meters)
-     np.array([0,0,0], dtype = np.float64), #detector tilt (radians)
-     )
+    [general_input, plasma_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(scenario_input)
 
 ## Set up a beamline test scenario --------------------------------------------
 elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL':
-    [general_input, source_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(
-     general_input, source_input, graphite_input, crystal_input, detector_input,
-     1.000,                                 #source-graphite distance
-     crystal_input['sagitt_focus'],         #graphite-crystal distance
-     crystal_input['meridi_focus']        , #crystal-detector distance
-     np.array([0,0,0], dtype = np.float64), #graphite offset (meters)
-     np.array([0,0,0], dtype = np.float64), #graphite tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #crystal offset (meters)
-     np.array([0,0,0], dtype = np.float64), #crystal tilt (radians)
-     np.array([0,0,0], dtype = np.float64), #detector offset (meters)
-     np.array([0,0,0], dtype = np.float64), #detector tilt (radians)
-     )
+    [general_input, source_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(scenario_input)
 
 ## Set up a crystal test scenario ---------------------------------------------
 elif general_input['scenario'] == 'CRYSTAL':
-    [source_input, crystal_input, detector_input] = setup_crystal_test(
-     source_input, crystal_input, detector_input, 
-     3.0                                  , #source-crystal distance
-     crystal_input['meridi_focus']        , #crystal-detector distance
-     np.array([0,0,0], dtype = np.float64), #crystal offset (meters)
-     00 * np.pi / 180                     , #crystal tilt (radians)
-     )                      
+    [source_input, crystal_input, detector_input] = setup_crystal_test(scenario_input)                      
     
     graphite_input['position']     = crystal_input['position']
     graphite_input['normal']       = crystal_input['normal']
@@ -308,11 +306,7 @@ elif general_input['scenario'] == 'CRYSTAL':
     
 ## Set up a graphite test scenario --------------------------------------------
 elif general_input['scenario'] == 'GRAPHITE':
-    [source_input, graphite_input, detector_input] = setup_graphite_test(
-     source_input, graphite_input, detector_input, 
-     1,                                     #source-graphite distance
-     1,                                     #graphite-detector distance
-     )
+    [source_input, graphite_input, detector_input] = setup_graphite_test(scenario_input)
     
     crystal_input['position']       = graphite_input['position']
     crystal_input['normal']         = graphite_input['normal']
@@ -320,9 +314,7 @@ elif general_input['scenario'] == 'GRAPHITE':
     
 ## Set up a source test scenario ----------------------------------------------
 elif general_input['scenario'] == 'SOURCE':
-    [source_input, detector_input] = setup_source_test(
-     source_input, detector_input, 1        #source-detector distance
-     )
+    [source_input, detector_input] = setup_source_test(scenario_input)
     
 ## Backwards raytracing involves swapping the source and detector -------------
 if general_input['backwards_raytrace']:

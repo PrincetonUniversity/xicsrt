@@ -71,20 +71,32 @@ def source_location_bragg(source_input, crystal_input, detector_input,
     source_location += horiz_displace * sagittal_normal
     
     source_input['position'] = source_location
-    return source_input, crystal_input, detector_input,
+    return source_input, crystal_input, detector_input
 
 # s = source / g = graphite / c = crystal / d = detector
 
-def setup_beam_scenario(general_input, source_input, graphite_input, 
-                        crystal_input, detector_input,
-                        distance_s_g ,distance_g_c, distance_c_d,
-                        g_offset, g_tilt,
-                        c_offset, c_tilt,
-                        d_offset, d_tilt):
+def setup_beam_scenario(scenario_input):
     ## An idealized scenario with a source, an HOPG, a crystal, and a detector
     #unpack variables
-    bragg_c = crystal_input['bragg']
-    bragg_g = graphite_input['bragg']
+    general_input   = scenario_input['general_input']
+    source_input    = scenario_input['source_input']
+    graphite_input  = scenario_input['graphite_input']
+    crystal_input   = scenario_input['crystal_input']
+    detector_input  = scenario_input['detector_input']
+    
+    distance_s_g    = scenario_input['source_graphite_dist']
+    distance_g_c    = scenario_input['graphite_crystal_dist']
+    distance_c_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_c         = scenario_input['crystal_bragg']
+    bragg_g         = scenario_input['graphite_bragg']
+    
+    g_offset        = scenario_input['graphite_offset']
+    c_offset        = scenario_input['crystal_offset']
+    d_offset        = scenario_input['detector_offset']
+    g_tilt          = scenario_input['graphite_tilt']
+    c_tilt          = scenario_input['crystal_tilt']
+    d_tilt          = scenario_input['detector_tilt']
     
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis
@@ -208,15 +220,23 @@ def setup_beam_scenario(general_input, source_input, graphite_input,
 
     return  general_input, source_input, graphite_input, crystal_input, detector_input
 
-def setup_crystal_test(source_input, crystal_input, detector_input,
-                       distance_s_c, distance_c_d,
-                       c_offset, c_tilt):
-    """
-    An idealized scenario involving a source, crystal, and detector
-    Designed to probe the crystal's properties and check for bugs
-    """
-    bragg_c = crystal_input['bragg']
+def setup_crystal_test(scenario_input):
+    ## An idealized scenario with a source, a crystal, and a detector
+    #unpack variables
+    source_input    = scenario_input['source_input']
+    crystal_input   = scenario_input['crystal_input']
+    detector_input  = scenario_input['detector_input']
     
+    distance_s_c    = scenario_input['source_graphite_dist']
+    distance_c_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_c         = scenario_input['crystal_bragg']
+    
+    c_offset        = scenario_input['crystal_offset']
+    c_tilt          = scenario_input['crystal_tilt']
+    
+    ## Source Placement
+    #souce is placed at origin by default and aimed along the X axis    
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
     s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
@@ -270,7 +290,7 @@ def setup_crystal_test(source_input, crystal_input, detector_input,
     #offset vector math
     c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
     c_position += c_basis.dot(np.transpose(c_offset))
-    c_z_vector    = vector_rotate(c_z_vector, c_normal, c_tilt)
+    c_z_vector  = vector_rotate(c_z_vector, c_normal, c_tilt)
     
     # repack variables
     source_input['position']        = s_position
@@ -286,13 +306,20 @@ def setup_crystal_test(source_input, crystal_input, detector_input,
 
     return source_input, crystal_input, detector_input
 
-def setup_graphite_test(source_input, graphite_input, detector_input,
-                        distance_s_g, distance_g_d):
-    """
-    An idealized scenario involving a source, HOPG, and detector
-    Designed to probe the crystal's properties and check for bugs
-    """
-    bragg_g = graphite_input['bragg']
+def setup_graphite_test(scenario_input):
+    ## An idealized scenario with a source, an HOPG, and a detector
+    #unpack variables
+    source_input    = scenario_input['source_input']
+    graphite_input  = scenario_input['graphite_input']
+    detector_input  = scenario_input['detector_input']
+    
+    distance_s_g    = scenario_input['source_graphite_dist']
+    distance_g_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_g         = scenario_input['graphite_bragg']
+    
+    g_offset        = scenario_input['graphite_offset']
+    g_tilt          = scenario_input['graphite_tilt']
     
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
@@ -301,22 +328,28 @@ def setup_graphite_test(source_input, graphite_input, detector_input,
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
     
-    #define crystal position and normal relative to source
+    #define graphite position and normal relative to source
     g_position      = s_position + (path_vector * distance_s_g)
     g_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     g_y_vector      = np.cross(g_z_vector, path_vector)  
+    g_x_vector      = np.cross(g_y_vector, g_z_vector)
     g_normal        = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
     
-    #for focused extended sources, target them towards the crystal position    
+    #for focused extended sources, target them towards the graphite position    
     s_target = g_position
     
-    #reflect the path vector off of the crystal
+    #reflect the path vector off of the graohite
     path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
 
-    #define detector position and normal relative to crystal
+    #define detector position and normal relative to graphite
     d_position      = g_position + (path_vector * distance_g_d)
     d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
+    
+    #offset vector math
+    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
+    g_position += g_basis.dot(np.transpose(g_offset))
+    g_z_vector  = vector_rotate(g_z_vector, g_normal, g_tilt)
     
     # repack variables
     source_input['position']        = s_position
@@ -332,10 +365,13 @@ def setup_graphite_test(source_input, graphite_input, detector_input,
 
     return  source_input, graphite_input, detector_input
 
-def setup_source_test(source_input, detector_input, distance_s_d):
-    """
-    A source and a detector, nothing else. Useful for debugging sources
-    """
+def setup_source_test(scenario_input):
+    #A source and a detector, nothing else. Useful for debugging sources
+    source_input    = scenario_input['source_input']
+    detector_input  = scenario_input['detector_input']
+    
+    distance_s_d    = scenario_input['source_graphite_dist']
+    
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
     s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
