@@ -18,6 +18,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from xicsrt.xics_rt_objects import TraceObject
+from xicsrt.util import profiler
 
 class GenericOptic(TraceObject):
     def __init__(self, optic_input):
@@ -29,45 +30,23 @@ class GenericOptic(TraceObject):
         self.position       = optic_input['position']
         self.normal         = optic_input['normal']
         self.xorientation   = optic_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.yorientation   = np.cross(self.normal, self.xorientation)
+        self.yorientation  /= np.linalg.norm(self.yorientation)
         self.spacing        = optic_input['spacing']
         self.rocking_curve  = optic_input['rocking_curve']
         self.reflectivity   = optic_input['reflectivity']
         self.width          = optic_input['width']
         self.height         = optic_input['height']
         self.pixel_size     = self.width / optic_input['pixel_scaling']
-        self.pixel_width    = int(round(self.width / self.pixel_size))
+        self.pixel_width    = int(round(self.width  / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.sigma_data     = optic_input['sigma_data']
         self.pi_data        = optic_input['pi_data']
         self.mix_factor     = optic_input['mix_factor']
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = optic_input['rocking_curve_type']
-        
-        def pixel_center(row, column):
-            row_center = self.pixel_height / 2 - .5
-            column_center = self.pixel_width / 2 - .5
-            
-            xstep = (column - column_center) * self.pixel_size
-            ystep = (row_center - row) * self.pixel_size
-            center = (self.position + xstep * self.xorientation 
-                                    + ystep * self.yorientation)
-            
-            return center
-        
-        def create_center_array():
-            center_array = []
-            for ii in range(0, self.pixel_height):
-                for jj in range(0, self.pixel_width):
-                    point = pixel_center(ii, jj)
-                    center_array.append(point)
-            
-            return center_array
-        
-        self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
-        self.center_tree = cKDTree(create_center_array())
         
     def normalize(self, vector):
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
@@ -176,22 +155,46 @@ class GenericOptic(TraceObject):
         D[m] -= 2 * np.einsum('ij,ij->i', D[m], norm[m])[:, np.newaxis] * norm[m]
         
         return rays
-    
-    def pixel_row_column(self, pixel_number):
-        row = int(pixel_number // self.pixel_width)
-        column = pixel_number - (row * self.pixel_width)
-        return row, column
 
     def collect_rays(self, rays):
         X = rays['origin']
-        m = rays['mask']
-        index = self.center_tree.query(X[m])[1]
-        self.photon_count = len(m[m])
+        m = rays['mask'].copy()
         
-        for number in index:
-            row, column = self.pixel_row_column(number)
-            self.pixel_array[row, column] += 1
-        return
+        num_lines = np.sum(m)
+        if num_lines > 0:
+            # Transform the intersection coordinates from external coordinates
+            # to local optical coordinates.
+            point_loc = self.point_to_local(X[m])
+            
+            # Bin the intersections into pixels using integer math.
+            pix = np.zeros([num_lines, 3], dtype = int)
+            pix = np.round(point_loc / self.pixel_size).astype(int)
+            
+            # Check to ascertain if origin pixel is even or odd
+            if (self.pixel_width % 2) == 0:
+                pix_min_x = self.pixel_width//2
+            else:
+                pix_min_x = (self.pixel_width + 1)//2
+                
+            if (self.pixel_height % 2) == 0:
+                pix_min_y = self.pixel_height//2
+            else:
+                pix_min_y = (self.pixel_height + 1)//2
+            
+            pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
+            
+            # Convert from pixels, which are centered around the origin, to
+            # channels, which start from the corner of the optic.
+            channel    = np.zeros([num_lines, 3], dtype = int)
+            channel[:] = pix[:] - pix_min
+            
+            # I feel like there must be a faster way to do this than to loop over
+            # every intersection.  This could be slow for large arrays.
+            for ii in range(len(channel)):
+                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+        
+        self.photon_count = len(m[m])
+        return self.pixel_array    
     
     def output_image(self, image_name, rotate=None):
         if rotate:
@@ -212,8 +215,8 @@ class SphericalCrystal(GenericOptic):
         self.position       = crystal_input['position']
         self.normal         = crystal_input['normal']
         self.xorientation   = crystal_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.yorientation   = np.cross(self.normal, self.xorientation)
+        self.yorientation  /= np.linalg.norm(self.yorientation)
         self.crystal_spacing= crystal_input['spacing']
         self.rocking_curve  = crystal_input['rocking_curve']
         self.reflectivity   = crystal_input['reflectivity']
@@ -223,32 +226,10 @@ class SphericalCrystal(GenericOptic):
         self.pixel_size     = self.width / crystal_input['pixel_scaling']
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.sigma_data     = crystal_input['sigma_data']
         self.pi_data        = crystal_input['pi_data']
         self.mix_factor     = crystal_input['mix_factor']
-        
-        def pixel_center(row, column):
-            row_center = self.pixel_height / 2 - .5
-            column_center = self.pixel_width / 2 - .5
-            
-            xstep = (column - column_center) * self.pixel_size
-            ystep = (row_center - row) * self.pixel_size
-            center = (self.position + xstep * self.xorientation 
-                                    + ystep * self.yorientation)
-            
-            return center
-            
-        def create_center_array():
-            center_array = []
-            for ii in range(0, self.pixel_height):
-                for jj in range(0, self.pixel_width):
-                    point = pixel_center(ii, jj)
-                    center_array.append(point)
-            
-            return center_array
-            
-        self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
-        self.center_tree = cKDTree(create_center_array())      
         
     def spherical_intersect(self, rays):
         """
@@ -311,8 +292,8 @@ class MosaicGraphite(GenericOptic):
         self.position       = graphite_input['position']
         self.normal         = graphite_input['normal']
         self.xorientation   = graphite_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.yorientation   = np.cross(self.normal, self.xorientation) 
+        self.yorientation  /= np.linalg.norm(self.yorientation)
         self.crystal_spacing= graphite_input['spacing']
         self.rocking_curve  = graphite_input['rocking_curve']
         self.reflectivity   = graphite_input['reflectivity']
@@ -322,33 +303,11 @@ class MosaicGraphite(GenericOptic):
         self.pixel_size     = self.width / graphite_input['pixel_scaling'] 
         self.pixel_width    = int(round(self.width / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
+        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.center         = self.position
         self.sigma_data     = graphite_input['sigma_data']
         self.pi_data        = graphite_input['pi_data']
         self.mix_factor     = graphite_input['mix_factor']
-        
-        def pixel_center(row, column):
-            row_center = self.pixel_height / 2 - .5
-            column_center = self.pixel_width / 2 - .5
-            
-            xstep = (column - column_center) * self.pixel_size
-            ystep = (row_center - row) * self.pixel_size
-            center = (self.position + xstep * self.xorientation 
-                                    + ystep * self.yorientation)
-            
-            return center
-            
-        def create_center_array():
-            center_array = []
-            for ii in range(0, self.pixel_height):
-                for jj in range(0, self.pixel_width):
-                    point = pixel_center(ii, jj)
-                    center_array.append(point)
-                
-            return center_array
-            
-        self.pixel_array = np.zeros((self.pixel_height, self.pixel_width))
-        self.center_tree = cKDTree(create_center_array())
 
     def planar_intersect(self, rays):
         #test to see if a ray intersects the mirror plane
@@ -386,10 +345,10 @@ class MosaicGraphite(GenericOptic):
         rad_spread = np.radians(self.mosaic_spread)
         dir_local = f(rad_spread, length)
         
-        o_1 = np.cross(normal, [0,0,1])
-        o_1[m] /=  np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
-        o_2 = np.cross(normal, o_1)
-        o_2[m] /=  np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
+        o_1     = np.cross(normal, [0,0,1])
+        o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
+        o_2     = np.cross(normal, o_1)
+        o_2[m] /= np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
         
         R = np.empty((length, 3, 3))
         R[:,0,:] = o_1

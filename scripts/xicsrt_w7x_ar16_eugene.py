@@ -246,6 +246,7 @@ scenario_input['meridi_focus']      = crystal_input['curvature'] * np.sin(
 scenario_input['sagitt_focus']      = - scenario_input['meridi_focus'] / np.cos(
                                       2 * scenario_input['crystal_bragg'])
 
+# Load scenario properties
 scenario_input['source_graphite_dist']  = 2
 scenario_input['graphite_crystal_dist'] = 8.5
 scenario_input['crystal_detector_dist'] = scenario_input['meridi_focus']
@@ -266,9 +267,10 @@ scenario_input['detector_input']        = detector_input
 
 # Metadata Calculations
 # Size of bands on crystal [mm]
-scenario_input['effective_width']       = (crystal_input['curvature'] * 
-              graphite_input['width'] * np.sin(scenario_input['graphite_bragg']
-              ) / (scenario_input['graphite_crystal_dist'] - 0.911)) * 1000
+scenario_input['effective_width_mm']    = (crystal_input['curvature'] * 
+              graphite_input['height'] * np.sin(scenario_input['graphite_bragg']
+              ) / (scenario_input['graphite_crystal_dist'] - 1)) * 1000
+scenario_input['effective_width_px']    = int(scenario_input['effective_width_mm'] * 1000 / crystal_input['pixel_scaling'])
 
 ## Set up a legacy beamline scenario ------------------------------------------
 if general_input['scenario'] == 'LEGACY':

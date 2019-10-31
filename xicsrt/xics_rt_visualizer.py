@@ -14,6 +14,7 @@ a 3D visualization of the X-Ray optics setup using matplotlib Axes3D
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from xicsrt.xics_rt_scenarios import bragg_angle
 from PIL import Image
 
 def visualize_layout(general_input, source_input, graphite_input, crystal_input,
@@ -84,9 +85,9 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
     height[3] = detector_input['height']
     height[4] = plasma_input['height']
     #crystal optical properties [Float64]
-    crystal_bragg = crystal_input['bragg']
-    meridi_focus  = crystal_input['meridi_focus']
-    sagitt_focus  = crystal_input['sagitt_focus']
+    crystal_bragg = bragg_angle(source_input['wavelength'], crystal_input['spacing'])
+    meridi_focus  = crystal_input['curvature'] * np.sin(crystal_bragg)
+    sagitt_focus  = - meridi_focus / np.cos(2 * crystal_bragg)
     
     ## Create Bounding Boxes
     #3D coordinates of the four corners of each optical element 

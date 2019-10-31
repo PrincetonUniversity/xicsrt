@@ -26,12 +26,12 @@ import json
 import os
 import numpy as np
 
-from xicsrt.xics_rt_sources import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas import CubicPlasma, CylindricalPlasma
-from xicsrt.xics_rt_detectors import Detector
-from xicsrt.xics_rt_optics import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace import raytrace
-from xicsrt.xics_rt_model import analytical_model
+from xicsrt.xics_rt_sources    import FocusedExtendedSource
+from xicsrt.xics_rt_plasmas    import CubicPlasma, CylindricalPlasma
+from xicsrt.xics_rt_detectors  import Detector
+from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
+from xicsrt.xics_rt_raytrace   import raytrace
+from xicsrt.xics_rt_model      import analytical_model
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
 
 profiler.stop('Import Time')
