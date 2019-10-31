@@ -96,8 +96,8 @@ general_input['xics_temp'] = 273.0
 # Number of rays to launch
 # A source intensity greater than 1e7 is not recommended due to excessive
 # memory usage.
-source_input['intensity']    = int(1e6)
-general_input['number_of_runs']     = 10
+source_input['intensity']    = int(1e7)
+general_input['number_of_runs']     = 1
 
 # Xenon mass in AMU
 source_input['mass']     = 131.293
@@ -129,11 +129,12 @@ crystal_input['position']       = config_dict['CRYSTAL_LOCATION']
 crystal_input['normal']         = config_dict['CRYSTAL_NORMAL']
 crystal_input['orientation']    = config_dict['CRYSTAL_ORIENTATION']
 
-crystal_input['curvature']      = 2.400
+crystal_input['curvature']      = 1.200
+#crystal_input['curvature']      = 2.400
 
 crystal_input['spacing']        = 1.70578
-crystal_input['width']          = 0.0500
-crystal_input['height']         = 0.0400
+crystal_input['width']          = 0.200
+crystal_input['height']         = 0.200
 
 crystal_input['reflectivity']   = 1
 crystal_input['rocking_curve']  = 90.30e-6
@@ -146,10 +147,10 @@ graphite_input['position']         = config_dict['CRYSTAL_LOCATION']
 graphite_input['normal']           = config_dict['CRYSTAL_NORMAL']
 graphite_input['orientation']      = config_dict['CRYSTAL_ORIENTATION']
 
-graphite_input['width']            = 0.030
-graphite_input['height']           = 0.040
+graphite_input['width']            = 0.05
+graphite_input['height']           = 0.50
 graphite_input['reflectivity']     = 1
-graphite_input['mosaic_spread']    = 0.5
+graphite_input['mosaic_spread']    = 0.0
 graphite_input['spacing']          = 3.35
 graphite_input['rocking_curve']    = 8765e-6
 #graphite_input['_rocking_curve']    = 1e-1
@@ -180,22 +181,17 @@ source_input['normal']       = np.array([0, 1, 0])
 source_input['orientation']  = np.array([0, 0, 1])
 source_input['target']       = crystal_input['position']
 
+#Angular spread of source in degrees
+#This needs to be matched to the source distance and crystal size
+source_input['spread']   = 2.0
 #Ion temperature in eV
-source_input['temp']     = 0.0
+source_input['temp']     = 0
 
 #These values are arbitrary for now. Set to 0.0 for point source
 #source_input['width']   = 0.0
 #source_input['height']  = 0.0
 #source_input['depth']   = 0.0
 
-#Angular spread of source in degrees
-#This needs to be matched to the source distance and crystal size
-#source_input['spread']   = 2.0
-#source_input['width']   = 0.1
-#source_input['height']  = 0.1
-#source_input['depth']   = 4.0
-
-source_input['spread']   = 0.3
 source_input['width']   = 0.2
 source_input['height']  = 0.2
 source_input['depth']   = 0.0
@@ -245,9 +241,10 @@ if general_input['scenario'] == 'LEGACY':
 
 ## Set up a beamline test scenario
 elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL':
-    total_distance = 9.0+4.0
+    total_distance = 5.0
     dist_crystal_detector = crystal_input['meridi_focus']
-    dist_graphite_crystal = 8.5
+    #dist_graphite_crystal = crystal_input['sagitt_focus']
+    dist_graphite_crystal = 3.5
     dist_source_graphite = total_distance - dist_graphite_crystal
 
     [source_input['position']        ,
