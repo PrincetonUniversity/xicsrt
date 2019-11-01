@@ -29,13 +29,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
-## Start Profiling
-from xicsrt.util import profiler
-profiler.startProfiler()
-
-profiler.start('Total Time')
-profiler.start('Import Time')
-
 ## Begin normal imports
 import numpy as np
 from collections import OrderedDict
@@ -43,13 +36,15 @@ from collections import OrderedDict
 import json
 
 from xicsrt.xics_rt_scenarios import bragg_angle, source_location_bragg
-from xicsrt.xics_rt_scenarios import setup_beam_scenario, setup_crystal_test
-from xicsrt.xics_rt_scenarios import setup_graphite_test, setup_source_test
+from xicsrt.xics_rt_scenarios import setup_plasma_scenario
+from xicsrt.xics_rt_scenarios import setup_beam_scenario
+from xicsrt.xics_rt_scenarios import setup_crystal_test
+from xicsrt.xics_rt_scenarios import setup_graphite_test
+from xicsrt.xics_rt_scenarios import setup_source_test
 
 ## MirPyIDL imports
 import mirutil.hdf5
 
-profiler.stop('Import Time')
 #%% OPEN
 """
 Check to see if xicsrt_input.json exists. If no, create it. If yes, read it.
@@ -69,8 +64,6 @@ Crystal and detector parameters are taken from the W7-X Op1.2 calibration
 This can be found in the file w7x_ar16.cerdata for shot 180707017
 """
 print('Initializing Variables...')
-profiler.start('Input Setup Time')
-
 general_input   = OrderedDict()
 scenario_input  = OrderedDict()
 plasma_input    = OrderedDict()
@@ -94,11 +87,11 @@ possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 """
 general_input['ideal_geometry']     = True
 general_input['backwards_raytrace'] = False
-general_input['do_visualizations']  = False
+general_input['do_visualizations']  = True
 general_input['do_savefiles']       = True
 general_input['do_image_analysis']  = False
 general_input['random_seed']        = 1234567
-general_input['scenario']           = 'BEAM'
+general_input['scenario']           = 'PLASMA'
 general_input['system']             = 'w7x_ar16'
 general_input['shot']               = 180707017
 
@@ -116,13 +109,16 @@ plasma_input['position']            = np.array([0, 0, 0])
 plasma_input['normal']              = np.array([0, 1, 0])
 plasma_input['orientation']         = np.array([0, 0, 1])
 plasma_input['target']              = np.array([1, 0, 0])    
-plasma_input['width']               = 0.1
-plasma_input['height']              = 0.1
-plasma_input['depth']               = 0.1
+plasma_input['width']               = 30
+plasma_input['height']              = 30
+plasma_input['depth']               = 30
+
+plasma_input['major_radius']        = 6.2
+plasma_input['minor_radius']        = 2.0
        
 plasma_input['space_resolution']    = 0.01 ** 3
 plasma_input['time_resolution']     = 0.01
-plasma_input['bundle_count']        = 100
+plasma_input['bundle_count']        = 10000
 
 plasma_input['spread']              = 2.0       #Angular spread (degrees)
 plasma_input['temp']                = 1000      #Ion temperature (eV)
@@ -159,7 +155,6 @@ Darwin Curve, pi:    14.043 urad
 Graphite Rocking Curve FWHM in radians
 Taken from XOP: 8765 urad
 """
-
 ## Load spherical crystal properties from hdf5 file ---------------------------
 config_dict = mirutil.hdf5.hdf5ToDict(
         '/Users/Eugene/PPPL_python_project1/w7x_ar16_180707017_geometry.hdf5')
@@ -224,8 +219,6 @@ detector_input['height']            = (detector_input['vertical_pixels']
 
 detector_input['do_miss_checks']    = True
 
-profiler.stop('Input Setup Time')
-
 #%% SCENARIO
 """
 Each of these scenarios corresponds to a script located in xics_rt_tools.py 
@@ -233,7 +226,6 @@ which assembles the optical elements into a specific configuration based on
 input parameters
 """
 print('Arranging Scenarios...')
-profiler.start('Scenario Setup Time')
 
 ## Populate scenario_input dictionary -----------------------------------------
 # Analytical solutions for spectrometer geometry involving crystal focus 
@@ -247,7 +239,7 @@ scenario_input['sagitt_focus']      = - scenario_input['meridi_focus'] / np.cos(
                                       2 * scenario_input['crystal_bragg'])
 
 # Load scenario properties
-scenario_input['source_graphite_dist']  = 2
+scenario_input['source_graphite_dist']  = 20
 scenario_input['graphite_crystal_dist'] = 8.5
 scenario_input['crystal_detector_dist'] = scenario_input['meridi_focus']
 scenario_input['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
@@ -292,7 +284,7 @@ if general_input['scenario'] == 'LEGACY':
 
 ## Set up a plasma test scenario ----------------------------------------------
 elif general_input['scenario'] == 'PLASMA':
-    [general_input, plasma_input, graphite_input, crystal_input, detector_input] = setup_beam_scenario(scenario_input)
+    [general_input, plasma_input, graphite_input, crystal_input, detector_input] = setup_plasma_scenario(scenario_input)
 
 ## Set up a beamline test scenario --------------------------------------------
 elif general_input['scenario'] == 'BEAM' or general_input['scenario'] == 'MODEL':
@@ -338,36 +330,11 @@ if general_input['ideal_geometry'] is False:
     crystal_input['spacing']  *= 1 + crystal_input['therm_expand']  * (general_input['xics_temp'] - 273)
     graphite_input['spacing'] *= 1 + graphite_input['therm_expand'] * (general_input['xics_temp'] - 273)
     
-profiler.stop('Scenario Setup Time')
-
 #%% SAVE
-# Convert all numpy arrays into json-recognizable lists
-print('Saving Dictionaries...')
-profiler.start('Dictionary Save Time')
-plasma_input['position']        = plasma_input['position'].tolist()
-plasma_input['normal']          = plasma_input['normal'].tolist()
-plasma_input['orientation']     = plasma_input['orientation'].tolist()
-plasma_input['target']          = plasma_input['target'].tolist()
-
-source_input['position']        = source_input['position'].tolist()
-source_input['normal']          = source_input['normal'].tolist()
-source_input['orientation']     = source_input['orientation'].tolist()
-source_input['target']          = source_input['target'].tolist()
-
-crystal_input['position']       = crystal_input['position'].tolist()
-crystal_input['normal']         = crystal_input['normal'].tolist()
-crystal_input['orientation']    = crystal_input['orientation'].tolist()
-
-graphite_input['position']      = graphite_input['position'].tolist()
-graphite_input['normal']        = graphite_input['normal'].tolist()
-graphite_input['orientation']   = graphite_input['orientation'].tolist()
-
-detector_input['position']      = detector_input['position'].tolist()
-detector_input['normal']        = detector_input['normal'].tolist()
-detector_input['orientation']   = detector_input['orientation'].tolist()
 
 # Compact all inputs into a single input dictionary named save_input
 # save_input represents one configuration
+print('Saving Dictionaries...')
 save_input = dict()
 save_input['general_input']     = general_input
 save_input['plasma_input']      = plasma_input
@@ -376,7 +343,13 @@ save_input['crystal_input']     = crystal_input
 save_input['graphite_input']    = graphite_input
 save_input['detector_input']    = detector_input
 
-profiler.stop('Dictionary Save Time')
+# Convert all numpy arrays into json-recognizable lists
+for element in save_input:
+    for key in save_input[element]:
+        if type(save_input[element][key]) is np.ndarray:
+            save_input[element][key] = (
+                    save_input[element][key].tolist())
+
 # Ask the user what they want to do with the input file
 xicsrt_input = list()
 xicsrt_input.append(save_input)
@@ -422,4 +395,3 @@ while asking_for_input is True:
 """
             
 print('Done!')
-profiler.stop('Total Time')

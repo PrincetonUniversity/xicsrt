@@ -64,12 +64,30 @@ def vector_rotate(a, b, theta):
 
 def cart2cyl(x, y, z):
     #convert cartesian coordinates -> cylindirical coordinates
-    r       = np.sqrt(np.power(x,2) + np.power(y,2))
-    theta   = np.arctan2(y, x)
-    h       = z
+    radius  = np.sqrt(np.power(x,2) + np.power(y,2))
+    azimuth = np.arctan2(y, x)
+    height  = z
     
-    return r, theta, h
+    return radius, azimuth, height
+
+def cart2toro(x, y, z, a):
+    """
+    X Y Z       = Cartesian Coordinates
+    rho         = Cylindrical Radius
+    d_one d_two = Bipolar Coodinate Foci
+    sig tau phi = Toroidal Coordinates
+    """
+    rho  = np.sqrt(np.power(x,2) + np.power(y,2))
+    phi  = np.arctan2(y, x)
     
+    d_one= np.sqrt(np.power((rho + a),2) + np.power(z,2))
+    d_two= np.sqrt(np.power((rho - a),2) + np.power(z,2))
+    tau  = np.log(d_one / d_two)
+    
+    sig  = np.arccos((-4 * np.power(a,2) + np.power(d_one,2) + np.power(d_two,2))
+            / (2 * d_one * d_two))
+    
+    return sig, tau, phi
 
 def plot_rows(file_name, row, bin):
     

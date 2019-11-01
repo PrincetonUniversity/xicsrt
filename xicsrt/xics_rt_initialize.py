@@ -27,7 +27,7 @@ import os
 import numpy as np
 
 from xicsrt.xics_rt_sources    import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas    import CubicPlasma, CylindricalPlasma
+from xicsrt.xics_rt_plasmas    import CubicPlasma, CylindricalPlasma, ToroidalPlasma
 from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace   import raytrace
@@ -64,13 +64,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--suffix'
-        ,help='A suffix to add to the end of the image name.'
-        ,type=str)
+        ,help = 'A suffix to add to the end of the image name.'
+        ,type = str)
     parser.add_argument(
         '--path'
-        ,default=''
-        ,help='The path to store the results.'
-        ,type=str)    
+        ,default = ''
+        ,help = 'The path to store the results.'
+        ,type = str)    
     args = parser.parse_args()
     
     # create the rays_total dictionary to count the total number of rays
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         crystal     = SphericalCrystal(crystal_input)
         graphite    = MosaicGraphite(graphite_input)
         source      = FocusedExtendedSource(source_input)
-        plasma      = CylindricalPlasma(plasma_input)
+        plasma      = ToroidalPlasma(plasma_input)
         profiler.stop('Class Setup Time')
 
         ## Raytrace Runs
