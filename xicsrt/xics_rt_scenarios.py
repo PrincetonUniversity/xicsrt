@@ -4,63 +4,21 @@ Created on Fri Apr 28 12:30:38 2017
 
 @author: James
 """
+from xicsrt.xics_rt_math import bragg_angle, vector_rotate, rotation_matrix
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.optimize import leastsq
 
-def bragg_angle(wavelength, crystal_spacing):
-    """
-    The Bragg angle calculation is used so often that it deserves its own funct
-    """
-    bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
-    return bragg_angle
-
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    """
-    axis = np.asarray(axis)
-    axis = axis/np.sqrt(np.dot(axis, axis))
-    a = np.cos(theta/2.0)
-    b, c, d = -axis*np.sin(theta/2.0)
-    aa, bb, cc, dd = a*a, b*b, c*c, d*d
-    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
-    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
-    
-def vector_rotate(a, b, theta):
-    ## Rotate vector a around vector b by an angle theta (radians)
-    #project a onto b, return parallel and perpendicular component vectors
-    proj_para = b * np.dot(a, b) / np.dot(b, b)
-    proj_perp = a - proj_para
-    
-    #define and normalize the unit vector w, perpendicular to a and b
-    w  = np.cross(b, proj_perp)
-    if (np.linalg.norm(w) != 0): 
-        w /= np.linalg.norm(w)
-    
-    #return the final rotated vector c
-    c = proj_para + (proj_perp * np.cos(theta)) + (
-            np.linalg.norm(proj_perp) * w * np.sin(theta))
-    return c
-
-def source_location(distance
-                    ,vert_displace
-                    ,crystal_location
-                    ,crystal_normal
-                    ,crystal_curvature
-                    ,crystal_spacing
-                    ,detector_location
-                    ,wavelength):
+def source_location(distance, vert_displace, source_input, detector_input, crystal_input):
     """
     Returns the source location that satisfies the bragg condition met by the
     detector. Allows for a vertical displacement above and below the 
     meridional plane
     """
+    crystal_location = crystal_input['position']
+    crystal_normal = crystal_input['normal']
+    crystal_curvature = crystal_input['curvature']
+    crystal_spacing = crystal_input['spacing']
+    detector_location = detector_input['position']
+    wavelength = source_input['wavelength']
     
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     meridional_normal = np.cross(crystal_location - crystal_center,
@@ -80,23 +38,21 @@ def source_location(distance
     
     return source_location
 
-def source_location_bragg(distance
-                          ,vert_displace
-                          ,horiz_displace
-                          ,crystal_location
-                          ,crystal_normal
-                          ,crystal_curvature
-                          ,crystal_spacing
-                          ,detector_location
-                          ,wavelength):
+def source_location_bragg(source_input, crystal_input, detector_input,
+                          distance ,vert_displace ,horiz_displace):
     """
     Returns the source on the meridional plane that meets the Bragg condition
     for the given wavelength. Allows for a vertical displacement above and 
     below the meridional plane.
     """
 
-    bragg_c = bragg_angle(wavelength, crystal_spacing)
-    norm_angle = np.pi/2.0 - bragg_c
+    crystal_location = crystal_input['position']
+    crystal_normal = crystal_input['normal']
+    crystal_curvature = crystal_input['curvature']
+    crystal_bragg = crystal_input['bragg']
+    detector_location = detector_input['position']
+
+    norm_angle = np.pi/2.0 - crystal_bragg
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     
     meridional_normal = np.cross(-crystal_normal, detector_location - crystal_center)
@@ -113,20 +69,34 @@ def source_location_bragg(distance
     sagittal_normal /= np.linalg.norm(sagittal_normal)
     
     source_location += horiz_displace * sagittal_normal
-    return source_location
+    
+    source_input['position'] = source_location
+    return source_input, crystal_input, detector_input
 
 # s = source / g = graphite / c = crystal / d = detector
 
-def setup_beam_scenario(c_spacing ,g_spacing ,
-                        distance_s_g ,distance_g_c, distance_c_d,
-                        wavelength, backwards_raytrace,
-                        g_offset, g_tilt,
-                        c_offset, c_tilt,
-                        d_offset, d_tilt):
+def setup_beam_scenario(scenario_input):
     ## An idealized scenario with a source, an HOPG, a crystal, and a detector
+    #unpack variables
+    general_input   = scenario_input['general_input']
+    source_input    = scenario_input['source_input']
+    graphite_input  = scenario_input['graphite_input']
+    crystal_input   = scenario_input['crystal_input']
+    detector_input  = scenario_input['detector_input']
     
-    bragg_g = bragg_angle(wavelength, g_spacing)
-    bragg_c = bragg_angle(wavelength, c_spacing)
+    distance_s_g    = scenario_input['source_graphite_dist']
+    distance_g_c    = scenario_input['graphite_crystal_dist']
+    distance_c_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_c         = scenario_input['crystal_bragg']
+    bragg_g         = scenario_input['graphite_bragg']
+    
+    g_offset        = scenario_input['graphite_offset']
+    c_offset        = scenario_input['crystal_offset']
+    d_offset        = scenario_input['detector_offset']
+    g_tilt          = scenario_input['graphite_tilt']
+    c_tilt          = scenario_input['crystal_tilt']
+    d_tilt          = scenario_input['detector_tilt']
     
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis
@@ -228,30 +198,48 @@ def setup_beam_scenario(c_spacing ,g_spacing ,
     d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
     d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
     
-    if   backwards_raytrace is False:
+    if   general_input['backwards_raytrace'] is False:
         s_target = g_position
-    elif backwards_raytrace is True:
+    elif general_input['backwards_raytrace'] is True:
         s_target = c_position
     
-    scenario_output = [s_position, s_normal, s_z_vector,
-                       g_position, g_normal, g_z_vector,
-                       c_position, c_normal, c_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    ## Repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    graphite_input['position']      = g_position
+    graphite_input['normal']        = g_normal
+    graphite_input['orientation']   = g_z_vector
+    crystal_input['position']       = c_position
+    crystal_input['normal']         = c_normal
+    crystal_input['orientation']    = c_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
-                       wavelength, backwards_raytrace,
-                       c_offset, c_tilt):
-    """
-    An idealized scenario involving a source, crystal, and detector
-    Designed to probe the crystal's properties and check for bugs
-    """
-    bragg_c = bragg_angle(wavelength, c_spacing)
+    return  general_input, source_input, graphite_input, crystal_input, detector_input
+
+def setup_crystal_test(scenario_input):
+    ## An idealized scenario with a source, a crystal, and a detector
+    #unpack variables
+    source_input    = scenario_input['source_input']
+    crystal_input   = scenario_input['crystal_input']
+    detector_input  = scenario_input['detector_input']
     
+    distance_s_c    = scenario_input['source_graphite_dist']
+    distance_c_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_c         = scenario_input['crystal_bragg']
+    
+    c_offset        = scenario_input['crystal_offset']
+    c_tilt          = scenario_input['crystal_tilt']
+    
+    ## Source Placement
+    #souce is placed at origin by default and aimed along the X axis    
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
@@ -274,10 +262,10 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     c_normal   /= np.linalg.norm(c_normal)
     
     #for focused extended sources, target them towards the crystal position    
-    #s_target = c_position
+    s_target = c_position
     
     #alternatively, target them towards where the graphite would be in the beam
-    s_target = path_vector * 1
+    #s_target = path_vector * 1
     
     #reflect the path vector off of the crystal
     path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
@@ -302,55 +290,88 @@ def setup_crystal_test(c_spacing, distance_s_c, distance_c_d,
     #offset vector math
     c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
     c_position += c_basis.dot(np.transpose(c_offset))
-    c_z_vector    = vector_rotate(c_z_vector, c_normal, c_tilt)
+    c_z_vector  = vector_rotate(c_z_vector, c_normal, c_tilt)
     
-    scenario_output = [s_position, s_normal, s_orientation,
-                       c_position, c_normal, c_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    # repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    crystal_input['position']       = c_position
+    crystal_input['normal']         = c_normal
+    crystal_input['orientation']    = c_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_graphite_test(g_spacing, distance_s_g, distance_g_d, wavelength):
-    """
-    An idealized scenario involving a source, HOPG, and detector
-    Designed to probe the crystal's properties and check for bugs
-    """
-    bragg_g = bragg_angle(wavelength, g_spacing)
+    return source_input, crystal_input, detector_input
+
+def setup_graphite_test(scenario_input):
+    ## An idealized scenario with a source, an HOPG, and a detector
+    #unpack variables
+    source_input    = scenario_input['source_input']
+    graphite_input  = scenario_input['graphite_input']
+    detector_input  = scenario_input['detector_input']
+    
+    distance_s_g    = scenario_input['source_graphite_dist']
+    distance_g_d    = scenario_input['crystal_detector_dist']
+    
+    bragg_g         = scenario_input['graphite_bragg']
+    
+    g_offset        = scenario_input['graphite_offset']
+    g_tilt          = scenario_input['graphite_tilt']
     
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_orientation   = np.array([0, 0, 1], dtype = np.float64)
+    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
     path_vector     = np.array([1, 0, 0], dtype = np.float64)
     
-    #define crystal position and normal relative to source
+    #define graphite position and normal relative to source
     g_position      = s_position + (path_vector * distance_s_g)
     g_z_vector      = np.array([0, 0, 1], dtype = np.float64)
     g_y_vector      = np.cross(g_z_vector, path_vector)  
+    g_x_vector      = np.cross(g_y_vector, g_z_vector)
     g_normal        = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
     
-    #for focused extended sources, target them towards the crystal position    
+    #for focused extended sources, target them towards the graphite position    
     s_target = g_position
     
-    #reflect the path vector off of the crystal
+    #reflect the path vector off of the graohite
     path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
 
-    #define detector position and normal relative to crystal
+    #define detector position and normal relative to graphite
     d_position      = g_position + (path_vector * distance_g_d)
     d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
     
-    scenario_output = [s_position, s_normal, s_orientation,
-                       g_position, g_normal, g_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
+    #offset vector math
+    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
+    g_position += g_basis.dot(np.transpose(g_offset))
+    g_z_vector  = vector_rotate(g_z_vector, g_normal, g_tilt)
+    
+    # repack variables
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    graphite_input['position']      = g_position
+    graphite_input['normal']        = g_normal
+    graphite_input['orientation']   = g_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
 
-def setup_source_test(distance_s_d):
-    """
-    A source and a detector, nothing else. Useful for debugging sources
-    """
+    return  source_input, graphite_input, detector_input
+
+def setup_source_test(scenario_input):
+    #A source and a detector, nothing else. Useful for debugging sources
+    source_input    = scenario_input['source_input']
+    detector_input  = scenario_input['detector_input']
+    
+    distance_s_d    = scenario_input['source_graphite_dist']
+    
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)
     s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
@@ -361,97 +382,12 @@ def setup_source_test(distance_s_d):
     
     s_target = d_position
     
-    scenario_output = [s_position, s_normal, s_z_vector,
-                       d_position, d_normal, d_z_vector,
-                       s_target]
-    return  scenario_output
-
-def plot_rows(file_name, row, bin):
-    import matplotlib.pyplot as plt
-    
-    image_array = np.array(Image.open(file_name))
-    
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)
-        
-    plt.plot(row_array, 'k')
-    plt.xlabel('Horizontal Pixels')
-    plt.ylabel('Pixel Counts')
-    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bin) + ')')
-    #plt.show()
-    return
-
-def plot_rows_data(file_name, row, bint, color):
-    import matplotlib.pyplot as plt
-    
-    image_array = np.array(Image.open(file_name))
-    
-    mint = int(row - bint // 2)
-    maxt = int(row + bint // 2)
-    
-    row_array = (np.array(image_array[mint].T[0],dtype= np.int32) +
-                 np.array(image_array[mint].T[1],dtype= np.int32))
-
-    for i in range(mint + 1, maxt +1, 1):
-        sample_row0 = np.array(image_array[i].T[0], dtype=np.int32)
-        sample_row1 = np.array(image_array[i].T[1], dtype=np.int32)
-        row_array = row_array + sample_row0 + sample_row1
-        
-    #plt.figure()
-    #row_new = row_array.T[1]  +  row_array.T[0] 
-    #plt.plot(row_new)
-    plt.plot(row_array, 'b')
-
-    plt.xlabel('Horizontal Pixels')
-    plt.ylabel('Pixel Counts')
-    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bint) + ')')
-    #plt.show()
-    return
-
-def get_rows(file_name, row, bin):
-    image_array = np.array(Image.open(file_name))
-
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)        
-    
-    return row_array
-
-def get_rows_data(file_name, row, bin):
-    image_array = np.array(Image.open(file_name))
-    image_array = image_array.T
-    print(len(image_array[260]))
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)        
-    
-    return row_array
-
-def image_height(file_name):
-    # returns percentage of vertical illumination
-    image_array = np.array(Image.open(file_name))
-    test = np.where(image_array > 0)
-    length = len(image_array)
-    percent = (length - 2 * test[0][0]) / length
-    return round(percent, 3) * 100
-
-def tif_to_gray_scale(file_name, scale):    
-    image = Image.open(file_name).convert("L")
-    arr = np.asarray(image) * scale
-    plt.figure()
-    plt.imshow(arr, cmap='gray_r')
-    plt.show()
-    return
+    #repack vectors
+    source_input['position']        = s_position
+    source_input['normal']          = s_normal
+    source_input['orientation']     = s_z_vector
+    detector_input['position']      = d_position
+    detector_input['normal']        = d_normal
+    detector_input['orientation']   = d_z_vector
+    source_input['target']          = s_target
+    return  source_input, detector_input

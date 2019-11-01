@@ -17,7 +17,7 @@ Description:
 from collections import OrderedDict
 
 import os
-from datetime import datetime, timedelta
+import datetime
 
 import logging
 
@@ -78,20 +78,20 @@ def start(name):
         if not name in profiler_results:
             _newProfile(name)
             
-        profiler_results[name]['time_start'] = datetime.now()
+        profiler_results[name]['time_start'] = datetime.datetime.now()
 
         
 def stop(name):
     if flags['enabled']:
         if profiler_results[name]['time_start'] is not None:
-            profiler_results[name]['time_total'] += datetime.now() - profiler_results[name]['time_start']
+            profiler_results[name]['time_total'] += datetime.datetime.now() - profiler_results[name]['time_start']
             profiler_results[name]['num_calls'] += 1
             profiler_results[name]['time_start'] = None
 
             
 def _newProfile(name):
     profiler_results[name] = {
-        'time_total':timedelta(0)
+        'time_total':datetime.timedelta(0)
         ,'time_start':None
         ,'num_calls':0
         }
