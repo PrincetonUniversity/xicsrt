@@ -194,7 +194,7 @@ config['detector_input']['do_miss_checks']    = True
 # Load scenario properties
 config['scenario_input']['source_graphite_dist']  = 2
 config['scenario_input']['graphite_crystal_dist'] = 8.5
-config['scenario_input']['crystal_detector_dist'] = 0
+config['scenario_input']['crystal_detector_dist'] = None
 config['scenario_input']['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
 config['scenario_input']['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
 config['scenario_input']['crystal_offset']        = np.array([0,0,0], dtype = np.float64)

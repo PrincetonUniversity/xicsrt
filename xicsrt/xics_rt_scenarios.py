@@ -75,9 +75,15 @@ def source_location_bragg(config, distance ,vert_displace ,horiz_displace):
 
 
 def setup_beam_scenario(config):
-    ## An idealized scenario with a source, an HOPG, a crystal, and a detector
-    #unpack variables
+    """
+    An idealized scenario with a source, an HOPG Pre-refelector, a crystal,
+    and a detector.
 
+    This is meant to model a basic XRCS spectrometer with a pre-refelctor,
+    such as is planned for the ITER XRCS-Core spectrometer.
+    """
+
+    #unpack variables
     distance_s_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
@@ -91,6 +97,12 @@ def setup_beam_scenario(config):
 
     bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
     bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
+
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
+    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+
+    if distance_c_d is None:
+        distance_c_d = meridi_focus
 
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis
@@ -216,14 +228,27 @@ def setup_beam_scenario(config):
 
 
 def setup_crystal_test(config):
-    ## An idealized scenario with a source, a crystal, and a detector
+    """
+    An idealized scenario with a source, a crystal, and a detector
+
+    This is meant to be used in conjunction with the beam scenario.
+    Using the same configuration file this will generate a scenario where
+    the crystal is at the position where the pre-reflector used to be.
+    """
+
     distance_s_c    = config['scenario_input']['source_graphite_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
     
     c_offset        = config['scenario_input']['crystal_offset']
     c_tilt          = config['scenario_input']['crystal_tilt']
 
-    bragg_c = bragg_angle(source_input['wavelength'], crystal_input['spacing'])
+    bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
+
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
+    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+
+    if distance_c_d is None:
+        distance_c_d = meridi_focus
 
     ## Source Placement
     #souce is placed at origin by default and aimed along the X axis    
@@ -298,7 +323,14 @@ def setup_crystal_test(config):
 
 
 def setup_graphite_test(config):
-    ## An idealized scenario with a source, an HOPG, and a detector
+    """
+    An idealized scenario with a source, a crystal, and a detector
+
+    This is meant to be used in conjunction with the beam scenario.
+    Using the same configuration file this will generate a scenario where
+    the crystal is removed and the detector is placed at the
+    crystal-detector distance.
+    """
     distance_s_g    = config['scenario_input']['source_graphite_dist']
     distance_g_d    = config['scenario_input']['crystal_detector_dist']
     
@@ -353,7 +385,14 @@ def setup_graphite_test(config):
 
 
 def setup_source_test(config):
-    #A source and a detector, nothing else. Useful for debugging sources
+    """
+    A source and a detector, nothing else. Useful for debugging sources
+
+    This is meant to be used in conjunction with the beam scenario.
+    Using the same configuration file this will generate a scenario with
+    only a source and a detector. The detector will be placed at the
+    source-graphite distance.
+    """
     distance_s_d    = config['scenario_input']['source_graphite_dist']
     
     s_position      = np.array([0, 0, 0], dtype = np.float64)
