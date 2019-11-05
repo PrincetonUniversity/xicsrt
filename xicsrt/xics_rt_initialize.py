@@ -14,8 +14,8 @@ from xicsrt.util import profiler
 profiler.start('Import Time')
 import numpy as np
 
-from xicsrt.xics_rt_scenarios import setup_beam_scenario, setup_crystal_test
-from xicsrt.xics_rt_scenarios import setup_graphite_test, setup_source_test
+from xicsrt.xics_rt_scenarios import setup_beam_scenario, setup_plasma_scenario
+from xicsrt.xics_rt_scenarios import setup_crystal_test, setup_graphite_test, setup_source_test
 
 profiler.stop('Import Time')
 
@@ -29,7 +29,7 @@ def initialize(config):
 
     ## Set up a plasma test scenario ----------------------------------------------
     if config['general_input']['scenario'] == 'PLASMA':
-        config = setup_beam_scenario(config)
+        config = setup_plasma_scenario(config)
 
     ## Set up a beamline test scenario --------------------------------------------
     elif config['general_input']['scenario'] == 'BEAM' or config['general_input']['scenario'] == 'MODEL':

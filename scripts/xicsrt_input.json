@@ -19,7 +19,7 @@
    "pi_data": "../xicsrt/rocking_curve_germanium_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    7.697581966362218,
+    25.69758196636222,
     6.307738084019028,
     0.0
    ],
@@ -47,7 +47,7 @@
    ],
    "pixel_size": 0.000172,
    "position": [
-    6.840136345039748,
+    24.84013634503975,
     6.732267315325268,
     0.0
    ],
@@ -58,11 +58,11 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
    "number_of_runs": 1,
    "random_seed": 1234567,
-   "scenario": "BEAM",
+   "scenario": "PLASMA",
    "shot": 180707017,
    "system": "w7x_ar16",
    "xics_temp": 273.0
@@ -86,7 +86,7 @@
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    2.0,
+    20.0,
     0.0,
     0.0
    ],
@@ -99,9 +99,45 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 100,
-   "depth": 0.1,
-   "height": 0.1,
+   "bundle_count": 10000,
+   "depth": 15,
+   "height": 15,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "minor_radius": 2.0,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "space_resolution": 1.0000000000000002e-06,
+   "spread": 2.0,
+   "target": [
+    20.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "time_resolution": 0.01,
+   "volume_partitioning": false,
+   "wavelength": 2.7203,
+   "width": 15
+  },
+  "source_input": {
+   "depth": 0.05,
+   "height": 0.05,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -119,45 +155,11 @@
     0,
     0
    ],
-   "space_resolution": 1.0000000000000002e-06,
-   "spread": 2.0,
+   "spread": 1.0,
    "target": [
     1,
     0,
     0
-   ],
-   "temp": 1000,
-   "time_resolution": 0.01,
-   "volume_partitioning": false,
-   "wavelength": 2.7203,
-   "width": 0.1
-  },
-  "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
-   "intensity": 10000000,
-   "linewidth": 112900000000000.0,
-   "mass": 131.293,
-   "normal": [
-    1.0,
-    0.0,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "position": [
-    0.0,
-    0.0,
-    0.0
-   ],
-   "spread": 1.0,
-   "target": [
-    2.0,
-    0.0,
-    0.0
    ],
    "temp": 1000,
    "wavelength": 2.7203,

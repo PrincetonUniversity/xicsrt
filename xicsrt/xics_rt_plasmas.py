@@ -17,7 +17,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.xics_rt_math    import cart2cyl#, cart2pol, cart2flux
+from xicsrt.xics_rt_math    import cart2cyl, cart2toro
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_objects import TraceObject
 
@@ -132,14 +132,14 @@ class CubicPlasma(GenericPlasma):
                 
     def cubic_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.bundle_count)
-        h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        d_offset = np.random.uniform(-1 * self.depth/2, self.depth/2, self.bundle_count)        
+        x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
+        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
+        z_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.bundle_count)        
                 
         bundle_input['position'][:] = (self.position
-                  + np.einsum('i,j', w_offset, self.xorientation)
-                  + np.einsum('i,j', h_offset, self.yorientation)
-                  + np.einsum('i,j', d_offset, self.normal))
+                  + np.einsum('i,j', x_offset, self.xorientation)
+                  + np.einsum('i,j', y_offset, self.yorientation)
+                  + np.einsum('i,j', z_offset, self.normal))
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
@@ -178,18 +178,23 @@ class CylindricalPlasma(GenericPlasma):
                 
     def cylindrical_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.bundle_count)
-        h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        d_offset = np.random.uniform(-1 * self.depth/2, self.depth/2, self.bundle_count)        
-                
+        x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
+        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
+        z_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.bundle_count)        
+        
         bundle_input['position'][:] = (self.position
-                  + np.einsum('i,j', w_offset, self.xorientation)
-                  + np.einsum('i,j', h_offset, self.yorientation)
-                  + np.einsum('i,j', d_offset, self.normal))
+                  + np.einsum('i,j', x_offset, self.xorientation)
+                  + np.einsum('i,j', y_offset, self.yorientation)
+                  + np.einsum('i,j', z_offset, self.normal))
         
         #convert from cartesian coordinates to cylindrical coordinates [radius, azimuth, height]
-        #NOTE: cylinder is rotated on its side such that height = w_offset || xorientation
-        radius, azimuth, height = cart2cyl(d_offset, h_offset, w_offset)
+        #cylinder is ordiented along the Y axis
+        """
+        plasma normal           = absolute X
+        plasma x orientation    = absolute Z
+        plasma y orientation    = absolute Y
+        """
+        radius, azimuth, height = cart2cyl(z_offset, x_offset, y_offset)
         
         #evaluate temperature at each point
         #plasma cylinder temperature falls off as a function of radius
@@ -197,7 +202,7 @@ class CylindricalPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma cylinder emissivity falls off as a function of radius
-        bundle_input['emissivity']   = 1e12 / radius
+        bundle_input['emissivity']   = 1e10 / radius
         
         return bundle_input
 
@@ -206,6 +211,57 @@ class CylindricalPlasma(GenericPlasma):
         bundle_input = self.setup_bundles()
         ## Populate that list with ray bundle parameters, like locations
         bundle_input = self.cylindrical_bundle_generate(bundle_input)
+        ## Use the list to generate ray sources
+        rays = self.create_sources(bundle_input)
+        return rays
+    
+class ToroidalPlasma(GenericPlasma):
+    def __init__(self, plasma_input):
+        super().__init__(plasma_input)
+        self.position       = plasma_input['position']
+        
+        self.width          = plasma_input['width']
+        self.height         = plasma_input['height']
+        self.depth          = plasma_input['depth']
+        self.volume         = self.width * self.height * self.depth
+        self.major_radius   = plasma_input['major_radius']
+        self.minor_radius   = plasma_input['minor_radius']
+        self.bundle_count   = plasma_input['bundle_count']
+        
+    def toroidal_bundle_generate(self, bundle_input):
+        #create a long list containing random points within the cube's dimensions
+        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2,  self.bundle_count)
+        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
+        z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2,  self.bundle_count)        
+        
+        #unlike the other plasmas, the toroidal plasma has fixed orientation to
+        #prevent confusion
+        bundle_input['position'][:] = (self.position
+                  + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
+                  + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
+                  + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
+        
+        #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
+        #torus is oriented along the Z axis
+        rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
+        
+        step_test    = np.zeros(self.bundle_count, dtype = np.bool)
+        step_test[:] = (rad <= self.minor_radius)
+        #evaluate temperature at each point
+        #plasma torus temperature falls off as a function of radius
+        bundle_input['temp'][step_test] = self.temp
+        
+        #evaluate emissivity at each point
+        #plasma torus emissivity falls off as a function of radius
+        bundle_input['emissivity'][step_test]   = 1e11
+  
+        return bundle_input
+
+    def generate_rays(self):
+        ## Create an empty list of ray bundles
+        bundle_input = self.setup_bundles()
+        ## Populate that list with ray bundle parameters, like locations
+        bundle_input = self.toroidal_bundle_generate(bundle_input)
         ## Use the list to generate ray sources
         rays = self.create_sources(bundle_input)
         return rays

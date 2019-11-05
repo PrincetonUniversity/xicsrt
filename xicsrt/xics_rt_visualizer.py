@@ -317,7 +317,7 @@ def visualize_layout(general_input, source_input, graphite_input, crystal_input,
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
     
 
-    ax.set_xlim(0, 2 * scale)
+    ax.set_xlim(-scale, scale)
     ax.set_ylim(-scale, scale)
     ax.set_zlim(-scale, scale)
     
@@ -331,18 +331,21 @@ def visualize_vectors(output, general_input, source_input, graphite_input,
     m      = output['mask']
     
     #to avoid plotting too many rays, randomly cull rays until there are 1000
-    if len(m[m]) > 1000:
+    if len(m[m]) > 10000:
         cutter = np.random.randint(0, len(m[m]), len(m))
-        m[m] &= (cutter[m] < 1000)
+        m[m] &= (cutter[m] < 10000)
     
     plt, ax = visualize_layout(general_input, source_input, graphite_input, 
                                crystal_input, detector_input, plasma_input)
     plt.title("X-Ray Raytracing Results")    
-
+    """
     ax.quiver(origin[m,0], origin[m,1], origin[m,2],
               direct[m,0], direct[m,1], direct[m,2],
               length = 1.0, arrow_length_ratio = 0.01, 
-              color = "green", normalize = True)
+              color = "green", alpha = 0.1, normalize = True)
+    """
+    ax.scatter(origin[m,0], origin[m,1], origin[m,2],
+              color = "green", alpha = 0.1)
     
     return plt, ax
 
