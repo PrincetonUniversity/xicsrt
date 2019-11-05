@@ -1,0 +1,56 @@
+# -*- coding: utf-8 -*-
+"""
+Authors
+-------
+  - Novimir Pablant <npablant@pppl.gov>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+Description
+-----------
+
+Deal with reading and writing input files for XICSRT.
+"""
+
+import numpy as np
+from copy import deepcopy
+
+import json
+
+from xicsrt.util import profiler
+
+def load_config(filepath):
+    config = json.load(filepath)
+    config_to_numpy(config)
+    return config
+
+
+def save_config(filepath, config):
+    config_out = deepcopy(config)
+    config_out = _dict_to_list(config_out)
+    config_to_list(config_out)
+    with open(filepath, 'w') as ff:
+        json.dump(config_out, ff, indent=1)
+
+
+def config_to_numpy(obj):
+    _dict_to_numpy(obj)
+
+
+def config_to_list(obj):
+    _dict_to_list(obj)
+
+
+def _dict_to_numpy(obj):
+    for key in obj:
+        if isinstance(obj[key], list):
+            obj[key] = np.array(obj[key])
+        elif isinstance(obj[key], dict):
+            obj[key] = _dict_to_numpy(obj[key])
+
+
+def _dict_to_list(obj):
+    for key in obj:
+        if isinstance(obj[key], np.ndarray):
+            obj[key] = obj[key].toList()
+        elif isinstance(obj[key], dict):
+            obj[key] = _dict_to_list(obj[key])

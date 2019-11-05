@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 13 10:13:39 2017
-Edited on Fri Sep 06 11:37:11 2019
-
 @author: James
 @editor: Eugene
 """
@@ -81,3 +78,5 @@ def raytrace(source, detector, *optics,  number_of_runs=None, collect_optics=Non
     print('')
 
     return rays_history, rays_count
+
+
