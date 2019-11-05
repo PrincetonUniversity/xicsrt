@@ -243,16 +243,18 @@ class ToroidalPlasma(GenericPlasma):
         
         #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
         #torus is oriented along the Z axis
-        sigma, tau, phi = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
-                
+        rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
+        
+        step_test    = np.zeros(self.bundle_count, dtype = np.bool)
+        step_test[:] = (rad <= self.minor_radius)
         #evaluate temperature at each point
         #plasma torus temperature falls off as a function of radius
-        bundle_input['temp']         = self.temp * (tau / self.minor_radius)
+        bundle_input['temp'][step_test] = self.temp
         
         #evaluate emissivity at each point
         #plasma torus emissivity falls off as a function of radius
-        bundle_input['emissivity']   = 1e10 * (tau / self.minor_radius)
-        
+        bundle_input['emissivity'][step_test]   = 1e11
+  
         return bundle_input
 
     def generate_rays(self):

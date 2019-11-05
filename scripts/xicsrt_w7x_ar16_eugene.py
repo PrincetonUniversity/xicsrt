@@ -109,9 +109,9 @@ plasma_input['position']            = np.array([0, 0, 0])
 plasma_input['normal']              = np.array([0, 1, 0])
 plasma_input['orientation']         = np.array([0, 0, 1])
 plasma_input['target']              = np.array([1, 0, 0])    
-plasma_input['width']               = 30
-plasma_input['height']              = 30
-plasma_input['depth']               = 30
+plasma_input['width']               = 15
+plasma_input['height']              = 15
+plasma_input['depth']               = 15
 
 plasma_input['major_radius']        = 6.2
 plasma_input['minor_radius']        = 2.0

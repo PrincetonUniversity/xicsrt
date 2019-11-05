@@ -100,8 +100,8 @@
   },
   "plasma_input": {
    "bundle_count": 10000,
-   "depth": 30,
-   "height": 30,
+   "depth": 15,
+   "height": 15,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
@@ -132,7 +132,7 @@
    "time_resolution": 0.01,
    "volume_partitioning": false,
    "wavelength": 2.7203,
-   "width": 30
+   "width": 15
   },
   "source_input": {
    "depth": 0.05,
