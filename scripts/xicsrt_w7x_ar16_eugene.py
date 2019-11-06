@@ -117,10 +117,10 @@ plasma_input['major_radius']        = 6.2
 plasma_input['minor_radius']        = 2.0
        
 plasma_input['space_resolution']    = 0.01 ** 3
-plasma_input['time_resolution']     = 0.01
+plasma_input['time_resolution']     = 1
 plasma_input['bundle_count']        = 10000
 
-plasma_input['spread']              = 2.0       #Angular spread (degrees)
+plasma_input['spread']              = 1         #Angular spread (degrees)
 plasma_input['temp']                = 1000      #Ion temperature (eV)
 plasma_input['mass']                = 131.293   # Xenon mass (AMU)
 plasma_input['wavelength']          = 2.7203    # Line location (angstroms)
@@ -239,7 +239,7 @@ scenario_input['sagitt_focus']      = - scenario_input['meridi_focus'] / np.cos(
                                       2 * scenario_input['crystal_bragg'])
 
 # Load scenario properties
-scenario_input['source_graphite_dist']  = 20
+scenario_input['source_graphite_dist']  = 1
 scenario_input['graphite_crystal_dist'] = 8.5
 scenario_input['crystal_detector_dist'] = scenario_input['meridi_focus']
 scenario_input['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
@@ -262,7 +262,8 @@ scenario_input['detector_input']        = detector_input
 scenario_input['effective_width_mm']    = (crystal_input['curvature'] * 
               graphite_input['height'] * np.sin(scenario_input['graphite_bragg']
               ) / (scenario_input['graphite_crystal_dist'] - 1)) * 1000
-scenario_input['effective_width_px']    = int(scenario_input['effective_width_mm'] * 1000 / crystal_input['pixel_scaling'])
+scenario_input['effective_width_px']    = int(scenario_input['effective_width_mm']
+                 * 1000 / crystal_input['pixel_scaling'])
 
 ## Set up a legacy beamline scenario ------------------------------------------
 if general_input['scenario'] == 'LEGACY':
@@ -274,7 +275,7 @@ if general_input['scenario'] == 'LEGACY':
     )
     
     source_input['target'] = crystal_input['position']
-    source_input['normal'] = (crystal_input['position'] - source_input['position'])
+    source_input['normal'] = crystal_input['position'] - source_input['position']
     source_input['normal']/=  np.linalg.norm(source_input['normal'])
 
     #This direction is rather abitrary and is not (in general)

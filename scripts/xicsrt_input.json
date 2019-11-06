@@ -19,7 +19,7 @@
    "pi_data": "../xicsrt/rocking_curve_germanium_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    25.69758196636222,
+    6.697581966362218,
     6.307738084019028,
     0.0
    ],
@@ -47,7 +47,7 @@
    ],
    "pixel_size": 0.000172,
    "position": [
-    24.84013634503975,
+    5.840136345039748,
     6.732267315325268,
     0.0
    ],
@@ -86,7 +86,7 @@
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    20.0,
+    1.0,
     0.0,
     0.0
    ],
@@ -122,14 +122,14 @@
     0.0
    ],
    "space_resolution": 1.0000000000000002e-06,
-   "spread": 2.0,
+   "spread": 1,
    "target": [
-    20.0,
+    1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
-   "time_resolution": 0.01,
+   "time_resolution": 1,
    "volume_partitioning": false,
    "wavelength": 2.7203,
    "width": 15

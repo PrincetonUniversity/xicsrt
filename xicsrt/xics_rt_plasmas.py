@@ -32,15 +32,15 @@ class GenericPlasma(TraceObject):
         self.position       = plasma_input['position']
         self.normal         = plasma_input['normal']
         self.xorientation   = plasma_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.yorientation   = np.cross(self.normal, self.xorientation )
+        self.yorientation  /= np.linalg.norm(self.yorientation)
         self.target         = plasma_input['target']
         # Voxels are 3D pixels, Chronons are time pixels
         self.width          = plasma_input['width']
         self.height         = plasma_input['height']
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
-        self.solid_angle    = plasma_input['spread'] * (np.pi ** 2) / 180 
+        self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
         self.voxel_size     = plasma_input['space_resolution']
         self.chronon_size   = plasma_input['time_resolution']
         self.bundle_count   = plasma_input['bundle_count']
@@ -84,7 +84,8 @@ class GenericPlasma(TraceObject):
             source_input['position']    = bundle_input['position'][ii]
             source_input['temp']        = bundle_input['temp'][ii]
             source_input['intensity']   = int(bundle_input['emissivity'][ii]
-                * self.chronon_size * self.voxel_size * self.solid_angle)
+                * self.chronon_size * self.voxel_size 
+                * self.solid_angle / (4 * np.pi))
             
             #constants
             source_input['width'], source_input['height'], source_input['depth'] = [np.power(self.voxel_size, 1/3)] * 3
@@ -253,8 +254,8 @@ class ToroidalPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma torus emissivity falls off as a function of radius
-        bundle_input['emissivity'][step_test]   = 1e11
-  
+        bundle_input['emissivity'][step_test]   = 1e12
+        
         return bundle_input
 
     def generate_rays(self):
