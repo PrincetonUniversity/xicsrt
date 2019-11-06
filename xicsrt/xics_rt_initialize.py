@@ -27,16 +27,18 @@ def initialize(config):
     ## Temporary
     config['source_input']['intensity'] = config['general_input']['number_of_rays']
 
+    scenario = str.lower(config['general_input']['scenario'])
+
     ## Set up a plasma test scenario ----------------------------------------------
-    if config['general_input']['scenario'] == 'PLASMA':
+    if scenario == 'plasma':
         config = setup_plasma_scenario(config)
 
     ## Set up a beamline test scenario --------------------------------------------
-    elif config['general_input']['scenario'] == 'BEAM' or config['general_input']['scenario'] == 'MODEL':
+    elif scenario == 'beam' or scenario == 'model':
         config = setup_beam_scenario(config)
 
     ## Set up a crystal test scenario ---------------------------------------------
-    elif config['general_input']['scenario'] == 'CRYSTAL':
+    elif scenario == 'crystal':
         config = setup_crystal_test(config)
 
         config['graphite_input']['position']     = config['crystal_input']['position']
@@ -44,7 +46,7 @@ def initialize(config):
         config['graphite_input']['orientation']  = config['crystal_input']['orientation']
 
     ## Set up a graphite test scenario --------------------------------------------
-    elif config['general_input']['scenario'] == 'GRAPHITE':
+    elif scenario == 'graphite':
         config = setup_graphite_test(config)
 
         config['crystal_input']['position']       = config['graphite_input']['position']
@@ -52,8 +54,11 @@ def initialize(config):
         config['crystal_input']['orientation']    = config['graphite_input']['orientation']
 
     ## Set up a source test scenario ----------------------------------------------
-    elif config['general_input']['scenario'] == 'SOURCE':
+    elif scenario == 'source':
         config = setup_source_test(config)
+
+    else:
+        raise Exception('Scenario not defined: {}'.format(scenario))
 
     ## Backwards raytracing involves swapping the source and detector -------------
     if config['general_input']['backwards_raytrace']:

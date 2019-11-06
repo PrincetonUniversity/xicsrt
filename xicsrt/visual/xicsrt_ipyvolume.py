@@ -4,6 +4,16 @@ import numpy as np
 
 import matplotlib
 
+def truncate_mask(mask, max_num):
+    num_mask = np.sum(mask)
+    if num_mask > max_num:
+        w = np.where(mask)[0]
+        np.random.shuffle(w)
+        mask[w[max_num:]] = False
+
+    return mask
+
+
 def figure():
     fig = ipv.figure(width=900, height=900)
     return fig
@@ -76,10 +86,8 @@ def add_rays(output, inputs):
             mask_temp = mask & cmask
             num_lines = np.sum(mask_temp)
             if num_lines > 0:
-                if num_lines > 1000:
-                    w = np.flatnonzero(mask_temp)
-                    mask_temp[w[1000:]] = False
-                    num_lines = np.sum(mask_temp)
+                truncate_mask(mask_temp, 1000)
+                num_lines = np.sum(mask_temp)
 
                 print('{:30s} {}'.format(
                     '    Plotted:'
@@ -107,9 +115,8 @@ def add_rays(output, inputs):
     if True and flag_plot_unreflected:
         mask = np.invert(output[1]['mask'].copy())
         num_mask = np.sum(mask)
-        if num_mask > 2000:
-            w = np.flatnonzero(mask)
-            mask[w[2000:]] = False
+
+        truncate_mask(mask, 1000)
         num_lines = np.sum(mask)
 
         print('{:25s} {}'.format(
@@ -151,10 +158,9 @@ def add_rays(output, inputs):
             mask_temp = mask & cmask
             num_lines = np.sum(mask_temp)
             if num_lines > 0:
-                if num_lines > 1000:
-                    w = np.flatnonzero(mask_temp)
-                    mask_temp[w[1000:]] = False
-                    num_lines = np.sum(mask_temp)
+
+                truncate_mask(mask_temp, 1000)
+                num_lines = np.sum(mask_temp)
 
                 x0 = output[1]['origin'][mask_temp, 0]
                 y0 = output[1]['origin'][mask_temp, 1]
@@ -178,9 +184,8 @@ def add_rays(output, inputs):
     if True and flag_plot_unreflected:
         mask = output[1]['mask'] & (~output[2]['mask'])
         num_mask = np.sum(mask)
-        if num_mask > 1000:
-            w = np.flatnonzero(mask)
-            mask[w[1000:]] = False
+
+        truncate_mask(mask, 1000)
         num_lines = np.sum(mask)
 
         print('{:25s} {}'.format(
@@ -222,10 +227,9 @@ def add_rays(output, inputs):
             mask_temp = mask & cmask
             num_lines = np.sum(mask_temp)
             if num_lines > 0:
-                if num_lines > 1000:
-                    w = np.flatnonzero(mask_temp)
-                    mask_temp[w[1000:]] = False
-                    num_lines = np.sum(mask_temp)
+
+                truncate_mask(mask_temp, 1000)
+                num_lines = np.sum(mask_temp)
 
                 x0 = output[2]['origin'][mask_temp, 0]
                 y0 = output[2]['origin'][mask_temp, 1]

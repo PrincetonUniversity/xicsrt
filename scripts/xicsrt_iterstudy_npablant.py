@@ -62,6 +62,15 @@ def get_config():
 
     # -----------------------------------------------------------------------------
     ## Load plasma properties
+
+    # bundle_count
+    #   Increase to improve both plasma modeling and raytracing accuracy.
+    # bundle_volume
+    #   Increase to improve raytracing accuracy
+    #   Decrease to improve plasma modeling
+    #
+    #   This currently only has an effect of bundle_type is 'voxel'.
+
     config['plasma_input']['position']            = np.array([0, 0, 0])
     config['plasma_input']['normal']              = np.array([0, 1, 0])
     config['plasma_input']['orientation']         = np.array([0, 0, 1])
@@ -70,17 +79,19 @@ def get_config():
     config['plasma_input']['height']              = 0.1
     config['plasma_input']['depth']               = 0.1
 
-    config['plasma_input']['space_resolution']    = 0.01 ** 3
+    config['plasma_input']['major_radius']        = 6.2
+    config['plasma_input']['minor_radius']        = 2.0
+
     config['plasma_input']['time_resolution']     = 0.01
-    config['plasma_input']['bundle_count']        = 100
+    config['plasma_input']['bundle_count']        = 20
+    config['plasma_input']['bundle_volume']       = 0.01**3
+    config['plasma_input']['bundle_type']         = 'point'
 
     config['plasma_input']['spread']              = 2.0       #Angular spread (degrees)
     config['plasma_input']['temp']                = 1000      #Ion temperature (eV)
     config['plasma_input']['mass']                = 131.293   # Xenon mass (AMU)
     config['plasma_input']['wavelength']          = 2.7203    # Line location (angstroms)
     config['plasma_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
-
-    config['plasma_input']['volume_partitioning'] = False
 
 
     # -----------------------------------------------------------------------------

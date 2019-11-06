@@ -12,6 +12,7 @@ This script holds all of the plasma classes. These are separate from ray
 sources; rather than emitting rays, plasmas create ray sources. They are
 effectively advanced substitutes for regular ray sources.
 """
+import logging
 
 import numpy as np   
 from collections import OrderedDict
@@ -40,27 +41,23 @@ class GenericPlasma(TraceObject):
         self.height         = plasma_input['height']
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
-        self.solid_angle    = plasma_input['spread'] * (np.pi ** 2) / 180 
-        self.voxel_size     = plasma_input['space_resolution']
+        self.solid_angle    = plasma_input['spread'] * (np.pi ** 2) / 180
         self.chronon_size   = plasma_input['time_resolution']
         self.bundle_count   = plasma_input['bundle_count']
+        self.bundle_volume  = plasma_input['bundle_volume']
+        self.bundle_type    = plasma_input['bundle_type']
         
         self.mass_number    = plasma_input['mass']   
         self.temp           = plasma_input['temp']
         self.wavelength     = plasma_input['wavelength']
         self.linewidth      = plasma_input['linewidth']
         
-        self.partitioning   = plasma_input['volume_partitioning']
-        
     def setup_bundles(self):
-        ## Decide how many bundles there will be
-        if self.partitioning is True:
-            self.bundle_count * int(self.volume / self.voxel_size)
             
         bundle_input = dict()
         bundle_input['position']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
-        bundle_input['temp']         = np.ones( [self.bundle_count], dtype = np.float64)
-        bundle_input['emissivity']   = np.ones( [self.bundle_count], dtype = np.int)
+        bundle_input['temp']         = np.ones([self.bundle_count], dtype = np.float64)
+        bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
         
         return bundle_input
         
@@ -70,11 +67,11 @@ class GenericPlasma(TraceObject):
         
         #create ray dictionary
         rays                = dict()
-        rays['origin']      = np.zeros([1,3], dtype = np.float64)
-        rays['direction']   = np.ones( [1,3], dtype = np.float64)
-        rays['wavelength']  = np.ones( [1], dtype=np.float64)
-        rays['weight']      = np.ones( [1], dtype=np.float64)
-        rays['mask']        = np.ones( [1], dtype=np.bool)
+        rays['origin']      = np.zeros([0,3], dtype = np.float64)
+        rays['direction']   = np.ones( [0,3], dtype = np.float64)
+        rays['wavelength']  = np.ones( [0], dtype=np.float64)
+        rays['weight']      = np.ones( [0], dtype=np.float64)
+        rays['mask']        = np.ones( [0], dtype=np.bool)
         
         #bundle generation loop
         for ii in range(self.bundle_count):
@@ -83,11 +80,38 @@ class GenericPlasma(TraceObject):
             #spacially-dependent parameters
             source_input['position']    = bundle_input['position'][ii]
             source_input['temp']        = bundle_input['temp'][ii]
-            source_input['intensity']   = int(bundle_input['emissivity'][ii]
-                * self.chronon_size * self.voxel_size * self.solid_angle)
+
+            # Calculate the total number of photons to launch from this bundle volume.
+            intensity = (bundle_input['emissivity'][ii]
+                         * self.chronon_size
+                         * self.bundle_volume
+                         * self.solid_angle)
+
+            # Scale the number of photons based on the number of bundles.
+            #
+            # bundle_volume cancels out here, each bundle represents an area of
+            # volume/bundle_count.  I am leaving the calculation as is for now
+            # for clarity in case a different approach is needed in the future.
+            volume_factor = self.volume/(self.bundle_count*self.bundle_volume)
+            intensity *= volume_factor
+
+            if intensity < 1:
+                logging.warning('Bundle intensity is less than one. ')
+                continue
+
+            source_input['intensity'] = int(intensity)
             
             #constants
-            source_input['width'], source_input['height'], source_input['depth'] = [np.power(self.voxel_size, 1/3)] * 3
+            if self.bundle_type == 'voxel':
+                voxel_size = np.power(self.bundle_volume, 1/3)
+                source_input['width'] = voxel_size
+                source_input['height'] = voxel_size
+                source_input['depth'] = voxel_size
+            if self.bundle_type == 'point':
+                source_input['width'] = 0
+                source_input['height'] = 0
+                source_input['depth'] = 0
+
             source_input['normal']      = self.normal
             source_input['orientation'] = self.xorientation
             source_input['target']      = self.target
@@ -129,6 +153,8 @@ class CubicPlasma(GenericPlasma):
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
         self.bundle_count   = plasma_input['bundle_count']
+        self.bundle_volume  = plasma_input['bundle_volume']
+        self.bundle_type    = plasma_input['bundle_type']
                 
     def cubic_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
@@ -146,8 +172,8 @@ class CubicPlasma(GenericPlasma):
         bundle_input['temp'][:]         = self.temp
         
         #evaluate emissivity at each point
-        #plasma cube has uniformly random emissivity throughout
-        bundle_input['emissivity'][:]   = np.random.uniform(0, 2e13, self.bundle_count)
+        #plasma cube has a constant emissivity througout.
+        bundle_input['emissivity'][:]   = 1e12
             
         return bundle_input
     
@@ -159,6 +185,7 @@ class CubicPlasma(GenericPlasma):
         ## Use the list to generate ray sources
         rays = self.create_sources(bundle_input)
         return rays
+
 
 class CylindricalPlasma(GenericPlasma):
     def __init__(self, plasma_input):

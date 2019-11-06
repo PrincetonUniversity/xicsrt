@@ -135,6 +135,7 @@ def setup_plasma_scenario(config):
     #reflect the path vector off of the graphite
     path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
     path_vector/= np.linalg.norm(path_vector)
+
     ## Crystal Placement
     #define crystal position, normal, and basis relative to graphite
     c_position  = g_position + (path_vector * distance_g_c)
@@ -205,9 +206,9 @@ def setup_plasma_scenario(config):
     d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
 
     if config['general_input']['backwards_raytrace']:
-        s_target = c_position
+        p_target = c_position
     else:
-        s_target = g_position
+        p_target = g_position
     
     ## Repack variables
     config['plasma_input']['position']        = p_position
@@ -289,6 +290,7 @@ def setup_beam_scenario(config):
     #reflect the path vector off of the graphite
     path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
     path_vector/= np.linalg.norm(path_vector)
+
     ## Crystal Placement
     #define crystal position, normal, and basis relative to graphite
     c_position  = g_position + (path_vector * distance_g_c)
@@ -367,6 +369,8 @@ def setup_beam_scenario(config):
     config['source_input']['position']        = s_position
     config['source_input']['normal']          = s_normal
     config['source_input']['orientation']     = s_z_vector
+    config['source_input']['target']          = s_target
+
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal
     config['graphite_input']['orientation']   = g_z_vector
@@ -376,7 +380,6 @@ def setup_beam_scenario(config):
     config['detector_input']['position']      = d_position
     config['detector_input']['normal']        = d_normal
     config['detector_input']['orientation']   = d_z_vector
-    config['source_input']['target']          = s_target
 
     return config
 

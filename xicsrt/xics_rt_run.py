@@ -48,17 +48,19 @@ def run(config):
     crystal = SphericalCrystal(crystal_input)
     graphite = MosaicGraphite(graphite_input)
     source = FocusedExtendedSource(source_input)
-    plasma = CylindricalPlasma(plasma_input)
+    plasma = CubicPlasma(plasma_input)
     profiler.stop('Class Setup Time')
 
+    scenario = str.lower(config['general_input']['scenario'])
+
     ## Raytrace Runs
-    if general_input['scenario'] == 'PLASMA':
+    if scenario == 'plasma':
         output, rays_count = raytrace(
             plasma, pilatus, graphite, crystal
             , number_of_runs=general_input['number_of_runs']
             , collect_optics=True)
 
-    elif general_input['scenario'] == 'BEAM':
+    elif scenario == 'beam':
         if general_input['backwards_raytrace'] is False:
             output, rays_count = raytrace(
                 source, pilatus, graphite, crystal
@@ -71,28 +73,28 @@ def run(config):
                 , number_of_runs=general_input['number_of_runs']
                 , collect_optics=True)
 
-    elif general_input['scenario'] == 'CRYSTAL':
+    elif scenario == 'crystal':
         output, rays_count = raytrace(
             source, pilatus, crystal
             , number_of_runs=general_input['number_of_runs']
             , collect_optics=True)
 
-    elif general_input['scenario'] == 'GRAPHITE':
+    elif scenario == 'graphite':
         output, rays_count = raytrace(
             source, pilatus, graphite
             , number_of_runs=general_input['number_of_runs']
             , collect_optics=True)
 
-    elif general_input['scenario'] == 'SOURCE':
+    elif scenario == 'source':
         output, rays_count = raytrace(
             source, pilatus
             , number_of_runs=general_input['number_of_runs']
             , collect_optics=True)
 
     else:
-        raise Exception('Scenario unknown: {}'.format(general_input['scenario']))
+        raise Exception('Scenario unknown: {}'.format(scenario))
 
-    #if general_input['scenario'] == 'MODEL':
+    #if scenario == 'MODEL':
     #    output, metadata = analytical_model(
     #        source, crystal, graphite, pilatus
     #        , source_input, graphite_input
