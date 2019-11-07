@@ -242,12 +242,6 @@ scenario_input['sagitt_focus']      = - scenario_input['meridi_focus'] / np.cos(
 scenario_input['source_graphite_dist']  = 1
 scenario_input['graphite_crystal_dist'] = 8.5
 scenario_input['crystal_detector_dist'] = scenario_input['meridi_focus']
-scenario_input['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
-scenario_input['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
-scenario_input['crystal_offset']        = np.array([0,0,0], dtype = np.float64)
-scenario_input['crystal_tilt']          = np.array([0,0,0], dtype = np.float64)
-scenario_input['detector_offset']       = np.array([0,0,0], dtype = np.float64)
-scenario_input['detector_tilt']         = np.array([0,0,0], dtype = np.float64)
 
 # Feed input dictionaries to scenatio_input
 scenario_input['general_input']         = general_input

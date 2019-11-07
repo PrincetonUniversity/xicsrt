@@ -16,7 +16,6 @@ profiler.start('Import Time')
 
 import logging
 import argparse
-import json
 import os
 import numpy as np
 
@@ -31,12 +30,11 @@ from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visuali
 profiler.stop('Import Time')
 
 def run(config):
-
     ## Input Dictionaries
-    general_input = config['general_input']
-    plasma_input = config['plasma_input']
-    source_input = config['source_input']
-    crystal_input = config['crystal_input']
+    general_input  = config['general_input']
+    plasma_input   = config['plasma_input']
+    source_input   = config['source_input']
+    crystal_input  = config['crystal_input']
     graphite_input = config['graphite_input']
     detector_input = config['detector_input']
 

@@ -4,7 +4,7 @@ Created on Fri Apr 28 12:30:38 2017
 
 @author: James
 """
-from xicsrt.xics_rt_math import bragg_angle, vector_rotate, rotation_matrix
+from xicsrt.xics_rt_math import bragg_angle, rotation_matrix
 import numpy as np
 
 def source_location(distance, vert_displace, config):
@@ -13,12 +13,12 @@ def source_location(distance, vert_displace, config):
     detector. Allows for a vertical displacement above and below the 
     meridional plane
     """
-    crystal_location = config['crystal_input']['position']
-    crystal_normal = config['crystal_input']['normal']
-    crystal_curvature = config['crystal_input']['curvature']
-    crystal_spacing = config['crystal_input']['spacing']
-    detector_location = config['detector_input']['position']
-    wavelength = config['source_input']['wavelength']
+    crystal_location    = config['crystal_input']['position']
+    crystal_normal      = config['crystal_input']['normal']
+    crystal_curvature   = config['crystal_input']['curvature']
+    crystal_spacing     = config['crystal_input']['spacing']
+    detector_location   = config['detector_input']['position']
+    wavelength          = config['source_input']['wavelength']
     
     crystal_center = crystal_location + crystal_curvature * crystal_normal
     meridional_normal = np.cross(crystal_location - crystal_center,
@@ -46,11 +46,11 @@ def source_location_bragg(config, distance ,vert_displace ,horiz_displace):
     below the meridional plane.
     """
 
-    crystal_location = config['crystal_input']['position']
-    crystal_normal = config['crystal_input']['normal']
-    crystal_curvature = config['crystal_input']['curvature']
-    crystal_bragg = config['crystal_input']['bragg']
-    detector_location = config['detector_input']['position']
+    crystal_location    = config['crystal_input']['position']
+    crystal_normal      = config['crystal_input']['normal']
+    crystal_curvature   = config['crystal_input']['curvature']
+    crystal_bragg       = config['crystal_input']['bragg']
+    detector_location   = config['detector_input']['position']
 
     norm_angle = np.pi/2.0 - crystal_bragg
     crystal_center = crystal_location + crystal_curvature * crystal_normal
@@ -87,13 +87,6 @@ def setup_plasma_scenario(config):
     distance_p_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
-
-    g_offset        = config['scenario_input']['graphite_offset']
-    c_offset        = config['scenario_input']['crystal_offset']
-    d_offset        = config['scenario_input']['detector_offset']
-    g_tilt          = config['scenario_input']['graphite_tilt']
-    c_tilt          = config['scenario_input']['crystal_tilt']
-    d_tilt          = config['scenario_input']['detector_tilt']
 
     bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
     bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
@@ -175,35 +168,6 @@ def setup_plasma_scenario(config):
     #detector normal faces crystal
     d_normal    = -path_vector
     d_normal   /= np.linalg.norm(d_normal)
-    
-    """
-    Optical elements' x_vectors, y_vectors, z_vectors form 3D bases
-    Use the bases to create transformation matrices that use vector math to
-    convert g_offset, c_offset, d_offset to XYZ offsets
-    """
-    ## Offset and Tilt Vector Math
-    #create bases
-    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
-    c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
-    d_basis     = np.transpose(np.array([d_x_vector, d_y_vector, d_z_vector]))
-    
-    #offset using vector transformation matrix
-    g_position += g_basis.dot(np.transpose(g_offset))
-    c_position += c_basis.dot(np.transpose(c_offset))
-    d_position += d_basis.dot(np.transpose(d_offset))
-    
-    #tilt using lots of vector rotations (WARNING! Non-commutative operations)
-    g_normal    = vector_rotate(g_normal, g_x_vector, g_tilt[0])
-    g_normal    = vector_rotate(g_normal, g_y_vector, g_tilt[1])
-    g_normal    = vector_rotate(g_normal, g_z_vector, g_tilt[2])
-
-    c_normal    = vector_rotate(c_normal, c_x_vector, c_tilt[0])
-    c_normal    = vector_rotate(c_normal, c_y_vector, c_tilt[1])
-    c_normal    = vector_rotate(c_normal, c_z_vector, c_tilt[2])
-    
-    d_normal    = vector_rotate(d_normal, d_x_vector, d_tilt[0])
-    d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
-    d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
 
     if config['general_input']['backwards_raytrace']:
         p_target = c_position
@@ -242,13 +206,6 @@ def setup_beam_scenario(config):
     distance_s_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
-
-    g_offset        = config['scenario_input']['graphite_offset']
-    c_offset        = config['scenario_input']['crystal_offset']
-    d_offset        = config['scenario_input']['detector_offset']
-    g_tilt          = config['scenario_input']['graphite_tilt']
-    c_tilt          = config['scenario_input']['crystal_tilt']
-    d_tilt          = config['scenario_input']['detector_tilt']
 
     bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
     bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
@@ -330,35 +287,6 @@ def setup_beam_scenario(config):
     #detector normal faces crystal
     d_normal    = -path_vector
     d_normal   /= np.linalg.norm(d_normal)
-    
-    """
-    Optical elements' x_vectors, y_vectors, z_vectors form 3D bases
-    Use the bases to create transformation matrices that use vector math to
-    convert g_offset, c_offset, d_offset to XYZ offsets
-    """
-    ## Offset and Tilt Vector Math
-    #create bases
-    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
-    c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
-    d_basis     = np.transpose(np.array([d_x_vector, d_y_vector, d_z_vector]))
-    
-    #offset using vector transformation matrix
-    g_position += g_basis.dot(np.transpose(g_offset))
-    c_position += c_basis.dot(np.transpose(c_offset))
-    d_position += d_basis.dot(np.transpose(d_offset))
-    
-    #tilt using lots of vector rotations (WARNING! Non-commutative operations)
-    g_normal    = vector_rotate(g_normal, g_x_vector, g_tilt[0])
-    g_normal    = vector_rotate(g_normal, g_y_vector, g_tilt[1])
-    g_normal    = vector_rotate(g_normal, g_z_vector, g_tilt[2])
-
-    c_normal    = vector_rotate(c_normal, c_x_vector, c_tilt[0])
-    c_normal    = vector_rotate(c_normal, c_y_vector, c_tilt[1])
-    c_normal    = vector_rotate(c_normal, c_z_vector, c_tilt[2])
-    
-    d_normal    = vector_rotate(d_normal, d_x_vector, d_tilt[0])
-    d_normal    = vector_rotate(d_normal, d_y_vector, d_tilt[1])
-    d_normal    = vector_rotate(d_normal, d_z_vector, d_tilt[2])
 
     if config['general_input']['backwards_raytrace']:
         s_target = c_position
@@ -459,11 +387,6 @@ def setup_crystal_test(config):
     d_normal    = -path_vector
     d_normal   /= np.linalg.norm(d_normal)
     
-    #offset vector math
-    c_basis     = np.transpose(np.array([c_x_vector, c_y_vector, c_z_vector]))
-    c_position += c_basis.dot(np.transpose(c_offset))
-    c_z_vector  = vector_rotate(c_z_vector, c_normal, c_tilt)
-    
     # repack variables
     config['source_input']['position']        = s_position
     config['source_input']['normal']          = s_normal
@@ -520,11 +443,6 @@ def setup_graphite_test(config):
     d_position      = g_position + (path_vector * distance_g_d)
     d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
     d_normal        = -path_vector
-    
-    #offset vector math
-    g_basis     = np.transpose(np.array([g_x_vector, g_y_vector, g_z_vector]))
-    g_position += g_basis.dot(np.transpose(g_offset))
-    g_z_vector  = vector_rotate(g_z_vector, g_normal, g_tilt)
     
     # repack variables
     config['source_input']['position']        = s_position
