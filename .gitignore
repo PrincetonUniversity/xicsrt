@@ -1,6 +1,9 @@
 ## -----------------------------------------------------------------------------
 ## General filetype exclusions.
 
+##
+results
+
 ## Large image files
 *.tif
 *.fits
@@ -21,3 +24,5 @@ __pycache__
 *.DS_Store
 /Icon?
 
+## IDEs
+.idea

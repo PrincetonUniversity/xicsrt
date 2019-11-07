@@ -10,7 +10,6 @@ A set of base objects for xicsrt.
 """
 
 import numpy as np
-import scipy as sp
 import xicsrt.tool
 
 class RayArray(dict):
@@ -80,16 +79,22 @@ class RayArray(dict):
         else:
             super().__setattr(key, value)
 
-    def copy(self):
-        # Do this explicitly to avoid any unnecessary object creation.
-        ray_new = GeometryObject(
-            origin=self['origin'].copy()
-            ,direction=self['direction'].copy()
-            ,wavelength=self['wavelength'].copy()
-            ,mask=self['mask'].copy()
-            )
+    def zeros(self, num):
+        self['origin'] = np.zeros((num, 3))
+        self['direction'] = np.zeros((num, 3))
+        self['mask'] = np.zeros((num), dtype=bool)
+        self['wavelength'] = np.zeros((num))
 
+    def copy(self):
+        ray_new = RayArray()
+        for key in self:
+            ray_new[key] = self[key].copy()
         return ray_new
+
+    def extend(self, ray_in):
+        for key in self:
+            self[key] = np.concatenate((self[key], ray_in[key]))
+
 
 class GeometryObject():
     """

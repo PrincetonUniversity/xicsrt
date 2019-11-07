@@ -37,6 +37,7 @@ class GenericOptic(TraceObject):
         self.reflectivity   = optic_input['reflectivity']
         self.width          = optic_input['width']
         self.height         = optic_input['height']
+        self.depth          = 0.0
         self.pixel_size     = self.width / optic_input['pixel_scaling']
         self.pixel_width    = int(round(self.width  / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
@@ -47,7 +48,10 @@ class GenericOptic(TraceObject):
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = optic_input['rocking_curve_type']
-        
+
+        # Check the input types.
+        self.rocking_type = str.lower(self.rocking_type)
+
     def normalize(self, vector):
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
         vector_norm = vector / magnitude[:, np.newaxis]
@@ -58,11 +62,11 @@ class GenericOptic(TraceObject):
         return magnitude 
 
     def rocking_curve_filter(self, incident_angle, bragg_angle):
-        if self.rocking_type == "STEP":
+        if "step" in self.rocking_type:
             # Step Function
             mask = (abs(incident_angle - bragg_angle) <= self.rocking_curve)
             
-        elif self.rocking_type == "GAUSS":
+        elif "gauss" in self.rocking_type:
             # Convert from FWHM to sigma.
             sigma = self.rocking_curve / np.sqrt(2 * np.log(2)) / 2
             
@@ -74,7 +78,7 @@ class GenericOptic(TraceObject):
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
             mask = p.flatten() > test
             
-        elif self.rocking_type == "FILE":
+        elif "file" in self.rocking_type:
             # read datafiles and extract points
             sigma_data  = np.loadtxt(self.sigma_data, dtype = np.float64)
             pi_data     = np.loadtxt(self.pi_data, dtype = np.float64)
@@ -99,6 +103,9 @@ class GenericOptic(TraceObject):
             # curves to decide whether the ray reflects or not. Use mix factor.
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
             mask = self.mix_factor * sigma_curve + (1 - self.mix_factor) * pi_curve >= test
+
+        else:
+            raise Exception('Rocking curve type not understood: {}'.format(self.rocking_curve))
             
         return mask
     

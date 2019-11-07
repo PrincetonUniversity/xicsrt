@@ -41,7 +41,9 @@ class GenericSource(TraceObject):
 
     def generate_rays(self):
         rays = dict()
-        
+
+        self.intensity = int(self.intensity)
+
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
         profiler.stop('generate_origin')
@@ -219,7 +221,9 @@ class FocusedExtendedSource(GenericSource):
            w: weight of ray (UNUSED)
         """
         rays = dict()
-        
+
+        self.intensity = int(self.intensity)
+
         profiler.start('Generate Origin')
         rays['origin'] = super().generate_origin()
         profiler.stop('Generate Origin')

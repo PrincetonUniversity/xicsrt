@@ -31,6 +31,7 @@ class Detector(TraceObject):
         self.yorientation  /= np.linalg.norm(self.yorientation)
         self.width          = detector_input['width']
         self.height         = detector_input['height']
+        self.depth          = 0
         self.pixel_size     = detector_input['pixel_size']
         self.pixel_width    = detector_input['horizontal_pixels']
         self.pixel_height   = detector_input['vertical_pixels']
