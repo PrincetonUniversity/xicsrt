@@ -30,6 +30,7 @@ class GenericPlasma(TraceObject):
             ,plasma_input['orientation'])
         
         self.plasma_input   = plasma_input
+        self.max_rays       = plasma_input['max_rays']
         self.position       = plasma_input['position']
         self.normal         = plasma_input['normal']
         self.xorientation   = plasma_input['orientation']
@@ -42,7 +43,6 @@ class GenericPlasma(TraceObject):
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
-        self.voxel_size     = plasma_input['space_resolution']
         self.chronon_size   = plasma_input['time_resolution']
         self.bundle_count   = plasma_input['bundle_count']
         self.bundle_volume  = plasma_input['bundle_volume']
@@ -126,7 +126,7 @@ class GenericPlasma(TraceObject):
             bundled_rays = source.generate_rays()
             
             #append bundled rays together to form a single ray dictionary
-            if len(rays['mask']) >= 1e7:
+            if len(rays['mask']) >= self.max_rays:
                 print('Ray-Bundle Generation Halted: Too Many Rays')
                 break
             else:

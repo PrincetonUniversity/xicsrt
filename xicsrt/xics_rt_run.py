@@ -15,7 +15,6 @@ from xicsrt.util import profiler
 profiler.start('Import Time')
 
 import logging
-import argparse
 import os
 import numpy as np
 
@@ -23,13 +22,13 @@ from xicsrt.xics_rt_sources    import FocusedExtendedSource
 from xicsrt.xics_rt_plasmas    import CubicPlasma, CylindricalPlasma, ToroidalPlasma
 from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace   import raytrace
+from xicsrt.xics_rt_raytrace   import raytrace, raytrace_single
 from xicsrt.xics_rt_model      import analytical_model
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
 
 profiler.stop('Import Time')
 
-def run(config):
+def run(config, config_number):
     ## Input Dictionaries
     general_input  = config['general_input']
     plasma_input   = config['plasma_input']
@@ -105,28 +104,25 @@ def run(config):
             os.mkdir(general_input['output_path'])
 
         # create detector image file
-        filename = 'xicsrt_detector'
-        if general_input['output_suffix']:
-            filename += '_' + general_input['output_suffix']
-        filename += '.tif'
+        filename = 'xicsrt_detector_'
+        filename+= str(int(config_number))
+        filename+= general_input['output_suffix']
         filepath = os.path.join(general_input['output_path'], filename)
         print('Exporting detector image: {}'.format(filepath))
         pilatus.output_image(filepath, rotate=False)
 
         # create graphite image file
-        filename = 'xicsrt_graphite'
-        if general_input['output_suffix']:
-            filename += '_' + general_input['output_suffix']
-        filename += '.tif'
+        filename = 'xicsrt_graphite_'
+        filename+= str(int(config_number))
+        filename+= general_input['output_suffix']
         filepath = os.path.join(general_input['output_path'], filename)
         print('Exporting graphite image: {}'.format(filepath))
         graphite.output_image(filepath, rotate=False)
 
         # create crystal image file
-        filename = 'xicsrt_crystal'
-        if general_input['output_suffix']:
-            filename += '_' + general_input['output_suffix']
-        filename += '.tif'
+        filename = 'xicsrt_crystal_'
+        filename+= str(int(config_number))
+        filename+= general_input['output_suffix']
         filepath = os.path.join(general_input['output_path'], filename)
         print('Exporting crystal image:  {}'.format(filepath))
         crystal.output_image(filepath, rotate=False)
@@ -141,21 +137,21 @@ def run_multi(config_multi):
     # create the rays_total dictionary to count the total number of rays
     rays_total = dict()
     rays_total['total_generated'] = 0
-    rays_total['total_graphite'] = 0
-    rays_total['total_crystal'] = 0
-    rays_total['total_detector'] = 0
+    rays_total['total_graphite']  = 0
+    rays_total['total_crystal']   = 0
+    rays_total['total_detector']  = 0
 
     output_final = []
 
     # loop through each configuration in the configuration input file
-    for jj, key in enumerate(config_multi):
+    for jj in range(len(config_multi)):
 
         ## Object Setup
-        logging.info('')
-        logging.info('Setting Up Optics for Configuration: {} of {}'.format(
+        print('')
+        print('Setting Up Optics for Configuration: {} of {}'.format(
             jj + 1, len(config_multi)))
 
-        output, rays_count = run(config_multi[key])
+        output, rays_count = run(config_multi[jj], jj)
 
         output_final.append(output)
         for key in rays_total:

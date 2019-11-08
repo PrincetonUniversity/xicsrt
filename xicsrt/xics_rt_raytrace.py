@@ -89,8 +89,6 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     and a subset of rays that are lost.
     """
 
-    print('Using local raytrace.')
-
     if number_of_runs is None: number_of_runs = 1
 
     count = dict()

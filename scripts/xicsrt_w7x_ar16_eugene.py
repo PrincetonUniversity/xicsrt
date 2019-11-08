@@ -54,7 +54,7 @@ try:
         xicsrt_input = json.load(input_file)
 except FileNotFoundError:
     xicsrt_input = list()
-    
+
 #%% INPUTS
 """
 Input Section
