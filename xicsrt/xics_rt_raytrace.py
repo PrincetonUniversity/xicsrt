@@ -68,7 +68,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
     rays_count['total_detector'] += detector.photon_count
     profiler.stop('Raytrace Run')
 
-
+    """
     print('')
     print('Total Rays Generated: {:6.4e}'.format(rays_count['total_generated']))
     print('Total Rays on HOPG:   {:6.4e}'.format(rays_count['total_graphite']))
@@ -79,6 +79,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
         np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
         rays_count['total_detector'] / rays_count['total_generated'] * 100))
     print('')
+    """
 
     return rays_history, rays_count
 
@@ -111,7 +112,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
             count[key] += count_temp[key]
 
         w_found = np.flatnonzero(history_temp[-1]['mask'])
-        w_lost = np.flatnonzero(np.invert(history_temp[-1]['mask']))
+        w_lost  = np.flatnonzero(np.invert(history_temp[-1]['mask']))
 
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
@@ -122,7 +123,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         w_lost = w_lost[index_lost[:lost_max]]
 
         found = []
-        lost = []
+        lost  = []
         for ii_opt in range(len(history_temp)):
             found.append({})
             lost.append({})

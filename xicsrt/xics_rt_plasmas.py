@@ -43,9 +43,10 @@ class GenericPlasma(TraceObject):
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
+        self.voxel_size     = plasma_input['space_resolution']
         self.chronon_size   = plasma_input['time_resolution']
+        self.bundle_volume  = self.voxel_size ** 3
         self.bundle_count   = plasma_input['bundle_count']
-        self.bundle_volume  = plasma_input['bundle_volume']
         self.bundle_type    = plasma_input['bundle_type']
         
         self.mass_number    = plasma_input['mass']   
@@ -93,25 +94,25 @@ class GenericPlasma(TraceObject):
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
-            volume_factor = self.volume/(self.bundle_count*self.bundle_volume)
+            
+            volume_factor = self.volume / (self.bundle_count * self.bundle_volume)
             intensity *= volume_factor
-
+            """
             if intensity < 1:
                 logging.warning('Bundle intensity is less than one. ')
                 continue
-
+            """
             source_input['intensity'] = int(intensity)
             
             #constants
             if self.bundle_type == 'voxel':
-                voxel_size = np.power(self.bundle_volume, 1/3)
-                source_input['width'] = voxel_size
-                source_input['height'] = voxel_size
-                source_input['depth'] = voxel_size
+                source_input['width']   = self.voxel_size
+                source_input['height']  = self.voxel_size
+                source_input['depth']   = self.voxel_size
             if self.bundle_type == 'point':
-                source_input['width'] = 0
-                source_input['height'] = 0
-                source_input['depth'] = 0
+                source_input['width']   = 0
+                source_input['height']  = 0
+                source_input['depth']   = 0
 
             source_input['normal']      = self.normal
             source_input['orientation'] = self.xorientation
@@ -174,7 +175,7 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
-        bundle_input['emissivity'][:]   = 1e12
+        bundle_input['emissivity'][:]   = 1e13
             
         return bundle_input
     
@@ -258,9 +259,9 @@ class ToroidalPlasma(GenericPlasma):
         
     def toroidal_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2,  self.bundle_count)
+        x_offset = np.random.uniform(-0 * self.width/2 , self.width   , self.bundle_count)
         y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2,  self.bundle_count)        
+        z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2 , self.bundle_count)        
         
         #unlike the other plasmas, the toroidal plasma has fixed orientation to
         #prevent confusion
@@ -281,7 +282,7 @@ class ToroidalPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma torus emissivity falls off as a function of radius
-        bundle_input['emissivity'][step_test]   = 1e12
+        bundle_input['emissivity'][step_test]   = 1e14
         
         return bundle_input
 

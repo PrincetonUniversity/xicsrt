@@ -40,7 +40,7 @@ def get_config():
     # possible scenarios include 'MODEL', 'PLASMA', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
     # possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 
-    config['general_input']['number_of_rays']     = int(1e6)
+    config['general_input']['number_of_rays']     = int(1e7)
     config['general_input']['number_of_runs']     = 10
 
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
@@ -74,16 +74,16 @@ def get_config():
     config['plasma_input']['normal']              = np.array([1.0, 0.0, 0.0])
     config['plasma_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['plasma_input']['target']              = np.array([1.0, 0.0, 0.0])
-    config['plasma_input']['width']               = 0.1
+    config['plasma_input']['width']               = 9
     config['plasma_input']['height']              = 0.1
     config['plasma_input']['depth']               = 0.1
-
+    
     config['plasma_input']['major_radius']        = 6.2
     config['plasma_input']['minor_radius']        = 2.0
-
+    
+    config['plasma_input']['space_resolution']    = 0.01
     config['plasma_input']['time_resolution']     = 0.01
-    config['plasma_input']['bundle_count']        = 20
-    config['plasma_input']['bundle_volume']       = 0.01**3
+    config['plasma_input']['bundle_count']        = 100
     config['plasma_input']['bundle_type']         = 'point'
 
     config['plasma_input']['spread']              = 2.0       #Angular spread (degrees)
@@ -215,7 +215,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'multi'
+runtype = 'single'
 jsontype= 'load'
 logging.info('Starting Ray-Trace Runs...')
 

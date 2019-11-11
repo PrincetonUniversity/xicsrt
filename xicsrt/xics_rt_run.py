@@ -19,74 +19,74 @@ import os
 import numpy as np
 
 from xicsrt.xics_rt_sources    import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas    import CubicPlasma, CylindricalPlasma, ToroidalPlasma
+from xicsrt.xics_rt_plasmas    import ToroidalPlasma
 from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace   import raytrace, raytrace_single
+from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt.xics_rt_model      import analytical_model
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
 
 profiler.stop('Import Time')
 
 def run(config, config_number):
-    ## Input Dictionaries
-    general_input  = config['general_input']
-    plasma_input   = config['plasma_input']
-    source_input   = config['source_input']
-    crystal_input  = config['crystal_input']
-    graphite_input = config['graphite_input']
-    detector_input = config['detector_input']
+    ## Initial Setup
 
-    # Initialize the random seed.
-    np.random.seed(general_input['random_seed'])
-
+    # Initialize the random seed
+    np.random.seed(config['general_input']['random_seed'])
+    
+    # Setup Classes
     profiler.start('Class Setup Time')
-    pilatus = Detector(detector_input)
-    crystal = SphericalCrystal(crystal_input)
-    graphite = MosaicGraphite(graphite_input)
-    source = FocusedExtendedSource(source_input)
-    plasma = CubicPlasma(plasma_input)
+    pilatus  = Detector(                config['detector_input'])
+    crystal  = SphericalCrystal(        config['crystal_input'])
+    graphite = MosaicGraphite(          config['graphite_input'])
+    source   = FocusedExtendedSource(   config['source_input'])
+    plasma   = ToroidalPlasma(          config['plasma_input'])
     profiler.stop('Class Setup Time')
 
     scenario = str.lower(config['general_input']['scenario'])
+    
+    ## Initial Visualization
+    if config['general_input']['do_visualizations'] is True:
+        plt1, ax1 = visualize_layout(config)
+        plt1.show()
 
     ## Raytrace Runs
     if scenario == 'plasma':
         output, rays_count = raytrace(
             plasma, pilatus, graphite, crystal
-            , number_of_runs=general_input['number_of_runs']
+            , number_of_runs=config['general_input']['number_of_runs']
             , collect_optics=True)
 
     elif scenario == 'beam':
-        if general_input['backwards_raytrace'] is False:
+        if config['general_input']['backwards_raytrace'] is False:
             output, rays_count = raytrace(
                 source, pilatus, graphite, crystal
-                , number_of_runs=general_input['number_of_runs']
-                , collect_optics=True)
+                , number_of_runs = config['general_input']['number_of_runs']
+                , collect_optics = True)
 
-        if general_input['backwards_raytrace'] is True:
+        if config['general_input']['backwards_raytrace'] is True:
             output, rays_count = raytrace(
                 source, pilatus, crystal, graphite
-                , number_of_runs=general_input['number_of_runs']
-                , collect_optics=True)
+                , number_of_runs = config['general_input']['number_of_runs']
+                , collect_optics = True)
 
     elif scenario == 'crystal':
         output, rays_count = raytrace(
             source, pilatus, crystal
-            , number_of_runs=general_input['number_of_runs']
-            , collect_optics=True)
+            , number_of_runs = config['general_input']['number_of_runs']
+            , collect_optics = True)
 
     elif scenario == 'graphite':
         output, rays_count = raytrace(
             source, pilatus, graphite
-            , number_of_runs=general_input['number_of_runs']
-            , collect_optics=True)
+            , number_of_runs = config['general_input']['number_of_runs']
+            , collect_optics = True)
 
     elif scenario == 'source':
         output, rays_count = raytrace(
             source, pilatus
-            , number_of_runs=general_input['number_of_runs']
-            , collect_optics=True)
+            , number_of_runs = config['general_input']['number_of_runs']
+            , collect_optics = True)
 
     else:
         raise Exception('Scenario unknown: {}'.format(scenario))
@@ -97,33 +97,39 @@ def run(config, config_number):
     #        , source_input, graphite_input
     #        , crystal_input, detector_input
     #        , general_input)
-
-    if general_input['do_savefiles'] is True:
+    
+    ## Final Visualization
+    if config['general_input']['do_visualizations'] is True:
+        plt2, ax2 = visualize_vectors(config, output)
+        plt2.show()
+    
+    ## Save Outputs
+    if config['general_input']['do_savefiles'] is True:
         ## Create the output path if needed
-        if not os.path.exists(general_input['output_path']):
-            os.mkdir(general_input['output_path'])
+        if not os.path.exists(config['general_input']['output_path']):
+            os.mkdir(config['general_input']['output_path'])
 
         # create detector image file
         filename = 'xicsrt_detector_'
         filename+= str(int(config_number))
-        filename+= general_input['output_suffix']
-        filepath = os.path.join(general_input['output_path'], filename)
+        filename+= config['general_input']['output_suffix']
+        filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting detector image: {}'.format(filepath))
         pilatus.output_image(filepath, rotate=False)
 
         # create graphite image file
         filename = 'xicsrt_graphite_'
         filename+= str(int(config_number))
-        filename+= general_input['output_suffix']
-        filepath = os.path.join(general_input['output_path'], filename)
+        filename+= config['general_input']['output_suffix']
+        filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting graphite image: {}'.format(filepath))
         graphite.output_image(filepath, rotate=False)
 
         # create crystal image file
         filename = 'xicsrt_crystal_'
         filename+= str(int(config_number))
-        filename+= general_input['output_suffix']
-        filepath = os.path.join(general_input['output_path'], filename)
+        filename+= config['general_input']['output_suffix']
+        filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting crystal image:  {}'.format(filepath))
         crystal.output_image(filepath, rotate=False)
 

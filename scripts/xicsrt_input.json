@@ -21,7 +21,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
+    0.1
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -58,9 +58,9 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
-   "number_of_rays": 1000000,
+   "number_of_rays": 10000000,
    "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
@@ -102,15 +102,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -127,6 +126,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -136,7 +136,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -146,7 +146,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -197,79 +197,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.01
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -278,15 +278,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -303,6 +302,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -312,7 +312,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -322,7 +322,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -373,79 +373,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.02
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -454,15 +454,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -479,6 +478,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -488,7 +488,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -498,7 +498,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -549,79 +549,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.03
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -630,15 +630,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -655,6 +654,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -664,7 +664,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -674,7 +674,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -725,79 +725,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.04
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -806,15 +806,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -831,6 +830,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -840,7 +840,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -850,7 +850,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -901,79 +901,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.05
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -982,15 +982,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -1007,6 +1006,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -1016,7 +1016,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -1026,7 +1026,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -1077,79 +1077,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.06
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -1158,15 +1158,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -1183,6 +1182,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -1192,7 +1192,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -1202,7 +1202,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -1253,79 +1253,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.07
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -1334,15 +1334,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -1359,6 +1358,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -1368,7 +1368,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -1378,7 +1378,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -1429,79 +1429,79 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
-   ],
-   "reflectivity": 1,
-   "rocking_curve": 9.03e-05,
-   "rocking_curve_type": "FILE",
-   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
-   "spacing": 1.7059,
-   "therm_expand": 5.9e-06,
-   "width": 0.04
-  },
-  "detector_input": {
-   "do_miss_checks": true,
-   "height": 0.25370000000000004,
-   "horizontal_pixels": 195,
-   "normal": [
-    0.8961735135916393,
-    -0.44370376777396864,
-    0.0
-   ],
-   "orientation": [
-    0.44370376777396864,
-    0.8961735135916393,
-    0.0
-   ],
-   "pixel_size": 0.000172,
-   "position": [
-    6.840136345039748,
-    6.732267315325268,
-    0.0
-   ],
-   "vertical_pixels": 1475,
-   "width": 0.03354
-  },
-  "general_input": {
-   "backwards_raytrace": false,
-   "do_image_analysis": false,
-   "do_savefiles": true,
-   "do_visualizations": false,
-   "ideal_geometry": true,
-   "number_of_rays": 1000000,
-   "number_of_runs": 10,
-   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
-   "output_suffix": ".tif",
-   "random_seed": 123456,
-   "scenario": "BEAM",
-   "shot": 180707017,
-   "system": "w7x_ar16",
-   "xics_temp": 273.0
-  },
-  "graphite_input": {
-   "do_bragg_checks": true,
-   "do_miss_checks": true,
-   "height": 0.04,
-   "mix_factor": 1.0,
-   "mosaic_spread": 0.5,
-   "normal": [
-    -0.4060149253731343,
-    0.9138664455894243,
-    0.0
-   ],
-   "orientation": [
-    0.0,
-    0.0,
-    1.0
-   ],
-   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
-   "pixel_scaling": 200,
-   "position": [
-    2.0,
-    0.0,
     0.08
    ],
    "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../xicsrt/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "width": 0.04
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.25370000000000004,
+   "horizontal_pixels": 195,
+   "normal": [
+    0.8961735135916393,
+    -0.44370376777396864,
+    0.0
+   ],
+   "orientation": [
+    0.44370376777396864,
+    0.8961735135916393,
+    0.0
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    6.840136345039748,
+    6.732267315325268,
+    0.0
+   ],
+   "vertical_pixels": 1475,
+   "width": 0.03354
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_image_analysis": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 123456,
+   "scenario": "BEAM",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.4060149253731343,
+    0.9138664455894243,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "reflectivity": 1,
    "rocking_curve": 0.008765,
    "rocking_curve_type": "gaussian",
    "sigma_data": "../xicsrt/rocking_curve_graphite_sigma.txt",
@@ -1510,15 +1510,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -1535,6 +1534,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -1544,7 +1544,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -1554,7 +1554,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
@@ -1605,7 +1605,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.0
+    0.09
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -1642,9 +1642,9 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
-   "number_of_rays": 1000000,
+   "number_of_rays": 10000000,
    "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
@@ -1675,7 +1675,7 @@
    "position": [
     2.0,
     0.0,
-    0.09
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 0.008765,
@@ -1686,15 +1686,14 @@
    "width": 0.03
   },
   "plasma_input": {
-   "bundle_count": 20,
+   "bundle_count": 100,
    "bundle_type": "point",
-   "bundle_volume": 1.0000000000000002e-06,
    "depth": 0.1,
    "height": 0.1,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
    "mass": 131.293,
-   "max_rays": 1000000,
+   "max_rays": 10000000,
    "minor_radius": 2.0,
    "normal": [
     1.0,
@@ -1711,6 +1710,7 @@
     0.0,
     0.0
    ],
+   "space_resolution": 0.01,
    "spread": 2.0,
    "target": [
     1.0,
@@ -1720,7 +1720,7 @@
    "temp": 1000,
    "time_resolution": 0.01,
    "wavelength": 2.7203,
-   "width": 0.1
+   "width": 9
   },
   "scenario_input": {
    "crystal_detector_dist": null,
@@ -1730,7 +1730,7 @@
   "source_input": {
    "depth": 0.05,
    "height": 0.05,
-   "intensity": 1000000,
+   "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
    "normal": [
