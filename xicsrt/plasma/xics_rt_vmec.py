@@ -12,6 +12,7 @@ A plasma source based on a VMEC equilibrium.
 import numpy as np
 
 from xicsrt.xics_rt_plasmas import GenericPlasma
+from xicsrt.util import profiler
 
 from mirfusion.vmec import mirtools
 
@@ -49,17 +50,18 @@ class FluxSurfacePlasma(GenericPlasma):
         return np.sqrt(point_flx[0])
 
     def generate_bundles(self, bundle_input):
+
+        profiler.start("Bundle Input Generation")
+
         # create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width / 2, self.width / 2, self.bundle_count)
-        y_offset = np.random.uniform(-1 * self.height / 2, self.height / 2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth / 2, self.depth / 2, self.bundle_count)
+        offset = np.zeros((self.config['bundle_count'],3))
+        offset[:,0] = np.random.uniform(-1 * self.width / 2, self.width / 2, self.bundle_count)
+        offset[:,1] = np.random.uniform(-1 * self.height / 2, self.height / 2, self.bundle_count)
+        offset[:,2] = np.random.uniform(-1 * self.depth / 2, self.depth / 2, self.bundle_count)
 
         # unlike the other plasmas, the toroidal plasma has fixed orientation to
         # prevent confusion
-        bundle_input['position'][:] = (self.position
-                                       + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
-                                       + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
-                                       + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
+        bundle_input['position'][:] = self.point_to_external(offset)
 
         # print('self.position', self.position)
 
@@ -68,10 +70,12 @@ class FluxSurfacePlasma(GenericPlasma):
         for ii in range(self.config['bundle_count']):
 
             # convert from cartesian coordinates to normalized radial coordinate.
+            profiler.start("Fluxspace from Realspace")
             try:
                 rho = self.rho_from_car(bundle_input['position'][ii,:])
             except mirtools.DomainError:
                 rho = np.nan
+            profiler.stop("Fluxspace from Realspace")
 
             # print(rho, bundle_input['position'][ii,0], bundle_input['position'][ii,1], bundle_input['position'][ii,2])
 
@@ -82,10 +86,12 @@ class FluxSurfacePlasma(GenericPlasma):
 
                 # evaluate emissivity at each point
                 # plasma torus emissivity falls off as a function of radius
-                bundle_input['emissivity'][ii] = 1e9
+                bundle_input['emissivity'][ii] = 1.0*self.config['emissivity_factor']
             else:
                 bundle_input['temp'][ii] = 0
                 bundle_input['emissivity'][ii] = 0
+
+        profiler.stop("Bundle Input Generation")
 
         return bundle_input
 

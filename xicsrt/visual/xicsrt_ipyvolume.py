@@ -32,6 +32,8 @@ def add_rays(output, inputs):
     # This is a good pink color for un-reflected rays.
     # color_unref = [1.0, 0.5, 0.5, 0.2]
 
+    num_optics = len(output)
+
     if False:
         color_masks.append(output[0]['mask'].copy())
         color_list.append((1.0, 0.0, 0.0, 0.5))
@@ -76,7 +78,7 @@ def add_rays(output, inputs):
 
     if True:
         if flag_plot_final:
-            mask = output[3]['mask'].copy()
+            mask = output[num_optics-1]['mask'].copy()
         else:
             mask = output[1]['mask'].copy()
         num_mask = np.sum(mask)
@@ -148,7 +150,7 @@ def add_rays(output, inputs):
 
     if True:
         if flag_plot_final:
-            mask = output[3]['mask'].copy()
+            mask = output[num_optics-1]['mask'].copy()
         else:
             mask = output[2]['mask'].copy()
         num_mask = np.sum(mask)
@@ -215,9 +217,9 @@ def add_rays(output, inputs):
             obj.line_material.transparent = True
             obj.line_material.linewidth = 10.0
 
-    if True:
+    if False:
         if flag_plot_final:
-            mask = output[3]['mask'].copy()
+            mask = output[num_optics-1]['mask'].copy()
         else:
             mask = output[3]['mask'].copy()
         num_mask = np.sum(mask)
@@ -270,9 +272,6 @@ def add_surf(obj):
     points[7, :] = [-w, -h, -d]
 
     points_ext = obj.point_to_external(points)
-
-    print(points)
-    print(points_ext)
 
     x = points_ext[:, 0]
     y = points_ext[:, 1]
@@ -386,7 +385,7 @@ def add_optics(inputs):
         obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
         obj.material.transparent = True
 
-    if True:
+    if False:
         w = inputs['graphite_input']['width'] / 2.0
         h = inputs['graphite_input']['height'] / 2.0
         cx = inputs['graphite_input']['orientation']
@@ -525,7 +524,7 @@ def add_optics(inputs):
         obj.material.transparent = True
 
 def add_optics_volume(config):
-    source = GenericPlasma(config['plasma_input'])
+    source = GenericPlasma(config['source_input'])
     add_surf(source)
 
 def show():

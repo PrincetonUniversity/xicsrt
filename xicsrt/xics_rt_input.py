@@ -34,11 +34,12 @@ def save_config(filepath, config):
 
 def config_to_numpy(obj):
     _dict_to_numpy(obj)
+    return obj
 
 
 def config_to_list(obj):
     _dict_to_list(obj)
-
+    return obj
 
 def _dict_to_numpy(obj):
     for key in obj:
@@ -46,6 +47,7 @@ def _dict_to_numpy(obj):
             obj[key] = np.array(obj[key])
         elif isinstance(obj[key], dict):
             obj[key] = _dict_to_numpy(obj[key])
+    return obj
 
 
 def _dict_to_list(obj):
@@ -54,3 +56,4 @@ def _dict_to_list(obj):
             obj[key] = obj[key].toList()
         elif isinstance(obj[key], dict):
             obj[key] = _dict_to_list(obj[key])
+    return obj

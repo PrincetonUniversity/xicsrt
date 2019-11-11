@@ -79,8 +79,11 @@ class GenericPlasma(TraceObject):
 
         flag_warning_issued_intensity = False
 
+        count_rays_in_bundle = []
+
         #bundle generation loop
         for ii in range(self.bundle_count):
+
             profiler.start("Ray Bundle Generation")
             source_input = OrderedDict()
             #spacially-dependent parameters
@@ -132,21 +135,30 @@ class GenericPlasma(TraceObject):
             #create ray bundle sources and generate bundled rays
             source       = FocusedExtendedSource(source_input)
             bundled_rays = source.generate_rays()
-            
+
+            count_rays_in_bundle.append(len(bundled_rays['mask']))
+
+            profiler.start('Ray Bundle Collection')
+            rays['origin'] = np.append(rays['origin'], bundled_rays['origin'], axis=0)
+            rays['direction'] = np.append(rays['direction'], bundled_rays['direction'], axis=0)
+            rays['wavelength'] = np.append(rays['wavelength'], bundled_rays['wavelength'])
+            rays['weight'] = np.append(rays['weight'], bundled_rays['weight'])
+            rays['mask'] = np.append(rays['mask'], bundled_rays['mask'])
+            profiler.start('Ray Bundle Collection')
+
+            profiler.stop("Ray Bundle Generation")
+
             #append bundled rays together to form a single ray dictionary
             if len(rays['mask']) >= 1e7:
                 print('Ray-Bundle Generation Halted: Too Many Rays')
                 break
-            else:
-                rays['origin']      = np.append(rays['origin'],      bundled_rays['origin'], axis = 0)
-                rays['direction']   = np.append(rays['direction'],   bundled_rays['direction'], axis = 0)
-                rays['wavelength']  = np.append(rays['wavelength'],  bundled_rays['wavelength'])
-                rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
-                rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
-            profiler.stop("Ray Bundle Generation")
 
         if len(rays['mask']) == 0:
             raise Exception('No rays generated. Check plasma input parameters')
+
+        logging.info('Average rays per bundle, mean: {} median: {}'.format(
+            np.mean(count_rays_in_bundle)
+            ,np.mean(count_rays_in_bundle)))
 
         return rays
         
