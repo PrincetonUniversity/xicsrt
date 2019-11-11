@@ -4,6 +4,9 @@ import numpy as np
 
 import matplotlib
 
+from xicsrt.xics_rt_sources import GenericSource
+from xicsrt.xics_rt_plasmas import GenericPlasma
+
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
     if num_mask > max_num:
@@ -266,13 +269,14 @@ def add_surf(obj):
     points[6, :] = [-w, h, -d]
     points[7, :] = [-w, -h, -d]
 
-    points_loc = obj.point_to_local(points)
+    points_ext = obj.point_to_external(points)
 
-    print(points_loc)
+    print(points)
+    print(points_ext)
 
-    x = points_loc[:, 0]
-    y = points_loc[:, 1]
-    z = points_loc[:, 2]
+    x = points_ext[:, 0]
+    y = points_ext[:, 1]
+    z = points_ext[:, 2]
 
     # I am sure there is a way to automate this using a meshgrid,
     # but at the moment this is faster.
@@ -302,7 +306,7 @@ def add_surf(obj):
             , (0, 3, 2)
         )
 
-    ipv_obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[1.0, 1.0, 0.0, 0.5])
+    ipv_obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[1.0, 1.0, 0.0, 0.2])
     ipv_obj.material.transparent = True
 
 
@@ -520,8 +524,9 @@ def add_optics(inputs):
         obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[1.0, 1.0, 0.0, 0.5])
         obj.material.transparent = True
 
-def add_optics_volume(obj_optic):
-    add_surf(obj_optic)
+def add_optics_volume(config):
+    source = GenericPlasma(config['plasma_input'])
+    add_surf(source)
 
 def show():
     view = [0,0,0]
@@ -529,7 +534,7 @@ def show():
     ipv.ylim(view[1] - 0.5, view[1] + 0.5)
     ipv.zlim(view[2] - 0.5, view[2] + 0.5)
 
-    ipv.style.axes_off()
-    ipv.style.box_off()
+    #ipv.style.axes_off()
+    #ipv.style.box_off()
 
     ipv.show()

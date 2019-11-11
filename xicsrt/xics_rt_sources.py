@@ -136,7 +136,7 @@ class GenericSource(TraceObject):
         # Check for the Lorentzian case.
         if (self.temp == 0.0):
             # I need to update the cauchy routine first.
-            pass
+            raise NotImplementedError('Random Lorentzian distribution not implemented.')
         # Check for the Gaussian case.
         if (self.linewidth  == 0.0):
             return self.random_wavelength_normal(size)

@@ -28,6 +28,8 @@ from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt.xics_rt_model      import analytical_model
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
 
+from xicsrt.plasma.xics_rt_vmec import FluxSurfacePlasma
+
 profiler.stop('Import Time')
 
 def run(config):
@@ -48,7 +50,12 @@ def run(config):
     crystal = SphericalCrystal(crystal_input)
     graphite = MosaicGraphite(graphite_input)
     source = FocusedExtendedSource(source_input)
-    plasma = CubicPlasma(plasma_input)
+    # This needs to be generalized somehow.
+    if config['general_input']['scenario'].lower() == 'plasma':
+        if config['plasma_input']['plasma_type'].lower() == 'vmec':
+            plasma = FluxSurfacePlasma(plasma_input)
+        if config['plasma_input']['plasma_type'].lower() == 'cubic':
+            plasma = CubicPlasma(plasma_input)
     profiler.stop('Class Setup Time')
 
     scenario = str.lower(config['general_input']['scenario'])

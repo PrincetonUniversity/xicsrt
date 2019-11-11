@@ -52,12 +52,31 @@ def get_config():
     config['general_input']['do_savefiles']       = False
     config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 123456
-    config['general_input']['scenario']           = 'BEAM'
+    config['general_input']['scenario']           = 'beam'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
 
     # Temperature that the optical elements will be cooled to (kelvin)
     config['general_input']['xics_temp'] = 273.0
+
+
+    # -----------------------------------------------------------------------------
+    # Scenario properties
+
+    # Each of these scenarios corresponds to a script located in xics_rt_tools.py
+    # which assembles the optical elements into a specific configuration based on
+    # input parameters
+
+    # Load scenario properties
+    config['scenario_input']['source_graphite_dist']  = 4.5
+    config['scenario_input']['graphite_crystal_dist'] = 8.5
+    config['scenario_input']['crystal_detector_dist'] = None
+    config['scenario_input']['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
+    config['scenario_input']['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
+    config['scenario_input']['crystal_offset']        = np.array([0,0,0], dtype = np.float64)
+    config['scenario_input']['crystal_tilt']          = np.array([0,0,0], dtype = np.float64)
+    config['scenario_input']['detector_offset']       = np.array([0,0,0], dtype = np.float64)
+    config['scenario_input']['detector_tilt']         = np.array([0,0,0], dtype = np.float64)
 
 
     # -----------------------------------------------------------------------------
@@ -104,16 +123,19 @@ def get_config():
     config['source_input']['orientation']         = np.array([0, 0, 1])
     config['source_input']['target']              = np.array([1, 0, 0])
 
-    config['source_input']['spread']              = 1.0       #Angular spread (degrees)
-    config['source_input']['temp']                = 1000      #Ion temperature (eV)
+    config['source_input']['spread']              = 0.3       #Angular spread (degrees)
     config['source_input']['mass']                = 131.293   # Xenon mass (AMU)
     config['source_input']['wavelength']          = 2.7203    # Line location (angstroms)
-    config['source_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
+
+    config['source_input']['temp']                = 0         #Ion temperature (eV)
+    config['source_input']['linewidth']           = 0         # Natural linewith (1/s)
+    #config['source_input']['temp']                = 1000      #Ion temperature (eV)
+    #config['source_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
 
     #These values are arbitrary for now. Set to 0.0 for point source
-    config['source_input']['width']               = 0.050
-    config['source_input']['height']              = 0.050
-    config['source_input']['depth']               = 0.050
+    config['source_input']['width']               = 0.2
+    config['source_input']['height']              = 0.2
+    config['source_input']['depth']               = 0.000
 
 
     # -----------------------------------------------------------------------------
@@ -130,11 +152,11 @@ def get_config():
     config['crystal_input']['normal']             = [0.0, 0.0, 0.0]
     config['crystal_input']['orientation']        = [0.0, 0.0, 0.0]
 
-    config['crystal_input']['width']              = 0.040
-    config['crystal_input']['height']             = 0.050
-    config['crystal_input']['curvature']          = 1.200
+    config['crystal_input']['width']              = 0.050
+    config['crystal_input']['height']             = 0.040
+    config['crystal_input']['curvature']          = 2.400
 
-    config['crystal_input']['spacing']            = 1.7059
+    config['crystal_input']['spacing']            = 1.70578
     config['crystal_input']['reflectivity']       = 1
     config['crystal_input']['rocking_curve']      = 90.30e-6
     config['crystal_input']['pixel_scaling']      = int(200)
@@ -148,7 +170,7 @@ def get_config():
 
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
-    config['crystal_input']['rocking_curve_type'] = "FILE"
+    config['crystal_input']['rocking_curve_type'] = "file"
 
 
     # -----------------------------------------------------------------------------
@@ -196,24 +218,6 @@ def get_config():
 
     config['detector_input']['do_miss_checks']    = True
 
-
-    # -----------------------------------------------------------------------------
-    # Scenario properties
-
-    # Each of these scenarios corresponds to a script located in xics_rt_tools.py
-    # which assembles the optical elements into a specific configuration based on
-    # input parameters
-
-    # Load scenario properties
-    config['scenario_input']['source_graphite_dist']  = 2
-    config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = None
-    config['scenario_input']['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['crystal_offset']        = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['crystal_tilt']          = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['detector_offset']       = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['detector_tilt']         = np.array([0,0,0], dtype = np.float64)
 
     return config
 
