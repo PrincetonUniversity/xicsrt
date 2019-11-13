@@ -89,8 +89,6 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     and a subset of rays that are lost.
     """
 
-    print('Using local raytrace.')
-
     if number_of_runs is None: number_of_runs = 1
 
     count = dict()
@@ -113,7 +111,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
             count[key] += count_temp[key]
 
         w_found = np.flatnonzero(history_temp[-1]['mask'])
-        w_lost = np.flatnonzero(np.invert(history_temp[-1]['mask']))
+        w_lost  = np.flatnonzero(np.invert(history_temp[-1]['mask']))
 
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
@@ -124,7 +122,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         w_lost = w_lost[index_lost[:lost_max]]
 
         found = []
-        lost = []
+        lost  = []
         for ii_opt in range(len(history_temp)):
             found.append({})
             lost.append({})

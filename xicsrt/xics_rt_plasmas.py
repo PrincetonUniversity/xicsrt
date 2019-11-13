@@ -32,20 +32,23 @@ class GenericPlasma(TraceObject):
             config['position']
             ,config['normal']
             ,config['orientation'])
-        
+
         self.config   = config
+        self.max_rays       = config['max_rays']
         self.position       = config['position']
         self.normal         = config['normal']
         self.xorientation   = config['orientation']
         self.yorientation   = (np.cross(self.normal, self.xorientation) / 
                                np.linalg.norm(np.cross(self.normal, self.xorientation)))
         self.target         = config['target']
+
         # Voxels are 3D pixels, Chronons are time pixels
         self.width          = config['width']
         self.height         = config['height']
         self.depth          = config['depth']
         self.volume         = self.width * self.height * self.depth
-        self.solid_angle    = config['spread'] * (np.pi ** 2) / 180
+
+        self.solid_angle    = 4 * np.pi * np.sin(config['spread'] * np.pi / 360)**2
         self.chronon_size   = config['time_resolution']
         self.bundle_count   = config['bundle_count']
         self.bundle_volume  = config['bundle_volume']
@@ -94,14 +97,15 @@ class GenericPlasma(TraceObject):
             intensity = (bundle_input['emissivity'][ii]
                          * self.chronon_size
                          * self.bundle_volume
-                         * self.solid_angle)
+                         * self.solid_angle / (4 * np.pi))
 
             # Scale the number of photons based on the number of bundles.
             #
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
-            volume_factor = self.volume/(self.bundle_count*self.bundle_volume)
+            
+            volume_factor = self.volume / (self.bundle_count * self.bundle_volume)
             intensity *= volume_factor
 
             # Ignore bundles with no intensity (quietly except for one warning).
@@ -149,20 +153,20 @@ class GenericPlasma(TraceObject):
             profiler.stop("Ray Bundle Generation")
 
             #append bundled rays together to form a single ray dictionary
-            if len(rays['mask']) >= 1e7:
+            if len(rays['mask']) >= self.max_rays:
                 print('Ray-Bundle Generation Halted: Too Many Rays')
                 break
 
         if len(rays['mask']) == 0:
             raise Exception('No rays generated. Check plasma input parameters')
 
-        logging.info('Rays per bundle, mean:   {}'.format(
+        logging.info('Rays per bundle, mean:   {:0.0f}'.format(
             np.mean(count_rays_in_bundle)))
-        logging.info('Rays per bundle, median: {}'.format(
+        logging.info('Rays per bundle, median: {:0.0f}'.format(
             np.median(count_rays_in_bundle)))
-        logging.info('Rays per bundle, max:    {}'.format(
+        logging.info('Rays per bundle, max:    {:0d}'.format(
             np.max(count_rays_in_bundle)))
-        logging.info('Rays per bundle, min:    {}'.format(
+        logging.info('Rays per bundle, min:    {:0d}'.format(
             np.min(count_rays_in_bundle)))
 
         return rays
@@ -205,7 +209,7 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
-        bundle_input['emissivity'][:]   = 1e12
+        bundle_input['emissivity'][:]   = 1e13
             
         return bundle_input
     
@@ -311,8 +315,8 @@ class ToroidalPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma torus emissivity falls off as a function of radius
-        bundle_input['emissivity'][step_test]   = 1e11
-  
+        bundle_input['emissivity'][step_test]   = 1e14
+        
         return bundle_input
 
     def generate_rays(self):

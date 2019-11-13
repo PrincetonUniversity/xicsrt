@@ -107,6 +107,7 @@ def get_config():
     config['source_input']['bundle_count']        = 20
     config['source_input']['bundle_volume']       = 0.01**3
     config['source_input']['bundle_type']         = 'point'
+    config['source_input']['max_rays']            = 1e7
 
     config['source_input']['spread']              = 1.0       #Angular spread (degrees)
     config['source_input']['temp']                = 1000      #Ion temperature (eV)
