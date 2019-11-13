@@ -49,6 +49,12 @@ class FluxSurfacePlasma(GenericPlasma):
         point_flx = self.flx_from_car(point_car)
         return np.sqrt(point_flx[0])
 
+    def getEmissivity(self, rho):
+        return 1.0
+
+    def getTemperature(self, rho):
+        return self.temp
+
     def generate_bundles(self, bundle_input):
 
         profiler.start("Bundle Input Generation")
@@ -82,11 +88,11 @@ class FluxSurfacePlasma(GenericPlasma):
             if np.isfinite(rho):
                 # evaluate temperature at each point
                 # plasma torus temperature falls off as a function of radius
-                bundle_input['temp'][ii] = self.temp
+                bundle_input['temp'][ii] = self.getTemperature(rho)
 
                 # evaluate emissivity at each point
                 # plasma torus emissivity falls off as a function of radius
-                bundle_input['emissivity'][ii] = 1.0*self.config['emissivity_factor']
+                bundle_input['emissivity'][ii] = self.getEmissivity(rho) * self.config['emissivity_factor']
             else:
                 bundle_input['temp'][ii] = 0
                 bundle_input['emissivity'][ii] = 0
