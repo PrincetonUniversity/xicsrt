@@ -156,9 +156,14 @@ class GenericPlasma(TraceObject):
         if len(rays['mask']) == 0:
             raise Exception('No rays generated. Check plasma input parameters')
 
-        logging.info('Average rays per bundle, mean: {} median: {}'.format(
-            np.mean(count_rays_in_bundle)
-            ,np.mean(count_rays_in_bundle)))
+        logging.info('Rays per bundle, mean:   {}'.format(
+            np.mean(count_rays_in_bundle)))
+        logging.info('Rays per bundle, median: {}'.format(
+            np.median(count_rays_in_bundle)))
+        logging.info('Rays per bundle, max:    {}'.format(
+            np.max(count_rays_in_bundle)))
+        logging.info('Rays per bundle, min:    {}'.format(
+            np.min(count_rays_in_bundle)))
 
         return rays
         

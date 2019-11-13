@@ -88,7 +88,7 @@ class FluxSurfacePlasma(GenericPlasma):
             if np.isfinite(rho):
                 # evaluate temperature at each point
                 # plasma torus temperature falls off as a function of radius
-                bundle_input['temp'][ii] = self.getTemperature(rho)
+                bundle_input['temp'][ii] = self.getTemperature(rho) * self.config['temperature_factor']
 
                 # evaluate emissivity at each point
                 # plasma torus emissivity falls off as a function of radius
