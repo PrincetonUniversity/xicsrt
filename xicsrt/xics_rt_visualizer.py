@@ -214,7 +214,7 @@ def visualize_layout(config):
                   color = "red", length = 0.1 , arrow_length_ratio = 0.1)
         
         #beamline
-        ax.plot3D(beamline[:3,0], beamline[:3,1], beamline[:3,2], "black")
+        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
         
         #bounding boxes
         ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
@@ -318,9 +318,9 @@ def visualize_layout(config):
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
     
 
-    ax.set_xlim(-scale, scale)
-    ax.set_ylim(-scale, scale)
-    ax.set_zlim(-scale, scale)
+    ax.set_xlim(position[3,0] - scale, position[3,0] + scale)
+    ax.set_ylim(position[3,1] - scale, position[3,1] + scale)
+    ax.set_zlim(position[3,2] - scale, position[3,2] + scale)
     
     return plt, ax
     

@@ -21,7 +21,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.1
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -58,7 +58,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -82,9 +82,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.15869124290755848,
+    0.07050375189661949,
+    0.984807753012208
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -197,7 +197,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.01
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -234,7 +234,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -258,9 +258,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.01594916863782227,
+    0.007085937497215274,
+    0.9998476951563913
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -373,7 +373,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.02
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -410,7 +410,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -434,9 +434,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.03189347900437439,
+    0.014169716549225879,
+    0.9993908270190958
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -549,7 +549,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.03
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -586,7 +586,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -610,9 +610,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.04782807430826272,
+    0.021249179368310462,
+    0.9986295347545738
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -725,7 +725,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.04
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -762,7 +762,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -786,9 +786,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.0637481007173958,
+    0.028322169481514038,
+    0.9975640502598242
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -901,7 +901,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.05
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -938,7 +938,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -962,9 +962,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.07964870883750862,
+    0.03538653238753053,
+    0.9961946980917455
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -1077,7 +1077,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.06
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -1114,7 +1114,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -1138,9 +1138,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.09552505518933517,
+    0.042440116212984734,
+    0.9945218953682733
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -1253,7 +1253,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.07
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -1290,7 +1290,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -1314,9 +1314,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.11137230368397907,
+    0.04948077236791383,
+    0.992546151641322
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -1429,7 +1429,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.08
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -1466,7 +1466,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -1490,9 +1490,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.1271856270960331,
+    0.05650635620024866,
+    0.9902680687415704
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
@@ -1605,7 +1605,7 @@
    "position": [
     7.697581966362218,
     6.307738084019028,
-    0.09
+    0.0
    ],
    "reflectivity": 1,
    "rocking_curve": 9.03e-05,
@@ -1642,7 +1642,7 @@
    "backwards_raytrace": false,
    "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": true,
+   "do_visualizations": false,
    "ideal_geometry": true,
    "number_of_rays": 10000000,
    "number_of_runs": 10,
@@ -1666,9 +1666,9 @@
     0.0
    ],
    "orientation": [
-    0.0,
-    0.0,
-    1.0
+    0.14296020853399885,
+    0.06351472764909552,
+    0.9876883405951378
    ],
    "pi_data": "../xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,

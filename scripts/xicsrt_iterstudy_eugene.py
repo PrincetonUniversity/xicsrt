@@ -116,12 +116,10 @@ def get_config():
     # -------------------------------------------------------------------------
     ## Load spherical crystal properties
 
-    # Rocking curve FWHM in radians
-    # This is taken from x0h for quartz 1,1,-2,0
+    # Rocking curve FWHM:  90.30 urad
     # Darwin Curve, sigma: 48.070 urad
     # Darwin Curve, pi:    14.043 urad
-    # Graphite Rocking Curve FWHM in radians
-    # Taken from XOP: 8765 urad
+    # Taken from XoP
 
     config['crystal_input']['position']           = [0.0, 0.0, 0.0]
     config['crystal_input']['normal']             = [0.0, 0.0, 0.0]
@@ -147,6 +145,10 @@ def get_config():
 
     # --------------------------------------------------------------------------
     ## Load mosaic graphite properties
+    
+    # HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
+    # Taken from Ohler et al. “X-ray topographic determination of the granular 
+    # structure in a graphite mosaic crystal: a three-dimensional reconstruction”
 
     config['graphite_input']['position']          = [0.0, 0.0, 0.0]
     config['graphite_input']['normal']            = [0.0, 0.0, 0.0]
@@ -158,7 +160,7 @@ def get_config():
     config['graphite_input']['reflectivity']      = 1
     config['graphite_input']['mosaic_spread']     = 0.5
     config['graphite_input']['spacing']           = 3.35
-    config['graphite_input']['rocking_curve']     = 8765e-6
+    config['graphite_input']['rocking_curve']     = 2620-6
     config['graphite_input']['pixel_scaling']     = int(200)
 
     config['graphite_input']['therm_expand']      = 20e-6
@@ -188,7 +190,7 @@ def get_config():
     config['detector_input']['do_miss_checks']    = True
 
     # -------------------------------------------------------------------------
-    # Load scenario properties
+    ## Load scenario properties
     
     config['scenario_input']['source_graphite_dist']  = 2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
@@ -204,7 +206,7 @@ def get_config_multi(configurations):
         
     return config_multi
 
-# Run the scripts in order (TEMPORARY - Find a better place to put this code)
+## Run the scripts in order (TEMPORARY - Find a better place to put this code)
 import sys
 sys.path.append('/Users/Eugene/PPPL_python_project1')
 sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code') 
@@ -215,22 +217,20 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'single'
-jsontype= 'load'
+runtype = 'load'
 logging.info('Starting Ray-Trace Runs...')
 
-if jsontype == 'none':
-    if runtype == 'single':
-        config = get_config()
-        config = initialize(config)
-        output, meta = run(config, 0)
+if runtype == 'single':
+    config = get_config()
+    config = initialize(config)
+    output, meta = run(config)
         
-    if runtype == 'multi':
-        config_multi = get_config_multi(10)
-        config_multi = initialize_multi(config_multi)
-        output, meta = run_multi(config_multi)
+if runtype == 'multi':
+    config_multi = get_config_multi(10)
+    config_multi = initialize_multi(config_multi)
+    output, meta = run_multi(config_multi)
         
-if jsontype == 'save':
+if runtype == 'save':
     config_multi = get_config_multi(10)
     config_multi = initialize_multi(config_multi)
     # Convert all numpy arrays into json-recognizable lists
@@ -245,7 +245,7 @@ if jsontype == 'save':
         json.dump(config_multi ,input_file, indent = 1, sort_keys = True)
         print('xicsrt_input.json saved!')
         
-if jsontype == 'load':
+if runtype == 'load':
     try:
         with open('xicsrt_input.json', 'r') as input_file:
             config_multi = json.load(input_file)

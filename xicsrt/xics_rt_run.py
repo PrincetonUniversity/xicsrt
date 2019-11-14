@@ -28,7 +28,7 @@ from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visuali
 
 profiler.stop('Import Time')
 
-def run(config, config_number):
+def run(config, config_number = None):
     ## Initial Setup
 
     # Initialize the random seed
@@ -110,24 +110,30 @@ def run(config, config_number):
             os.mkdir(config['general_input']['output_path'])
 
         # create detector image file
-        filename = 'xicsrt_detector_'
-        filename+= str(int(config_number))
+        filename = 'xicsrt_detector'
+        if config_number is not None:
+            filename+= '_'
+            filename+= str(int(config_number))
         filename+= config['general_input']['output_suffix']
         filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting detector image: {}'.format(filepath))
         pilatus.output_image(filepath, rotate=False)
 
         # create graphite image file
-        filename = 'xicsrt_graphite_'
-        filename+= str(int(config_number))
+        filename = 'xicsrt_graphite'
+        if config_number is not None:
+            filename+= '_'
+            filename+= str(int(config_number))
         filename+= config['general_input']['output_suffix']
         filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting graphite image: {}'.format(filepath))
         graphite.output_image(filepath, rotate=False)
 
         # create crystal image file
-        filename = 'xicsrt_crystal_'
-        filename+= str(int(config_number))
+        filename = 'xicsrt_crystal'
+        if config_number is not None:
+            filename+= '_'
+            filename+= str(int(config_number))
         filename+= config['general_input']['output_suffix']
         filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting crystal image:  {}'.format(filepath))
