@@ -160,7 +160,7 @@ def get_config():
     config['graphite_input']['reflectivity']      = 1
     config['graphite_input']['mosaic_spread']     = 0.5
     config['graphite_input']['spacing']           = 3.35
-    config['graphite_input']['rocking_curve']     = 2620-6
+    config['graphite_input']['rocking_curve']     = 2620e-6
     config['graphite_input']['pixel_scaling']     = int(200)
 
     config['graphite_input']['therm_expand']      = 20e-6
