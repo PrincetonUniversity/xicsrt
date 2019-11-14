@@ -14,7 +14,6 @@ filename_list = glob.glob(os.path.join(path, 'xicsrt_detector*.tif'))
 for ff in filename_list:
     print(ff)
 
-
 image = Image.open(filename_list[0])
 image_array = np.array(image)
 
@@ -27,7 +26,6 @@ for ff in filename_list[1:]:
 # The idea is to add just enough noise that the Gaussian distribution
 # starts to approximate the Poisson distribution, but also keep the
 # signal to noise ratio down in tha case of small signal.
-#noise_level = min(10, np.max(image_array)*0.05)
 noise_level = 10
 noise = np.random.poisson(noise_level, image_array.shape)
 image_array += noise

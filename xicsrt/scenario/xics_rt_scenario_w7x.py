@@ -19,6 +19,8 @@ import os
 
 from collections import OrderedDict
 
+from multiprocessing import Pool
+
 from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt import xics_rt_input
 
@@ -47,6 +49,7 @@ def run(config, name=None, do_random_seed=True):
 
     if do_random_seed:
         # Initialize the random seed.
+        logging.info('Seeding np.random with {}'.format(config['general_input']['random_seed']))
         np.random.seed(config['general_input']['random_seed'])
 
     profiler.start('Class Setup Time')
@@ -136,7 +139,61 @@ def run_multi(config_multi):
             do_random_seed = True
         else:
             do_random_seed = False
+
         output, rays_count = run(config_multi[key], key, do_random_seed=do_random_seed)
+
+        output_final.append(output)
+        rays_final.append(rays_count)
+        for key in rays_total:
+            rays_total[key] += rays_count[key]
+
+    # after all raytrace runs for all configurations, report the ray totals
+    print('')
+    print('Multi Config Rays Generated: {:6.4e}'.format(rays_total['total_generated']))
+    print('Multi Config Rays on Crystal:{:6.4e}'.format(rays_total['total_crystal']))
+    print('Multi Config Rays Detected:  {:6.4e}'.format(rays_total['total_detector']))
+    print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
+        rays_total['total_detector'] / rays_total['total_generated'],
+        np.sqrt(rays_total['total_detector']) / rays_total['total_generated'],
+        rays_total['total_detector'] / rays_total['total_generated'] * 100))
+    print('')
+
+    profiler.stop('XICSRT Run')
+
+    return output_final, rays_final
+
+
+def run_multiprocessing(config_multi):
+
+    profiler.start('XICSRT Run')
+
+    # create the rays_total dictionary to count the total number of rays
+    rays_total = OrderedDict()
+    rays_total['total_generated'] = 0
+    rays_total['total_crystal'] = 0
+    rays_total['total_detector'] = 0
+
+    output_final = []
+    rays_final = []
+
+    result_list = []
+    with Pool() as pool:
+        # loop through each configuration in the configuration input file
+        # and add a new run into the pool.
+        for ii, name in enumerate(config_multi):
+            logging.info('Launching raytrace for Configuration: {}'.format(name))
+
+            if config_multi[name]['general_input']['random_seed'] is not None:
+                config_multi[name]['general_input']['random_seed'] += ii
+            arg = (config_multi[name], name)
+            result = pool.apply_async(run, arg)
+            result_list.append(result)
+        pool.close()
+        pool.join()
+
+    # Gather all the results together.
+    for result in result_list:
+        output, rays_count = result.get()
 
         output_final.append(output)
         rays_final.append(rays_count)
