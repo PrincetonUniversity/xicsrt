@@ -92,45 +92,47 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
 
     if number_of_runs is None: number_of_runs = 1
 
-    count = dict()
-    count['total_generated']  = 0
-    count['total_graphite']   = 0
-    count['total_crystal']    = 0
-    count['total_detector']   = 0
+    rays_count = dict()
+    rays_count['total_generated']  = 0
+    rays_count['total_graphite']   = 0
+    rays_count['total_crystal']    = 0
+    rays_count['total_detector']   = 0
 
     history = {}
     history['found'] = []
     history['lost'] = []
+    
+    rays_history = {}
+    rays_history['found'] = []
+    rays_history['lost'] = []
 
     for ii in range(number_of_runs):
         print('')
         print('Starting iteration: {} of {}'.format(ii + 1, number_of_runs))
 
-        history_temp, count_temp = raytrace_single(source, detector, *optics, collect_optics=collect_optics)
+        single_history, single_count = raytrace_single(
+                source, detector, *optics, collect_optics=collect_optics)
 
-        for key in count_temp:
-            count[key] += count_temp[key]
+        for key in single_count:
+            rays_count[key] += single_count[key]
 
-        w_found = np.flatnonzero(history_temp[-1]['mask'])
-        w_lost  = np.flatnonzero(np.invert(history_temp[-1]['mask']))
-
-        # Save only a portion of the lost rays so that our lost history does
-        # not become too large.
-        max_lost = 5000
-        lost_max = min(max_lost, len(w_lost))
-        index_lost = np.arange(len(w_lost))
-        np.random.shuffle(index_lost)
-        w_lost = w_lost[index_lost[:lost_max]]
+        w_found = np.flatnonzero(single_history[-1]['mask'])
+        w_lost  = np.flatnonzero(np.invert(single_history[-1]['mask']))
+        
+        #to avoid saving too many rays, randomly cull rays until there are 5000
+        if len(w_lost) >= 5000:
+            cutter = np.random.randint(0, len(w_lost), len(w_lost))
+            w_lost = w_lost[cutter <= 5000]
 
         found = []
         lost  = []
-        for ii_opt in range(len(history_temp)):
+        for optic in range(len(single_history)):
             found.append({})
             lost.append({})
 
-            for key in history_temp[ii_opt]:
-                found[ii_opt][key] = history_temp[ii_opt][key][w_found]
-                lost[ii_opt][key] = history_temp[ii_opt][key][w_lost]
+            for key in single_history[optic]:
+                found[optic][key] = single_history[optic][key][w_found]
+                lost[optic][key]  = single_history[optic][key][w_lost]
 
         history['found'].append(found)
         history['lost'].append(lost)
@@ -139,29 +141,27 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
     ray_temp = RayArray()
     ray_temp.zeros(0)
 
-    history_final = {}
-    history_final['found'] = []
-    history_final['lost'] = []
-    for ii_opt in range(len(history['found'][0])):
-        history_final['found'].append(ray_temp.copy())
-        history_final['lost'].append(ray_temp.copy())
 
-    for ii_run in range(len(history['found'])):
-        for ii_opt in range(len(history['found'][0])):
-            history_final['found'][ii_opt].extend(history['found'][ii_run][ii_opt])
-            history_final['lost'][ii_opt].extend(history['lost'][ii_run][ii_opt])
+    for optic in range(len(history['found'][0])):
+        rays_history['found'].append(ray_temp.copy())
+        rays_history['lost'].append(ray_temp.copy())
+
+    for run in range(len(history['found'])):
+        for optic in range(len(history['found'][0])):
+            rays_history['found'][optic].extend(history['found'][run][optic])
+            rays_history['lost'][optic].extend(history['lost'][run][optic])
 
     print('')
-    print('Final Rays Generated: {:6.4e}'.format(count['total_generated']))
-    print('Final Rays on HOPG:   {:6.4e}'.format(count['total_graphite']))
-    print('Final Rays on Crystal:{:6.4e}'.format(count['total_crystal']))
-    print('Final Rays Detected:  {:6.4e}'.format(count['total_detector']))
+    print('Final Rays Generated: {:6.4e}'.format(rays_count['total_generated']))
+    print('Final Rays on HOPG:   {:6.4e}'.format(rays_count['total_graphite']))
+    print('Final Rays on Crystal:{:6.4e}'.format(rays_count['total_crystal']))
+    print('Final Rays Detected:  {:6.4e}'.format(rays_count['total_detector']))
     print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-        count['total_detector'] / count['total_generated'],
-        np.sqrt(count['total_detector']) / count['total_generated'],
-        count['total_detector'] / count['total_generated'] * 100))
+        rays_count['total_detector'] / rays_count['total_generated'],
+        np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
+        rays_count['total_detector'] / rays_count['total_generated'] * 100))
     print('')
 
-    return history_final, count
+    return rays_history, rays_count
 
 

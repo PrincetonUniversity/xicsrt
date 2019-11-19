@@ -41,17 +41,17 @@ def get_config():
     # possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
 
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
     config['general_input']['ideal_geometry']     = True
     config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = False
+    config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 123456
-    config['general_input']['scenario']           = 'BEAM'
+    config['general_input']['scenario']           = 'PLASMA'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
 
@@ -80,14 +80,18 @@ def get_config():
     
     config['plasma_input']['major_radius']        = 6.2
     config['plasma_input']['minor_radius']        = 2.0
+    config['plasma_input']['temperature_data']    = '../xicsrt/plasma_temperature.txt'
+    config['plasma_input']['emissivity_data']     = '../xicsrt/plasma_emissivity_xe44.txt'
     
     config['plasma_input']['space_resolution']    = 0.01
     config['plasma_input']['time_resolution']     = 0.01
-    config['plasma_input']['bundle_count']        = 100
+    config['plasma_input']['bundle_count']        = 1000000
     config['plasma_input']['bundle_type']         = 'point'
+    config['plasma_input']['profile_type']        = 'data'
 
-    config['plasma_input']['spread']              = 2.0       #Angular spread (degrees)
-    config['plasma_input']['temp']                = 1000      #Ion temperature (eV)
+    config['plasma_input']['spread']              = 2.0       # Angular spread (degrees)
+    config['plasma_input']['temperature']         = 1000      # Ion temperature (eV)
+    config['plasma_input']['emissivity']          = 1e16      # Emissivity (photons m^-3 s^-1)
     config['plasma_input']['mass']                = 131.293   # Xenon mass (AMU)
     config['plasma_input']['wavelength']          = 2.7203    # Line location (angstroms)
     config['plasma_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
@@ -192,7 +196,7 @@ def get_config():
     # -------------------------------------------------------------------------
     ## Load scenario properties
     
-    config['scenario_input']['source_graphite_dist']  = 2
+    config['scenario_input']['source_graphite_dist']  = 10
     config['scenario_input']['graphite_crystal_dist'] = 8.5
     config['scenario_input']['crystal_detector_dist'] = None
 
@@ -217,7 +221,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'load'
+runtype = 'single'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':

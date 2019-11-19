@@ -143,6 +143,21 @@ def visualize_layout(config):
     saggit_line[0,:] = position[2,:] + sagitt_focus * inbound_vector + 0.1 *   normal[2,:]
     saggit_line[1,:] = position[2,:] + sagitt_focus * inbound_vector - 0.1 *   normal[2,:]
     
+    ## The plasma's major and minor radii
+    #plasma center[3D Coordinates]
+    plasma_center   =(config['plasma_input']['major_radius']
+                    * config['plasma_input']['normal']
+                    + config['plasma_input']['position'])
+                    
+    #plasma_circle[Point Number, 3D Coordinates], 36 evenly-spaced points
+    major_circle    = config['plasma_input']['major_radius'] * (
+            (orient_y[4,:] * np.cos(circle_points)) + (normal[4,:] * np.sin(circle_points)))
+    major_circle   += config['plasma_input']['position']
+    
+    minor_circle    = config['plasma_input']['minor_radius'] * (
+            (orient_x[4,:] * np.cos(circle_points)) + (normal[4,:] * np.sin(circle_points)))
+    minor_circle   += plasma_center
+    
     ## Plot everything
     if config['general_input']['scenario'] == "PLASMA":
         #resize axes
@@ -154,6 +169,7 @@ def visualize_layout(config):
         ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
         ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
         ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+        ax.scatter(plasma_center[0] , plasma_center[1] , plasma_center[2] , color = "yellow")
         
         #normal vectors
         ax.quiver(position[4,0], position[4,1], position[4,2],
@@ -174,7 +190,6 @@ def visualize_layout(config):
         ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
         
         #bounding boxes
-        ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
         ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
         ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
@@ -183,6 +198,8 @@ def visualize_layout(config):
         ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
         ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
         ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
+        ax.plot3D(major_circle[:,0]  , major_circle[:,1]  , major_circle[:,2]  , color = "yellow")
+        ax.plot3D(minor_circle[:,0]  , minor_circle[:,1]  , minor_circle[:,2]  , color = "yellow")
         
         #foci
         ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
@@ -318,9 +335,9 @@ def visualize_layout(config):
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
     
 
-    ax.set_xlim(position[3,0] - scale, position[3,0] + scale)
-    ax.set_ylim(position[3,1] - scale, position[3,1] + scale)
-    ax.set_zlim(position[3,2] - scale, position[3,2] + scale)
+    ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
+    ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
+    ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
     
     return plt, ax
     

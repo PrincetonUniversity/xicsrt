@@ -30,27 +30,32 @@ class GenericPlasma(TraceObject):
             ,plasma_input['orientation'])
         
         self.plasma_input   = plasma_input
-        self.max_rays       = plasma_input['max_rays']
+        #spacial information
         self.position       = plasma_input['position']
         self.normal         = plasma_input['normal']
         self.xorientation   = plasma_input['orientation']
         self.yorientation   = np.cross(self.normal, self.xorientation )
         self.yorientation  /= np.linalg.norm(self.yorientation)
         self.target         = plasma_input['target']
-        # Voxels are 3D pixels, Chronons are time pixels
         self.width          = plasma_input['width']
         self.height         = plasma_input['height']
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
+        #bundle information
+        self.bundle_type    = str.lower(plasma_input['bundle_type'])
+        self.max_rays       = plasma_input['max_rays']
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
         self.voxel_size     = plasma_input['space_resolution']
         self.chronon_size   = plasma_input['time_resolution']
         self.bundle_volume  = self.voxel_size ** 3
         self.bundle_count   = plasma_input['bundle_count']
-        self.bundle_type    = plasma_input['bundle_type']
-        
-        self.mass_number    = plasma_input['mass']   
-        self.temp           = plasma_input['temp']
+        #profile information
+        self.profile_type   = str.lower(plasma_input['profile_type'])
+        self.temp_data      = plasma_input['temperature_data']
+        self.emis_data      = plasma_input['emissivity_data']
+        self.temperature    = plasma_input['temperature']
+        self.emissivity     = plasma_input['emissivity']
+        self.mass_number    = plasma_input['mass']
         self.wavelength     = plasma_input['wavelength']
         self.linewidth      = plasma_input['linewidth']
         
@@ -171,7 +176,7 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
-        bundle_input['temp'][:]         = self.temp
+        bundle_input['temp'][:]         = self.temperature
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
@@ -227,7 +232,7 @@ class CylindricalPlasma(GenericPlasma):
         
         #evaluate temperature at each point
         #plasma cylinder temperature falls off as a function of radius
-        bundle_input['temp']         = self.temp / radius
+        bundle_input['temp']         = self.temperature / radius
         
         #evaluate emissivity at each point
         #plasma cylinder emissivity falls off as a function of radius
@@ -270,19 +275,28 @@ class ToroidalPlasma(GenericPlasma):
                   + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
                   + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
         
-        #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
+        #convert from cartesian coordinates to toroidal coordinates [rad, pol, tor]
         #torus is oriented along the Z axis
         rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
         
-        step_test    = np.zeros(self.bundle_count, dtype = np.bool)
-        step_test[:] = (rad <= self.minor_radius)
-        #evaluate temperature at each point
-        #plasma torus temperature falls off as a function of radius
-        bundle_input['temp'][step_test] = self.temp
-        
-        #evaluate emissivity at each point
-        #plasma torus emissivity falls off as a function of radius
-        bundle_input['emissivity'][step_test]   = 1e14
+        #evaluate temperature and emissivity at each point
+        if self.profile_type == 'step':
+            #step function profile
+            step_test    = np.zeros(self.bundle_count, dtype = np.bool)
+            step_test[:] = (rad <= self.minor_radius)
+            bundle_input['temp'][step_test]         = self.temperature
+            bundle_input['emissivity'][step_test]   = self.emissivity
+            
+        if self.profile_type == 'data':
+            #read and interpolate profile from data file
+            temp_data  = np.loadtxt(self.temp_data, dtype = np.float64)
+            emis_data  = np.loadtxt(self.emis_data, dtype = np.float64)
+            nrad       = rad / self.minor_radius
+            
+            bundle_input['temp']        = np.interp(nrad, temp_data[:,0], temp_data[:,1],
+                                                    left = 1.0, right = 1.0)
+            bundle_input['emissivity']  = np.interp(nrad, emis_data[:,0], emis_data[:,1],
+                                                    left = 1.0, right = 1.0)
         
         return bundle_input
 
