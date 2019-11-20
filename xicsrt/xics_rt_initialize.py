@@ -14,6 +14,7 @@ from xicsrt.util import profiler
 
 profiler.start('Import Time')
 
+from xicsrt.xics_rt_scenarios import setup_throughput_scenario
 from xicsrt.xics_rt_scenarios import setup_plasma_scenario
 from xicsrt.xics_rt_scenarios import setup_beam_scenario
 from xicsrt.xics_rt_scenarios import setup_graphite_test
@@ -34,6 +35,10 @@ def initialize(config):
     ## Set up a plasma test scenario 
     if scenario == 'plasma':
         config = setup_plasma_scenario(config)
+        
+    ## Set up a throughput test scenario 
+    if scenario == 'throughput':
+        config = setup_throughput_scenario(config)
 
     ## Set up a beamline test scenario 
     elif scenario == 'beam' or scenario == 'model':
@@ -43,17 +48,9 @@ def initialize(config):
     elif scenario == 'crystal':
         config = setup_crystal_test(config)
 
-        config['graphite_input']['position']     = config['crystal_input']['position']
-        config['graphite_input']['normal']       = config['crystal_input']['normal']
-        config['graphite_input']['orientation']  = config['crystal_input']['orientation']
-
     ## Set up a graphite test scenario 
     elif scenario == 'graphite':
         config = setup_graphite_test(config)
-
-        config['crystal_input']['position']       = config['graphite_input']['position']
-        config['crystal_input']['normal']         = config['graphite_input']['normal']
-        config['crystal_input']['orientation']    = config['graphite_input']['orientation']
 
     ## Set up a source test scenario 
     elif scenario == 'source':

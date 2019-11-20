@@ -37,7 +37,8 @@ def get_config():
     # set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
     # set do_miss_checks to False to prevent optics from masking rays that miss
     # change the random seed to alter the random numbers generated
-    # possible scenarios include 'MODEL', 'PLASMA', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
+    # possible scenarios include 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
+    # 'CRYSTAL', 'GRAPHITE', 'SOURCE'
     # possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
 
     config['general_input']['number_of_rays']     = int(1e7)
@@ -51,7 +52,7 @@ def get_config():
     config['general_input']['do_savefiles']       = True
     config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 123456
-    config['general_input']['scenario']           = 'PLASMA'
+    config['general_input']['scenario']           = 'THROUGHPUT'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
 
@@ -74,9 +75,9 @@ def get_config():
     config['plasma_input']['normal']              = np.array([1.0, 0.0, 0.0])
     config['plasma_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['plasma_input']['target']              = np.array([1.0, 0.0, 0.0])
-    config['plasma_input']['width']               = 9
-    config['plasma_input']['height']              = 0.1
-    config['plasma_input']['depth']               = 0.1
+    config['plasma_input']['width']               = 4.0
+    config['plasma_input']['height']              = 0.05
+    config['plasma_input']['depth']               = 4.0
     
     config['plasma_input']['major_radius']        = 6.2
     config['plasma_input']['minor_radius']        = 2.0
@@ -85,7 +86,7 @@ def get_config():
     
     config['plasma_input']['space_resolution']    = 0.01
     config['plasma_input']['time_resolution']     = 0.01
-    config['plasma_input']['bundle_count']        = 1000000
+    config['plasma_input']['bundle_count']        = int(1e7)
     config['plasma_input']['bundle_type']         = 'point'
     config['plasma_input']['profile_type']        = 'data'
 

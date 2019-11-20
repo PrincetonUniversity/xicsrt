@@ -24,7 +24,8 @@ from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt.xics_rt_model      import analytical_model
-from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model, visualize_vectors
+from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model
+from xicsrt.xics_rt_visualizer import visualize_vectors, visualize_bundles
 
 profiler.stop('Import Time')
 
@@ -54,6 +55,12 @@ def run(config, config_number = None):
     if scenario == 'plasma':
         output, rays_count = raytrace(
             plasma, pilatus, graphite, crystal
+            , number_of_runs=config['general_input']['number_of_runs']
+            , collect_optics=True)
+
+    elif scenario == 'throughput':
+        output, rays_count = raytrace(
+            plasma, pilatus, crystal
             , number_of_runs=config['general_input']['number_of_runs']
             , collect_optics=True)
 
@@ -100,8 +107,11 @@ def run(config, config_number = None):
     
     ## Final Visualization
     if config['general_input']['do_visualizations'] is True:
-        plt2, ax2 = visualize_vectors(config, output)
+        plt2, ax2 = visualize_bundles(config, output)
         plt2.show()
+        for ii in range(len(output['lost'])):
+            plt3, ax3 = visualize_vectors(config, output, ii)
+            plt3.show()
     
     ## Save Outputs
     if config['general_input']['do_savefiles'] is True:

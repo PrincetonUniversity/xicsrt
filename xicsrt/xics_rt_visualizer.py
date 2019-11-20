@@ -44,6 +44,7 @@ def visualize_layout(config):
     saggit_line     = np.zeros([2,3], dtype = np.float64)
     
     ## Define variables
+    scenario        = config['general_input']['scenario']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     
@@ -135,8 +136,15 @@ def visualize_layout(config):
     rowland_circle += rowland_center
     
     ## The crystal's saggital and meridional foci
-    inbound_vector = position[1,:] - position[2,:]
-    inbound_vector/= np.linalg.norm(inbound_vector)
+    inbound_vector   = np.zeros([3], dtype = np.float64)
+    if scenario == "PLASMA" or scenario == "BEAM":
+        inbound_vector = position[1,:] - position[2,:]
+        inbound_vector/= np.linalg.norm(inbound_vector)
+        
+    if scenario == "THROUGHPUT" or scenario == "CRYSTAL":
+        inbound_vector = position[0,:] - position[2,:]
+        inbound_vector/= np.linalg.norm(inbound_vector)
+        
     #meridi_line[Point Number, 3D Coordinates], 2 points (one above, one below)
     meridi_line[0,:] = position[2,:] + meridi_focus * inbound_vector + 0.1 * orient_x[2,:]
     meridi_line[1,:] = position[2,:] + meridi_focus * inbound_vector - 0.1 * orient_x[2,:]
@@ -159,7 +167,7 @@ def visualize_layout(config):
     minor_circle   += plasma_center
     
     ## Plot everything
-    if config['general_input']['scenario'] == "PLASMA":
+    if scenario == "PLASMA":
         #resize axes
         scale = abs(position[0,0] - position[2,0])
         
@@ -205,7 +213,51 @@ def visualize_layout(config):
         ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
         ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
         
-    elif config['general_input']['scenario'] == "BEAM" or config['general_input']['scenario'] == "MODEL":
+    elif scenario == "THROUGHPUT":
+        #resize axes
+        scale = abs(position[0,0] - position[2,0])
+        
+        #position points
+        ax.scatter(position[4,0], position[4,1], position[4,2], color = "yellow")
+        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
+        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
+        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+        ax.scatter(plasma_center[0] , plasma_center[1] , plasma_center[2] , color = "yellow")
+        
+        #normal vectors
+        ax.quiver(position[4,0], position[4,1], position[4,2],
+                  normal[4,0]  , normal[4,1]  , normal[4,2]  ,
+                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
+        ax.quiver(position[1,0], position[1,1], position[1,2],
+                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
+                  color = "grey", length = 0.1, arrow_length_ratio = 0.1)
+        ax.quiver(position[2,0], position[2,1], position[2,2],
+                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
+                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
+        ax.quiver(position[3,0], position[3,1], position[3,2],
+                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
+                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
+        
+        #beamline
+        beamline[0,:] = beamline[4,:]
+        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
+        
+        #bounding boxes
+        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
+        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
+        
+        #circles
+        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
+        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
+        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
+        ax.plot3D(major_circle[:,0]  , major_circle[:,1]  , major_circle[:,2]  , color = "yellow")
+        ax.plot3D(minor_circle[:,0]  , minor_circle[:,1]  , minor_circle[:,2]  , color = "yellow")
+        
+        #foci
+        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
+        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+        
+    elif scenario == "BEAM" or scenario == "MODEL":
         #resize axes
         scale = abs(position[0,0] - position[2,0])
         
@@ -248,7 +300,7 @@ def visualize_layout(config):
         ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
         ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
         
-    elif config['general_input']['scenario'] == "CRYSTAL":
+    elif scenario == "CRYSTAL":
         #resize axes
         scale = abs(position[0,0] - position[3,0])
         
@@ -286,7 +338,7 @@ def visualize_layout(config):
         ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
         ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
     
-    elif config['general_input']['scenario'] == "GRAPHITE":
+    elif scenario == "GRAPHITE":
         #resize axes
         scale = abs(position[0,0] - position[3,0])
 
@@ -314,7 +366,7 @@ def visualize_layout(config):
         ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
         
-    elif config['general_input']['scenario'] == "SOURCE":
+    elif scenario == "SOURCE":
         #resize axes
         scale = abs(position[0,0] - position[3,0])
         
@@ -341,12 +393,11 @@ def visualize_layout(config):
     
     return plt, ax
     
-def visualize_vectors(config, output):
+def visualize_vectors(config, output, ii):
     ## Do all of the steps as before, but also add the output rays
-    origin = output['lost'][0]['origin']
-    direct = output['lost'][0]['direction']
-    m      = output['lost'][0]['mask']
-    quiver = False
+    origin = output['lost'][ii]['origin']
+    direct = output['lost'][ii]['direction']
+    m      = output['lost'][ii]['mask']
     
     #to avoid plotting too many rays, randomly cull rays until there are 1000
     if len(m[m]) > 1000:
@@ -356,14 +407,28 @@ def visualize_vectors(config, output):
     plt, ax = visualize_layout(config)
     plt.title("X-Ray Raytracing Results")
     
-    if quiver is True:
-        ax.quiver(origin[m,0], origin[m,1], origin[m,2],
-                  direct[m,0], direct[m,1], direct[m,2],
-                  length = 1.0, arrow_length_ratio = 0.01, 
-                  color = "green", alpha = 0.1, normalize = True)
-    if quiver is False:
-        ax.scatter(origin[m,0], origin[m,1], origin[m,2],
-                  color = "green", alpha = 0.1)
+    ax.quiver(origin[m,0], origin[m,1], origin[m,2],
+              direct[m,0], direct[m,1], direct[m,2],
+              length = 1.0, arrow_length_ratio = 0.01, 
+              color = "green", alpha = 0.1, normalize = True)
+    
+    return plt, ax
+
+def visualize_bundles(config, output):
+    ## Do all of the steps as before, but also add the plasma bundles
+    origin = output['lost'][0]['origin']
+    m      = output['lost'][0]['mask']
+    
+    #to avoid plotting too many bundles, randomly cull rays until there are 1000
+    if len(m[m]) > 1000:
+        cutter = np.random.randint(0, len(m[m]), len(m))
+        m[m] &= (cutter[m] < 1000)
+    
+    plt, ax = visualize_layout(config)
+    plt.title("X-Ray Bundle Generation Results")
+
+    ax.scatter(origin[m,0], origin[m,1], origin[m,2],
+              color = "green", alpha = 0.1)
     
     return plt, ax
 
