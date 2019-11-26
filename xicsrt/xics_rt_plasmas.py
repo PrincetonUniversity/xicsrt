@@ -42,15 +42,15 @@ class GenericPlasma(TraceObject):
         self.depth          = plasma_input['depth']
         self.volume         = self.width * self.height * self.depth
         #bundle information
+        self.bundle_count   = plasma_input['bundle_count']
         self.bundle_type    = str.lower(plasma_input['bundle_type'])
         self.max_rays       = plasma_input['max_rays']
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
         self.voxel_size     = plasma_input['space_resolution']
         self.chronon_size   = plasma_input['time_resolution']
         self.bundle_volume  = self.voxel_size ** 3
-        self.bundle_count   = plasma_input['bundle_count']
         #profile information
-        self.profile_type   = str.lower(plasma_input['profile_type'])
+        self.use_profiles   = plasma_input['use_profiles']
         self.temp_data      = plasma_input['temperature_data']
         self.emis_data      = plasma_input['emissivity_data']
         self.temperature    = plasma_input['temperature']
@@ -142,7 +142,7 @@ class GenericPlasma(TraceObject):
                 rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
                 rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
             profiler.stop("Ray Bundle Generation")
-                
+        print(' Bundles Generated: {:6.4e}'.format(ii + 1))        
         return rays
         
 class CubicPlasma(GenericPlasma):
@@ -180,7 +180,7 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
-        bundle_input['emissivity'][:]   = 1e13
+        bundle_input['emissivity'][:]   = self.emissivity
             
         return bundle_input
     
@@ -236,7 +236,7 @@ class CylindricalPlasma(GenericPlasma):
         
         #evaluate emissivity at each point
         #plasma cylinder emissivity falls off as a function of radius
-        bundle_input['emissivity']   = 1e10 / radius
+        bundle_input['emissivity']   = self.emissivity / radius
         
         return bundle_input
 
@@ -280,14 +280,14 @@ class ToroidalPlasma(GenericPlasma):
         rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
         
         #evaluate temperature and emissivity at each point
-        if self.profile_type == 'step':
+        if self.use_profiles is False:
             #step function profile
             step_test    = np.zeros(self.bundle_count, dtype = np.bool)
             step_test[:] = (rad <= self.minor_radius)
             bundle_input['temp'][step_test]         = self.temperature
             bundle_input['emissivity'][step_test]   = self.emissivity
             
-        if self.profile_type == 'data':
+        if self.use_profiles is True:
             #read and interpolate profile from data file
             temp_data  = np.loadtxt(self.temp_data, dtype = np.float64)
             emis_data  = np.loadtxt(self.emis_data, dtype = np.float64)

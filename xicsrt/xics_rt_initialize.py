@@ -25,35 +25,32 @@ profiler.stop('Import Time')
 
 
 def initialize(config):
-
     profiler.start('Scenario Setup Time')
 
-    ## Temporary
-
-    scenario = str.lower(config['general_input']['scenario'])
+    scenario = str.upper(config['general_input']['scenario'])
 
     ## Set up a plasma test scenario 
-    if scenario == 'plasma':
+    if   scenario == 'PLASMA':
         config = setup_plasma_scenario(config)
         
     ## Set up a throughput test scenario 
-    if scenario == 'throughput':
+    elif scenario == 'THROUGHPUT':
         config = setup_throughput_scenario(config)
 
     ## Set up a beamline test scenario 
-    elif scenario == 'beam' or scenario == 'model':
+    elif scenario == 'BEAM' or scenario == 'MODEL':
         config = setup_beam_scenario(config)
 
     ## Set up a crystal test scenario 
-    elif scenario == 'crystal':
+    elif scenario == 'CRYSTAL':
         config = setup_crystal_test(config)
 
     ## Set up a graphite test scenario 
-    elif scenario == 'graphite':
+    elif scenario == 'GRAPHITE':
         config = setup_graphite_test(config)
 
     ## Set up a source test scenario 
-    elif scenario == 'source':
+    elif scenario == 'SOURCE':
         config = setup_source_test(config)
 
     else:
