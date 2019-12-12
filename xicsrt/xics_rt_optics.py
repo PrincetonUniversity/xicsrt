@@ -15,7 +15,6 @@ rocking curve, and reflectivity, as well as a height and width.
 """
 from PIL import Image
 import numpy as np
-from scipy.spatial import cKDTree
 
 from xicsrt.xics_rt_objects import TraceObject
 from xicsrt.util import profiler
@@ -47,10 +46,7 @@ class GenericOptic(TraceObject):
         self.mix_factor     = optic_input['mix_factor']
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
-        self.rocking_type   = optic_input['rocking_curve_type']
-
-        # Check the input types.
-        self.rocking_type = str.lower(self.rocking_type)
+        self.rocking_type   = str.lower(optic_input['rocking_curve_type'])
 
     def normalize(self, vector):
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
@@ -107,7 +103,7 @@ class GenericOptic(TraceObject):
         else:
             raise Exception('Rocking curve type not understood: {}'.format(self.rocking_curve))
             
-        return mask
+        return mask  
     
     def intersect_check(self, rays, distance):
         O = rays['origin']
@@ -373,3 +369,297 @@ class MosaicGraphite(GenericOptic):
         rays = self.reflect_vectors(X, rays, self.mosaic_norm_generate(rays))
         print(' Rays from Graphite:{:6.4e}'.format(D[m].shape[0]))     
         return rays
+    
+    
+class MosaicGraphiteMesh(TraceObject):
+    def __init__(self, graphite_input):
+        super().__init__(
+             graphite_input['position']
+            ,graphite_input['normal']
+            ,graphite_input['orientation'])
+        
+        self.mesh_points    = graphite_input['mesh_points']
+        self.mesh_faces     = graphite_input['mesh_faces']
+        
+        self.__name__       = 'MosaicGraphite'
+        self.crystal_spacing= graphite_input['spacing']
+        self.rocking_curve  = graphite_input['rocking_curve']
+        self.reflectivity   = graphite_input['reflectivity']
+        self.mosaic_spread  = graphite_input['mosaic_spread']
+        self.pi_data        = graphite_input['pi_data']
+        self.mix_factor     = graphite_input['mix_factor']
+        self.bragg_checks   = graphite_input['do_bragg_checks']
+        self.miss_checks    = graphite_input['do_miss_checks']
+        self.rocking_type   = str.lower(graphite_input['rocking_curve_type'])
+
+    def normalize(self, vector):
+        magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
+        vector_norm = vector / magnitude[:, np.newaxis]
+        return vector_norm
+        
+    def norm(self, vector):
+        magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
+        return magnitude
+    
+    def mesh_triangulate(self, ii):
+        points = self.mesh_points
+        faces  = self.mesh_faces
+        
+        #find which points belong to the triangle face
+        p1 = points[faces[ii,0],:]
+        p2 = points[faces[ii,1],:]
+        p3 = points[faces[ii,2],:]
+
+        #calculate the centerpoint and normal of the triangle face
+        p0 = np.mean(np.array([p1, p2, p3]), 0)
+        n  = np.cross((p1 - p2),(p3 - p2))
+        n /= np.linalg.norm(n)
+        
+        #compact the triangle data into a dictionary for easy movement
+        tri = dict()
+        tri['center'] = p0
+        tri['point1'] = p1
+        tri['point2'] = p2
+        tri['point3'] = p3
+        tri['normal'] = n
+        
+        return tri
+
+    def rocking_curve_filter(self, incident_angle, bragg_angle):
+        if "step" in self.rocking_type:
+            # Step Function
+            mask = (abs(incident_angle - bragg_angle) <= self.rocking_curve)
+            
+        elif "gauss" in self.rocking_type:
+            # Convert from FWHM to sigma.
+            sigma = self.rocking_curve / np.sqrt(2 * np.log(2)) / 2
+            
+            # evaluate rocking curve reflectivity value for each ray
+            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
+            
+            # give each ray a random number and compare that number to the reflectivity 
+            # curves to decide whether the ray reflects or not.         
+            test = np.random.uniform(0.0, 1.0, len(incident_angle))
+            mask = p.flatten() > test
+            
+        elif "file" in self.rocking_type:
+            # read datafiles and extract points
+            sigma_data  = np.loadtxt(self.sigma_data, dtype = np.float64)
+            pi_data     = np.loadtxt(self.pi_data, dtype = np.float64)
+            
+            # convert data from arcsec to rad
+            sigma_data[:,0] *= np.pi / (180 * 3600)
+            pi_data[:,0]    *= np.pi / (180 * 3600)
+            
+            # evaluate rocking curve reflectivity value for each incident ray
+            sigma_curve = np.zeros(len(incident_angle), dtype = np.float64)
+            pi_curve    = np.zeros(len(incident_angle), dtype = np.float64)
+            
+            sigma_curve = np.interp((incident_angle - bragg_angle), 
+                                    sigma_data[:,0], sigma_data[:,1], 
+                                    left = 0.0, right = 0.0)
+            
+            pi_curve    = np.interp((incident_angle - bragg_angle), 
+                                    pi_data[:,0], pi_data[:,1], 
+                                    left = 0.0, right = 0.0)
+            
+            # give each ray a random number and compare that number to the reflectivity 
+            # curves to decide whether the ray reflects or not. Use mix factor.
+            test = np.random.uniform(0.0, 1.0, len(incident_angle))
+            mask = self.mix_factor * sigma_curve + (1 - self.mix_factor) * pi_curve >= test
+
+        else:
+            raise Exception('Rocking curve type not understood: {}'.format(self.rocking_curve))
+            
+        return mask
+    
+    def mesh_intersect_check(self, rays):
+        O = rays['origin']
+        D = rays['direction']
+        m = rays['mask']
+        
+        X     = np.zeros(D.shape, dtype=np.float64)
+        hits  = np.zeros(m.shape, dtype=np.int)
+
+        #loop over each triangular face to find which rays hit
+        for ii in range(len(self.mesh_faces)):
+            intersect= np.zeros(O.shape, dtype=np.float64)
+            distance = np.zeros(m.shape, dtype=np.float64)
+            test     = np.zeros(m.shape, dtype=np.bool)
+            
+            #query the triangle mesh grid
+            tri = self.mesh_triangulate(ii)
+            p0= tri['center']
+            p1= tri['point1']
+            p2= tri['point2']
+            p3= tri['point3']
+            n = tri['normal']
+
+            #find the intersection point between the rays and triangle plane
+            distance     = np.dot((p0 - O), n) / np.dot(D, n)
+            intersect[m] = O[m] + D[m] * distance[m,np.newaxis]
+            
+            #test to see if the intersection is inside the triangle
+            #'test' starts as 0 and flips to 1 for each successful hit
+            #uses barycentric coordinate technique
+            tri_area = np.linalg.norm(np.cross((p1 - p2),(p1 - p3)))
+            alpha    = self.norm(np.cross((intersect - p2),(intersect - p3))) / tri_area
+            beta     = self.norm(np.cross((intersect - p3),(intersect - p1))) / tri_area
+            gamma    = self.norm(np.cross((intersect - p1),(intersect - p2))) / tri_area
+            
+            test |= (alpha <= 1) & (beta  <= 1) & (gamma <= 1) & (alpha + beta + gamma == 1)
+            test &= (distance >= 0)
+            
+            #append the results to the global impacts arrays
+            X[test]    = intersect[test]
+            hits[test] = ii + 1
+        
+        #mask all the rays that missed all faces
+        if self.miss_checks is True:
+            m[m] &= (hits[m] != 0)
+        
+        return X, rays, hits
+    
+    def angle_check(self, X, rays, norm):
+        D = rays['direction']
+        W = rays['wavelength']
+#       w = rays['weight']
+        m = rays['mask']
+        
+        bragg_angle = np.zeros(m.shape, dtype=np.float64)
+        dot = np.zeros(m.shape, dtype=np.float64)
+        incident_angle = np.zeros(m.shape, dtype=np.float64)
+        
+        # returns vectors that satisfy the bragg condition
+        # only perform check on rays that have intersected the optic
+        bragg_angle[m] = np.arcsin( W[m] / (2 * self.crystal_spacing))
+        dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
+        incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
+        #check which rays satisfy bragg, update mask to remove those that don't
+        if self.bragg_checks is True:
+            m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
+        return rays
+    
+    def reflect_vectors(self, X, rays, hits):
+        O = rays['origin']
+        D = rays['direction']
+        m = rays['mask']
+        
+        norm       = np.zeros(O.shape, dtype=np.float64)
+        
+        for ii in range(len(self.mesh_faces)):
+            #query the triangle mesh grid
+            tri  = self.mesh_triangulate(ii)
+            test = np.equal(ii, (hits - 1))
+            
+            #generate the normal vector for each impact location and append it
+            norm[test] = self.mosaic_mesh_norm_generate(rays, tri)[test]
+        
+        # Check which vectors meet the Bragg condition (with rocking curve)
+        rays = self.angle_check(X, rays, norm)
+        
+        # Perform reflection around normal vector, creating new rays with new
+        # origin O = X and new direction D
+        O[:]  = X[:]
+        D[m] -= 2 * np.einsum('ij,ij->i', D[m], norm[m])[:, np.newaxis] * norm[m]
+        
+        return rays
+    
+    def mosaic_mesh_norm_generate(self, rays, tri):
+        # Pulled from Novi's FocusedExtendedSource
+        # Generates a list of crystallite norms normally distributed around the
+        # average graphite mirror norm
+        def f(theta, number):
+            output = np.empty((number, 3))
+            
+            z   = np.random.uniform(np.cos(theta),1, number)
+            phi = np.random.uniform(0, np.pi * 2, number)
+            
+            output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
+            output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
+            output[:,2]   = z
+            return output
+        
+        O = rays['origin']
+        m = rays['mask']
+        normal = np.ones(O.shape) * tri['normal']
+        length = len(m)
+        norm = np.empty(O.shape)
+        rad_spread = np.radians(self.mosaic_spread)
+        dir_local = f(rad_spread, length)
+        
+        o_1     = np.cross(normal, [0,0,1])
+        o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
+        o_2     = np.cross(normal, o_1)
+        o_2[m] /= np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
+        
+        R = np.empty((length, 3, 3))
+        R[:,0,:] = o_1
+        R[:,1,:] = o_2
+        R[:,2,:] = normal
+        
+        norm = np.einsum('ij,ijk->ik', dir_local, R)
+        return norm
+    
+    def light(self, rays):
+        D = rays['direction']
+        m = rays['mask']
+        X, rays, hits = self.mesh_intersect_check(rays)
+        print(' Rays on Graphite:  {:6.4e}'.format(D[m].shape[0]))        
+        rays = self.reflect_vectors(X, rays, hits)
+        print(' Rays from Graphite:{:6.4e}'.format(D[m].shape[0]))
+        return rays
+
+    def collect_rays(self, rays):
+        X = rays['origin']
+        m = rays['mask'].copy()
+        self.photon_count = len(m[m])
+        """
+        num_lines = np.sum(m)
+        if num_lines > 0:
+            # Transform the intersection coordinates from external coordinates
+            # to local optical coordinates.
+            point_loc = self.point_to_local(X[m])
+            
+            # Bin the intersections into pixels using integer math.
+            pix = np.zeros([num_lines, 3], dtype = int)
+            pix = np.round(point_loc / self.pixel_size).astype(int)
+            
+            # Check to ascertain if origin pixel is even or odd
+            if (self.pixel_width % 2) == 0:
+                pix_min_x = self.pixel_width//2
+            else:
+                pix_min_x = (self.pixel_width + 1)//2
+                
+            if (self.pixel_height % 2) == 0:
+                pix_min_y = self.pixel_height//2
+            else:
+                pix_min_y = (self.pixel_height + 1)//2
+            
+            pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
+            
+            # Convert from pixels, which are centered around the origin, to
+            # channels, which start from the corner of the optic.
+            channel    = np.zeros([num_lines, 3], dtype = int)
+            channel[:] = pix[:] - pix_min
+            
+            # I feel like there must be a faster way to do this than to loop over
+            # every intersection.  This could be slow for large arrays.
+            for ii in range(len(channel)):
+                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+        
+        self.photon_count = len(m[m])
+        return self.pixel_array   
+        """
+    
+    def output_image(self, image_name, rotate=None):
+        """
+        if rotate:
+            out_array = np.rot90(self.pixel_array)
+        else:
+            out_array = self.pixel_array
+            
+        generated_image = Image.fromarray(out_array)
+        generated_image.save(image_name)
+        """
+

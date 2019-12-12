@@ -507,7 +507,7 @@ def setup_graphite_test(config):
     distance_s_g    = config['scenario_input']['source_graphite_dist']
     distance_g_d    = config['scenario_input']['crystal_detector_dist']
 
-    bragg_g = bragg_angle(config['scenario_input']['wavelength'], config['graphite_input']['spacing'])
+    bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
 
     s_position      = np.array([0, 0, 0], dtype = np.float64)
     s_normal        = np.array([1, 0, 0], dtype = np.float64)

@@ -34,7 +34,7 @@ def get_config():
     """
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'THROUGHPUT'
+    config['general_input']['scenario']           = 'GRAPHITE'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -125,7 +125,7 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
-    config['source_input']['spread']              = 1.0
+    config['source_input']['spread']              = 10
     config['source_input']['temp']                = 1000 
     config['source_input']['mass']                = 131.293
     config['source_input']['wavelength']          = 2.7203
@@ -205,7 +205,7 @@ def get_config():
     sigma and pi are polarized rocking curves. 'mix_factor' interpolates between them.
     A 'mix_factor' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = True
+    config['graphite_input']['do_bragg_checks']   = False
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
     config['graphite_input']['use_meshgrid']      = False
@@ -244,7 +244,10 @@ def get_config():
     Taken from Ohler et al. “X-ray topographic determination of the granular 
     structure in a graphite mosaic crystal: a three-dimensional reconstruction”
     """
-
+    config['graphite_input']['mesh_points'] = np.array([[1.0,0.0,0.0],
+           [2.0,1.0,1.0],[2.0,-1.0,1.0],[2.0,-1.0,-1.0],[2.0,1.0,-1.0]])
+    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[0,2,3],[0,3,4],[0,4,1]])
+    
     # -------------------------------------------------------------------------
     ## Load detector properties
     """
@@ -272,9 +275,9 @@ def get_config():
     scenario generator defaults to placing the detector at the crystal's
     meridional focus.
     """
-    config['scenario_input']['source_graphite_dist']  = 10
+    config['scenario_input']['source_graphite_dist']  = 1
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = None
+    config['scenario_input']['crystal_detector_dist'] = 1
 
     return config
 
