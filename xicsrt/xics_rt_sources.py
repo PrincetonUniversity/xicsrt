@@ -19,7 +19,7 @@ from xicsrt.xics_rt_objects import TraceObject
 class GenericSource(TraceObject):
     #Source class to hold basic functions for each source type
     def __init__(self, source_input):
-        super().__init__(
+        super(GenericSource, self).__init__(
             source_input['position']
             ,source_input['normal']
             ,source_input['orientation'])
@@ -196,7 +196,7 @@ class GenericSource(TraceObject):
 
 class FocusedExtendedSource(GenericSource):
     def __init__(self, source_input):
-        super().__init__(source_input)
+        super(FocusedExtendedSource, self).__init__(source_input)
         
         self.position       = source_input['position']
         self.normal         = source_input['normal']
@@ -225,7 +225,7 @@ class FocusedExtendedSource(GenericSource):
         self.intensity = int(self.intensity)
 
         profiler.start('Generate Origin')
-        rays['origin'] = super().generate_origin()
+        rays['origin'] = super(FocusedExtendedSource, self).generate_origin()
         profiler.stop('Generate Origin')
 
         profiler.start('Generate Direction')
@@ -233,22 +233,22 @@ class FocusedExtendedSource(GenericSource):
         profiler.stop('Generate Direction')
 
         profiler.start('Generate Wavelength')
-        rays['wavelength'] = super().generate_wavelength()
+        rays['wavelength'] = super(FocusedExtendedSource, self).generate_wavelength()
         profiler.stop('Generate Wavelength')
         
         profiler.start('Generate Weight')
-        rays['weight'] = super().generate_weight()
+        rays['weight'] = super(FocusedExtendedSource, self).generate_weight()
         profiler.stop('Generate Weight')
         
         profiler.start('Generate Mask')
-        rays['mask'] = super().generate_mask()
+        rays['mask'] = super(FocusedExtendedSource, self).generate_mask()
         profiler.stop('Generate Mask')
         
         return rays
     
     def generate_direction(self, origin):
         normal = self.make_normal_focused(origin)
-        D = super().random_direction(origin, normal)
+        D = super(FocusedExtendedSource, self).random_direction(origin, normal)
         return D
     
     def make_normal_focused(self, origin):
@@ -259,7 +259,7 @@ class FocusedExtendedSource(GenericSource):
 
 class DirectedSource(GenericSource):
     def __init__(self, source_input, general_input):
-        super().__init__(source_input, general_input)
+        super(DirectedSource, self).__init__(source_input, general_input)
         
         self.position       = source_input['position']
         self.normal         = source_input['normal']

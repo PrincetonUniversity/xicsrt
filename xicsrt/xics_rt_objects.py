@@ -18,7 +18,7 @@ class RayArray(dict):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(RayArray, self).__init__(*args, **kwargs)
 
         if 'origin' in self and 'direction' in self:
             self.initialize()
@@ -61,7 +61,7 @@ class RayArray(dict):
         elif key == 'M' or key == 'mask':
             return self['mask']
         else:
-            return super().__getattribute__(key)
+            return super(RayArray, self).__getattribute__(key)
 
     def __setattr__(self, key, value):
         """
@@ -77,7 +77,7 @@ class RayArray(dict):
         elif key == 'M' or key == 'mask':
             self['mask'] = value
         else:
-            super().__setattr(key, value)
+            super(RayArray, self).__setattr(key, value)
 
     def zeros(self, num):
         self['origin'] = np.zeros((num, 3))
@@ -96,7 +96,7 @@ class RayArray(dict):
             self[key] = np.concatenate((self[key], ray_in[key]))
 
 
-class GeometryObject():
+class GeometryObject(object):
     """
     The base class for any geometrical objects used in XICSRT.
     """

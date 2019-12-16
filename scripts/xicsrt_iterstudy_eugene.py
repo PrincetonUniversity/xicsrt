@@ -208,7 +208,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = False
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0    
     config['graphite_input']['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.txt'
@@ -230,7 +230,7 @@ def get_config():
     config['graphite_input']['therm_expand']      = 20e-6
     
     """Geometry Settings
-    graphite 'width' and 'height' (meters) only matter when 'use_trimesh' is False
+    graphite 'width' and 'height' (meters) only matter when 'use_meshgrid' is False
     """
     config['graphite_input']['position']          = np.array([0.0, 0.0, 0.0])
     config['graphite_input']['normal']            = np.array([0.0, 0.0, 0.0])
@@ -245,7 +245,7 @@ def get_config():
     structure in a graphite mosaic crystal: a three-dimensional reconstruction”
     """
     config['graphite_input']['mesh_points'] = np.array([[1.0,0.0,0.0],
-           [2.0,1.0,1.0],[2.0,-1.0,1.0],[2.0,-1.0,-1.0],[2.0,1.0,-1.0]])
+           [2.0,1.0,0.0],[2.0,0.0,1.0],[2.0,-1.0,0.0],[2.0,0.0,-1.0]])
     config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[0,2,3],[0,3,4],[0,4,1]])
     
     # -------------------------------------------------------------------------

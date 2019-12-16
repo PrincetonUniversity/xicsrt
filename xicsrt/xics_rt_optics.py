@@ -17,11 +17,10 @@ from PIL import Image
 import numpy as np
 
 from xicsrt.xics_rt_objects import TraceObject
-from xicsrt.util import profiler
 
 class GenericOptic(TraceObject):
     def __init__(self, optic_input):
-        super().__init__(
+        super(GenericOptic, self).__init__(
             optic_input['position']
             ,optic_input['normal']
             ,optic_input['orientation'])
@@ -211,7 +210,7 @@ class GenericOptic(TraceObject):
       
 class SphericalCrystal(GenericOptic):
     def __init__(self, crystal_input):
-        super().__init__(crystal_input)
+        super(SphericalCrystal, self).__init__(crystal_input)
         
         self.__name__       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
@@ -289,7 +288,7 @@ class SphericalCrystal(GenericOptic):
 
 class MosaicGraphite(GenericOptic):
     def __init__(self, graphite_input):
-        super().__init__(graphite_input)
+        super(MosaicGraphite, self).__init__(graphite_input)
         
         self.__name__       = 'MosaicGraphite'
         self.position       = graphite_input['position']
@@ -373,21 +372,23 @@ class MosaicGraphite(GenericOptic):
     
 class MosaicGraphiteMesh(TraceObject):
     def __init__(self, graphite_input):
-        super().__init__(
+        super(MosaicGraphiteMesh, self).__init__(
              graphite_input['position']
             ,graphite_input['normal']
             ,graphite_input['orientation'])
         
+        self.__name__       = 'MosaicGraphite'
         self.mesh_points    = graphite_input['mesh_points']
         self.mesh_faces     = graphite_input['mesh_faces']
         
-        self.__name__       = 'MosaicGraphite'
         self.crystal_spacing= graphite_input['spacing']
         self.rocking_curve  = graphite_input['rocking_curve']
         self.reflectivity   = graphite_input['reflectivity']
         self.mosaic_spread  = graphite_input['mosaic_spread']
+        self.sigma_data     = graphite_input['sigma_data']
         self.pi_data        = graphite_input['pi_data']
         self.mix_factor     = graphite_input['mix_factor']
+        
         self.bragg_checks   = graphite_input['do_bragg_checks']
         self.miss_checks    = graphite_input['do_miss_checks']
         self.rocking_type   = str.lower(graphite_input['rocking_curve_type'])
@@ -501,7 +502,7 @@ class MosaicGraphiteMesh(TraceObject):
             
             #test to see if the intersection is inside the triangle
             #'test' starts as 0 and flips to 1 for each successful hit
-            #uses barycentric coordinate technique
+            #uses barycentric coordinate technique (compute and compare parallelpiped areas)
             tri_area = np.linalg.norm(np.cross((p1 - p2),(p1 - p3)))
             alpha    = self.norm(np.cross((intersect - p2),(intersect - p3))) / tri_area
             beta     = self.norm(np.cross((intersect - p3),(intersect - p1))) / tri_area
@@ -540,12 +541,12 @@ class MosaicGraphiteMesh(TraceObject):
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
         return rays
     
-    def reflect_vectors(self, X, rays, hits):
+    def mesh_reflect_vectors(self, X, rays, hits):
         O = rays['origin']
         D = rays['direction']
         m = rays['mask']
         
-        norm       = np.zeros(O.shape, dtype=np.float64)
+        norm = np.zeros(O.shape, dtype=np.float64)
         
         for ii in range(len(self.mesh_faces)):
             #query the triangle mesh grid
@@ -553,7 +554,7 @@ class MosaicGraphiteMesh(TraceObject):
             test = np.equal(ii, (hits - 1))
             
             #generate the normal vector for each impact location and append it
-            norm[test] = self.mosaic_mesh_norm_generate(rays, tri)[test]
+            norm[test] = self.mesh_mosaic_norm_generate(rays, tri)[test]
         
         # Check which vectors meet the Bragg condition (with rocking curve)
         rays = self.angle_check(X, rays, norm)
@@ -565,7 +566,7 @@ class MosaicGraphiteMesh(TraceObject):
         
         return rays
     
-    def mosaic_mesh_norm_generate(self, rays, tri):
+    def mesh_mosaic_norm_generate(self, rays, tri):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -606,7 +607,7 @@ class MosaicGraphiteMesh(TraceObject):
         m = rays['mask']
         X, rays, hits = self.mesh_intersect_check(rays)
         print(' Rays on Graphite:  {:6.4e}'.format(D[m].shape[0]))        
-        rays = self.reflect_vectors(X, rays, hits)
+        rays = self.mesh_reflect_vectors(X, rays, hits)
         print(' Rays from Graphite:{:6.4e}'.format(D[m].shape[0]))
         return rays
 
@@ -614,6 +615,7 @@ class MosaicGraphiteMesh(TraceObject):
         X = rays['origin']
         m = rays['mask'].copy()
         self.photon_count = len(m[m])
+        
         """
         num_lines = np.sum(m)
         if num_lines > 0:
@@ -649,9 +651,9 @@ class MosaicGraphiteMesh(TraceObject):
                 self.pixel_array[channel[ii,0], channel[ii,1]] += 1
         
         self.photon_count = len(m[m])
-        return self.pixel_array   
+        return self.pixel_array  
         """
-    
+        
     def output_image(self, image_name, rotate=None):
         """
         if rotate:
@@ -662,4 +664,4 @@ class MosaicGraphiteMesh(TraceObject):
         generated_image = Image.fromarray(out_array)
         generated_image.save(image_name)
         """
-
+        

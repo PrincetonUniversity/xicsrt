@@ -11,14 +11,12 @@ from xicsrt.util import profiler
 
 from xicsrt.xics_rt_objects import RayArray
 
-def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_optics=None):
-    """ 
+def raytrace_single(source, detector, *optics):
+    """
     Rays are generated from source and then passed through the optics in
     the order listed. Finally, they are collected by the detector. 
     Rays consists of origin, direction, wavelength, and weight.
     """
-
-    if collect_optics is None: collect_optics = False
     
     rays_count = dict()
     rays_count['total_generated']  = 0
@@ -47,8 +45,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
         rays_history.append(deepcopy(rays))
 
         profiler.start('Collection: Optics')
-        if collect_optics:
-            optic.collect_rays(rays)
+        optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
 
         if optic.__name__ == 'SphericalCrystal':
@@ -84,7 +81,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
     return rays_history, rays_count
 
 
-def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None):
+def raytrace(number_of_runs, source, detector, *optics):
     """
     Run a series of ray tracing runs.  Save all rays that make it to the detector
     and a subset of rays that are lost.
@@ -111,7 +108,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         print('Starting iteration: {} of {}'.format(ii + 1, number_of_runs))
 
         single_history, single_count = raytrace_single(
-                source, detector, *optics, collect_optics=collect_optics)
+                source, detector, *optics)
 
         for key in single_count:
             rays_count[key] += single_count[key]

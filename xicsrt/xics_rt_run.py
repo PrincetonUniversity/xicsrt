@@ -39,9 +39,13 @@ def run(config, config_number = None):
     profiler.start('Class Setup Time')
     pilatus  = Detector(                config['detector_input'])
     crystal  = SphericalCrystal(        config['crystal_input'])
-    graphite = MosaicGraphiteMesh(      config['graphite_input'])
     source   = FocusedExtendedSource(   config['source_input'])
     plasma   = ToroidalPlasma(          config['plasma_input'])
+    
+    if config['graphite_input']['use_meshgrid'] == True:
+        graphite = MosaicGraphiteMesh(  config['graphite_input'])
+    else:
+        graphite = MosaicGraphite(      config['graphite_input'])
     profiler.stop('Class Setup Time')
 
     scenario = str.lower(config['general_input']['scenario'])
@@ -53,47 +57,33 @@ def run(config, config_number = None):
 
     ## Raytrace Runs
     if scenario == 'plasma':
-        output, rays_count = raytrace(
-            plasma, pilatus, graphite, crystal
-            , number_of_runs=config['general_input']['number_of_runs']
-            , collect_optics=True)
+        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            plasma, pilatus, graphite, crystal)
 
     elif scenario == 'throughput':
-        output, rays_count = raytrace(
-            plasma, pilatus, crystal
-            , number_of_runs=config['general_input']['number_of_runs']
-            , collect_optics=True)
+        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            plasma, pilatus, crystal)
 
     elif scenario == 'beam':
         if config['general_input']['backwards_raytrace'] is False:
-            output, rays_count = raytrace(
-                source, pilatus, graphite, crystal
-                , number_of_runs = config['general_input']['number_of_runs']
-                , collect_optics = True)
+            output, rays_count = raytrace(config['general_input']['number_of_runs'],
+                source, pilatus, graphite, crystal)
 
         if config['general_input']['backwards_raytrace'] is True:
-            output, rays_count = raytrace(
-                source, pilatus, crystal, graphite
-                , number_of_runs = config['general_input']['number_of_runs']
-                , collect_optics = True)
+            output, rays_count = raytrace(config['general_input']['number_of_runs'],
+                source, pilatus, crystal, graphite)
 
     elif scenario == 'crystal':
-        output, rays_count = raytrace(
-            source, pilatus, crystal
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            source, pilatus, crystal)
 
     elif scenario == 'graphite':
-        output, rays_count = raytrace(
-            source, pilatus, graphite
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            source, pilatus, graphite)
 
     elif scenario == 'source':
-        output, rays_count = raytrace(
-            source, pilatus
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            source, pilatus)
 
     else:
         raise Exception('Scenario unknown: {}'.format(scenario))

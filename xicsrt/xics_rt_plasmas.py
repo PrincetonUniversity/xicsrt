@@ -24,7 +24,7 @@ from xicsrt.xics_rt_objects import TraceObject
 
 class GenericPlasma(TraceObject):
     def __init__(self, plasma_input):
-        super().__init__(
+        super(GenericPlasma, self).__init__(
             plasma_input['position']
             ,plasma_input['normal']
             ,plasma_input['orientation'])
@@ -251,7 +251,7 @@ class CylindricalPlasma(GenericPlasma):
     
 class ToroidalPlasma(GenericPlasma):
     def __init__(self, plasma_input):
-        super().__init__(plasma_input)
+        super(ToroidalPlasma, self).__init__(plasma_input)
         self.position       = plasma_input['position']
         
         self.width          = plasma_input['width']
