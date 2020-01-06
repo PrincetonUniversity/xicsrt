@@ -72,6 +72,12 @@ def visualize_layout(config):
     orient_y[2,:]   = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:]   = np.cross(normal[3,:], orient_x[3,:])
     orient_y[4,:]   = np.cross(normal[4,:], orient_x[4,:])
+    
+    orient_y[0,:]  /= np.linalg.norm(orient_y[0,:])
+    orient_y[1,:]  /= np.linalg.norm(orient_y[1,:])
+    orient_y[2,:]  /= np.linalg.norm(orient_y[2,:])
+    orient_y[3,:]  /= np.linalg.norm(orient_y[3,:])
+    orient_y[4,:]  /= np.linalg.norm(orient_y[4,:])
     #width[Optical Element Number]
     width[0]        = config['source_input']['width']
     width[1]        = config['graphite_input']['width'] 
@@ -359,7 +365,7 @@ def visualize_layout(config):
                   color = "red", length = 0.1 , arrow_length_ratio = 0.1)
         
         #beamline
-        ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
+        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
         
         #bounding boxes
         ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
@@ -387,9 +393,9 @@ def visualize_layout(config):
         ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
     
 
-    ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
-    ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
-    ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
+    ax.set_xlim(position[1,0] - scale, position[1,0] + scale)
+    ax.set_ylim(position[1,1] - scale, position[1,1] + scale)
+    ax.set_zlim(position[1,2] - scale, position[1,2] + scale)
     
     return plt, ax
     
@@ -460,9 +466,9 @@ def visualize_model(config, rays_history, rays_metadata):
 
 def visualize_images():
     ## Open and intialize images
-    g_image = Image.open('xicsrt_graphite.tif')
-    c_image = Image.open('xicsrt_crystal.tif')
-    d_image = Image.open('xicsrt_detector.tif')
+    g_image = Image.open('../results/xicsrt_graphite.tif')
+    c_image = Image.open('../results/xicsrt_crystal.tif')
+    d_image = Image.open('../results/xicsrt_detector.tif')
     
     g_array = np.array(g_image)
     c_array = np.transpose(np.array(c_image))

@@ -136,7 +136,7 @@ class GenericOptic(TraceObject):
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin( W[m] / (2 * self.crystal_spacing))
-        dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
+        dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * norm[m]))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.bragg_checks is True:
@@ -508,7 +508,7 @@ class MosaicGraphiteMesh(TraceObject):
             beta     = self.norm(np.cross((intersect - p3),(intersect - p1))) / tri_area
             gamma    = self.norm(np.cross((intersect - p1),(intersect - p2))) / tri_area
             
-            test |= (alpha <= 1) & (beta  <= 1) & (gamma <= 1) & (alpha + beta + gamma == 1)
+            test |= np.round((alpha + beta + gamma), decimals = 6) == 1.000000
             test &= (distance >= 0)
             
             #append the results to the global impacts arrays
@@ -534,7 +534,7 @@ class MosaicGraphiteMesh(TraceObject):
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin( W[m] / (2 * self.crystal_spacing))
-        dot[m] = np.einsum('ij,ij->i',D[m], -1 * norm[m])
+        dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * norm[m]))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.bragg_checks is True:

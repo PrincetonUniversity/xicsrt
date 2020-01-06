@@ -509,18 +509,22 @@ def setup_graphite_test(config):
 
     bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
 
-    s_position      = np.array([0, 0, 0], dtype = np.float64)
-    s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    s_position  = np.array([0, 0, 0], dtype = np.float64)
+    s_normal    = np.array([1, 0, 0], dtype = np.float64)
+    s_z_vector  = np.array([0, 0, 1], dtype = np.float64)
     
     #create a path vector that connects the centers of all optical elements
-    path_vector     = np.array([1, 0, 0], dtype = np.float64)
+    path_vector= np.array([1, 0, 0], dtype = np.float64)
     
     #define graphite position and normal relative to source
-    g_position      = s_position + (path_vector * distance_s_g)
-    g_z_vector      = np.array([0, 0, 1], dtype = np.float64)
-    g_y_vector      = np.cross(g_z_vector, path_vector)  
-    g_normal        = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
+    g_position  = s_position + (path_vector * distance_s_g)
+    g_z_vector  = np.array([0, 0, 1], dtype = np.float64)
+    
+    g_y_vector  = np.cross(g_z_vector, path_vector)
+    g_y_vector /= np.linalg.norm(g_y_vector)
+    
+    g_normal    = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
+    g_normal   /= np.linalg.norm(g_normal)
     
     #for focused extended sources, target them towards the graphite position    
     s_target = g_position
@@ -529,9 +533,9 @@ def setup_graphite_test(config):
     path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
 
     #define detector position and normal relative to graphite
-    d_position      = g_position + (path_vector * distance_g_d)
-    d_z_vector      = np.array([0, 1, 0], dtype = np.float64)
-    d_normal        = -path_vector
+    d_position  = g_position + (path_vector * distance_g_d)
+    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
+    d_normal    = -path_vector
     
     # repack variables
     config['source_input']['position']        = s_position

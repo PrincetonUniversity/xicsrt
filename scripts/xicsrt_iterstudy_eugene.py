@@ -34,7 +34,7 @@ def get_config():
     """
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'GRAPHITE'
+    config['general_input']['scenario']           = 'BEAM'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 10
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -58,7 +58,7 @@ def get_config():
     config['general_input']['backwards_raytrace'] = False
     config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
-    config['general_input']['do_image_analysis']  = False
+    config['general_input']['do_image_analysis']  = True
     config['general_input']['random_seed']        = 123456
     config['general_input']['xics_temp']          = 273.0
 
@@ -125,7 +125,7 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
-    config['source_input']['spread']              = 10
+    config['source_input']['spread']              = 1
     config['source_input']['temp']                = 1000 
     config['source_input']['mass']                = 131.293
     config['source_input']['wavelength']          = 2.7203
@@ -157,7 +157,7 @@ def get_config():
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
     config['crystal_input']['rocking_curve_type'] = 'FILE'   
-    config['crystal_input']['use_trimesh']        = False    
+    config['crystal_input']['use_meshgrid']       = False    
     config['crystal_input']['meshgrid_data']      = ''
     config['crystal_input']['mix_factor']         = 1.0   
     config['crystal_input']['sigma_data']         = '../xicsrt/rocking_curve_germanium_sigma.txt'
@@ -205,7 +205,7 @@ def get_config():
     sigma and pi are polarized rocking curves. 'mix_factor' interpolates between them.
     A 'mix_factor' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = False
+    config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
     config['graphite_input']['use_meshgrid']      = True
@@ -232,21 +232,30 @@ def get_config():
     """Geometry Settings
     graphite 'width' and 'height' (meters) only matter when 'use_meshgrid' is False
     """
-    config['graphite_input']['position']          = np.array([0.0, 0.0, 0.0])
+    config['graphite_input']['position']          = np.array([1.0, 0.0, 0.0])
     config['graphite_input']['normal']            = np.array([0.0, 0.0, 0.0])
-    config['graphite_input']['orientation']       = np.array([0.0, 0.0, 0.0])
+    config['graphite_input']['orientation']       = np.array([0.0, 0.0, 1.0])
     
     config['graphite_input']['width']             = 0.030
-    config['graphite_input']['height']            = 0.040    
+    config['graphite_input']['height']            = 0.040
     
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
     Taken from Ohler et al. “X-ray topographic determination of the granular 
     structure in a graphite mosaic crystal: a three-dimensional reconstruction”
     """
-    config['graphite_input']['mesh_points'] = np.array([[1.0,0.0,0.0],
-           [2.0,1.0,0.0],[2.0,0.0,1.0],[2.0,-1.0,0.0],[2.0,0.0,-1.0]])
-    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[0,2,3],[0,3,4],[0,4,1]])
+    bragg = np.arcsin(config['source_input']['wavelength'] / (2 * config['graphite_input']['spacing']))
+    dx = config['graphite_input']['height'] * np.cos(bragg) / 2
+    dy = config['graphite_input']['height'] * np.sin(bragg) / 2
+    dz = config['graphite_input']['width']                  / 2
+    
+    p1 = config['graphite_input']['position'] + np.array([ dx, dy, dz])
+    p2 = config['graphite_input']['position'] + np.array([-dx,-dy, dz])
+    p3 = config['graphite_input']['position'] + np.array([-dx,-dy,-dz])
+    p4 = config['graphite_input']['position'] + np.array([ dx, dy,-dz])
+        
+    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
+    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
     
     # -------------------------------------------------------------------------
     ## Load detector properties
