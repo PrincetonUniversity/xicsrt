@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion

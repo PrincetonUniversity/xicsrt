@@ -52,8 +52,8 @@ def run(config, config_number = None):
     
     ## Initial Visualization
     if config['general_input']['do_visualizations'] is True:
-        plt1, ax1 = visualize_layout(config)
-        plt1.show()
+        fig1, ax1 = visualize_layout(config)
+        fig1.show()
 
     ## Raytrace Runs
     if scenario == 'plasma':
@@ -97,11 +97,11 @@ def run(config, config_number = None):
     
     ## Final Visualization
     if config['general_input']['do_visualizations'] is True:
-        plt2, ax2 = visualize_bundles(config, output)
-        plt2.show()
+        fig2, ax2 = visualize_bundles(config, output)
+        fig2.show()
         for ii in range(len(output['lost'])):
-            plt3, ax3 = visualize_vectors(config, output, ii)
-            plt3.show()
+            fig3, ax3 = visualize_vectors(config, output, ii)
+            fig3.show()
     
     ## Save Outputs
     if config['general_input']['do_savefiles'] is True:

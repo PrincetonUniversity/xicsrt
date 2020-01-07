@@ -13,6 +13,7 @@ a 3D visualization of the X-Ray optics setup using matplotlib Axes3D
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
 from xicsrt.xics_rt_scenarios import bragg_angle
 from PIL import Image
@@ -33,9 +34,7 @@ def visualize_layout(config):
     height          = np.zeros([5], dtype = np.float64)[:,np.newaxis]
     
     corners         = np.zeros([5,5,3], dtype = np.float64)
-    
-    beamline        = np.zeros([5,3], dtype = np.float64)
-    
+        
     circle_points   = np.linspace(0, np.pi * 2, 36)[:,np.newaxis]
     crystal_circle  = np.zeros([36,3], dtype = np.float64)
     rowland_circle  = np.zeros([36,3], dtype = np.float64)
@@ -45,6 +44,7 @@ def visualize_layout(config):
     
     ## Define variables
     scenario        = config['general_input']['scenario']
+    graphite_mesh   = config['graphite_input']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     
@@ -106,17 +106,6 @@ def visualize_layout(config):
     corners[:,2,:]  = (position[:,:] + (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))  
     corners[:,3,:]  = (position[:,:] - (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))  
     corners[:,4,:]  = (position[:,:] - (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))
-    
-    ## The line connecting the centers of all optical elements
-    #beamline[Optical Element Number, 3D Coordinates]
-    if config['general_input']['backwards_raytrace'] is False:
-        beamline[:,:] = position[:,:]
-    
-    if config['general_input']['backwards_raytrace'] is True:
-        beamline[0,:] = position[3,:]
-        beamline[1,:] = position[1,:]
-        beamline[2,:] = position[2,:]
-        beamline[3,:] = position[0,:]
         
     ## The crystal's radius of curvature and Rowland circle
     #crystal_center[3D Coodrinates]
@@ -172,233 +161,258 @@ def visualize_layout(config):
             (orient_x[4,:] * np.cos(circle_points)) + (normal[4,:] * np.sin(circle_points)))
     minor_circle   += plasma_center
     
+    ## Compactify variables into a dictionary
+    config_vis = {'position':position,'normal':normal,'orient_x':orient_x,
+                  'orient_y':orient_y,'width':width,'height':height,
+                  'corners':corners,'meridi_line':meridi_line,
+                  'saggit_line':saggit_line,'plasma_center':plasma_center,
+                  'crystal_center':crystal_center,'crystal_circle':crystal_circle,
+                  'tangent_circle':tangent_circle,'rowland_circle':rowland_circle,
+                  'major_circle':major_circle,'minor_circle':minor_circle}
+    config_vis['graphite_mesh_points'] = config['graphite_input']['mesh_points']
+    config_vis['graphite_mesh_faces'] = config['graphite_input']['mesh_faces']
+
     ## Plot everything
     if scenario == "PLASMA":
-        #resize axes
+        #resize and recenter axes on plasma
         scale = abs(position[0,0] - position[2,0])
+        ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
+        ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
+        ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
         
-        #position points
-        ax.scatter(position[4,0], position[4,1], position[4,2], color = "yellow")
-        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
-        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
-        ax.scatter(plasma_center[0] , plasma_center[1] , plasma_center[2] , color = "yellow")
-        
-        #normal vectors
-        ax.quiver(position[4,0], position[4,1], position[4,2],
-                  normal[4,0]  , normal[4,1]  , normal[4,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[1,0], position[1,1], position[1,2],
-                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
-                  color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[2,0], position[2,1], position[2,2],
-                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #beamline
-        beamline[0,:] = beamline[4,:]
-        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
-        
-        #bounding boxes
-        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
-        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
-        
-        #circles
-        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
-        ax.plot3D(major_circle[:,0]  , major_circle[:,1]  , major_circle[:,2]  , color = "yellow")
-        ax.plot3D(minor_circle[:,0]  , minor_circle[:,1]  , minor_circle[:,2]  , color = "yellow")
-        
-        #foci
-        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
-        
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = position[4,:]
+            beamline[1,:] = position[1,:]
+            beamline[2,:] = position[2,:]
+            beamline[3,:] = position[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = position[3,:]
+            beamline[1,:] = position[2,:]
+            beamline[2,:] = position[1,:]
+            beamline[3,:] = position[4,:]
+                    
+        #draw plasma, graphite, crystal, detector
+        draw_plasma(config_vis, ax)
+        draw_graphite(config_vis, graphite_mesh, ax)
+        draw_crystal(config_vis, ax)
+        draw_detector(config_vis, ax)
+    
     elif scenario == "THROUGHPUT":
-        #resize axes
+        #resize and recenter axes on plasma
         scale = abs(position[0,0] - position[2,0])
+        ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
+        ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
+        ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
         
-        #position points
-        ax.scatter(position[4,0], position[4,1], position[4,2], color = "yellow")
-        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
-        ax.scatter(plasma_center[0] , plasma_center[1] , plasma_center[2] , color = "yellow")
-        
-        #normal vectors
-        ax.quiver(position[4,0], position[4,1], position[4,2],
-                  normal[4,0]  , normal[4,1]  , normal[4,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[1,0], position[1,1], position[1,2],
-                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
-                  color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[2,0], position[2,1], position[2,2],
-                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #beamline
-        beamline[0,:] = beamline[4,:]
-        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
-        
-        #bounding boxes
-        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
-        
-        #circles
-        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
-        ax.plot3D(major_circle[:,0]  , major_circle[:,1]  , major_circle[:,2]  , color = "yellow")
-        ax.plot3D(minor_circle[:,0]  , minor_circle[:,1]  , minor_circle[:,2]  , color = "yellow")
-        
-        #foci
-        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = position[4,:]
+            beamline[1,:] = position[1,:]
+            beamline[2,:] = position[2,:]
+            beamline[3,:] = position[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = position[3,:]
+            beamline[1,:] = position[2,:]
+            beamline[2,:] = position[1,:]
+            beamline[3,:] = position[4,:]
+                    
+        #draw plasma, graphite, crystal, detector
+        draw_plasma(config_vis, ax)
+        draw_graphite(config_vis, graphite_mesh, ax)
+        draw_crystal(config_vis, ax)
+        draw_detector(config_vis, ax)
         
     elif scenario == "BEAM" or scenario == "MODEL":
-        #resize axes
+        #resize and recenter axes on source
         scale = abs(position[0,0] - position[2,0])
+        ax.set_xlim(position[0,0] - scale, position[0,0] + scale)
+        ax.set_ylim(position[0,1] - scale, position[0,1] + scale)
+        ax.set_zlim(position[0,2] - scale, position[0,2] + scale)        
         
-        #position points
-        ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
-        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
-        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
-        
-        #normal vectors
-        ax.quiver(position[0,0], position[0,1], position[0,2],
-                  normal[0,0]  , normal[0,1]  , normal[0,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[1,0], position[1,1], position[1,2],
-                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
-                  color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[2,0], position[2,1], position[2,2],
-                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #beamline
-        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
-        
-        #bounding boxes
-        ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
-        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
-        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
-        
-        #circles
-        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
-        
-        #foci
-        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = position[0,:]
+            beamline[1,:] = position[1,:]
+            beamline[2,:] = position[2,:]
+            beamline[3,:] = position[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = position[3,:]
+            beamline[1,:] = position[2,:]
+            beamline[2,:] = position[1,:]
+            beamline[3,:] = position[0,:]
+                    
+        #draw source, graphite, crystal, detector
+        draw_source(config_vis, ax)
+        draw_graphite(config_vis, graphite_mesh, ax)
+        draw_crystal(config_vis, ax)
+        draw_detector(config_vis, ax)
         
     elif scenario == "CRYSTAL":
-        #resize axes
+        #resize and recenter axes on crystal
         scale = abs(position[0,0] - position[3,0])
+        ax.set_xlim(position[2,0] - scale, position[2,0] + scale)
+        ax.set_ylim(position[2,1] - scale, position[2,1] + scale)
+        ax.set_zlim(position[2,2] - scale, position[2,2] + scale)        
         
-        #position points
-        ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
-        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = position[0,:]
+        beamline[1,:] = position[2,:]
+        beamline[2,:] = position[3,:]
         
-        #normal vectors
-        ax.quiver(position[0,0], position[0,1], position[0,2],
-                  normal[0,0]  , normal[0,1]  , normal[0,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[2,0], position[2,1], position[2,2],
-                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #beamline
-        ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
-        
-        #bounding boxes
-        ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
-        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
-        
-        #circles
-        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
-        
-        #foci
-        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+        #draw plasma, graphite, crystal, detector
+        draw_source(config_vis, ax)
+        draw_crystal(config_vis, ax)
+        draw_detector(config_vis, ax)
     
     elif scenario == "GRAPHITE":
-        #resize axes
+        #resize and recenter axes on graphite
         scale = abs(position[0,0] - position[3,0])
+        ax.set_xlim(position[1,0] - scale, position[1,0] + scale)
+        ax.set_ylim(position[1,1] - scale, position[1,1] + scale)
+        ax.set_zlim(position[1,2] - scale, position[1,2] + scale)        
+        
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = position[0,:]
+        beamline[1,:] = position[1,:]
+        beamline[2,:] = position[3,:]
 
-        #position points
-        ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
-        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
-        
-        #normal vectors
-        ax.quiver(position[0,0], position[0,1], position[0,2],
-                  normal[0,0]  , normal[0,1]  , normal[0,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[1,0], position[1,1], position[1,2],
-                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
-                  color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #beamline
-        ax.plot3D(beamline[:4,0], beamline[:4,1], beamline[:4,2], "black")
-        
-        #bounding boxes
-        ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
-        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
+        #draw source, graphite, detector
+        draw_source(config_vis, ax)
+        draw_graphite(config_vis, graphite_mesh, ax)
+        draw_detector(config_vis, ax)
         
     elif scenario == "SOURCE":
-        #resize axes
+        #resize and recenter axes on source
         scale = abs(position[0,0] - position[3,0])
+        ax.set_xlim(position[0,0] - scale, position[0,0] + scale)
+        ax.set_ylim(position[0,1] - scale, position[0,1] + scale)
+        ax.set_zlim(position[0,2] - scale, position[0,2] + scale)        
         
-        #position points
-        ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
-        ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
+        #draw beamline
+        beamline = np.zeros([2,3], dtype = np.float64)
+        beamline[0,:] = position[0,:]
+        beamline[1,:] = position[3,:]
         
-        #normal vectors
-        ax.quiver(position[0,0], position[0,1], position[0,2],
-                  normal[0,0]  , normal[0,1]  , normal[0,2]  ,
-                  color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
-        ax.quiver(position[3,0], position[3,1], position[3,2],
-                  normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-                  color = "red", length = 0.1 , arrow_length_ratio = 0.1)
-        
-        #bounding boxes
-        ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
-        ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
+        #draw source, detector
+        draw_source(config_vis, ax)
+        draw_detector(config_vis, ax)   
     
+    ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
 
-    ax.set_xlim(position[1,0] - scale, position[1,0] + scale)
-    ax.set_ylim(position[1,1] - scale, position[1,1] + scale)
-    ax.set_zlim(position[1,2] - scale, position[1,2] + scale)
-    
     return plt, ax
+
+def draw_plasma(config_vis, ax):
+    #unpack variables
+    plasma_center = config_vis['plasma_center']
+    position = config_vis['position']
+    normal   = config_vis['normal']
+    major_circle = config_vis['major_circle']
+    minor_circle = config_vis['minor_circle']
     
+    #draw plasma position dot, normal vector, center dot, and circles
+    ax.scatter(position[4,0], position[4,1], position[4,2], color = "yellow")
+    ax.quiver(position[4,0], position[4,1], position[4,2],
+              normal[4,0]  , normal[4,1]  , normal[4,2]  ,
+              color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
+    
+    ax.scatter(plasma_center[0] , plasma_center[1] , plasma_center[2] , color = "yellow")
+    ax.plot3D(major_circle[:,0]  , major_circle[:,1]  , major_circle[:,2]  , color = "yellow")
+    ax.plot3D(minor_circle[:,0]  , minor_circle[:,1]  , minor_circle[:,2]  , color = "yellow")
+    
+    return ax
+
+def draw_source(config_vis, ax):
+    #unpack variables
+    position = config_vis['position']
+    normal   = config_vis['normal']
+    corners  = config_vis['corners']
+    
+    #draw source position dot, normal vector, and bounding box
+    ax.scatter(position[0,0], position[0,1], position[0,2], color = "yellow")
+    ax.quiver(position[0,0], position[0,1], position[0,2],
+              normal[0,0]  , normal[0,1]  , normal[0,2]  ,
+              color = "yellow", length = 0.1, arrow_length_ratio = 0.1)
+    ax.plot3D(corners[0,:,0], corners[0,:,1], corners[0,:,2], color = "yellow")
+    
+    return ax
+
+def draw_graphite(config_vis, graphite_mesh, ax):
+    #unpack variables
+    position    = config_vis['position']
+    normal      = config_vis['normal']
+    corners     = config_vis['corners']
+    mesh_points = config_vis['graphite_mesh_points']
+    mesh_faces  = config_vis['graphite_mesh_faces']
+    
+    if graphite_mesh is True:
+        x_array = mesh_points[:,0]
+        y_array = mesh_points[:,1]
+        z_array = mesh_points[:,2]
+        triangles = tri.Triangulation(x_array, y_array, mesh_faces)
+        ax.plot_trisurf(triangles, z_array, color = 'grey')
+    else:
+        #draw graphite position dot, normal vector, and bounding box
+        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
+        ax.quiver(position[1,0], position[1,1], position[1,2],
+              normal[1,0]  , normal[1,1]  , normal[1,2]  ,
+              color = "grey", length = 0.1, arrow_length_ratio = 0.1)
+        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
+    
+    return ax
+
+def draw_crystal(config_vis, ax):
+    #unpack variables
+    position       = config_vis['position']
+    normal         = config_vis['normal']
+    corners        = config_vis['corners']
+    crystal_center = config_vis['crystal_center']
+    crystal_circle = config_vis['crystal_circle']
+    tangent_circle = config_vis['tangent_circle']
+    rowland_circle = config_vis['rowland_circle']
+    meridi_line    = config_vis['meridi_line']
+    saggit_line    = config_vis['saggit_line']
+    
+    #draw crystal position dot, normal vector, center point, and bounding box
+    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
+    ax.quiver(position[2,0], position[2,1], position[2,2],
+              normal[2,0]  , normal[2,1]  , normal[2,2]  ,
+              color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
+    ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
+    
+    #draw crystal foci and circles
+    ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
+    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
+    ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
+    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
+    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+    
+    return ax
+
+def draw_detector(config_vis, ax):
+    #unpack variables
+    position       = config_vis['position']
+    normal         = config_vis['normal']
+    corners        = config_vis['corners']
+    
+    #draw detector position dot, normal vector, and bounding box
+    ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
+    ax.quiver(position[3,0], position[3,1], position[3,2],
+              normal[3,0]  , normal[3,1]  , normal[3,2]  ,
+              color = "red", length = 0.1 , arrow_length_ratio = 0.1)    
+    ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
+    
+    return ax
+
 def visualize_vectors(config, output, ii):
     ## Do all of the steps as before, but also add the output rays
     origin = output['lost'][ii]['origin']
