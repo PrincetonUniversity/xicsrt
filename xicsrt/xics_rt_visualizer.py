@@ -47,7 +47,7 @@ def visualize_layout(config):
     graphite_mesh   = config['graphite_input']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
-    
+    view_center = 1
     #position[Optical Element Number, 3D Coordinates]
     position[0,:]   = config['source_input']['position']
     position[1,:]   = config['graphite_input']['position']
@@ -176,9 +176,6 @@ def visualize_layout(config):
     if scenario == "PLASMA":
         #resize and recenter axes on plasma
         scale = abs(position[0,0] - position[2,0])
-        ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
-        ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
-        ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
         
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
@@ -307,6 +304,9 @@ def visualize_layout(config):
         draw_detector(config_vis, ax)   
     
     ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
+    ax.set_xlim(position[view_center,0] - scale, position[view_center,0] + scale)
+    ax.set_ylim(position[view_center,1] - scale, position[view_center,1] + scale)
+    ax.set_zlim(position[view_center,2] - scale, position[view_center,2] + scale)
 
     return plt, ax
 

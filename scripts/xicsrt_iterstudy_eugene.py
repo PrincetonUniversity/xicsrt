@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 10
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -59,25 +59,27 @@ def get_config():
     config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['do_image_analysis']  = True
-    config['general_input']['random_seed']        = 123456
+    config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
 
     # -------------------------------------------------------------------------
     ## Load plasma properties
     """Type and file settings
-    setting 'profile_type' to True causes the code to read the temperature and
+    setting 'use_profiles' to True causes the code to read the temperature and
     emissivity profiles located at 'temperature_data' and 'emissivity_data' paths
-    setting 'profile_type' to False causes the code to use 'temperature' and
+    setting 'use_profiles' to False causes the code to use 'temperature' and
     'emissivity' instead, as flat step-function distributions
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
     config['plasma_input']['use_profiles']        = True 
     config['plasma_input']['bundle_type']         = 'POINT'
     config['plasma_input']['temperature_data']    = '../xicsrt/plasma_temperature.txt'
-    config['plasma_input']['emissivity_data']     = '../xicsrt/plasma_emissivity_xe44.txt'    
+    config['plasma_input']['emissivity_data']     = '../xicsrt/plasma_emissivity_xe44.txt'
+    config['plasma_input']['velocity_data']       = 'FILE MISSING'
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e16
-    
+    config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
+
     """Geometry settings
     The plasma is a torus with a 'major_radius' and 'minor_radius' (meters)
     Only a small cubic chunk of the plasma is rendered and emits rays
@@ -123,13 +125,15 @@ def get_config():
     'mass'                  is the impurity mass                (AMU)
     'wavelength'            is the x-ray emission line location (angstroms)
     'linewidth'             is the x-ray natural linewidth      (1/s)
+    'velocity'              is the impurity ion velocity vector (m/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
     config['source_input']['spread']              = 1
     config['source_input']['temp']                = 1000 
     config['source_input']['mass']                = 131.293
     config['source_input']['wavelength']          = 2.7203
-    config['source_input']['linewidth']           = 1.129e+14 
+    config['source_input']['linewidth']           = 1.129e+14
+    config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
 
     """Geometry Settings
     'width', 'height', and 'depth' of source (meters)
@@ -208,7 +212,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0    
     config['graphite_input']['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.txt'

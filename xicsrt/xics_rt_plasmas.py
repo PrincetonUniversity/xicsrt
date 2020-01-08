@@ -53,8 +53,10 @@ class GenericPlasma(TraceObject):
         self.use_profiles   = plasma_input['use_profiles']
         self.temp_data      = plasma_input['temperature_data']
         self.emis_data      = plasma_input['emissivity_data']
+        self.velo_data      = plasma_input['velocity_data']
         self.temperature    = plasma_input['temperature']
         self.emissivity     = plasma_input['emissivity']
+        self.velocity       = plasma_input['velocity']
         self.mass_number    = plasma_input['mass']
         self.wavelength     = plasma_input['wavelength']
         self.linewidth      = plasma_input['linewidth']
@@ -63,8 +65,9 @@ class GenericPlasma(TraceObject):
             
         bundle_input = dict()
         bundle_input['position']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
-        bundle_input['temp']         = np.ones([self.bundle_count], dtype = np.float64)
+        bundle_input['temperature']  = np.ones([self.bundle_count], dtype = np.float64)
         bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
+        bundle_input['velocity']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
         
         return bundle_input
         
@@ -86,7 +89,8 @@ class GenericPlasma(TraceObject):
             source_input = OrderedDict()
             #spacially-dependent parameters
             source_input['position']    = bundle_input['position'][ii]
-            source_input['temp']        = bundle_input['temp'][ii]
+            source_input['temp']        = bundle_input['temperature'][ii]
+            source_input['velocity']    = bundle_input['velocity'][ii]
 
             # Calculate the total number of photons to launch from this bundle volume.
             intensity = (bundle_input['emissivity'][ii]
@@ -176,7 +180,7 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
-        bundle_input['temp'][:]         = self.temperature
+        bundle_input['temperature'][:]         = self.temperature
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
@@ -232,7 +236,7 @@ class CylindricalPlasma(GenericPlasma):
         
         #evaluate temperature at each point
         #plasma cylinder temperature falls off as a function of radius
-        bundle_input['temp']         = self.temperature / radius
+        bundle_input['temperature']  = self.temperature / radius
         
         #evaluate emissivity at each point
         #plasma cylinder emissivity falls off as a function of radius
@@ -284,19 +288,28 @@ class ToroidalPlasma(GenericPlasma):
             #step function profile
             step_test    = np.zeros(self.bundle_count, dtype = np.bool)
             step_test[:] = (rad <= self.minor_radius)
-            bundle_input['temp'][step_test]         = self.temperature
+            bundle_input['temperature'][step_test]  = self.temperature
             bundle_input['emissivity'][step_test]   = self.emissivity
+            bundle_input['velocity'][step_test]     = self.velocity
             
         if self.use_profiles is True:
             #read and interpolate profile from data file
             temp_data  = np.loadtxt(self.temp_data, dtype = np.float64)
             emis_data  = np.loadtxt(self.emis_data, dtype = np.float64)
+            #velo_vata  = np.loadtxt(self.velo_data, dtype = np.float64)
             nrad       = rad / self.minor_radius
             
-            bundle_input['temp']        = np.interp(nrad, temp_data[:,0], temp_data[:,1],
+            bundle_input['temperature'] = np.interp(nrad, temp_data[:,0], temp_data[:,1],
                                                     left = 1.0, right = 1.0)
             bundle_input['emissivity']  = np.interp(nrad, emis_data[:,0], emis_data[:,1],
                                                     left = 1.0, right = 1.0)
+            """
+            bundle_input['velocity'][0] = np.interp(nrad, emis_data[:,0], emis_data[:,1],
+                                        left = 1.0, right = 1.0)
+            bundle_input['velocity'][1] = np.interp(nrad, emis_data[:,0], emis_data[:,2],
+                                        left = 1.0, right = 1.0)      
+            bundle_input['velocity'][2] = np.interp(nrad, emis_data[:,0], emis_data[:,3],
+                                        left = 1.0, right = 1.0)            """
         
         return bundle_input
 

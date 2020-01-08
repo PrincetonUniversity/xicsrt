@@ -27,8 +27,9 @@ class GenericSource(TraceObject):
         self.position       = source_input['position']
         self.normal         = source_input['normal']
         self.xorientation   = source_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
+        self.yorientation   = np.cross(self.normal, self.xorientation )
+        self.yorientation  /= np.linalg.norm(self.yorientation)
+        self.focus          = source_input['target']
         self.width          = source_input['width']
         self.height         = source_input['height']
         self.depth          = source_input['depth']
@@ -38,6 +39,7 @@ class GenericSource(TraceObject):
         self.temp           = source_input['temp']
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
+        self.velocity       = source_input['velocity']
 
     def generate_rays(self):
         rays = dict()
@@ -69,10 +71,10 @@ class GenericSource(TraceObject):
     
     def generate_origin(self):
         # generic origin for isotropic rays
-        w_offset = np.random.uniform(-1 * self.width/2, self.width/2, self.intensity)
+        w_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.intensity)
         h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.intensity)
-        d_offset = np.random.uniform(-1 * self.depth/2, self.depth/2, self.intensity)        
-                
+        d_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2 , self.intensity)        
+        
         origin = (self.position
                   + np.einsum('i,j', w_offset, self.xorientation)
                   + np.einsum('i,j', h_offset, self.yorientation)
@@ -124,7 +126,9 @@ class GenericSource(TraceObject):
         #random_wavelength = self.random_wavelength_normal
         #random_wavelength = self.random_wavelength_cauchy
         random_wavelength = self.random_wavelength_voigt
-        wavelength = random_wavelength(self.intensity)
+        wavelength  = random_wavelength(self.intensity)
+        #doppler shift (c = speed of light in vacuum)
+        wavelength *= 1 - (np.dot(self.velocity, self.focus) / 299792458.0)
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -201,6 +205,7 @@ class FocusedExtendedSource(GenericSource):
         self.position       = source_input['position']
         self.normal         = source_input['normal']
         self.xorientation   = source_input['orientation']
+        self.focus          = source_input['target']
         self.width          = source_input['width']
         self.height         = source_input['height']
         self.depth          = source_input['depth']
@@ -210,7 +215,7 @@ class FocusedExtendedSource(GenericSource):
         self.mass_number    = source_input['mass']
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
-        self.focus          = source_input['target']
+        self.velocity       = source_input['velocity']
 
     def generate_rays(self):
         """
