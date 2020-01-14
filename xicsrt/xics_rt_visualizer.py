@@ -132,7 +132,7 @@ def visualize_layout(config):
     
     ## The crystal's saggital and meridional foci
     inbound_vector   = np.zeros([3], dtype = np.float64)
-    if scenario == "PLASMA" or scenario == "BEAM":
+    if scenario == "REAL" or scenario == "PLASMA" or scenario == "BEAM":
         inbound_vector = position[1,:] - position[2,:]
         inbound_vector/= np.linalg.norm(inbound_vector)
         
@@ -173,7 +173,7 @@ def visualize_layout(config):
     config_vis['graphite_mesh_faces'] = config['graphite_input']['mesh_faces']
 
     ## Plot everything
-    if scenario == "PLASMA":
+    if scenario == "REAL" or scenario == "PLASMA":
         #resize and recenter axes on plasma
         scale = abs(position[0,0] - position[2,0])
         

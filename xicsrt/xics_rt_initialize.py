@@ -14,6 +14,7 @@ from xicsrt.util import profiler
 
 profiler.start('Import Time')
 
+from xicsrt.xics_rt_scenarios import setup_real_scenario
 from xicsrt.xics_rt_scenarios import setup_throughput_scenario
 from xicsrt.xics_rt_scenarios import setup_plasma_scenario
 from xicsrt.xics_rt_scenarios import setup_beam_scenario
@@ -28,9 +29,13 @@ def initialize(config):
     profiler.start('Scenario Setup Time')
 
     scenario = str.upper(config['general_input']['scenario'])
+    
+    ## Set up a real scenario 
+    if   scenario == 'REAL':
+        config = setup_real_scenario(config)
 
     ## Set up a plasma test scenario 
-    if   scenario == 'PLASMA':
+    elif scenario == 'PLASMA':
         config = setup_plasma_scenario(config)
         
     ## Set up a throughput test scenario 

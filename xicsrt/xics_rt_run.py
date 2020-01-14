@@ -56,7 +56,7 @@ def run(config, config_number = None):
         fig1.show()
 
     ## Raytrace Runs
-    if scenario == 'plasma':
+    if scenario == 'real' or scenario == 'plasma':
         output, rays_count = raytrace(config['general_input']['number_of_runs'],
             plasma, pilatus, graphite, crystal)
 

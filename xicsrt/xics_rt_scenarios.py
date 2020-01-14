@@ -4,7 +4,7 @@ Created on Fri Apr 28 12:30:38 2017
 
 @author: James
 """
-from xicsrt.xics_rt_math import bragg_angle, rotation_matrix
+from xicsrt.xics_rt_math import bragg_angle, rotation_matrix, vector_rotate
 import numpy as np
 
 def source_location(distance, vert_displace, config):
@@ -73,6 +73,95 @@ def source_location_bragg(config, distance ,vert_displace ,horiz_displace):
     config['source_input']['position'] = source_location
     return config
 
+def setup_real_scenario(config):
+    """
+    Rather than generating the entire scenario from scratch, this scenario
+    generator takes the information provided by the ITER XICS team and fills in
+    all the blanks to produce a complete description of the spectrometer layout
+    """
+    
+    #unpack variables and convert to meters
+    chord  = config['scenario_input']['chord']
+    h_raw  = config['scenario_input']['hole_positions'][chord]   / 1000
+    g_raw  = config['scenario_input']['hopg_positions'][chord]   / 1000
+    c_raw  = config['scenario_input']['crystal_position']        / 1000
+    origin = config['scenario_input']['origin_transform']
+    
+    ## Convert from spectrometer coordinates to XICSRT coordinates
+    #rotate the spectrometer coordinates counterclockwise Z axis 90 degrees
+    h_position  = np.zeros(h_raw.shape)
+    g_position  = np.zeros(g_raw.shape)
+    c_position  = np.zeros(c_raw.shape)
+    
+    h_position[0]  = h_raw[1]
+    g_position[0]  = g_raw[1]
+    c_position[0]  = c_raw[1]
+    
+    h_position[1]  = -h_raw[0]
+    g_position[1]  = -g_raw[0]
+    c_position[1]  = -c_raw[0]
+    
+    h_position[2]  = h_raw[2]
+    g_position[2]  = g_raw[2]
+    c_position[2]  = c_raw[2]
+    
+    #transform origin from spectrometer origin to global origin
+    h_position += origin
+    g_position += origin
+    c_position += origin
+    ## Create a coordinate basis for the HOPG
+    #calculate incoming and outgoing vectors, then calculate HOPG normals
+    in_vector   = g_position - h_position
+    in_vector  /= np.linalg.norm(in_vector)
+    
+    out_vector  = c_position - g_position
+    out_vector /= np.linalg.norm(out_vector)
+    
+    g_normal    = out_vector  - in_vector
+    g_normal   /= np.linalg.norm(g_normal)
+    
+    #calculate HOPG vector bases
+    g_z_vector  = g_normal
+    
+    g_y_vector  = np.cross(out_vector, in_vector)
+    g_y_vector /= np.linalg.norm(g_y_vector)
+        
+    g_x_vector  = np.cross(g_y_vector, g_z_vector)
+    g_x_vector /= np.linalg.norm(g_y_vector)
+    
+    ## Use the HOPG vector basis to place the mesh vertices 
+    #this step currently produces rectangular HOPGs, edit later
+    dx = g_x_vector * config['graphite_input']['height'] / 2
+    dy = g_y_vector * config['graphite_input']['width']  / 2
+    
+    p1 = g_position + dx + dy
+    p2 = g_position - dx + dy
+    p3 = g_position - dx - dy
+    p4 = g_position + dx - dy
+    
+    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
+    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
+    
+    ## Crystal and Detector placement
+    
+    
+    
+    ## Repack variables
+    config['plasma_input']['target']          = g_position
+
+    config['graphite_input']['position']      = g_position
+    config['graphite_input']['normal']        = g_normal
+    config['graphite_input']['orientation']   = g_z_vector
+    config['crystal_input']['position']       = c_position
+    
+    config['crystal_input']['normal']         = np.array([0.0,0.0,1.0])
+    config['crystal_input']['orientation']    = np.array([0.0,1.0,0.0])
+    config['detector_input']['position']      = np.array([15.0,0.0,1.0])
+    config['detector_input']['normal']        = np.array([0.0,0.0,1.0])
+    config['detector_input']['orientation']   = np.array([0.0,1.0,0.0])
+    
+    
+    return config
     
 def setup_plasma_scenario(config):
     """

@@ -34,7 +34,7 @@ def get_config():
     """
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'BEAM'
+    config['general_input']['scenario']           = 'REAL'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -94,7 +94,7 @@ def get_config():
     config['plasma_input']['minor_radius']        = 2.0    
     config['plasma_input']['width']               = 4.0
     config['plasma_input']['height']              = 0.1
-    config['plasma_input']['depth']               = 0.1
+    config['plasma_input']['depth']               = 4.0
 
     """Bundle Settings
     The plasma works be emitting cubic ray bundles, which have their own settings
@@ -108,7 +108,7 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']    
-    config['plasma_input']['bundle_count']        = int(1e5)    
+    config['plasma_input']['bundle_count']        = int(1e7)    
     config['plasma_input']['space_resolution']    = 0.01
     config['plasma_input']['time_resolution']     = 0.01
     config['plasma_input']['spread']              = 2.0
@@ -212,7 +212,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0    
     config['graphite_input']['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.txt'
@@ -290,7 +290,27 @@ def get_config():
     """
     config['scenario_input']['source_graphite_dist']  = 1
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = 1
+    config['scenario_input']['crystal_detector_dist'] = 1.595
+    
+    """
+    Convert the numbers given in the XICS presentations into useful information.
+    When copying values from the XICS presentations, please place them here, since
+    the coordinates are in millimeters and have a different origin with different orientation
+    """
+    config['scenario_input']['chord']                 = 0
+    config['scenario_input']['origin_transform']      = np.array(
+        [config['plasma_input']['major_radius'] + config['plasma_input']['minor_radius'],0,0])
+    config['scenario_input']['hole_positions']        = np.array([[-226.5, 0, 035.6],
+                                                                  [-226.5, 0, 245.2],
+                                                                  [-136.5, 0, 384.9],
+                                                                  [-136.5, 0, 601.4],
+                                                                  [-136.5, 0, 816.0]])
+    config['scenario_input']['hopg_positions']        = np.array([[068.5, 0754.5, -695.2],
+                                                                  [108.5, 0954.5, -691.4],
+                                                                  [148.5, 1064.5, -689.3],
+                                                                  [188.5, 1274.5, -685.3],
+                                                                  [228.5, 1484.4, -681.4]])
+    config['scenario_input']['crystal_position']      = np.array([-197, 9224, -534.7])
 
     return config
 
