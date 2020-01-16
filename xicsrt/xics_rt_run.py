@@ -99,7 +99,7 @@ def run(config, config_number = None):
     if config['general_input']['do_visualizations'] is True:
         fig2, ax2 = visualize_bundles(config, output)
         fig2.show()
-        for ii in range(len(output['lost'])):
+        for ii in range(len(output)):
             fig3, ax3 = visualize_vectors(config, output, ii)
             fig3.show()
     

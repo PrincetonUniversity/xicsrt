@@ -180,7 +180,7 @@ def visualize_layout(config):
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
         if config['general_input']['backwards_raytrace'] is False:
-            beamline[0,:] = position[4,:]
+            beamline[0,:] = plasma_center
             beamline[1,:] = position[1,:]
             beamline[2,:] = position[2,:]
             beamline[3,:] = position[3,:]
@@ -189,7 +189,7 @@ def visualize_layout(config):
             beamline[0,:] = position[3,:]
             beamline[1,:] = position[2,:]
             beamline[2,:] = position[1,:]
-            beamline[3,:] = position[4,:]
+            beamline[3,:] = plasma_center
                     
         #draw plasma, graphite, crystal, detector
         draw_plasma(config_vis, ax)
@@ -207,7 +207,7 @@ def visualize_layout(config):
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
         if config['general_input']['backwards_raytrace'] is False:
-            beamline[0,:] = position[4,:]
+            beamline[0,:] = plasma_center
             beamline[1,:] = position[1,:]
             beamline[2,:] = position[2,:]
             beamline[3,:] = position[3,:]
@@ -216,7 +216,7 @@ def visualize_layout(config):
             beamline[0,:] = position[3,:]
             beamline[1,:] = position[2,:]
             beamline[2,:] = position[1,:]
-            beamline[3,:] = position[4,:]
+            beamline[3,:] = plasma_center
                     
         #draw plasma, graphite, crystal, detector
         draw_plasma(config_vis, ax)
@@ -415,9 +415,9 @@ def draw_detector(config_vis, ax):
 
 def visualize_vectors(config, output, ii):
     ## Do all of the steps as before, but also add the output rays
-    origin = output['lost'][ii]['origin']
-    direct = output['lost'][ii]['direction']
-    m      = output['lost'][ii]['mask']
+    origin = output[ii]['origin']
+    direct = output[ii]['direction']
+    m      = output[ii]['mask']
     
     #to avoid plotting too many rays, randomly cull rays until there are 1000
     if len(m[m]) > 1000:
@@ -436,8 +436,8 @@ def visualize_vectors(config, output, ii):
 
 def visualize_bundles(config, output):
     ## Do all of the steps as before, but also add the plasma bundles
-    origin = output['lost'][0]['origin']
-    m      = output['lost'][0]['mask']
+    origin = output[0]['origin']
+    m      = output[0]['mask']
     
     #to avoid plotting too many bundles, randomly cull rays until there are 1000
     if len(m[m]) > 1000:

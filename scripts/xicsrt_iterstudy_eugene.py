@@ -34,7 +34,7 @@ def get_config():
     """
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'REAL'
+    config['general_input']['scenario']           = 'BEAM'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -73,8 +73,8 @@ def get_config():
     """
     config['plasma_input']['use_profiles']        = True 
     config['plasma_input']['bundle_type']         = 'POINT'
-    config['plasma_input']['temperature_data']    = '../xicsrt/plasma_temperature.txt'
-    config['plasma_input']['emissivity_data']     = '../xicsrt/plasma_emissivity_xe44.txt'
+    config['plasma_input']['temperature_data']    = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt'
+    config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e16
@@ -109,9 +109,9 @@ def get_config():
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']    
     config['plasma_input']['bundle_count']        = int(1e7)    
-    config['plasma_input']['space_resolution']    = 0.01
-    config['plasma_input']['time_resolution']     = 0.01
-    config['plasma_input']['spread']              = 2.0
+    config['plasma_input']['space_resolution']    = 0.001
+    config['plasma_input']['time_resolution']     = 0.1
+    config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass']                = 131.293
     config['plasma_input']['wavelength']          = 2.7203
     config['plasma_input']['linewidth']           = 1.129e+14
@@ -164,8 +164,8 @@ def get_config():
     config['crystal_input']['use_meshgrid']       = False    
     config['crystal_input']['meshgrid_data']      = ''
     config['crystal_input']['mix_factor']         = 1.0   
-    config['crystal_input']['sigma_data']         = '../xicsrt/rocking_curve_germanium_sigma.txt'
-    config['crystal_input']['pi_data']            = '../xicsrt/rocking_curve_germanium_pi.txt'
+    config['crystal_input']['sigma_data']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_sigma.txt'
+    config['crystal_input']['pi_data']            = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_pi.txt'
     
     """Crystal settings
     'spacing'       is the inter-atomic spacing (angstrom)
@@ -212,11 +212,11 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0    
-    config['graphite_input']['sigma_data']        = '../xicsrt/rocking_curve_graphite_sigma.txt'
-    config['graphite_input']['pi_data']           = '../xicsrt/rocking_curve_graphite_pi.txt'    
+    config['graphite_input']['sigma_data']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_sigma.txt'
+    config['graphite_input']['pi_data']           = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt'    
     
     """Graphite settings
     'spacing'       is the inter-atomic spacing (angstrom)
@@ -290,14 +290,14 @@ def get_config():
     """
     config['scenario_input']['source_graphite_dist']  = 1
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = 1.595
+    config['scenario_input']['crystal_detector_dist'] = None
     
     """
     Convert the numbers given in the XICS presentations into useful information.
     When copying values from the XICS presentations, please place them here, since
     the coordinates are in millimeters and have a different origin with different orientation
     """
-    config['scenario_input']['chord']                 = 0
+    config['scenario_input']['chord']                 = 1
     config['scenario_input']['origin_transform']      = np.array(
         [config['plasma_input']['major_radius'] + config['plasma_input']['minor_radius'],0,0])
     config['scenario_input']['hole_positions']        = np.array([[-226.5, 0, 035.6],
