@@ -68,6 +68,7 @@ class GenericPlasma(TraceObject):
         bundle_input['temperature']  = np.ones([self.bundle_count], dtype = np.float64)
         bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
         bundle_input['velocity']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
+        bundle_input['sightline']    = np.ones([self.bundle_count], dtype = np.bool)
         
         return bundle_input
         
@@ -83,30 +84,35 @@ class GenericPlasma(TraceObject):
         rays['weight']      = np.ones( [0], dtype=np.float64)
         rays['mask']        = np.ones( [0], dtype=np.bool)
         
+        #determine which bundles are near the sightline; if there is no 
+        #sightline, the plasma defaults to generating all bundles
+        m = bundle_input['sightline']
+        
         #bundle generation loop
-        for ii in range(self.bundle_count):
+        for ii in range(len(m[m])):
             profiler.start("Ray Bundle Generation")
             source_input = OrderedDict()
             #spacially-dependent parameters
-            source_input['position']    = bundle_input['position'][ii]
-            source_input['temp']        = bundle_input['temperature'][ii]
-            source_input['velocity']    = bundle_input['velocity'][ii]
+            
+            source_input['position']    = bundle_input['position'][m][ii]
+            source_input['temp']        = bundle_input['temperature'][m][ii]
+            source_input['velocity']    = bundle_input['velocity'][m][ii]
 
             # Calculate the total number of photons to launch from this bundle volume.
-            intensity = (bundle_input['emissivity'][ii]
+            intensity = (bundle_input['emissivity'][m][ii]
                          * self.chronon_size
                          * self.bundle_volume
                          * self.solid_angle / (4 * np.pi))
-
+            """
             # Scale the number of photons based on the number of bundles.
             #
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
             
-            volume_factor = self.volume / (self.bundle_count * self.bundle_volume)
+            volume_factor = self.volume / (len(m) * self.bundle_volume)
             intensity *= volume_factor
-            """
+            
             if intensity < 1:
                 logging.warning('Bundle intensity is less than one. ')
                 continue
@@ -266,6 +272,11 @@ class ToroidalPlasma(GenericPlasma):
         self.minor_radius   = plasma_input['minor_radius']
         self.bundle_count   = plasma_input['bundle_count']
         
+        self.sight_position = plasma_input['sight_position']
+        self.sight_direction= plasma_input['sight_direction']
+        self.sight_thickness= plasma_input['sight_thickness']
+        
+        
     def toroidal_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
         x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count)
@@ -278,6 +289,20 @@ class ToroidalPlasma(GenericPlasma):
                   + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
                   + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
                   + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
+        
+        #calculate whether the ray bundles are within range of the sightline
+        #vector from sightline origin to bundle position
+        l_0 = self.sight_position - bundle_input['position']
+        #projection of l_0 onto the sightline
+        proj = np.einsum('j,ij->i',self.sight_direction, l_0)[np.newaxis]
+        l_1  = np.dot(np.transpose(self.sight_direction[np.newaxis]), proj)
+        l_1  = np.transpose(l_1)
+        #component of l_0 perpendicular to the sightline
+        l_2 = l_0 - l_1
+        #sightline distance is the length of l_2
+        distance = np.einsum('ij,ij->i', l_2, l_2) ** .5
+        #check to see if the bundle is close enough to the sightline
+        bundle_input['sightline'][:] = (self.sight_thickness >= distance)
         
         #convert from cartesian coordinates to toroidal coordinates [rad, pol, tor]
         #torus is oriented along the Z axis

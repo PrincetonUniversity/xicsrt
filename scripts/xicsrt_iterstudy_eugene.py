@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 10
 
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -92,7 +92,7 @@ def get_config():
 
     config['plasma_input']['major_radius']        = 6.2
     config['plasma_input']['minor_radius']        = 2.0
-    config['plasma_input']['width']               = 0.01
+    config['plasma_input']['width']               = 4.0
     config['plasma_input']['height']              = 4.0
     config['plasma_input']['depth']               = 4.0
 
@@ -108,13 +108,23 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
-    config['plasma_input']['bundle_count']        = int(1e7)
+    config['plasma_input']['bundle_count']        = int(1e6)
     config['plasma_input']['space_resolution']    = 0.001
     config['plasma_input']['time_resolution']     = 0.1
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass']                = 131.293
     config['plasma_input']['wavelength']          = 2.7203
     config['plasma_input']['linewidth']           = 1.129e+14
+    
+    """Sightline Settings
+    The plasma sightline is a vector that extends from the graphite 
+    pre-reflector to the plasma. This improves rendering efficiency since the 
+    plasma only needs to render bundles near the sightline.
+    The sightline has a thickness (meters)
+    """
+    config['plasma_input']['sight_position']  = np.array([0.0, 0.0, 0.0])
+    config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
+    config['plasma_input']['sight_thickness'] = 0.100
 
     # -------------------------------------------------------------------------
     ## Load source properties
@@ -297,7 +307,7 @@ def get_config():
     When copying values from the XICS presentations, please place them here.
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
-    config['scenario_input']['chord']               = 4
+    config['scenario_input']['chord']               = 0
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],

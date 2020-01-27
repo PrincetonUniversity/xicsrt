@@ -123,12 +123,21 @@ def setup_real_scenario(config):
     c_normal  /= np.linalg.norm(c_normal)
     d_normal  /= np.linalg.norm(d_normal)
     
+    #calculate the graphite pre-reflector's sightline of the plasma
+    #start with the crystal-graphite vector, normalize, and reflect it
+    sightline  = g_position - c_position
+    sightline /= np.linalg.norm(sightline)
+    sightline -= 2 * np.dot(sightline, g_normal) * g_normal
+    
     #triangulate the graphite
     config['graphite_input']['mesh_points'] = g_corners
     config['graphite_input']['mesh_faces']  = np.array([[2,1,0],[0,3,2]])
     
     ## Repack variables
     config['plasma_input']['target']          = g_position
+    config['plasma_input']['sight_position']  = g_position
+    config['plasma_input']['sight_direction'] = sightline
+    config['plasma_input']['sight_thickness'] = 0.1
 
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal

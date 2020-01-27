@@ -255,15 +255,13 @@ class SphericalCrystal(GenericOptic):
         #this calculation is performed for all rays, mask regardless
         L     = self.center - O
         t_ca  = np.einsum('ij,ij->i', L, D)
-        mag_L = np.linalg.norm(L, axis=1)
         
-        # If t_ca is less than zero, then there is no intersection
-        # Use mask to only perform calculations on rays that hit the crystal
-#        m[m] &= ((t_ca[m] >= 0) & (mag_L[m] >= self.radius))
-        
+        #If t_ca is less than zero, then there is no intersection
+        #Use mask to only perform calculations on rays that hit the crystal        
         #d is the impact parameter between a ray and center of curvature
+        #WARNING: These square roots may occasionally produce complex numbers
         d[m]    = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
-        t_hc[m] = np.sqrt(self.radius**2 - d[m]**2)
+        t_hc[m] = np.sqrt((self.radius**2 - d[m]**2) + 0j)
         
         t_0[m] = t_ca[m] - t_hc[m]
         t_1[m] = t_ca[m] + t_hc[m]

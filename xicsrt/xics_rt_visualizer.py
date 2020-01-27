@@ -161,6 +161,9 @@ def visualize_layout(config):
             (orient_x[4,:] * np.cos(circle_points)) + (normal[4,:] * np.sin(circle_points)))
     minor_circle   += plasma_center
     
+    #plasma sightline[3D Coordinates]
+    plasma_sight    = config['plasma_input']['sight_position'] + 5 * config['plasma_input']['sight_direction']
+    
     ## Compactify variables into a dictionary
     config_vis = {'position':position,'normal':normal,'orient_x':orient_x,
                   'orient_y':orient_y,'width':width,'height':height,
@@ -180,7 +183,7 @@ def visualize_layout(config):
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
         if config['general_input']['backwards_raytrace'] is False:
-            beamline[0,:] = plasma_center
+            beamline[0,:] = plasma_sight
             beamline[1,:] = position[1,:]
             beamline[2,:] = position[2,:]
             beamline[3,:] = position[3,:]
@@ -189,7 +192,7 @@ def visualize_layout(config):
             beamline[0,:] = position[3,:]
             beamline[1,:] = position[2,:]
             beamline[2,:] = position[1,:]
-            beamline[3,:] = plasma_center
+            beamline[3,:] = plasma_sight
                     
         #draw plasma, graphite, crystal, detector
         draw_plasma(config_vis, ax)
