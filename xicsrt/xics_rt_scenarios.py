@@ -80,86 +80,73 @@ def setup_real_scenario(config):
     all the blanks to produce a complete description of the spectrometer layout
     """
     
-    #unpack variables and convert to meters
+    ## Unpack variables and convert to meters
     chord  = config['scenario_input']['chord']
-    h_raw  = config['scenario_input']['hole_positions'][chord]   / 1000
-    g_raw  = config['scenario_input']['hopg_positions'][chord]   / 1000
-    c_raw  = config['scenario_input']['crystal_position']        / 1000
-    origin = config['scenario_input']['origin_transform']
+    g_corners  = config['scenario_input']['graphite_corners'][chord] / 1000
+    c_corners  = config['scenario_input']['crystal_corners']         / 1000
+    d_corners  = config['scenario_input']['detector_corners']        / 1000
     
-    ## Convert from spectrometer coordinates to XICSRT coordinates
-    #rotate the spectrometer coordinates counterclockwise Z axis 90 degrees
-    h_position  = np.zeros(h_raw.shape)
-    g_position  = np.zeros(g_raw.shape)
-    c_position  = np.zeros(c_raw.shape)
+    #calculate geometric properties of all meshes
+    g_position = np.mean(g_corners, axis = 0)
+    c_position = np.mean(c_corners, axis = 0)
+    d_position = np.mean(d_corners, axis = 0)
     
-    h_position[0]  = h_raw[1]
-    g_position[0]  = g_raw[1]
-    c_position[0]  = c_raw[1]
+    g_width    = np.linalg.norm(g_corners[0] - g_corners[3])
+    c_width    = np.linalg.norm(c_corners[0] - c_corners[3])
+    d_width    = np.linalg.norm(d_corners[0] - d_corners[3])
     
-    h_position[1]  = -h_raw[0]
-    g_position[1]  = -g_raw[0]
-    c_position[1]  = -c_raw[0]
+    g_height   = np.linalg.norm(g_corners[0] - g_corners[1])
+    c_height   = np.linalg.norm(c_corners[0] - c_corners[1])
+    d_height   = np.linalg.norm(d_corners[0] - d_corners[1])
     
-    h_position[2]  = h_raw[2]
-    g_position[2]  = g_raw[2]
-    c_position[2]  = c_raw[2]
+    g_x_vector = g_corners[0] - g_corners[3]
+    c_x_vector = c_corners[0] - c_corners[3]
+    d_x_vector = d_corners[0] - d_corners[3]
     
-    #transform origin from spectrometer origin to global origin
-    h_position += origin
-    g_position += origin
-    c_position += origin
-    ## Create a coordinate basis for the HOPG
-    #calculate incoming and outgoing vectors, then calculate HOPG normals
-    in_vector   = g_position - h_position
-    in_vector  /= np.linalg.norm(in_vector)
+    g_x_vector/= g_width
+    c_x_vector/= c_width
+    d_x_vector/= d_width
     
-    out_vector  = c_position - g_position
-    out_vector /= np.linalg.norm(out_vector)
+    g_y_vector = g_corners[0] - g_corners[1]
+    c_y_vector = c_corners[0] - c_corners[1]
+    d_y_vector = d_corners[0] - d_corners[1]
     
-    g_normal    = out_vector  - in_vector
-    g_normal   /= np.linalg.norm(g_normal)
+    g_y_vector/= g_height
+    c_y_vector/= c_height
+    d_y_vector/= d_height
     
-    #calculate HOPG vector bases
-    g_z_vector  = g_normal
+    g_normal   = np.cross(g_x_vector, g_y_vector)
+    c_normal   = np.cross(c_x_vector, c_y_vector)
+    d_normal   = np.cross(d_x_vector, d_y_vector)
     
-    g_y_vector  = np.cross(out_vector, in_vector)
-    g_y_vector /= np.linalg.norm(g_y_vector)
-        
-    g_x_vector  = np.cross(g_y_vector, g_z_vector)
-    g_x_vector /= np.linalg.norm(g_y_vector)
+    g_normal  /= np.linalg.norm(g_normal)
+    c_normal  /= np.linalg.norm(c_normal)
+    d_normal  /= np.linalg.norm(d_normal)
     
-    ## Use the HOPG vector basis to place the mesh vertices 
-    #this step currently produces rectangular HOPGs, edit later
-    dx = g_x_vector * config['graphite_input']['height'] / 2
-    dy = g_y_vector * config['graphite_input']['width']  / 2
-    
-    p1 = g_position + dx + dy
-    p2 = g_position - dx + dy
-    p3 = g_position - dx - dy
-    p4 = g_position + dx - dy
-    
-    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
-    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
-    
-    ## Crystal and Detector placement
-    
-    
+    #triangulate the graphite
+    config['graphite_input']['mesh_points'] = g_corners
+    config['graphite_input']['mesh_faces']  = np.array([[2,1,0],[0,3,2]])
     
     ## Repack variables
     config['plasma_input']['target']          = g_position
 
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal
-    config['graphite_input']['orientation']   = g_z_vector
+    config['graphite_input']['orientation']   = g_x_vector
+    config['graphite_input']['width']         = g_width
+    config['graphite_input']['height']        = g_height
+    
     config['crystal_input']['position']       = c_position
+    config['crystal_input']['normal']         = c_normal
+    config['crystal_input']['orientation']    = c_x_vector
+    config['crystal_input']['width']          = c_width
+    config['crystal_input']['height']         = c_height
     
-    config['crystal_input']['normal']         = np.array([0.0,0.0,1.0])
-    config['crystal_input']['orientation']    = np.array([0.0,1.0,0.0])
-    config['detector_input']['position']      = np.array([15.0,0.0,1.0])
-    config['detector_input']['normal']        = np.array([0.0,0.0,1.0])
-    config['detector_input']['orientation']   = np.array([0.0,1.0,0.0])
-    
+    config['detector_input']['position']      = d_position
+    config['detector_input']['normal']        = d_normal
+    config['detector_input']['orientation']   = d_x_vector
+    config['detector_input']['width']         = d_width
+    config['detector_input']['height']        = d_height    
     
     return config
     

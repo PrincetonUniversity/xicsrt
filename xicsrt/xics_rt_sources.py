@@ -155,7 +155,6 @@ class GenericSource(TraceObject):
         # Doppler broadened line width.
         sigma = (np.sqrt(self.temp / self.mass_number / amu_kg / c**2 * ev_J)
                   * self.wavelength )
-
         rand_wave  = voigt.voigt_random(gamma, sigma, size)
         rand_wave += self.wavelength
         return rand_wave

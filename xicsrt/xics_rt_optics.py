@@ -176,12 +176,12 @@ class GenericOptic(TraceObject):
             if (self.pixel_width % 2) == 0:
                 pix_min_x = self.pixel_width//2
             else:
-                pix_min_x = (self.pixel_width + 1)//2
+                pix_min_x = (self.pixel_width - 1)//2
                 
             if (self.pixel_height % 2) == 0:
                 pix_min_y = self.pixel_height//2
             else:
-                pix_min_y = (self.pixel_height + 1)//2
+                pix_min_y = (self.pixel_height - 1)//2
             
             pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
             
@@ -547,7 +547,6 @@ class MosaicGraphiteMesh(TraceObject):
         m = rays['mask']
         
         norm = np.zeros(O.shape, dtype=np.float64)
-        
         for ii in range(len(self.mesh_faces)):
             #query the triangle mesh grid
             tri  = self.mesh_triangulate(ii)
@@ -555,7 +554,7 @@ class MosaicGraphiteMesh(TraceObject):
             
             #generate the normal vector for each impact location and append it
             norm[test] = self.mesh_mosaic_norm_generate(rays, tri)[test]
-        
+            
         # Check which vectors meet the Bragg condition (with rocking curve)
         rays = self.angle_check(X, rays, norm)
         
@@ -606,7 +605,7 @@ class MosaicGraphiteMesh(TraceObject):
         D = rays['direction']
         m = rays['mask']
         X, rays, hits = self.mesh_intersect_check(rays)
-        print(' Rays on Graphite:  {:6.4e}'.format(D[m].shape[0]))        
+        print(' Rays on Graphite:  {:6.4e}'.format(D[m].shape[0]))       
         rays = self.mesh_reflect_vectors(X, rays, hits)
         print(' Rays from Graphite:{:6.4e}'.format(D[m].shape[0]))
         return rays

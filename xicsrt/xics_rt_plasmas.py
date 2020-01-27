@@ -268,8 +268,8 @@ class ToroidalPlasma(GenericPlasma):
         
     def toroidal_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count) + self.major_radius
-        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
+        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count)
+        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count) + self.major_radius
         z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2 , self.bundle_count)        
         
         #unlike the other plasmas, the toroidal plasma has fixed orientation to
