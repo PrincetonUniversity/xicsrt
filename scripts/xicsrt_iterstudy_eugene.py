@@ -364,12 +364,12 @@ logging.info('Starting Ray-Trace Runs...')
 if runtype == 'single':
     config = get_config()
     config = initialize(config)
-    output, meta = run(config)
+    output_hits, output, meta = run(config)
 
 if runtype == 'multi':
     config_multi = get_config_multi(10)
     config_multi = initialize_multi(config_multi)
-    output, meta = run_multi(config_multi)
+    output_hits, output, meta = run_multi(config_multi)
 
 if runtype == 'save':
     config_multi = get_config_multi(10)
@@ -401,4 +401,4 @@ if runtype == 'load':
                 if type(config_multi[configuration][element][key]) is list:
                     config_multi[configuration][element][key] = np.array(
                             config_multi[configuration][element][key])
-    output, meta = run_multi(config_multi)
+    output_hits, output, meta = run_multi(config_multi)

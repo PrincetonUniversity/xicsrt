@@ -57,32 +57,32 @@ def run(config, config_number = None):
 
     ## Raytrace Runs
     if scenario == 'real' or scenario == 'plasma':
-        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             plasma, pilatus, graphite, crystal)
 
     elif scenario == 'throughput':
-        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             plasma, pilatus, crystal)
 
     elif scenario == 'beam':
         if config['general_input']['backwards_raytrace'] is False:
-            output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
                 source, pilatus, graphite, crystal)
 
         if config['general_input']['backwards_raytrace'] is True:
-            output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
                 source, pilatus, crystal, graphite)
 
     elif scenario == 'crystal':
-        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus, crystal)
 
     elif scenario == 'graphite':
-        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus, graphite)
 
     elif scenario == 'source':
-        output, rays_count = raytrace(config['general_input']['number_of_runs'],
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus)
 
     else:
@@ -139,7 +139,7 @@ def run(config, config_number = None):
         print('Exporting crystal image:  {}'.format(filepath))
         crystal.output_image(filepath, rotate=False)
 
-    return output, rays_count
+    return output_hits, output, rays_count
 
 
 def run_multi(config_multi):

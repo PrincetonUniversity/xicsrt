@@ -18,7 +18,7 @@ def raytrace_single(source, detector, *optics):
     Rays consists of origin, direction, wavelength, and weight.
     """
     
-    single_count = dict()
+    single_count = {}
     single_count['total_generated']  = 0
     single_count['total_graphite']   = 0
     single_count['total_crystal']    = 0
@@ -70,13 +70,18 @@ def raytrace_single(source, detector, *optics):
 def raytrace(number_of_runs, source, detector, *optics):
     """
     Run a series of ray tracing runs and add up all the results in the end.
-    The lest raytrace run also returns a rays history which describes everything
-    about the run, making it easier to visualize.
+    Then, return two raytrace outputs: 'rays_history' contains a truncated copy
+    of all rays in the raytrace run, while 'hits_history' contains the history
+    of only the rays that hit the detector.
     """
 
     if number_of_runs is None: number_of_runs = 1
+    
+    hits_history = []
+    
+    rays_history = []
 
-    rays_count = dict()
+    rays_count   = {}
     rays_count['total_generated']  = 0
     rays_count['total_graphite']   = 0
     rays_count['total_crystal']    = 0
@@ -91,8 +96,47 @@ def raytrace(number_of_runs, source, detector, *optics):
         for key in single_count:
             rays_count[key] += single_count[key]
             
-    rays_history = single_history
+        #find which rays hit the detector, these are the hits
+        #create two large masks to keep track
+        hits = np.flatnonzero(single_history[-1]['mask'])
+        miss = np.flatnonzero(np.invert(single_history[-1]['mask']))
+        
+        #to avoid saving too many miss, randomly cull rays until there are 5000
+        #hits will not be culled
+        if len(miss) >= 5000:
+            cutter = np.random.randint(0, len(miss), len(miss))
+            miss = miss[cutter <= 5000]
+            
+        #use the hits/miss masks to cut single_history into hit and missed rays
+        single_hits_history = []
+        single_miss_history = []
+        
+        for optic in range(len(single_history)):
+            single_hits_history.append({})
+            single_miss_history.append({})
+            
+            for key in single_history[optic]:
+                single_hits_history[optic][key] = single_history[optic][key][hits]
+                single_miss_history[optic][key] = single_history[optic][key][miss]
+        
+        #append the single histories to the global histories
+        if hits_history == []:
+            hits_history = single_hits_history
 
+        else:
+            for optic in range(len(hits_history)):
+                for key in hits_history[optic]:
+                    hits_history[optic][key] = np.append(
+                        hits_history[optic][key], single_hits_history[optic][key], axis = 0)
+                
+        if rays_history == []:
+            rays_history = single_miss_history
+        else:
+            for optic in range(len(rays_history)):
+                for key in rays_history[optic]:
+                    rays_history[optic][key] = np.append(
+                        rays_history[optic][key], single_miss_history[optic][key], axis = 0)
+        
     print('')
     print('Final Rays Generated: {:6.4e}'.format(rays_count['total_generated']))
     print('Final Rays on HOPG:   {:6.4e}'.format(rays_count['total_graphite']))
@@ -104,4 +148,4 @@ def raytrace(number_of_runs, source, detector, *optics):
         rays_count['total_detector'] / rays_count['total_generated'] * 100))
     print('')
 
-    return rays_history, rays_count
+    return hits_history, rays_history, rays_count
