@@ -103,9 +103,10 @@ def raytrace(number_of_runs, source, detector, *optics):
         
         #to avoid saving too many miss, randomly cull rays until there are 5000
         #hits will not be culled
-        if len(miss) >= 5000:
+        max_len = int(5000 / number_of_runs)
+        if len(miss) >= max_len:
             cutter = np.random.randint(0, len(miss), len(miss))
-            miss = miss[cutter <= 5000]
+            miss = miss[cutter <= max_len]
             
         #use the hits/miss masks to cut single_history into hit and missed rays
         single_hits_history = []
@@ -122,7 +123,6 @@ def raytrace(number_of_runs, source, detector, *optics):
         #append the single histories to the global histories
         if hits_history == []:
             hits_history = single_hits_history
-
         else:
             for optic in range(len(hits_history)):
                 for key in hits_history[optic]:

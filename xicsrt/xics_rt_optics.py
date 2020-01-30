@@ -20,7 +20,7 @@ from xicsrt.xics_rt_objects import TraceObject
 
 class GenericOptic(TraceObject):
     def __init__(self, optic_input):
-        super(GenericOptic, self).__init__(
+        super().__init__(
             optic_input['position']
             ,optic_input['normal']
             ,optic_input['orientation'])
@@ -210,7 +210,7 @@ class GenericOptic(TraceObject):
       
 class SphericalCrystal(GenericOptic):
     def __init__(self, crystal_input):
-        super(SphericalCrystal, self).__init__(crystal_input)
+        super().__init__(crystal_input)
         
         self.__name__       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
@@ -286,7 +286,7 @@ class SphericalCrystal(GenericOptic):
 
 class MosaicGraphite(GenericOptic):
     def __init__(self, graphite_input):
-        super(MosaicGraphite, self).__init__(graphite_input)
+        super().__init__(graphite_input)
         
         self.__name__       = 'MosaicGraphite'
         self.position       = graphite_input['position']
@@ -370,7 +370,7 @@ class MosaicGraphite(GenericOptic):
     
 class MosaicGraphiteMesh(TraceObject):
     def __init__(self, graphite_input):
-        super(MosaicGraphiteMesh, self).__init__(
+        super().__init__(
              graphite_input['position']
             ,graphite_input['normal']
             ,graphite_input['orientation'])

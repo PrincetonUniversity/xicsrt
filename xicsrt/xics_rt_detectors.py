@@ -19,7 +19,7 @@ from xicsrt.xics_rt_objects import TraceObject
 
 class Detector(TraceObject):
     def __init__(self, detector_input):
-        super(Detector, self).__init__(
+        super().__init__(
             detector_input['position']
             ,detector_input['normal']
             ,detector_input['orientation'])
