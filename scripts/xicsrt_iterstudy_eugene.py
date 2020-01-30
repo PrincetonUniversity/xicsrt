@@ -43,7 +43,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
 
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -72,7 +72,6 @@ def get_config():
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
     config['plasma_input']['use_profiles']        = True
-    config['plasma_input']['bundle_type']         = 'POINT'
     config['plasma_input']['temperature_data']    = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt'
     config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
@@ -98,6 +97,11 @@ def get_config():
 
     """Bundle Settings
     The plasma works be emitting cubic ray bundles, which have their own settings
+    NOTE: plasma volume, bundle volume, and bundle count are intrinsically
+    linked. Setting 'bundle_type' to 'POINT' will calculate bundle count
+    from plasma volume / bundle volume. Setting 'bundle_type' to 'CUBE' will
+    calculate bundle volume from plasma volume / bundle count.
+    
     'max_rays' should equal config['general_input']['number_of_rays']
     'bundle_count' typically should not exceed 1e7 unless running on a cluster
     'space_resolution'      is the cube side length             (meters)
@@ -108,9 +112,10 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
-    config['plasma_input']['bundle_count']        = int(1e6)
-    config['plasma_input']['space_resolution']    = 0.001
-    config['plasma_input']['time_resolution']     = 0.1
+    config['plasma_input']['bundle_type']         = 'POINT'
+    config['plasma_input']['bundle_count']        = int(1e7)
+    config['plasma_input']['space_resolution']    = 0.01
+    config['plasma_input']['time_resolution']     = 1e-9
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass']                = 131.293
     config['plasma_input']['wavelength']          = 2.7203

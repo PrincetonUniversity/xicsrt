@@ -43,7 +43,7 @@ class GenericPlasma(TraceObject):
         self.volume         = self.width * self.height * self.depth
         #bundle information
         self.bundle_count   = plasma_input['bundle_count']
-        self.bundle_type    = str.lower(plasma_input['bundle_type'])
+        self.bundle_type    = str.upper(plasma_input['bundle_type'])
         self.max_rays       = plasma_input['max_rays']
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
         self.voxel_size     = plasma_input['space_resolution']
@@ -62,8 +62,14 @@ class GenericPlasma(TraceObject):
         self.linewidth      = plasma_input['linewidth']
         
     def setup_bundles(self):
-            
-        bundle_input = dict()
+        #plasma volume, bundle volume, and bundle count are linked
+        if self.bundle_type == 'POINT':
+            self.bundle_count = int(self.volume / self.bundle_volume)
+        elif self.bundle_type == 'VOXEL':
+            self.bundle_volume = self.volume / self.bundle_count
+            self.voxel_size   = self.bundle_volume ** (1/3)
+        
+        bundle_input = {}
         bundle_input['position']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
         bundle_input['temperature']  = np.ones([self.bundle_count], dtype = np.float64)
         bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
@@ -75,7 +81,7 @@ class GenericPlasma(TraceObject):
     def create_sources(self, bundle_input):
         ## Bundle_input is a list containing dictionaries containing the locations,
         ## temperatures, and emissivities of all ray bundles to be emitted
-        
+
         #create ray dictionary
         rays                = dict()
         rays['origin']      = np.zeros([0,3], dtype = np.float64)
@@ -87,6 +93,15 @@ class GenericPlasma(TraceObject):
         #determine which bundles are near the sightline; if there is no 
         #sightline, the plasma defaults to generating all bundles
         m = bundle_input['sightline']
+        #test to see if the number of rays generated will exceed max ray limits
+        predicted_rays = int(np.sum(bundle_input['emissivity'][m])
+                         * self.chronon_size
+                         * self.bundle_volume
+                         * self.solid_angle / (4 * np.pi)
+                         * self.volume / (len(m[m]) * self.bundle_volume))
+
+        if predicted_rays >= self.max_rays:
+            raise ValueError('Plasma generated too many rays. Please reduce integration time.')
         
         #bundle generation loop
         for ii in range(len(m[m])):
@@ -103,32 +118,20 @@ class GenericPlasma(TraceObject):
                          * self.chronon_size
                          * self.bundle_volume
                          * self.solid_angle / (4 * np.pi))
-            """
+            
             # Scale the number of photons based on the number of bundles.
             #
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
+            intensity *= self.volume / (len(m[m]) * self.bundle_volume)
             
-            volume_factor = self.volume / (len(m) * self.bundle_volume)
-            intensity *= volume_factor
-            
-            if intensity < 1:
-                logging.warning('Bundle intensity is less than one. ')
-                continue
-            """
             source_input['intensity'] = int(intensity)
             
             #constants
-            if self.bundle_type == 'voxel':
-                source_input['width']   = self.voxel_size
-                source_input['height']  = self.voxel_size
-                source_input['depth']   = self.voxel_size
-            if self.bundle_type == 'point':
-                source_input['width']   = 0
-                source_input['height']  = 0
-                source_input['depth']   = 0
-
+            source_input['width']       = self.voxel_size
+            source_input['height']      = self.voxel_size
+            source_input['depth']       = self.voxel_size
             source_input['normal']      = self.normal
             source_input['orientation'] = self.xorientation
             source_input['target']      = self.target
@@ -142,15 +145,11 @@ class GenericPlasma(TraceObject):
             bundled_rays = source.generate_rays()
             
             #append bundled rays together to form a single ray dictionary
-            if len(rays['mask']) >= self.max_rays:
-                print('Ray-Bundle Generation Halted: Too Many Rays')
-                break
-            else:
-                rays['origin']      = np.append(rays['origin'],      bundled_rays['origin'], axis = 0)
-                rays['direction']   = np.append(rays['direction'],   bundled_rays['direction'], axis = 0)
-                rays['wavelength']  = np.append(rays['wavelength'],  bundled_rays['wavelength'])
-                rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
-                rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
+            rays['origin']      = np.append(rays['origin'],      bundled_rays['origin'], axis = 0)
+            rays['direction']   = np.append(rays['direction'],   bundled_rays['direction'], axis = 0)
+            rays['wavelength']  = np.append(rays['wavelength'],  bundled_rays['wavelength'])
+            rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
+            rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
             profiler.stop("Ray Bundle Generation")
         print(' Bundles Generated: {:6.4e}'.format(ii + 1))        
         return rays
@@ -276,7 +275,6 @@ class ToroidalPlasma(GenericPlasma):
         self.sight_direction= plasma_input['sight_direction']
         self.sight_thickness= plasma_input['sight_thickness']
         
-        
     def toroidal_bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
         x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count)
@@ -334,7 +332,8 @@ class ToroidalPlasma(GenericPlasma):
             bundle_input['velocity'][1] = np.interp(nrad, emis_data[:,0], emis_data[:,2],
                                         left = 1.0, right = 1.0)      
             bundle_input['velocity'][2] = np.interp(nrad, emis_data[:,0], emis_data[:,3],
-                                        left = 1.0, right = 1.0)            """
+                                        left = 1.0, right = 1.0)
+            """
         
         return bundle_input
 
