@@ -96,15 +96,17 @@ def get_config():
     config['plasma_input']['depth']               = 4.0
 
     """Bundle Settings
-    The plasma works be emitting cubic ray bundles, which have their own settings
-    NOTE: plasma volume, bundle volume, and bundle count are intrinsically
-    linked. Setting 'bundle_type' to 'POINT' will calculate bundle count
-    from plasma volume / bundle volume. Setting 'bundle_type' to 'CUBE' will
-    calculate bundle volume from plasma volume / bundle count.
+    The plasma works by emitting cubic ray bundles, which have their own settings
+    NOTE: plasma volume, bundle volume, bundle count, and bundle_factor are 
+    intrinsically linked. Setting 'bundle_type' to 'POINT' will calculate 
+    bundle count from plasma volume / bundle volume. Setting 'bundle_type' to
+    'VOXEL' will calculate bundle volume from plasma volume / bundle count.
     
     'max_rays' should equal config['general_input']['number_of_rays']
     'bundle_count' typically should not exceed 1e7 unless running on a cluster
-    'space_resolution'      is the cube side length             (meters)
+    'bundle_factor' lets you interchange generating more bundles or more rays
+    per bundle. Decreasing 'bundle_factor' results in better sampling, but slower.
+    'bundle_volume'         is the volume of each bundle        (meters^3)
     'time_resolution'       is the emissivity integration time  (sec)
     'spread'                is the angular spread               (degrees)
     'mass'                  is the impurity mass                (AMU)
@@ -114,7 +116,8 @@ def get_config():
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
     config['plasma_input']['bundle_type']         = 'POINT'
     config['plasma_input']['bundle_count']        = int(1e7)
-    config['plasma_input']['space_resolution']    = 0.01
+    config['plasma_input']['bundle_factor']       = 100
+    config['plasma_input']['bundle_volume']       = 0.01 ** 3
     config['plasma_input']['time_resolution']     = 1e-9
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass']                = 131.293

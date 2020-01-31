@@ -40,11 +40,13 @@ class GenericSource(TraceObject):
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
         self.velocity       = source_input['velocity']
+        
+        
 
     def generate_rays(self):
         rays = dict()
-
-        self.intensity = int(self.intensity)
+        
+        self.intensity = np.random.poisson(self.intensity)
 
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
@@ -225,8 +227,8 @@ class FocusedExtendedSource(GenericSource):
            w: weight of ray (UNUSED)
         """
         rays = dict()
-
-        self.intensity = int(self.intensity)
+        
+        self.intensity = np.random.poisson(self.intensity)
 
         profiler.start('Generate Origin')
         rays['origin'] = super().generate_origin()

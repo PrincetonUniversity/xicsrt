@@ -44,11 +44,12 @@ class GenericPlasma(TraceObject):
         #bundle information
         self.bundle_count   = plasma_input['bundle_count']
         self.bundle_type    = str.upper(plasma_input['bundle_type'])
-        self.max_rays       = plasma_input['max_rays']
+        self.bundle_factor  = plasma_input['bundle_factor']
+        self.bundle_volume  = plasma_input['bundle_volume']
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
-        self.voxel_size     = plasma_input['space_resolution']
+        self.voxel_size     = self.bundle_volume ** (1/3)
         self.chronon_size   = plasma_input['time_resolution']
-        self.bundle_volume  = self.voxel_size ** 3
+        self.max_rays       = plasma_input['max_rays']
         #profile information
         self.use_profiles   = plasma_input['use_profiles']
         self.temp_data      = plasma_input['temperature_data']
@@ -64,10 +65,13 @@ class GenericPlasma(TraceObject):
     def setup_bundles(self):
         #plasma volume, bundle volume, and bundle count are linked
         if self.bundle_type == 'POINT':
-            self.bundle_count = int(self.volume / self.bundle_volume)
+            self.bundle_count = int(self.volume / (self.bundle_volume * self.bundle_factor))
         elif self.bundle_type == 'VOXEL':
-            self.bundle_volume = self.volume / self.bundle_count
+            self.bundle_volume = self.volume / (self.bundle_count * self.bundle_factor)
             self.voxel_size   = self.bundle_volume ** (1/3)
+        
+        if self.bundle_count >= self.max_rays:
+            raise ValueError('Plasma generated too many bundles. Please increase bundle factor.')
         
         bundle_input = {}
         bundle_input['position']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
@@ -93,6 +97,8 @@ class GenericPlasma(TraceObject):
         #determine which bundles are near the sightline; if there is no 
         #sightline, the plasma defaults to generating all bundles
         m = bundle_input['sightline']
+        print(' Bundles Generated: {:6.4e}'.format(len(m[m])))
+        
         #test to see if the number of rays generated will exceed max ray limits
         predicted_rays = int(np.sum(bundle_input['emissivity'][m])
                          * self.chronon_size
@@ -119,15 +125,14 @@ class GenericPlasma(TraceObject):
                          * self.bundle_volume
                          * self.solid_angle / (4 * np.pi))
             
-            # Scale the number of photons based on the number of bundles.
+            # Scale the number of photons based on the number of bundles
             #
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
-            intensity *= self.volume / (len(m[m]) * self.bundle_volume)
+            intensity *= self.volume / (self.bundle_volume * len(m[m]))
             
-            source_input['intensity'] = int(intensity)
-            
+            source_input['intensity'] = intensity
             #constants
             source_input['width']       = self.voxel_size
             source_input['height']      = self.voxel_size
@@ -151,7 +156,6 @@ class GenericPlasma(TraceObject):
             rays['weight']      = np.append(rays['weight'],      bundled_rays['weight'])
             rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
             profiler.stop("Ray Bundle Generation")
-        print(' Bundles Generated: {:6.4e}'.format(ii + 1))        
         return rays
         
 class CubicPlasma(GenericPlasma):
