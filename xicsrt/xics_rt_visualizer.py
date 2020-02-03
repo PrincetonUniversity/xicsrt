@@ -47,7 +47,6 @@ def visualize_layout(config):
     graphite_mesh   = config['graphite_input']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
-    view_center = 1
     #position[Optical Element Number, 3D Coordinates]
     position[0,:]   = config['source_input']['position']
     position[1,:]   = config['graphite_input']['position']
@@ -177,8 +176,9 @@ def visualize_layout(config):
 
     ## Plot everything
     if scenario == "REAL" or scenario == "PLASMA":
-        #resize and recenter axes on plasma
-        scale = abs(position[0,0] - position[2,0])
+        #resize and recenter axes on graphite
+        scale = abs(config['plasma_input']['major_radius'])
+        view_center = 1
         
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
@@ -195,17 +195,15 @@ def visualize_layout(config):
             beamline[3,:] = plasma_sight
                     
         #draw plasma, graphite, crystal, detector
-        draw_plasma(config_vis, ax)
+        draw_torus(config, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
         draw_crystal(config_vis, ax)
         draw_detector(config_vis, ax)
     
     elif scenario == "THROUGHPUT":
         #resize and recenter axes on plasma
-        scale = abs(position[0,0] - position[2,0])
-        ax.set_xlim(position[4,0] - scale, position[4,0] + scale)
-        ax.set_ylim(position[4,1] - scale, position[4,1] + scale)
-        ax.set_zlim(position[4,2] - scale, position[4,2] + scale)
+        scale = abs(config['plasma_input']['major_radius'])
+        view_center = 4
         
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
@@ -230,10 +228,8 @@ def visualize_layout(config):
     elif scenario == "BEAM" or scenario == "MODEL":
         #resize and recenter axes on source
         scale = abs(position[0,0] - position[2,0])
-        ax.set_xlim(position[0,0] - scale, position[0,0] + scale)
-        ax.set_ylim(position[0,1] - scale, position[0,1] + scale)
-        ax.set_zlim(position[0,2] - scale, position[0,2] + scale)        
-        
+        view_center = 0
+       
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
         if config['general_input']['backwards_raytrace'] is False:
@@ -257,9 +253,7 @@ def visualize_layout(config):
     elif scenario == "CRYSTAL":
         #resize and recenter axes on crystal
         scale = abs(position[0,0] - position[3,0])
-        ax.set_xlim(position[2,0] - scale, position[2,0] + scale)
-        ax.set_ylim(position[2,1] - scale, position[2,1] + scale)
-        ax.set_zlim(position[2,2] - scale, position[2,2] + scale)        
+        view_center = 2
         
         #draw beamline
         beamline = np.zeros([3,3], dtype = np.float64)
@@ -275,9 +269,7 @@ def visualize_layout(config):
     elif scenario == "GRAPHITE":
         #resize and recenter axes on graphite
         scale = abs(position[0,0] - position[3,0])
-        ax.set_xlim(position[1,0] - scale, position[1,0] + scale)
-        ax.set_ylim(position[1,1] - scale, position[1,1] + scale)
-        ax.set_zlim(position[1,2] - scale, position[1,2] + scale)        
+        view_center = 1     
         
         #draw beamline
         beamline = np.zeros([3,3], dtype = np.float64)
@@ -293,9 +285,7 @@ def visualize_layout(config):
     elif scenario == "SOURCE":
         #resize and recenter axes on source
         scale = abs(position[0,0] - position[3,0])
-        ax.set_xlim(position[0,0] - scale, position[0,0] + scale)
-        ax.set_ylim(position[0,1] - scale, position[0,1] + scale)
-        ax.set_zlim(position[0,2] - scale, position[0,2] + scale)        
+        view_center = 0     
         
         #draw beamline
         beamline = np.zeros([2,3], dtype = np.float64)
@@ -306,12 +296,27 @@ def visualize_layout(config):
         draw_source(config_vis, ax)
         draw_detector(config_vis, ax)   
     
-    ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black")
+    ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black", zorder = 5)
     ax.set_xlim(position[view_center,0] - scale, position[view_center,0] + scale)
     ax.set_ylim(position[view_center,1] - scale, position[view_center,1] + scale)
     ax.set_zlim(position[view_center,2] - scale, position[view_center,2] + scale)
 
     return plt, ax
+
+def draw_torus(config, ax):
+    major_radius = config['plasma_input']['major_radius']
+    minor_radius = config['plasma_input']['minor_radius']
+    angle = np.linspace(0, np.pi * 2, 36)
+    theta, phi = np.meshgrid(angle, angle)
+    
+    x_array = (major_radius + (minor_radius * np.cos(theta))) * np.cos(phi)
+    y_array = (major_radius + (minor_radius * np.cos(theta))) * np.sin(phi)    
+    z_array = minor_radius * np.sin(theta)
+    
+    ax.plot_surface(x_array, y_array, z_array, color = 'yellow', alpha = 0.25, zorder = 0)
+    
+    return ax
+    
 
 def draw_plasma(config_vis, ax):
     #unpack variables
@@ -361,14 +366,14 @@ def draw_graphite(config_vis, graphite_mesh, ax):
         y_array = mesh_points[:,1]
         z_array = mesh_points[:,2]
         triangles = tri.Triangulation(x_array, y_array, mesh_faces)
-        ax.plot_trisurf(triangles, z_array, color = 'grey')
+        ax.plot_trisurf(triangles, z_array, color = 'grey', zorder = 10)
     else:
         #draw graphite position dot, normal vector, and bounding box
-        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey")
+        ax.scatter(position[1,0], position[1,1], position[1,2], color = "grey", zorder = 10)
         ax.quiver(position[1,0], position[1,1], position[1,2],
-              normal[1,0]  , normal[1,1]  , normal[1,2]  ,
-              color = "grey", length = 0.1, arrow_length_ratio = 0.1)
-        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey")
+                  normal[1,0]  , normal[1,1]  , normal[1,2]  ,
+                  color = "grey", length = 0.1, arrow_length_ratio = 0.1, zorder = 10)
+        ax.plot3D(corners[1,:,0], corners[1,:,1], corners[1,:,2], color = "grey", zorder = 10)
     
     return ax
 
@@ -385,19 +390,19 @@ def draw_crystal(config_vis, ax):
     saggit_line    = config_vis['saggit_line']
     
     #draw crystal position dot, normal vector, center point, and bounding box
-    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan")
+    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan", zorder = 10)
     ax.quiver(position[2,0], position[2,1], position[2,2],
               normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-              color = "cyan", length = 0.1, arrow_length_ratio = 0.1)
+              color = "cyan", length = 0.1, arrow_length_ratio = 0.1, zorder = 10)
     ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
-    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan")
+    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan", zorder = 10)
     
     #draw crystal foci and circles
-    ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue")
-    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue")
-    ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue")
-    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue")
-    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue")
+    ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue", zorder = 5)
+    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue", zorder = 5)
+    ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue", zorder = 5)
+    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue", zorder = 5)
+    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue", zorder = 5)
     
     return ax
 
@@ -408,11 +413,11 @@ def draw_detector(config_vis, ax):
     corners        = config_vis['corners']
     
     #draw detector position dot, normal vector, and bounding box
-    ax.scatter(position[3,0], position[3,1], position[3,2], color = "red")
+    ax.scatter(position[3,0], position[3,1], position[3,2], color = "red", zorder = 10)
     ax.quiver(position[3,0], position[3,1], position[3,2],
               normal[3,0]  , normal[3,1]  , normal[3,2]  ,
-              color = "red", length = 0.1 , arrow_length_ratio = 0.1)    
-    ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red")
+              color = "red", length = 0.1 , arrow_length_ratio = 0.1, zorder = 10)    
+    ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red", zorder = 10)
     
     return ax
 

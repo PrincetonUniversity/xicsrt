@@ -227,7 +227,7 @@ def get_config():
     sigma and pi are polarized rocking curves. 'mix_factor' interpolates between them.
     A 'mix_factor' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = False
+    config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
     config['graphite_input']['use_meshgrid']      = True
