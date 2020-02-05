@@ -137,7 +137,6 @@ def setup_real_scenario(config):
     config['plasma_input']['target']          = g_position
     config['plasma_input']['sight_position']  = g_position
     config['plasma_input']['sight_direction'] = sightline
-    config['plasma_input']['sight_thickness'] = 0.1
 
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal

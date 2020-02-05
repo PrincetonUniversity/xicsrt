@@ -131,7 +131,7 @@ class GenericPlasma(TraceObject):
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
             intensity *= self.volume / (self.bundle_volume * len(m[m]))
-            
+
             source_input['intensity'] = intensity
             #constants
             source_input['width']       = self.voxel_size
@@ -338,7 +338,6 @@ class ToroidalPlasma(GenericPlasma):
             bundle_input['velocity'][2] = np.interp(nrad, emis_data[:,0], emis_data[:,3],
                                         left = 1.0, right = 1.0)
             """
-        
         return bundle_input
 
     def generate_rays(self):

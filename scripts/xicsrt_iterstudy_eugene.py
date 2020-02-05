@@ -58,7 +58,7 @@ def get_config():
     config['general_input']['backwards_raytrace'] = False
     config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
-    config['general_input']['do_image_analysis']  = True
+    config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 123456
     config['general_input']['xics_temp']          = 273.0
 
@@ -76,7 +76,7 @@ def get_config():
     config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
     config['plasma_input']['temperature']         = 1000
-    config['plasma_input']['emissivity']          = 1e16
+    config['plasma_input']['emissivity']          = 1e18
     config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
 
     """Geometry settings
@@ -375,12 +375,12 @@ if runtype == 'single':
     output_hits, output, meta = run(config)
 
 if runtype == 'multi':
-    config_multi = get_config_multi(10)
+    config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
     output_hits, output, meta = run_multi(config_multi)
 
 if runtype == 'save':
-    config_multi = get_config_multi(10)
+    config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
     # Convert all numpy arrays into json-recognizable lists
     for configuration in range(len(config_multi)):

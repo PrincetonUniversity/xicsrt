@@ -40,8 +40,6 @@ class GenericSource(TraceObject):
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
         self.velocity       = source_input['velocity']
-        
-        
 
     def generate_rays(self):
         rays = dict()

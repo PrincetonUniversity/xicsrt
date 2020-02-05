@@ -152,7 +152,8 @@ def run_multi(config_multi):
     rays_total['total_graphite']  = 0
     rays_total['total_crystal']   = 0
     rays_total['total_detector']  = 0
-
+    
+    hits_final   = []
     output_final = []
 
     # loop through each configuration in the configuration input file
@@ -163,8 +164,9 @@ def run_multi(config_multi):
         print('Setting Up Optics for Configuration: {} of {}'.format(
             jj + 1, len(config_multi)))
 
-        output, rays_count = run(config_multi[jj], jj)
-
+        output_hits, output, rays_count = run(config_multi[jj], jj)
+        
+        hits_final.append(output_hits)
         output_final.append(output)
         for key in rays_total:
             rays_total[key] += rays_count[key]
@@ -183,4 +185,4 @@ def run_multi(config_multi):
 
     profiler.stop('XICSRT Run')
 
-    return output_final, rays_total
+    return hits_final, output_final, rays_total
