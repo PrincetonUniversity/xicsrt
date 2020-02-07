@@ -371,8 +371,6 @@ class RealPlasma(GenericPlasma):
         self.sight_thickness= plasma_input['sight_thickness']
         
     def real_bundle_generate(self, bundle_input):
-        print('initializing stelltools')
-        print(self.geom_data)
         import stelltools
         stelltools.initialize_from_wout(self.geom_data)
         
@@ -400,25 +398,29 @@ class RealPlasma(GenericPlasma):
         #sightline distance is the length of l_2
         distance = np.einsum('ij,ij->i', l_2, l_2) ** .5
         #check to see if the bundle is close enough to the sightline
-        sight_test = (self.sight_thickness >= distance)
-        bundle_input['sightline'][:] = sight_test
+        mask = (self.sight_thickness >= distance)
         
         #convert from cartesian coordinates to flux coordinates [s, u, phi]
         #torus is oriented along the Z axis
-        rho = np.zeros(sight_test[sight_test].shape, dtype = np.float64)
-        for ii in range(len(sight_test[sight_test])):
-            print(bundle_input['position'][sight_test][ii])
-            s, u, phi = stelltools.flx_from_car(bundle_input['position'][sight_test][ii])
-            rho[ii] = s
-            
+        rho = np.zeros(self.bundle_count, dtype = np.float64)
+        s   = np.zeros(len(mask[mask]), dtype = np.float64)
+        u   = np.zeros(len(mask[mask]), dtype = np.float64)
+        phi = np.zeros(len(mask[mask]), dtype = np.float64)
+        
+        for ii in range(len(mask[mask])):
+            try:
+                s[ii], u[ii], phi[ii] = stelltools.flx_from_car(
+                    bundle_input['position'][mask][ii])
+            except:
+                mask[mask][ii] = False
+        rho[mask] = np.sqrt(s)
+
         #evaluate temperature and emissivity at each point
         if self.use_profiles is False:
             #step function profile
-            step_test    = np.zeros(self.bundle_count, dtype = np.bool)
-            step_test[:] = (rho <= 1)
-            bundle_input['temperature'][step_test]  = self.temperature
-            bundle_input['emissivity'][step_test]   = self.emissivity
-            bundle_input['velocity'][step_test]     = self.velocity
+            bundle_input['temperature']  = self.temperature
+            bundle_input['emissivity']   = self.emissivity
+            bundle_input['velocity']     = self.velocity
             
         if self.use_profiles is True:
             #read and interpolate profile from data file
@@ -428,7 +430,7 @@ class RealPlasma(GenericPlasma):
             bundle_input['temperature'] = np.interp(rho, temp_data[:,0], temp_data[:,1],
                                                     left = 1.0, right = 1.0)
             bundle_input['emissivity']  = np.interp(rho, emis_data[:,0], emis_data[:,1],
-                                                    left = 1.0, right = 1.0)
+                                                    left = 0.0, right = 0.0)
             """
             bundle_input['velocity'][0] = np.interp(rho, emis_data[:,0], emis_data[:,1],
                                         left = 1.0, right = 1.0)
@@ -437,6 +439,7 @@ class RealPlasma(GenericPlasma):
             bundle_input['velocity'][2] = np.interp(rho, emis_data[:,0], emis_data[:,3],
                                         left = 1.0, right = 1.0)
             """
+        bundle_input['sightline'][:] = mask
         return bundle_input
 
     def generate_rays(self):

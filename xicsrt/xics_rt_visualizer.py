@@ -161,7 +161,7 @@ def visualize_layout(config):
     minor_circle   += plasma_center
     
     #plasma sightline[3D Coordinates]
-    plasma_sight    = config['plasma_input']['sight_position'] + 5 * config['plasma_input']['sight_direction']
+    plasma_sight    = config['plasma_input']['sight_position'] + 7 * config['plasma_input']['sight_direction']
     
     ## Compactify variables into a dictionary
     config_vis = {'position':position,'normal':normal,'orient_x':orient_x,

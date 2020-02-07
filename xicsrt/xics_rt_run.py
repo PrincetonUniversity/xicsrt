@@ -40,7 +40,7 @@ def run(config, config_number = None):
     pilatus  = Detector(                config['detector_input'])
     crystal  = SphericalCrystal(        config['crystal_input'])
     source   = FocusedExtendedSource(   config['source_input'])
-    plasma   = ToroidalPlasma(          config['plasma_input'])
+    plasma   = RealPlasma(              config['plasma_input'])
     
     if config['graphite_input']['use_meshgrid'] == True:
         graphite = MosaicGraphiteMesh(  config['graphite_input'])

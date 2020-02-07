@@ -142,10 +142,13 @@ def raytrace(number_of_runs, source, detector, *optics):
     print('Final Rays on HOPG:   {:6.4e}'.format(rays_count['total_graphite']))
     print('Final Rays on Crystal:{:6.4e}'.format(rays_count['total_crystal']))
     print('Final Rays Detected:  {:6.4e}'.format(rays_count['total_detector']))
-    print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-        rays_count['total_detector'] / rays_count['total_generated'],
-        np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
-        rays_count['total_detector'] / rays_count['total_generated'] * 100))
+    try:
+        print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
+            rays_count['total_detector'] / rays_count['total_generated'],
+            np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
+            rays_count['total_detector'] / rays_count['total_generated'] * 100))
+    except ZeroDivisionError:
+        print('Warning - No Rays Generated! Ray Statistics Unavailable.')
     print('')
 
     return hits_history, rays_history, rays_count
