@@ -16,30 +16,29 @@ import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import Delaunay
 
+"""
+multi-toroidal mirror designed for x-rays with energies 9.750 - 10.560 keV
+intended for Ge[400] crystal mirror with inter-atomic distance 2d = 2.82868 A
+"""
+## Initial Setup
 #constants for unit conversion
 conv1 = 12.398425
 conv2 = np.pi/180
 
 #input mesh horizontal and vertical resolutions here
-m = 100
+m = 20
 n = 10
 
 #input base radius and base height here (meters)
 r_0 = 0.300
 h_0 = 0.01
 
-"""
-multi-toroidal mirror designed to reflect x-rays with energies 9.750 - 10.560 keV
-intended for Ge[400] crystal mirror with inter-atomic distance 2d = 2.82868 A
-"""
-
 ## Solve the Sinusoidal Spiral
-energy = np.linspace(9.750, 10.560, m)
-#energy      = np.linspace(9.0, 100.0, m)
-wavelength  = conv1 / energy
-spacing     = 2.82868
-theta_rad   = np.arcsin(wavelength / spacing)
-theta_0_rad = theta_rad[0]
+energy     = np.linspace(9.750, 10.560, m)
+#energy     = np.linspace(9.0, 100.0, m)
+wavelength = conv1 / energy
+spacing    = 2.82868
+theta      = np.arcsin(wavelength / spacing)
 
 #b is the sinusoidal spiral constant; it shouldn't equal 1
 b = 2.0
@@ -47,9 +46,9 @@ a = b - 1.0
 c = 1.0 / a
 
 #solve for the sinusoidal spiral in polar coordinates
-phi = (theta_rad - theta_0_rad) / a
-alpha_rad = theta_rad + phi
-r = r_0 * np.power((np.sin(theta_rad) / np.sin(theta_0_rad)), c)
+phi   = (theta - theta[0]) / a
+alpha = theta + phi
+r     = r_0 * np.power((np.sin(theta) / np.sin(theta[0])), c)
 
 #convert polar to cartesian coordinates
 spiral      = np.zeros([m,3])
@@ -61,15 +60,14 @@ spiral[:,2] = 0.0
 #calculate crystal length by adding up the lengths of individual segments
 length = 0
 for j in range(m - 1):
-    length += r[j] * (phi[j+1] - phi[j] / np.sin(theta_rad[j]))
+    length += r[j] * (phi[j+1] - phi[j] / np.sin(theta[j]))
     
-#calculate crystal radius of curvature rho
-rho = r / ((a + 1) * np.sin(theta_rad))
+#calculate crystal radius of curvature rho and centers of curvature
+rho = r / ((a + 1) * np.sin(theta))
 
-#calculate coordinates of curvature centers
 center      = np.zeros([m,3])
-center[:,0] = spiral[:,0] - rho * np.sin(theta_rad)
-center[:,1] = spiral[:,1] + rho * np.cos(theta_rad)
+center[:,0] = spiral[:,0] - rho * np.sin(theta)
+center[:,1] = spiral[:,1] + rho * np.cos(theta)
 center[:,2] = 0.0
 
 #create vectors from the curvature centers to the lens
@@ -78,27 +76,36 @@ normal = spiral - center
 #use the normal vectors to calculate the mesh geometry
 height    = np.zeros([m,n], dtype = np.float64)
 height[:] = np.linspace(-h_0/2, h_0/2, n)
-theta_rad = np.repeat(theta_rad[:,np.newaxis], n, axis = 1)
+theta     = np.repeat(theta[:,np.newaxis], n, axis = 1)
 rho       = np.repeat(rho[:,np.newaxis], n, axis = 1)
-beta_rad  = np.arcsin(height / rho)
+beta      = np.arcsin(height / rho)
 
 #calculate mesh points
 mesh_points = np.zeros([m,n,3], dtype = np.float64)
+mesh_params = np.zeros([m,n,2], dtype = np.float64)
+mesh_params[:,:,0] = theta
+mesh_params[:,:,1] = beta
+
 z_vector    = np.array([0.0,0.0,1.0])
 for ii in range(m):
     for jj in range(n):
-        mesh_points[ii,jj,:] = (normal[ii,:] * np.cos(beta_rad[ii,jj]) +
-                                z_vector[:]  * np.sin(beta_rad[ii,jj]))
+        mesh_points[ii,jj,:] = (normal[ii,:] * np.cos(beta[ii,jj]) +
+                                z_vector[:]  * np.sin(beta[ii,jj]))      
+
+#calculate mesh faces from the 2D (theta, beta) parameter space
+#this works because there is a 1:1 mapping from 2D parameter space 
+#to 3D point space, and since Delaunay works better in 2D
 mesh_points = mesh_points.reshape((m*n),3)
-mesh_faces  = Delaunay(mesh_points).simplices
-mesh_faces  = mesh_faces[:,1:4]
+mesh_params = mesh_params.reshape((m*n),2)
+mesh_faces  = Delaunay(mesh_params).simplices
+
 #visualize the mesh
 plt.plot(spiral[:,0], spiral[:,1])
 plt.plot(center[:,0], center[:,1])
 
 fig = plt.figure()
 ax  = fig.gca(projection='3d')
-ax.scatter(mesh_points[:,0], mesh_points[:,1], mesh_points[:,2], color = "cyan")
-#triangles = tri.Triangulation(mesh_points[:,0], mesh_points[:,1], mesh_faces)
-#ax.plot_trisurf(triangles, mesh_points[:,2], color = 'cyan', zorder = 0)
+ax.scatter(mesh_points[:,0], mesh_points[:,1], mesh_points[:,2], color = "blue")
+triangles = tri.Triangulation(mesh_points[:,0], mesh_points[:,1], mesh_faces)
+ax.plot_trisurf(triangles, mesh_points[:,2], color = 'cyan')
 fig.show()

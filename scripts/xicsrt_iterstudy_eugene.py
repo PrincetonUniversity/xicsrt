@@ -75,6 +75,7 @@ def get_config():
     config['plasma_input']['temperature_data']    = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt'
     config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
+    config['plasma_input']['geometry_data']       = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc'
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e18
     config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
@@ -93,7 +94,7 @@ def get_config():
     config['plasma_input']['minor_radius']        = 2.0
     config['plasma_input']['width']               = 4.0
     config['plasma_input']['height']              = 4.0
-    config['plasma_input']['depth']               = 4.0
+    config['plasma_input']['depth']               = 7.5
 
     """Bundle Settings
     The plasma works by emitting cubic ray bundles, which have their own settings
@@ -315,7 +316,7 @@ def get_config():
     When copying values from the XICS presentations, please place them here.
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
-    config['scenario_input']['chord']               = 0
+    config['scenario_input']['chord']               = 4
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],

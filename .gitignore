@@ -11,6 +11,7 @@ results
 *.bmp
 *.jpg
 *.jpeg
+*.nc
 
 ## Emacs
 *~

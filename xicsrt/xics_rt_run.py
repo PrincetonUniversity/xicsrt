@@ -19,7 +19,7 @@ import os
 import numpy as np
 
 from xicsrt.xics_rt_sources    import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas    import ToroidalPlasma
+from xicsrt.xics_rt_plasmas    import RealPlasma, ToroidalPlasma
 from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite, MosaicGraphiteMesh
 from xicsrt.xics_rt_raytrace   import raytrace

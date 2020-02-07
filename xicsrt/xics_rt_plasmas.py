@@ -16,9 +16,7 @@ import logging
 
 import numpy as np   
 from collections import OrderedDict
-
 from xicsrt.util import profiler
-from xicsrt.xics_rt_math    import cart2cyl, cart2toro
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_objects import TraceObject
 
@@ -55,6 +53,7 @@ class GenericPlasma(TraceObject):
         self.temp_data      = plasma_input['temperature_data']
         self.emis_data      = plasma_input['emissivity_data']
         self.velo_data      = plasma_input['velocity_data']
+        self.geom_data      = plasma_input['geometry_data']
         self.temperature    = plasma_input['temperature']
         self.emissivity     = plasma_input['emissivity']
         self.velocity       = plasma_input['velocity']
@@ -224,6 +223,8 @@ class CylindricalPlasma(GenericPlasma):
         self.bundle_count   = plasma_input['bundle_count']
                 
     def cylindrical_bundle_generate(self, bundle_input):
+        from xicsrt.xics_rt_math import cart2cyl
+        
         #create a long list containing random points within the cube's dimensions
         x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
         y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
@@ -280,6 +281,8 @@ class ToroidalPlasma(GenericPlasma):
         self.sight_thickness= plasma_input['sight_thickness']
         
     def toroidal_bundle_generate(self, bundle_input):
+        from xicsrt.xics_rt_math import cart2toro
+        
         #create a long list containing random points within the cube's dimensions
         x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count)
         y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count) + self.major_radius
@@ -345,6 +348,102 @@ class ToroidalPlasma(GenericPlasma):
         bundle_input = self.setup_bundles()
         ## Populate that list with ray bundle parameters, like locations
         bundle_input = self.toroidal_bundle_generate(bundle_input)
+        ## Use the list to generate ray sources
+        rays = self.create_sources(bundle_input)
+        return rays
+    
+class RealPlasma(GenericPlasma):
+    def __init__(self, plasma_input):
+        super().__init__(plasma_input)
+        
+        self.position       = plasma_input['position']
+        
+        self.width          = plasma_input['width']
+        self.height         = plasma_input['height']
+        self.depth          = plasma_input['depth']
+        self.volume         = self.width * self.height * self.depth
+        self.bundle_count   = plasma_input['bundle_count']
+        self.major_radius   = plasma_input['major_radius']
+        self.minor_radius   = plasma_input['minor_radius']
+        
+        self.sight_position = plasma_input['sight_position']
+        self.sight_direction= plasma_input['sight_direction']
+        self.sight_thickness= plasma_input['sight_thickness']
+        
+    def real_bundle_generate(self, bundle_input):
+        print('initializing stelltools')
+        print(self.geom_data)
+        import stelltools
+        stelltools.initialize_from_wout(self.geom_data)
+        
+        #create a long list containing random points within the cube's dimensions
+        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2 , self.bundle_count)
+        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count) + self.major_radius
+        z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2 , self.bundle_count)
+        
+        #unlike the other plasmas, the toroidal plasma has fixed orientation to
+        #prevent confusion
+        bundle_input['position'][:] = (self.position
+                  + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
+                  + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
+                  + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
+        
+        #calculate whether the ray bundles are within range of the sightline
+        #vector from sightline origin to bundle position
+        l_0 = self.sight_position - bundle_input['position']
+        #projection of l_0 onto the sightline
+        proj = np.einsum('j,ij->i',self.sight_direction, l_0)[np.newaxis]
+        l_1  = np.dot(np.transpose(self.sight_direction[np.newaxis]), proj)
+        l_1  = np.transpose(l_1)
+        #component of l_0 perpendicular to the sightline
+        l_2 = l_0 - l_1
+        #sightline distance is the length of l_2
+        distance = np.einsum('ij,ij->i', l_2, l_2) ** .5
+        #check to see if the bundle is close enough to the sightline
+        sight_test = (self.sight_thickness >= distance)
+        bundle_input['sightline'][:] = sight_test
+        
+        #convert from cartesian coordinates to flux coordinates [s, u, phi]
+        #torus is oriented along the Z axis
+        rho = np.zeros(sight_test[sight_test].shape, dtype = np.float64)
+        for ii in range(len(sight_test[sight_test])):
+            print(bundle_input['position'][sight_test][ii])
+            s, u, phi = stelltools.flx_from_car(bundle_input['position'][sight_test][ii])
+            rho[ii] = s
+            
+        #evaluate temperature and emissivity at each point
+        if self.use_profiles is False:
+            #step function profile
+            step_test    = np.zeros(self.bundle_count, dtype = np.bool)
+            step_test[:] = (rho <= 1)
+            bundle_input['temperature'][step_test]  = self.temperature
+            bundle_input['emissivity'][step_test]   = self.emissivity
+            bundle_input['velocity'][step_test]     = self.velocity
+            
+        if self.use_profiles is True:
+            #read and interpolate profile from data file
+            temp_data  = np.loadtxt(self.temp_data, dtype = np.float64)
+            emis_data  = np.loadtxt(self.emis_data, dtype = np.float64)
+            #velo_vata  = np.loadtxt(self.velo_data, dtype = np.float64)            
+            bundle_input['temperature'] = np.interp(rho, temp_data[:,0], temp_data[:,1],
+                                                    left = 1.0, right = 1.0)
+            bundle_input['emissivity']  = np.interp(rho, emis_data[:,0], emis_data[:,1],
+                                                    left = 1.0, right = 1.0)
+            """
+            bundle_input['velocity'][0] = np.interp(rho, emis_data[:,0], emis_data[:,1],
+                                        left = 1.0, right = 1.0)
+            bundle_input['velocity'][1] = np.interp(rho, emis_data[:,0], emis_data[:,2],
+                                        left = 1.0, right = 1.0)      
+            bundle_input['velocity'][2] = np.interp(rho, emis_data[:,0], emis_data[:,3],
+                                        left = 1.0, right = 1.0)
+            """
+        return bundle_input
+
+    def generate_rays(self):
+        ## Create an empty list of ray bundles
+        bundle_input = self.setup_bundles()
+        ## Populate that list with ray bundle parameters, like locations
+        bundle_input = self.real_bundle_generate(bundle_input)
         ## Use the list to generate ray sources
         rays = self.create_sources(bundle_input)
         return rays
