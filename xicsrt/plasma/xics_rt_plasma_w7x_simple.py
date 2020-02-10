@@ -29,6 +29,8 @@ class W7xSimplePlasma(FluxSurfacePlasma):
         A made up emissivity profile with moderate hollowness.
         Peak value at 1.0.
         """
+
+        # moderately Hollow profile.
         coeff = np.array(
             [24.3604, 0.0000, -160.6740, 0.0000
             ,438.7522, 0.0000, -634.2482, 0.0000
@@ -43,12 +45,26 @@ class W7xSimplePlasma(FluxSurfacePlasma):
         A made up temperature profile with moderate flatness.
         Peak value at 1.0
         """
-        coeff = np.array(
-            [8.6914, 0.0000, -39.3415, 0.0000
-            ,63.1003, 0.0000, -38.8874, 0.0000
-            ,2.0835, 0.0000, 6.2036, 0.0000
-            ,-2.8290, 0.0000, -0.0146, 0.0000
-            ,0.9999])
+
+
+        if True:
+            # Flat profile.
+            coeff = np.array(
+                [8.6914, 0.0000, -39.3415, 0.0000
+                ,63.1003, 0.0000, -38.8874, 0.0000
+                ,2.0835, 0.0000, 6.2036, 0.0000
+                ,-2.8290, 0.0000, -0.0146, 0.0000
+                ,0.9999])
+
+        if True:
+            # Moderately peaked profile.
+            coeff = np.array(
+                [4.6488, 0.0000, -28.2995, 0.0000
+                ,70.8956, 0.0000, -92.7439, 0.0000
+                ,64.3911, 0.0000, -19.0179, 0.0000
+                ,-0.4734, 0.0000, -0.3997, 0.0000
+                ,1.0000])
+
         value = np.polyval(coeff, rho)
         return value
 

@@ -14,7 +14,7 @@ import numpy as np
 from xicsrt.xics_rt_plasmas import GenericPlasma
 from xicsrt.util import profiler
 
-from mirfusion.vmec import mirtools
+import stelltools
 
 class FluxSurfacePlasma(GenericPlasma):
     def __init__(self, config):
@@ -25,25 +25,25 @@ class FluxSurfacePlasma(GenericPlasma):
     def initialize_vmec(self, wout=None):
         if wout is None:
             wout = self.config['wout_file']
-        mirtools.initialize_from_vmec(wout)
+        stelltools.initialize_from_wout(wout)
 
     def flx_from_car(self, point_car):
-        return mirtools.flx_from_car(point_car)
+        return stelltools.flx_from_car(point_car)
 
     def car_from_flx(self, point_flx):
-        return mirtools.car_from_flx(point_flx)
+        return stelltools.car_from_flx(point_flx)
 
     def flx_from_cyl(self, point_cyl):
-        return mirtools.flx_from_cyl(point_cyl)
+        return stelltools.flx_from_cyl(point_cyl)
 
     def cyl_from_flx(self, point_flx):
-        return mirtools.cyl_from_flx(point_flx)
+        return stelltools.cyl_from_flx(point_flx)
 
     def cyl_from_car(self, point_car):
-        return mirtools.cyl_from_car(point_car)
+        return stelltools.cyl_from_car(point_car)
 
     def car_from_cyl(self, point_cyl):
-        return mirtools.car_from_cyl(point_cyl)
+        return stelltools.car_from_cyl(point_cyl)
 
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
@@ -79,7 +79,7 @@ class FluxSurfacePlasma(GenericPlasma):
             profiler.start("Fluxspace from Realspace")
             try:
                 rho = self.rho_from_car(bundle_input['position'][ii,:])
-            except mirtools.DomainError:
+            except stelltools.DomainError:
                 rho = np.nan
             profiler.stop("Fluxspace from Realspace")
 
