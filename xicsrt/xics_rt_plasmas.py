@@ -404,13 +404,11 @@ class RealPlasma(GenericPlasma):
         #torus is oriented along the Z axis
         rho = np.zeros(self.bundle_count, dtype = np.float64)
         s   = np.zeros(len(mask[mask]), dtype = np.float64)
-        u   = np.zeros(len(mask[mask]), dtype = np.float64)
-        phi = np.zeros(len(mask[mask]), dtype = np.float64)
         
         for ii in range(len(mask[mask])):
             try:
-                s[ii], u[ii], phi[ii] = stelltools.flx_from_car(
-                    bundle_input['position'][mask][ii])
+                s[ii] = stelltools.flx_from_car(
+                    bundle_input['position'][mask][ii])[0]
             except:
                 mask[mask][ii] = False
         rho[mask] = np.sqrt(s)
@@ -427,17 +425,17 @@ class RealPlasma(GenericPlasma):
             temp_data  = np.loadtxt(self.temp_data, dtype = np.float64)
             emis_data  = np.loadtxt(self.emis_data, dtype = np.float64)
             #velo_vata  = np.loadtxt(self.velo_data, dtype = np.float64)            
-            bundle_input['temperature'] = np.interp(rho, temp_data[:,0], temp_data[:,1],
-                                                    left = 1.0, right = 1.0)
-            bundle_input['emissivity']  = np.interp(rho, emis_data[:,0], emis_data[:,1],
-                                                    left = 0.0, right = 0.0)
+            bundle_input['temperature'] = np.interp(
+                rho, temp_data[:,0], temp_data[:,1],left = 1.0, right = 1.0)
+            bundle_input['emissivity']  = np.interp(
+                rho, emis_data[:,0], emis_data[:,1],left = 0.0, right = 0.0)
             """
-            bundle_input['velocity'][0] = np.interp(rho, emis_data[:,0], emis_data[:,1],
-                                        left = 1.0, right = 1.0)
-            bundle_input['velocity'][1] = np.interp(rho, emis_data[:,0], emis_data[:,2],
-                                        left = 1.0, right = 1.0)      
-            bundle_input['velocity'][2] = np.interp(rho, emis_data[:,0], emis_data[:,3],
-                                        left = 1.0, right = 1.0)
+            bundle_input['velocity'][0] = np.interp(
+                rho, emis_data[:,0], emis_data[:,1],left = 1.0, right = 1.0)
+            bundle_input['velocity'][1] = np.interp(
+                rho, emis_data[:,0], emis_data[:,2],left = 1.0, right = 1.0)      
+            bundle_input['velocity'][2] = np.interp(
+                rho, emis_data[:,0], emis_data[:,3],left = 1.0, right = 1.0)
             """
         bundle_input['sightline'][:] = mask
         return bundle_input

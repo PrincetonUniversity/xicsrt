@@ -21,7 +21,7 @@ import numpy as np
 from xicsrt.xics_rt_sources    import FocusedExtendedSource
 from xicsrt.xics_rt_plasmas    import RealPlasma, ToroidalPlasma
 from xicsrt.xics_rt_detectors  import Detector
-from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite, MosaicGraphiteMesh
+from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
 from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt.xics_rt_model      import analytical_model
 from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model
@@ -39,13 +39,10 @@ def run(config, config_number = None):
     profiler.start('Class Setup Time')
     pilatus  = Detector(                config['detector_input'])
     crystal  = SphericalCrystal(        config['crystal_input'])
+    graphite = MosaicGraphite(          config['graphite_input'])
     source   = FocusedExtendedSource(   config['source_input'])
     plasma   = RealPlasma(              config['plasma_input'])
     
-    if config['graphite_input']['use_meshgrid'] == True:
-        graphite = MosaicGraphiteMesh(  config['graphite_input'])
-    else:
-        graphite = MosaicGraphite(      config['graphite_input'])
     profiler.stop('Class Setup Time')
 
     scenario = str.lower(config['general_input']['scenario'])

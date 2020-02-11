@@ -117,7 +117,7 @@ def get_config():
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
     config['plasma_input']['bundle_type']         = 'POINT'
     config['plasma_input']['bundle_count']        = int(1e7)
-    config['plasma_input']['bundle_factor']       = 100
+    config['plasma_input']['bundle_factor']       = 1000
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
     config['plasma_input']['time_resolution']     = 1e-9
     config['plasma_input']['spread']              = 1.0
@@ -217,7 +217,18 @@ def get_config():
     Darwin Curve, pi:    14.043 urad
     Taken from XoP
     """
+    bragg = np.arcsin(config['source_input']['wavelength'] / (2 * config['crystal_input']['spacing']))
+    dx = config['crystal_input']['height'] * np.cos(bragg) / 2
+    dy = config['crystal_input']['height'] * np.sin(bragg) / 2
+    dz = config['crystal_input']['width']                  / 2
 
+    p1 = config['crystal_input']['position'] + np.array([ dx, dy, dz])
+    p2 = config['crystal_input']['position'] + np.array([-dx,-dy, dz])
+    p3 = config['crystal_input']['position'] + np.array([-dx,-dy,-dz])
+    p4 = config['crystal_input']['position'] + np.array([ dx, dy,-dz])
+    
+    config['crystal_input']['mesh_points'] = np.array([p1, p2, p3, p4])
+    config['crystal_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
     # -------------------------------------------------------------------------
     ## Load mosaic graphite properties
     """Type and file settings

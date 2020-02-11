@@ -15,8 +15,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import Delaunay
 from xicsrt.xics_rt_scenarios import bragg_angle
 from PIL import Image
+import stelltools
 
 def visualize_layout(config):
     ## Setup plot and axes
@@ -195,7 +197,7 @@ def visualize_layout(config):
             beamline[3,:] = plasma_sight
                     
         #draw plasma, graphite, crystal, detector
-        draw_torus(config, ax)
+        draw_flux(config, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
         draw_crystal(config_vis, ax)
         draw_detector(config_vis, ax)
@@ -220,7 +222,7 @@ def visualize_layout(config):
             beamline[3,:] = plasma_center
                     
         #draw plasma, graphite, crystal, detector
-        draw_plasma(config_vis, ax)
+        draw_torus(config_vis, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
         draw_crystal(config_vis, ax)
         draw_detector(config_vis, ax)
@@ -303,6 +305,44 @@ def visualize_layout(config):
 
     return plt, ax
 
+def draw_flux(config, ax):
+    stelltools.initialize_from_wout(config['plasma_input']['geometry_data'])
+    
+    #flux toroid resolution (number of points)
+    num_r = 1
+    num_m = 51
+    num_n = 51
+
+    num_points = num_r * num_m * num_n
+    flux_points = np.empty((num_points, 3))
+    
+    #build the flux surface
+    for nn in range(num_n):
+        for mm in range(num_m):
+            for rr in range(num_r):
+                index = rr + (mm * num_r) + (nn * num_r * num_m)
+                
+                flux_points[index, 0] = 1.0
+                flux_points[index, 1] = 2 * np.pi / (num_m - 1) * mm
+                flux_points[index, 2] = np.pi / (num_n - 1)* nn
+    
+    #convert to cartesian coordinates from flux coordinates
+    mesh_points = np.empty(flux_points.shape)
+    for ii in range(flux_points.shape[0]):
+        mesh_points[ii,:] = stelltools.car_from_flx(flux_points[ii,:])
+        
+    #build the plasma mesh grid
+    x_array = mesh_points[:,0]
+    y_array = mesh_points[:,1]
+    z_array = mesh_points[:,2]
+    
+    mesh_faces  = Delaunay(flux_points[:,1:]).simplices
+    
+    triangles = tri.Triangulation(x_array, y_array, mesh_faces)
+    ax.plot_trisurf(triangles, z_array, color = 'yellow', alpha = 0.25, zorder = 0)
+        
+    return ax
+
 def draw_torus(config, ax):
     major_radius = config['plasma_input']['major_radius']
     minor_radius = config['plasma_input']['minor_radius']
@@ -316,7 +356,6 @@ def draw_torus(config, ax):
     ax.plot_surface(x_array, y_array, z_array, color = 'yellow', alpha = 0.25, zorder = 0)
     
     return ax
-    
 
 def draw_plasma(config_vis, ax):
     #unpack variables
