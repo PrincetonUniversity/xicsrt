@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import Delaunay
+from scipy.spatial import delaunay_plot_2d
 
 """
 multi-toroidal mirror designed for x-rays with energies 9.750 - 10.560 keV

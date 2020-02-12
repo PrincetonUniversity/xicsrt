@@ -40,6 +40,7 @@ class GenericOptic(TraceObject):
         self.pixel_width    = int(round(self.width  / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
         self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
+        self.photon_count   = 0
         self.sigma_data     = optic_input['sigma_data']
         self.pi_data        = optic_input['pi_data']
         self.mix_factor     = optic_input['mix_factor']
@@ -179,11 +180,15 @@ class GenericOptic(TraceObject):
             
             #test to see if the intersection is inside the triangle
             #'test' starts as 0 and flips to 1 for each successful hit
-            #uses barycentric coordinate technique (compute and compare parallelpiped areas)
+            #uses barycentric coordinate math (compare parallelpiped areas)
             tri_area = np.linalg.norm(np.cross((p1 - p2),(p1 - p3)))
-            alpha    = self.norm(np.cross((intersect - p2),(intersect - p3))) / tri_area
-            beta     = self.norm(np.cross((intersect - p3),(intersect - p1))) / tri_area
-            gamma    = self.norm(np.cross((intersect - p1),(intersect - p2))) / tri_area
+            alpha    = self.norm(np.cross((intersect - p2),(intersect - p3)))
+            beta     = self.norm(np.cross((intersect - p3),(intersect - p1)))
+            gamma    = self.norm(np.cross((intersect - p1),(intersect - p2)))
+            
+            alpha /= tri_area
+            beta  /= tri_area
+            gamma /= tri_area
             
             test |= np.round((alpha + beta + gamma), decimals = 6) == 1.000000
             test &= (distance >= 0)
@@ -198,7 +203,7 @@ class GenericOptic(TraceObject):
         
         return X, rays, hits
     
-    def angle_check(self, X, rays, normals):
+    def angle_check(self, rays, normals):
         D = rays['direction']
         W = rays['wavelength']
         m = rays['mask']
@@ -214,7 +219,7 @@ class GenericOptic(TraceObject):
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.bragg_checks is True:
-            m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
+            m[m] &= self.rocking_curve_filter(bragg_angle[m],incident_angle[m])
         return rays, normals
     
     def reflect_vectors(self, X, rays, normals):
@@ -223,25 +228,26 @@ class GenericOptic(TraceObject):
         m = rays['mask']
         
         # Check which vectors meet the Bragg condition (with rocking curve)
-        rays, normals = self.angle_check(X, rays, normals)
+        rays, normals = self.angle_check(rays, normals)
         
         # Perform reflection around normal vector, creating new rays with new
         # origin O = X and new direction D
         O[:]  = X[:]
-        D[m] -= 2 * np.einsum('ij,ij->i', D[m], normals[m])[:, np.newaxis] * normals[m]
+        D[m] -= 2 * (np.einsum('ij,ij->i', D[m], normals[m])[:, np.newaxis]
+                     * normals[m])
         
         return rays
 
     def collect_rays(self, rays):
         X = rays['origin']
         m = rays['mask'].copy()
+        self.photon_count = len(m[m])
         
         num_lines = np.sum(m)
-        if (num_lines > 0) and (self.use_meshgrid is False):
+        if num_lines > 0:
             # Transform the intersection coordinates from external coordinates
             # to local optical coordinates.
             point_loc = self.point_to_local(X[m])
-            
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
             pix = np.round(point_loc / self.pixel_size).astype(int)
@@ -262,15 +268,22 @@ class GenericOptic(TraceObject):
             # Convert from pixels, which are centered around the origin, to
             # channels, which start from the corner of the optic.
             channel    = np.zeros([num_lines, 3], dtype = int)
-            channel[:] = pix[:] - pix_min
+            channel[:] = pix[:] + pix_min
             
-            # I feel like there must be a faster way to do this than to loop over
-            # every intersection.  This could be slow for large arrays.
-            for ii in range(len(channel)):
-                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+            # Check to see if the pixel is inside the viewing area
+            # Trim away invisible pixels that fall outside the box
+            pix_m  = np.ones([num_lines], dtype = bool)
+            pix_m &= (channel[:,0] < self.pixel_width)
+            pix_m &= (channel[:,1] < self.pixel_height)
+            
+            # I feel like there must be a faster way to do this than to loop 
+            # over every intersection.  This could be slow for large arrays.
+            for ii in range(len(pix_m[pix_m])):
+                chan_x = channel[pix_m][ii,0]
+                chan_y = channel[pix_m][ii,1]
+                self.pixel_array[chan_x,chan_y] += 1
         
-        self.photon_count = len(m[m])
-        return self.pixel_array    
+        return self.pixel_array
     
     def output_image(self, image_name, rotate=None):
         if rotate:
@@ -334,7 +347,8 @@ class SphericalCrystal(GenericOptic):
         #Use mask to only perform calculations on rays that hit the crystal        
         #d is the impact parameter between a ray and center of curvature
         
-        d[m]    = np.sqrt(np.abs(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2))
+        d[m]    = np.sqrt(np.abs(np.einsum('ij,ij->i',L[m] ,L[m])
+                                 - t_ca[m]**2))
         t_hc[m] = np.sqrt(np.abs(self.radius**2 - d[m]**2))
         
         t_0[m] = t_ca[m] - t_hc[m]
@@ -363,14 +377,17 @@ class SphericalCrystal(GenericOptic):
     def light(self, rays):
         m = rays['mask']
         if self.use_meshgrid is False:
-            X, rays = self.intersect_check(rays, self.spherical_intersect(rays))
-            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0]))        
-            rays = self.reflect_vectors(X, rays, self.generate_spherical_normals(X, rays))
+            distance = self.spherical_intersect(rays)
+            X, rays  = self.intersect_check(rays, distance)
+            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0])) 
+            normals  = self.generate_spherical_normals(X, rays)
+            rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from Crystal: {:6.4e}'.format(m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0]))        
-            rays = self.reflect_vectors(X, rays, self.mesh_generate_spherical_normals(X, rays, hits))
+            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0]))  
+            normals  = self.mesh_generate_spherical_normals(X, rays, hits)
+            rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from Crystal: {:6.4e}'.format(m[m].shape[0]))
         return rays
 
@@ -406,13 +423,14 @@ class MosaicGraphite(GenericOptic):
         m = rays['mask']
         
         distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m] = np.dot((self.position - O[m]), self.normal)/np.dot(D[m], self.normal)
+        distance[m]  = np.dot((self.position - O[m]), self.normal)
+        distance[m] /= np.dot(D[m], self.normal)
         
         test = (distance > 0) & (distance < 10)
         distance = np.where(test, distance, 0)
         return distance
     
-    def mosaic_normals_generate(self, rays):
+    def generate_mosaic_normals(self, rays):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -448,7 +466,7 @@ class MosaicGraphite(GenericOptic):
         normals = np.einsum('ij,ijk->ik', dir_local, R)
         return normals
     
-    def mesh_mosaic_normals_generate(self, rays, hits):
+    def mesh_generate_mosaic_normals(self, rays, hits):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -494,12 +512,14 @@ class MosaicGraphite(GenericOptic):
         m = rays['mask']
         if self.use_meshgrid is False:
             X, rays = self.intersect_check(rays, self.planar_intersect(rays))
-            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0]))        
-            rays = self.reflect_vectors(X, rays, self.mosaic_normals_generate(rays))
+            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0]))   
+            normals = self.generate_mosaic_normals(rays)
+            rays    = self.reflect_vectors(X, rays, normals)
             print(' Rays from Graphite:{:6.4e}'.format(m[m].shape[0]))   
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0]))       
-            rays = self.reflect_vectors(X, rays, self.mesh_mosaic_normals_generate(rays, hits))
+            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0])) 
+            normals = self.mesh_generate_mosaic_normals(rays, hits)
+            rays    = self.reflect_vectors(X, rays, normals)
             print(' Rays from Graphite:{:6.4e}'.format(m[m].shape[0]))
         return rays
