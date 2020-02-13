@@ -25,26 +25,27 @@ def get_config():
     config['graphite_input']  = OrderedDict()
     config['crystal_input']   = OrderedDict()
     config['detector_input']  = OrderedDict()
-
+    
     # -------------------------------------------------------------------------
     ## General raytracer properties
     """File and type settings
     possible scenarios include 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
+    config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/'
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
     config['general_input']['scenario']           = 'REAL'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
-
+    
     """Ray emission settings
     'number_of_rays' typically should not exceed 1e7 unless running on a cluster
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
-
+    config['general_input']['number_of_runs']     = 100
+    
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
     set backwards_raytrace to True to swap the detector and source
@@ -61,7 +62,7 @@ def get_config():
     config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 123456
     config['general_input']['xics_temp']          = 273.0
-
+    
     # -------------------------------------------------------------------------
     ## Load plasma properties
     """Type and file settings
@@ -79,7 +80,7 @@ def get_config():
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e18
     config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
-
+    
     """Geometry settings
     The plasma is a torus with a 'major_radius' and 'minor_radius' (meters)
     Only a small cubic chunk of the plasma is rendered and emits rays
@@ -89,13 +90,13 @@ def get_config():
     config['plasma_input']['normal']              = np.array([0.0, 1.0, 0.0])
     config['plasma_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['plasma_input']['target']              = np.array([1.0, 0.0, 0.0])
-
+    
     config['plasma_input']['major_radius']        = 6.2
     config['plasma_input']['minor_radius']        = 2.0
     config['plasma_input']['width']               = 4.0
     config['plasma_input']['height']              = 4.0
     config['plasma_input']['depth']               = 7.5
-
+    
     """Bundle Settings
     The plasma works by emitting cubic ray bundles, which have their own settings
     NOTE: plasma volume, bundle volume, bundle count, and bundle_factor are 
@@ -134,7 +135,7 @@ def get_config():
     config['plasma_input']['sight_position']  = np.array([0.0, 0.0, 0.0])
     config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
     config['plasma_input']['sight_thickness'] = 0.100
-
+    
     # -------------------------------------------------------------------------
     ## Load source properties
     """Source Settings
@@ -153,7 +154,7 @@ def get_config():
     config['source_input']['wavelength']          = 2.7203
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
-
+    
     """Geometry Settings
     'width', 'height', and 'depth' of source (meters)
     These values are arbitrary for now. Set to 0.0 for point source.
@@ -162,11 +163,11 @@ def get_config():
     config['source_input']['normal']              = np.array([1.0, 0.0, 0.0])
     config['source_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['source_input']['target']              = np.array([1.0, 0.0, 0.0])
-
-    config['source_input']['width']               = 0.050
-    config['source_input']['height']              = 0.050
-    config['source_input']['depth']               = 0.050
-
+    
+    config['source_input']['width']               = 0.0
+    config['source_input']['height']              = 0.0
+    config['source_input']['depth']               = 0.0
+    
     # -------------------------------------------------------------------------
     ## Load spherical crystal properties
     """Type and file settings
@@ -185,7 +186,7 @@ def get_config():
     config['crystal_input']['mix_factor']         = 1.0
     config['crystal_input']['sigma_data']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_sigma.txt'
     config['crystal_input']['pi_data']            = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_pi.txt'
-
+    
     """Crystal settings
     'spacing'       is the inter-atomic spacing (angstrom)
     'reflectivity'  is the maximum reflectivity used for 'STEP' and 'GAUSS'
@@ -198,7 +199,7 @@ def get_config():
     config['crystal_input']['rocking_curve']      = 90.30e-6
     config['crystal_input']['pixel_scaling']      = int(200)
     config['crystal_input']['therm_expand']       = 5.9e-6
-
+    
     """Geometry Settings
     crystal 'width' and 'height' (meters) only matter when 'use_trimesh' is False
     'curvature' is the crystal's radius of curvature (meters)
@@ -206,11 +207,11 @@ def get_config():
     config['crystal_input']['position']           = np.array([0.0, 0.0, 0.0])
     config['crystal_input']['normal']             = np.array([0.0, 0.0, 0.0])
     config['crystal_input']['orientation']        = np.array([0.0, 0.0, 0.0])
-
+    
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.050
     config['crystal_input']['curvature']          = 1.200
-
+    
     """
     Rocking curve FWHM:  90.30 urad
     Darwin Curve, sigma: 48.070 urad
@@ -221,12 +222,12 @@ def get_config():
     dx = config['crystal_input']['height'] * np.cos(bragg) / 2
     dy = config['crystal_input']['height'] * np.sin(bragg) / 2
     dz = config['crystal_input']['width']                  / 2
-
+    
     p1 = config['crystal_input']['position'] + np.array([ dx, dy, dz])
     p2 = config['crystal_input']['position'] + np.array([-dx,-dy, dz])
     p3 = config['crystal_input']['position'] + np.array([-dx,-dy,-dz])
     p4 = config['crystal_input']['position'] + np.array([ dx, dy,-dz])
-    
+        
     config['crystal_input']['mesh_points'] = np.array([p1, p2, p3, p4])
     config['crystal_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
     # -------------------------------------------------------------------------
@@ -247,7 +248,7 @@ def get_config():
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_sigma.txt'
     config['graphite_input']['pi_data']           = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt'
-
+    
     """Graphite settings
     'spacing'       is the inter-atomic spacing (angstrom)
     'reflectivity'  is the maximum reflectivity used for 'STEP' and 'GAUSS'
@@ -262,17 +263,17 @@ def get_config():
     config['graphite_input']['rocking_curve']     = 2620e-6
     config['graphite_input']['pixel_scaling']     = int(200)
     config['graphite_input']['therm_expand']      = 20e-6
-
+    
     """Geometry Settings
     graphite 'width' and 'height' (meters) only matter when 'use_meshgrid' is False
     """
     config['graphite_input']['position']          = np.array([1.0, 0.0, 0.0])
     config['graphite_input']['normal']            = np.array([0.0, 0.0, 0.0])
     config['graphite_input']['orientation']       = np.array([0.0, 0.0, 1.0])
-
-    config['graphite_input']['width']             = 0.030
+    
+    config['graphite_input']['width']             = 0.125
     config['graphite_input']['height']            = 0.040
-
+    
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
     Taken from Ohler et al. “X-ray topographic determination of the granular
@@ -282,15 +283,15 @@ def get_config():
     dx = config['graphite_input']['height'] * np.cos(bragg) / 2
     dy = config['graphite_input']['height'] * np.sin(bragg) / 2
     dz = config['graphite_input']['width']                  / 2
-
+    
     p1 = config['graphite_input']['position'] + np.array([ dx, dy, dz])
     p2 = config['graphite_input']['position'] + np.array([-dx,-dy, dz])
     p3 = config['graphite_input']['position'] + np.array([-dx,-dy,-dz])
     p4 = config['graphite_input']['position'] + np.array([ dx, dy,-dz])
-
+    
     config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
     config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
-
+    
     # -------------------------------------------------------------------------
     ## Load detector properties
     """
@@ -298,11 +299,11 @@ def get_config():
     'pixel_size' is in (meters)
     """
     config['detector_input']['do_miss_checks']    = True
-
+    
     config['detector_input']['position']          = np.array([0.0, 0.0, 0.0])
     config['detector_input']['normal']            = np.array([0.0, 0.0, 0.0])
     config['detector_input']['orientation']       = np.array([0.0, 0.0, 0.0])
-
+    
     config['detector_input']['pixel_size']        = 0.000172
     config['detector_input']['horizontal_pixels'] = 195
     config['detector_input']['vertical_pixels']   = 1475
@@ -310,7 +311,7 @@ def get_config():
                                                     *config['detector_input']['pixel_size'])
     config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
                                                     *config['detector_input']['pixel_size'])
-
+    
     # -------------------------------------------------------------------------
     ## Load scenario properties
     """
@@ -321,13 +322,13 @@ def get_config():
     config['scenario_input']['source_graphite_dist']  = 1
     config['scenario_input']['graphite_crystal_dist'] = 8.5
     config['scenario_input']['crystal_detector_dist'] = None
-
+    
     """
     Convert the numbers given in the XICS presentations into useful information.
     When copying values from the XICS presentations, please place them here.
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
-    config['scenario_input']['chord']               = 4
+    config['scenario_input']['chord']               = 0
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],
@@ -356,7 +357,7 @@ def get_config():
                                                                  [ 074.544, 17311.94, 1082.603],
                                                                  [ 056.630, 17504.27, 1134.460],
                                                                  [-142.510, 17485.72, 1134.460]])
-
+    
     return config
 
 def get_config_multi(configurations):
@@ -364,7 +365,7 @@ def get_config_multi(configurations):
     for i in range(configurations):
         config = get_config()
         config_multi.append(config)
-
+        
     return config_multi
 
 ## Run the scripts in order (TEMPORARY - Find a better place to put this code)
@@ -378,7 +379,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'single'
+runtype = 'load'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':

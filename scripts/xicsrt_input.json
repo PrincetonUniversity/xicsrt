@@ -5,6 +5,40 @@
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "normal": [
@@ -58,12 +92,13 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": true,
+   "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 1,
+   "number_of_runs": 100,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
    "random_seed": 123456,
@@ -75,7 +110,7 @@
   "graphite_input": {
    "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04870141168385199,
+   "height": 0.04,
    "mesh_faces": [
     [
      2,
@@ -137,16 +172,17 @@
    "spacing": 3.35,
    "therm_expand": 2e-05,
    "use_meshgrid": true,
-   "width": 0.08401923946335114
+   "width": 0.125
   },
   "plasma_input": {
    "bundle_count": 10000000,
-   "bundle_factor": 100,
+   "bundle_factor": 1000,
    "bundle_type": "POINT",
    "bundle_volume": 1.0000000000000002e-06,
-   "depth": 4.0,
+   "depth": 7.5,
    "emissivity": 1e+18,
    "emissivity_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt",
+   "geometry_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc",
    "height": 4.0,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
@@ -361,8 +397,8 @@
    "source_graphite_dist": 1
   },
   "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
+   "depth": 0.0,
+   "height": 0.0,
    "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
@@ -394,7 +430,7 @@
     0.0
    ],
    "wavelength": 2.7203,
-   "width": 0.05
+   "width": 0.0
   }
  },
  {
@@ -403,6 +439,40 @@
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "normal": [
@@ -456,12 +526,13 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": true,
+   "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 1,
+   "number_of_runs": 100,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
    "random_seed": 123456,
@@ -473,7 +544,7 @@
   "graphite_input": {
    "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04870141168385199,
+   "height": 0.04,
    "mesh_faces": [
     [
      2,
@@ -488,45 +559,45 @@
    ],
    "mesh_points": [
     [
-     0.24059,
-     9.18083,
-     -0.5993999999999999
+     0.18599000000000002,
+     9.4134,
+     -0.6026
     ],
     [
-     0.21203999999999998,
-     9.14138,
-     -0.59875
+     0.15661000000000003,
+     9.39554,
+     -0.6023200000000001
     ],
     [
-     0.20937999999999998,
-     9.21492,
-     -0.63989
+     0.15394,
+     9.48208,
+     -0.6435700000000001
     ],
     [
-     0.2381,
-     9.25418,
-     -0.6403
+     0.18353,
+     9.49984,
+     -0.64375
     ]
    ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "mosaic_spread": 0.5,
    "normal": [
-    -0.5331495260634465,
-    0.39814024108312124,
-    0.7464823717199198
+    -0.2417531034759839,
+    0.41146496187445564,
+    0.8787787105462802
    ],
    "orientation": [
-    0.029636069261090137,
-    -0.873014329438135,
-    0.48679326617614127
+    0.02568744418234875,
+    -0.9026108435456286,
+    0.4296903772779041
    ],
    "pi_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.1700175,
+    9.447715,
+    -0.62306
    ],
    "reflectivity": 1,
    "rocking_curve": 0.00262,
@@ -535,16 +606,17 @@
    "spacing": 3.35,
    "therm_expand": 2e-05,
    "use_meshgrid": true,
-   "width": 0.08401923946335114
+   "width": 0.125
   },
   "plasma_input": {
    "bundle_count": 10000000,
-   "bundle_factor": 100,
+   "bundle_factor": 1000,
    "bundle_type": "POINT",
    "bundle_volume": 1.0000000000000002e-06,
-   "depth": 4.0,
+   "depth": 7.5,
    "emissivity": 1e+18,
    "emissivity_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt",
+   "geometry_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc",
    "height": 4.0,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
@@ -567,21 +639,21 @@
     0.0
    ],
    "sight_direction": [
-    -0.39809230792751626,
-    -0.6758268152097653,
-    0.6203068838989048
+    -0.16682812577566325,
+    -0.6651621036335906,
+    0.7278239844494792
    ],
    "sight_position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.1700175,
+    9.447715,
+    -0.62306
    ],
    "sight_thickness": 0.1,
    "spread": 1.0,
    "target": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.1700175,
+    9.447715,
+    -0.62306
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
@@ -759,8 +831,8 @@
    "source_graphite_dist": 1
   },
   "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
+   "depth": 0.0,
+   "height": 0.0,
    "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
@@ -792,7 +864,7 @@
     0.0
    ],
    "wavelength": 2.7203,
-   "width": 0.05
+   "width": 0.0
   }
  },
  {
@@ -801,6 +873,40 @@
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "normal": [
@@ -854,12 +960,13 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": true,
+   "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 1,
+   "number_of_runs": 100,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
    "random_seed": 123456,
@@ -871,7 +978,7 @@
   "graphite_input": {
    "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04870141168385199,
+   "height": 0.04,
    "mesh_faces": [
     [
      2,
@@ -886,45 +993,45 @@
    ],
    "mesh_points": [
     [
-     0.24059,
-     9.18083,
-     -0.5993999999999999
+     0.13588,
+     9.53944,
+     -0.60424
     ],
     [
-     0.21203999999999998,
-     9.14138,
-     -0.59875
+     0.10626000000000001,
+     9.52776,
+     -0.60405
     ],
     [
-     0.20937999999999998,
-     9.21492,
-     -0.63989
+     0.10404000000000001,
+     9.61599,
+     -0.6453099999999999
     ],
     [
-     0.2381,
-     9.25418,
-     -0.6403
+     0.13387000000000002,
+     9.62761,
+     -0.64543
     ]
    ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "mosaic_spread": 0.5,
    "normal": [
-    -0.5331495260634465,
-    0.39814024108312124,
-    0.7464823717199198
+    -0.15789480171286469,
+    0.4149903993888825,
+    0.8960202006691094
    ],
    "orientation": [
-    0.029636069261090137,
-    -0.873014329438135,
-    0.48679326617614127
+    0.02064978330324125,
+    -0.9058166138541256,
+    0.4231664548559765
    ],
    "pi_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
    ],
    "reflectivity": 1,
    "rocking_curve": 0.00262,
@@ -933,16 +1040,17 @@
    "spacing": 3.35,
    "therm_expand": 2e-05,
    "use_meshgrid": true,
-   "width": 0.08401923946335114
+   "width": 0.125
   },
   "plasma_input": {
    "bundle_count": 10000000,
-   "bundle_factor": 100,
+   "bundle_factor": 1000,
    "bundle_type": "POINT",
    "bundle_volume": 1.0000000000000002e-06,
-   "depth": 4.0,
+   "depth": 7.5,
    "emissivity": 1e+18,
    "emissivity_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt",
+   "geometry_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc",
    "height": 4.0,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
@@ -965,21 +1073,21 @@
     0.0
    ],
    "sight_direction": [
-    -0.39809230792751626,
-    -0.6758268152097653,
-    0.6203068838989048
+    -0.1042327278369466,
+    -0.6624655030307693,
+    0.7418052276317947
    ],
    "sight_position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
    ],
    "sight_thickness": 0.1,
    "spread": 1.0,
    "target": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
@@ -1157,8 +1265,8 @@
    "source_graphite_dist": 1
   },
   "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
+   "depth": 0.0,
+   "height": 0.0,
    "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
@@ -1190,7 +1298,7 @@
     0.0
    ],
    "wavelength": 2.7203,
-   "width": 0.05
+   "width": 0.0
   }
  },
  {
@@ -1199,6 +1307,40 @@
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "normal": [
@@ -1252,12 +1394,13 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": true,
+   "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 1,
+   "number_of_runs": 100,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
    "random_seed": 123456,
@@ -1269,7 +1412,7 @@
   "graphite_input": {
    "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04870141168385199,
+   "height": 0.04,
    "mesh_faces": [
     [
      2,
@@ -1284,45 +1427,45 @@
    ],
    "mesh_points": [
     [
-     0.24059,
-     9.18083,
-     -0.5993999999999999
+     0.09554,
+     9.25232,
+     -0.60037
     ],
     [
-     0.21203999999999998,
-     9.14138,
-     -0.59875
+     0.06606000000000001,
+     9.22901,
+     -0.59999
     ],
     [
-     0.20937999999999998,
-     9.21492,
-     -0.63989
+     0.0644,
+     9.313229999999999,
+     -0.64123
     ],
     [
-     0.2381,
-     9.25418,
-     -0.6403
+     0.09406999999999999,
+     9.336409999999999,
+     -0.64148
     ]
    ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "mosaic_spread": 0.5,
    "normal": [
-    -0.5331495260634465,
-    0.39814024108312124,
-    0.7464823717199198
+    -0.3150574923802525,
+    0.4123859904572049,
+    0.8547962162818091
    ],
    "orientation": [
-    0.029636069261090137,
-    -0.873014329438135,
-    0.48679326617614127
+    0.015703012347691118,
+    -0.8982764002158714,
+    0.4391502296691004
    ],
    "pi_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
    ],
    "reflectivity": 1,
    "rocking_curve": 0.00262,
@@ -1331,16 +1474,17 @@
    "spacing": 3.35,
    "therm_expand": 2e-05,
    "use_meshgrid": true,
-   "width": 0.08401923946335114
+   "width": 0.125
   },
   "plasma_input": {
    "bundle_count": 10000000,
-   "bundle_factor": 100,
+   "bundle_factor": 1000,
    "bundle_type": "POINT",
    "bundle_volume": 1.0000000000000002e-06,
-   "depth": 4.0,
+   "depth": 7.5,
    "emissivity": 1e+18,
    "emissivity_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt",
+   "geometry_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc",
    "height": 4.0,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
@@ -1363,21 +1507,21 @@
     0.0
    ],
    "sight_direction": [
-    -0.39809230792751626,
-    -0.6758268152097653,
-    0.6203068838989048
+    -0.23743222124604457,
+    -0.664630905774565,
+    0.7084431518502038
    ],
    "sight_position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
    ],
    "sight_thickness": 0.1,
    "spread": 1.0,
    "target": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
@@ -1555,8 +1699,8 @@
    "source_graphite_dist": 1
   },
   "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
+   "depth": 0.0,
+   "height": 0.0,
    "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
@@ -1588,7 +1732,7 @@
     0.0
    ],
    "wavelength": 2.7203,
-   "width": 0.05
+   "width": 0.0
   }
  },
  {
@@ -1597,6 +1741,40 @@
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "normal": [
@@ -1650,12 +1828,13 @@
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": true,
+   "do_image_analysis": false,
    "do_savefiles": true,
-   "do_visualizations": false,
+   "do_visualizations": true,
    "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 1,
+   "number_of_runs": 100,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
    "random_seed": 123456,
@@ -1667,7 +1846,7 @@
   "graphite_input": {
    "do_bragg_checks": true,
    "do_miss_checks": true,
-   "height": 0.04870141168385199,
+   "height": 0.04,
    "mesh_faces": [
     [
      2,
@@ -1682,45 +1861,45 @@
    ],
    "mesh_points": [
     [
-     0.24059,
-     9.18083,
-     -0.5993999999999999
+     0.05036,
+     9.06845,
+     -0.5978
     ],
     [
-     0.21203999999999998,
-     9.14138,
-     -0.59875
+     0.02078,
+     9.04369,
+     -0.59738
     ],
     [
-     0.20937999999999998,
-     9.21492,
-     -0.63989
+     0.019579999999999997,
+     9.12713,
+     -0.63861
     ],
     [
-     0.2381,
-     9.25418,
-     -0.6403
+     0.04935,
+     9.15175,
+     -0.63889
     ]
    ],
    "meshgrid_data": "",
    "mix_factor": 1.0,
    "mosaic_spread": 0.5,
    "normal": [
-    -0.5331495260634465,
-    0.39814024108312124,
-    0.7464823717199198
+    -0.3342457313237394,
+    0.4136778921345794,
+    0.8468473254672001
    ],
    "orientation": [
-    0.029636069261090137,
-    -0.873014329438135,
-    0.48679326617614127
+    0.010873235657628143,
+    -0.8967728022578367,
+    0.4423576764078596
    ],
    "pi_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt",
    "pixel_scaling": 200,
    "position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0350175,
+    9.097755,
+    -0.61817
    ],
    "reflectivity": 1,
    "rocking_curve": 0.00262,
@@ -1729,16 +1908,17 @@
    "spacing": 3.35,
    "therm_expand": 2e-05,
    "use_meshgrid": true,
-   "width": 0.08401923946335114
+   "width": 0.125
   },
   "plasma_input": {
    "bundle_count": 10000000,
-   "bundle_factor": 100,
+   "bundle_factor": 1000,
    "bundle_type": "POINT",
    "bundle_volume": 1.0000000000000002e-06,
-   "depth": 4.0,
+   "depth": 7.5,
    "emissivity": 1e+18,
    "emissivity_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt",
+   "geometry_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc",
    "height": 4.0,
    "linewidth": 112900000000000.0,
    "major_radius": 6.2,
@@ -1761,21 +1941,21 @@
     0.0
    ],
    "sight_direction": [
-    -0.39809230792751626,
-    -0.6758268152097653,
-    0.6203068838989048
+    -0.2584956516512471,
+    -0.6637098133059283,
+    0.7019040403066553
    ],
    "sight_position": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0350175,
+    9.097755,
+    -0.61817
    ],
    "sight_thickness": 0.1,
    "spread": 1.0,
    "target": [
-    0.2250275,
-    9.197827499999999,
-    -0.6195849999999999
+    0.0350175,
+    9.097755,
+    -0.61817
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
@@ -1953,8 +2133,8 @@
    "source_graphite_dist": 1
   },
   "source_input": {
-   "depth": 0.05,
-   "height": 0.05,
+   "depth": 0.0,
+   "height": 0.0,
    "intensity": 10000000,
    "linewidth": 112900000000000.0,
    "mass": 131.293,
@@ -1986,7 +2166,7 @@
     0.0
    ],
    "wavelength": 2.7203,
-   "width": 0.05
+   "width": 0.0
   }
  }
 ]

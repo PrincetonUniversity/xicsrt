@@ -18,6 +18,7 @@ from xicsrt.xics_rt_scenarios import setup_real_scenario
 from xicsrt.xics_rt_scenarios import setup_throughput_scenario
 from xicsrt.xics_rt_scenarios import setup_plasma_scenario
 from xicsrt.xics_rt_scenarios import setup_beam_scenario
+from xicsrt.xics_rt_scenarios import setup_manfred_scenario
 from xicsrt.xics_rt_scenarios import setup_graphite_test
 from xicsrt.xics_rt_scenarios import setup_crystal_test
 from xicsrt.xics_rt_scenarios import setup_source_test
@@ -45,6 +46,9 @@ def initialize(config):
     ## Set up a beamline test scenario 
     elif scenario == 'BEAM' or scenario == 'MODEL':
         config = setup_beam_scenario(config)
+        
+    elif scenario == 'MANFRED':
+        config = setup_manfred_scenario(config)
 
     ## Set up a crystal test scenario 
     elif scenario == 'CRYSTAL':

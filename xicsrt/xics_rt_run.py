@@ -45,7 +45,7 @@ def run(config, config_number = None):
     
     profiler.stop('Class Setup Time')
 
-    scenario = str.lower(config['general_input']['scenario'])
+    scenario = str.upper(config['general_input']['scenario'])
     
     ## Initial Visualization
     if config['general_input']['do_visualizations'] is True:
@@ -53,15 +53,15 @@ def run(config, config_number = None):
         fig1.show()
 
     ## Raytrace Runs
-    if scenario == 'real' or scenario == 'plasma':
+    if scenario == 'REAL' or scenario == 'PLASMA':
         output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             plasma, pilatus, graphite, crystal)
 
-    elif scenario == 'throughput':
+    elif scenario == 'THROUGHPUT':
         output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             plasma, pilatus, crystal)
 
-    elif scenario == 'beam':
+    elif scenario == 'BEAM':
         if config['general_input']['backwards_raytrace'] is False:
             output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
                 source, pilatus, graphite, crystal)
@@ -70,15 +70,19 @@ def run(config, config_number = None):
             output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
                 source, pilatus, crystal, graphite)
 
-    elif scenario == 'crystal':
+    elif scenario == 'MANFRED':
         output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus, crystal)
 
-    elif scenario == 'graphite':
+    elif scenario == 'CRYSTAL':
+        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
+            source, pilatus, crystal)
+
+    elif scenario == 'GRAPHITE':
         output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus, graphite)
 
-    elif scenario == 'source':
+    elif scenario == 'SOURCE':
         output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
             source, pilatus)
 

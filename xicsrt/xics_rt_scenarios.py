@@ -73,6 +73,67 @@ def source_location_bragg(config, distance ,vert_displace ,horiz_displace):
     config['source_input']['position'] = source_location
     return config
 
+def setup_manfred_scenario(config):
+    """
+    Experimental sinusoidal spiral crystal designed by Dr. Manfred.
+    A Multi-toroidal mirror designed for x-rays with energies 9.750-10.560 keV
+    intended for Ge[400] crystal with inter-atomic distance 2d = 2.82868 A
+    """
+    from xicsrt.xics_rt_meshes import generate_sinusoidal_spiral
+    
+    manfred_input = {}
+    manfred_input['horz_resolution'] = 11
+    manfred_input['vert_resolution'] = 3
+    manfred_input['base_radius'] = 0.300
+    manfred_input['base_height'] = 0.01
+    manfred_input['spiral_parameter'] = 0.34
+    manfred_input['crystal_spacing'] = 2.82868 / 2
+    
+    manfred_output = generate_sinusoidal_spiral(manfred_input)
+    
+    mesh_points     = manfred_output['mesh_points']
+    mesh_faces      = manfred_output['mesh_faces']
+    mesh_normals    = manfred_output['mesh_normals']
+    detector_points = manfred_output['detector_points']
+    c_width         = manfred_output['c_length']
+    d_width         = manfred_output['d_length']
+    
+    #setup scenario
+    s_position = np.array([0.0, 0.0, 0.0])
+    c_position = np.mean(mesh_points, axis = 0)
+    d_position = np.mean(detector_points, axis = 0)
+    
+    s_z_vector = np.array([0.0, 0.0, 1.0])
+    c_z_vector = np.array([0.0, 0.0, 1.0])
+    d_z_vector = np.array([0.0, 0.0, 1.0])
+    
+    s_normal   = c_position / np.linalg.norm(c_position)
+    c_normal   = np.mean(mesh_normals, axis = 0)
+    d_normal   = np.cross(detector_points[-1,:] - detector_points[0,:], d_z_vector)
+    s_target   = c_position
+    
+    #repack variables
+    config['crystal_input']['mesh_points']    = mesh_points
+    config['crystal_input']['mesh_faces']     = mesh_faces
+    
+    config['source_input']['position']        = s_position
+    config['source_input']['normal']          = s_normal
+    config['source_input']['orientation']     = s_z_vector
+    config['source_input']['target']          = s_target
+    config['source_input']['wavelength']      = 10.25 / 12.398425
+    config['crystal_input']['position']       = c_position
+    config['crystal_input']['normal']         = c_normal
+    config['crystal_input']['orientation']    = c_z_vector
+    config['crystal_input']['height']         = c_width
+    config['crystal_input']['width']          = manfred_input['base_height']
+    config['crystal_input']['spacing']        = manfred_input['crystal_spacing']
+    config['detector_input']['position']      = d_position
+    config['detector_input']['normal']        = d_normal
+    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['width']         = d_width
+    
+    return config
+
 def setup_real_scenario(config):
     """
     Rather than generating the entire scenario from scratch, this scenario
@@ -85,7 +146,7 @@ def setup_real_scenario(config):
     g_corners  = config['scenario_input']['graphite_corners'][chord] / 1000
     c_corners  = config['scenario_input']['crystal_corners']         / 1000
     d_corners  = config['scenario_input']['detector_corners']        / 1000
-    
+
     #calculate geometric properties of all meshes
     g_position = np.mean(g_corners, axis = 0)
     c_position = np.mean(c_corners, axis = 0)
@@ -137,12 +198,12 @@ def setup_real_scenario(config):
     config['plasma_input']['target']          = g_position
     config['plasma_input']['sight_position']  = g_position
     config['plasma_input']['sight_direction'] = sightline
-
+    #graphite dimensions override - remove these hashtags later
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal
     config['graphite_input']['orientation']   = g_x_vector
-    config['graphite_input']['width']         = g_width
-    config['graphite_input']['height']        = g_height
+    #config['graphite_input']['width']         = g_width
+    #config['graphite_input']['height']        = g_height
     
     config['crystal_input']['position']       = c_position
     config['crystal_input']['normal']         = c_normal

@@ -47,6 +47,7 @@ def visualize_layout(config):
     ## Define variables
     scenario        = config['general_input']['scenario']
     graphite_mesh   = config['graphite_input']['use_meshgrid']
+    crystal_mesh    = config['crystal_input']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     #position[Optical Element Number, 3D Coordinates]
@@ -174,7 +175,9 @@ def visualize_layout(config):
                   'tangent_circle':tangent_circle,'rowland_circle':rowland_circle,
                   'major_circle':major_circle,'minor_circle':minor_circle}
     config_vis['graphite_mesh_points'] = config['graphite_input']['mesh_points']
-    config_vis['graphite_mesh_faces'] = config['graphite_input']['mesh_faces']
+    config_vis['graphite_mesh_faces']  = config['graphite_input']['mesh_faces']
+    config_vis['crystal_mesh_points']  = config['crystal_input']['mesh_points']
+    config_vis['crystal_mesh_faces']   = config['crystal_input']['mesh_faces']
 
     ## Plot everything
     if scenario == "REAL" or scenario == "PLASMA":
@@ -199,7 +202,7 @@ def visualize_layout(config):
         #draw plasma, graphite, crystal, detector
         draw_flux(config, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
-        draw_crystal(config_vis, ax)
+        draw_crystal(config_vis, crystal_mesh, True, ax)
         draw_detector(config_vis, ax)
     
     elif scenario == "THROUGHPUT":
@@ -224,7 +227,7 @@ def visualize_layout(config):
         #draw plasma, graphite, crystal, detector
         draw_torus(config_vis, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
-        draw_crystal(config_vis, ax)
+        draw_crystal(config_vis, crystal_mesh, True, ax)
         draw_detector(config_vis, ax)
         
     elif scenario == "BEAM" or scenario == "MODEL":
@@ -249,7 +252,23 @@ def visualize_layout(config):
         #draw source, graphite, crystal, detector
         draw_source(config_vis, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
-        draw_crystal(config_vis, ax)
+        draw_crystal(config_vis, crystal_mesh, True, ax)
+        draw_detector(config_vis, ax)
+        
+    elif scenario == "MANFRED":
+        #resize and recenter axes on crystal
+        scale = abs(position[0,0] - position[3,0])
+        view_center = 2
+        
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = position[0,:]
+        beamline[1,:] = position[2,:]
+        beamline[2,:] = position[3,:]
+        
+        #draw plasma, graphite, crystal, detector
+        draw_source(config_vis, ax)
+        draw_crystal(config_vis, crystal_mesh, False, ax)
         draw_detector(config_vis, ax)
         
     elif scenario == "CRYSTAL":
@@ -265,7 +284,7 @@ def visualize_layout(config):
         
         #draw plasma, graphite, crystal, detector
         draw_source(config_vis, ax)
-        draw_crystal(config_vis, ax)
+        draw_crystal(config_vis, crystal_mesh, True, ax)
         draw_detector(config_vis, ax)
     
     elif scenario == "GRAPHITE":
@@ -416,11 +435,13 @@ def draw_graphite(config_vis, graphite_mesh, ax):
     
     return ax
 
-def draw_crystal(config_vis, ax):
+def draw_crystal(config_vis, crystal_mesh, crystal_guides, ax):
     #unpack variables
     position       = config_vis['position']
     normal         = config_vis['normal']
     corners        = config_vis['corners']
+    mesh_points    = config_vis['crystal_mesh_points']
+    mesh_faces     = config_vis['crystal_mesh_faces']
     crystal_center = config_vis['crystal_center']
     crystal_circle = config_vis['crystal_circle']
     tangent_circle = config_vis['tangent_circle']
@@ -428,20 +449,28 @@ def draw_crystal(config_vis, ax):
     meridi_line    = config_vis['meridi_line']
     saggit_line    = config_vis['saggit_line']
     
-    #draw crystal position dot, normal vector, center point, and bounding box
-    ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan", zorder = 10)
-    ax.quiver(position[2,0], position[2,1], position[2,2],
-              normal[2,0]  , normal[2,1]  , normal[2,2]  ,
-              color = "cyan", length = 0.1, arrow_length_ratio = 0.1, zorder = 10)
-    ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
-    ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan", zorder = 10)
+    if crystal_mesh is True:
+        x_array = mesh_points[:,0]
+        y_array = mesh_points[:,1]
+        z_array = mesh_points[:,2]
+        triangles = tri.Triangulation(x_array, y_array, mesh_faces)
+        ax.plot_trisurf(triangles, z_array, color = 'cyan', zorder = 10)
+    else:
+        #draw crystal position dot, normal vector, center point, and bounding box
+        ax.scatter(position[2,0], position[2,1], position[2,2], color = "cyan", zorder = 10)
+        ax.quiver(position[2,0], position[2,1], position[2,2],
+                  normal[2,0]  , normal[2,1]  , normal[2,2]  ,
+                  color = "cyan", length = 0.1, arrow_length_ratio = 0.1, zorder = 10)
+        ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
+        ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan", zorder = 10)
     
-    #draw crystal foci and circles
-    ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue", zorder = 5)
-    ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue", zorder = 5)
-    ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue", zorder = 5)
-    ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue", zorder = 5)
-    ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue", zorder = 5)
+    if crystal_guides is True:
+        #draw crystal foci and circles
+        ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue", zorder = 5)
+        ax.plot3D(tangent_circle[:,0], tangent_circle[:,1], tangent_circle[:,2], color = "blue", zorder = 5)
+        ax.plot3D(rowland_circle[:,0], rowland_circle[:,1], rowland_circle[:,2], color = "blue", zorder = 5)
+        ax.plot3D(meridi_line[:,0], meridi_line[:,1], meridi_line[:,2], color = "blue", zorder = 5)
+        ax.plot3D(saggit_line[:,0], saggit_line[:,1], saggit_line[:,2], color = "blue", zorder = 5)
     
     return ax
 

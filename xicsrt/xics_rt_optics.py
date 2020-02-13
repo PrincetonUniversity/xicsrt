@@ -64,7 +64,6 @@ class GenericOptic(TraceObject):
     def mesh_triangulate(self, ii):
         points = self.mesh_points
         faces  = self.mesh_faces
-        
         #find which points belong to the triangle face
         p1 = points[faces[ii,0],:]
         p2 = points[faces[ii,1],:]
