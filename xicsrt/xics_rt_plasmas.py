@@ -28,7 +28,7 @@ class GenericPlasma(TraceObject):
             ,plasma_input['orientation'])
         
         self.plasma_input   = plasma_input
-        #spacial information
+        #spatial information
         self.position       = plasma_input['position']
         self.normal         = plasma_input['normal']
         self.xorientation   = plasma_input['orientation']
@@ -44,22 +44,19 @@ class GenericPlasma(TraceObject):
         self.bundle_type    = str.upper(plasma_input['bundle_type'])
         self.bundle_factor  = plasma_input['bundle_factor']
         self.bundle_volume  = plasma_input['bundle_volume']
+        self.spread         = plasma_input['spread']
         self.solid_angle    = 4 * np.pi * np.sin(plasma_input['spread'] * np.pi / 360) ** 2
         self.voxel_size     = self.bundle_volume ** (1/3)
         self.chronon_size   = plasma_input['time_resolution']
         self.max_rays       = plasma_input['max_rays']
         #profile information
-        self.use_profiles   = plasma_input['use_profiles']
-        self.temp_data      = plasma_input['temperature_data']
-        self.emis_data      = plasma_input['emissivity_data']
-        self.velo_data      = plasma_input['velocity_data']
-        self.geom_data      = plasma_input['geometry_data']
         self.temperature    = plasma_input['temperature']
         self.emissivity     = plasma_input['emissivity']
         self.velocity       = plasma_input['velocity']
         self.mass_number    = plasma_input['mass']
         self.wavelength     = plasma_input['wavelength']
         self.linewidth      = plasma_input['linewidth']
+        self.poisson        = plasma_input['use_poisson']
         
     def setup_bundles(self):
         #plasma volume, bundle volume, and bundle count are linked
@@ -103,7 +100,7 @@ class GenericPlasma(TraceObject):
                          * self.chronon_size
                          * self.bundle_volume
                          * self.solid_angle / (4 * np.pi)
-                         * self.volume / (len(m[m]) * self.bundle_volume))
+                         * self.volume / (self.bundle_count * self.bundle_volume))
 
         if predicted_rays >= self.max_rays:
             raise ValueError('Plasma generated too many rays. Please reduce integration time.')
@@ -142,8 +139,9 @@ class GenericPlasma(TraceObject):
             source_input['mass']        = self.mass_number
             source_input['wavelength']  = self.wavelength
             source_input['linewidth']   = self.linewidth
-            source_input['spread']      = self.plasma_input['spread']
-            
+            source_input['spread']      = self.spread
+            source_input['use_poisson'] = self.poisson
+
             #create ray bundle sources and generate bundled rays
             source       = FocusedExtendedSource(source_input)
             bundled_rays = source.generate_rays()
@@ -156,26 +154,21 @@ class GenericPlasma(TraceObject):
             rays['mask']        = np.append(rays['mask'],        bundled_rays['mask'])
             profiler.stop("Ray Bundle Generation")
         return rays
+    
+    def generate_rays(self):
+        ## Create an empty list of ray bundles
+        bundle_input = self.setup_bundles()
+        ## Populate that list with ray bundle parameters, like locations
+        bundle_input = self.bundle_generate(bundle_input)
+        ## Use the list to generate ray sources
+        rays = self.create_sources(bundle_input)
+        return rays
         
 class CubicPlasma(GenericPlasma):
     def __init__(self, plasma_input):
         super().__init__(plasma_input)
-        
-        self.position       = plasma_input['position']
-        self.normal         = plasma_input['normal']
-        self.xorientation   = plasma_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        
-        self.width          = plasma_input['width']
-        self.height         = plasma_input['height']
-        self.depth          = plasma_input['depth']
-        self.volume         = self.width * self.height * self.depth
-        self.bundle_count   = plasma_input['bundle_count']
-        self.bundle_volume  = plasma_input['bundle_volume']
-        self.bundle_type    = plasma_input['bundle_type']
                 
-    def cubic_bundle_generate(self, bundle_input):
+    def bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
         x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
         y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
@@ -188,41 +181,20 @@ class CubicPlasma(GenericPlasma):
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
-        bundle_input['temperature'][:]         = self.temperature
+        bundle_input['temperature'][:]  = self.temperature
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
         bundle_input['emissivity'][:]   = self.emissivity
             
         return bundle_input
-    
-    def generate_rays(self):
-        ## Create an empty list of ray bundles
-        bundle_input = self.setup_bundles()
-        ## Populate that list with ray bundle parameters, like locations
-        bundle_input = self.cubic_bundle_generate(bundle_input)
-        ## Use the list to generate ray sources
-        rays = self.create_sources(bundle_input)
-        return rays
 
 
 class CylindricalPlasma(GenericPlasma):
     def __init__(self, plasma_input):
         super().__init__(plasma_input)
-        
-        self.position       = plasma_input['position']
-        self.normal         = plasma_input['normal']
-        self.xorientation   = plasma_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        
-        self.width          = plasma_input['width']
-        self.height         = plasma_input['height']
-        self.depth          = plasma_input['depth']
-        self.volume         = self.width * self.height * self.depth
-        self.bundle_count   = plasma_input['bundle_count']
                 
-    def cylindrical_bundle_generate(self, bundle_input):
+    def bundle_generate(self, bundle_input):
         from xicsrt.xics_rt_math import cart2cyl
         
         #create a long list containing random points within the cube's dimensions
@@ -253,34 +225,26 @@ class CylindricalPlasma(GenericPlasma):
         bundle_input['emissivity']   = self.emissivity / radius
         
         return bundle_input
-
-    def generate_rays(self):
-        ## Create an empty list of ray bundles
-        bundle_input = self.setup_bundles()
-        ## Populate that list with ray bundle parameters, like locations
-        bundle_input = self.cylindrical_bundle_generate(bundle_input)
-        ## Use the list to generate ray sources
-        rays = self.create_sources(bundle_input)
-        return rays
+    
     
 class ToroidalPlasma(GenericPlasma):
     def __init__(self, plasma_input):
         super().__init__(plasma_input)
-        self.position       = plasma_input['position']
         
-        self.width          = plasma_input['width']
-        self.height         = plasma_input['height']
-        self.depth          = plasma_input['depth']
-        self.volume         = self.width * self.height * self.depth
         self.major_radius   = plasma_input['major_radius']
         self.minor_radius   = plasma_input['minor_radius']
-        self.bundle_count   = plasma_input['bundle_count']
+        
+        self.use_profiles   = plasma_input['use_profiles']
+        self.temp_data      = plasma_input['temperature_data']
+        self.emis_data      = plasma_input['emissivity_data']
+        self.velo_data      = plasma_input['velocity_data']
+        self.geom_data      = plasma_input['geometry_data']
         
         self.sight_position = plasma_input['sight_position']
         self.sight_direction= plasma_input['sight_direction']
         self.sight_thickness= plasma_input['sight_thickness']
         
-    def toroidal_bundle_generate(self, bundle_input):
+    def bundle_generate(self, bundle_input):
         from xicsrt.xics_rt_math import cart2toro
         
         #create a long list containing random points within the cube's dimensions
@@ -342,35 +306,26 @@ class ToroidalPlasma(GenericPlasma):
                                         left = 1.0, right = 1.0)
             """
         return bundle_input
-
-    def generate_rays(self):
-        ## Create an empty list of ray bundles
-        bundle_input = self.setup_bundles()
-        ## Populate that list with ray bundle parameters, like locations
-        bundle_input = self.toroidal_bundle_generate(bundle_input)
-        ## Use the list to generate ray sources
-        rays = self.create_sources(bundle_input)
-        return rays
+    
     
 class RealPlasma(GenericPlasma):
     def __init__(self, plasma_input):
         super().__init__(plasma_input)
-        
-        self.position       = plasma_input['position']
-        
-        self.width          = plasma_input['width']
-        self.height         = plasma_input['height']
-        self.depth          = plasma_input['depth']
-        self.volume         = self.width * self.height * self.depth
-        self.bundle_count   = plasma_input['bundle_count']
+    
         self.major_radius   = plasma_input['major_radius']
         self.minor_radius   = plasma_input['minor_radius']
+        
+        self.use_profiles   = plasma_input['use_profiles']
+        self.temp_data      = plasma_input['temperature_data']
+        self.emis_data      = plasma_input['emissivity_data']
+        self.velo_data      = plasma_input['velocity_data']
+        self.geom_data      = plasma_input['geometry_data']
         
         self.sight_position = plasma_input['sight_position']
         self.sight_direction= plasma_input['sight_direction']
         self.sight_thickness= plasma_input['sight_thickness']
         
-    def real_bundle_generate(self, bundle_input):
+    def bundle_generate(self, bundle_input):
         import stelltools
         stelltools.initialize_from_wout(self.geom_data)
         
@@ -439,12 +394,3 @@ class RealPlasma(GenericPlasma):
             """
         bundle_input['sightline'][:] = mask
         return bundle_input
-
-    def generate_rays(self):
-        ## Create an empty list of ray bundles
-        bundle_input = self.setup_bundles()
-        ## Populate that list with ray bundle parameters, like locations
-        bundle_input = self.real_bundle_generate(bundle_input)
-        ## Use the list to generate ray sources
-        rays = self.create_sources(bundle_input)
-        return rays

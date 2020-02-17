@@ -29,7 +29,7 @@ def get_config():
     # -------------------------------------------------------------------------
     ## General raytracer properties
     """File and type settings
-    possible scenarios include 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
+    possible scenarios include 'REAL', 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
     config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/'
@@ -44,7 +44,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 100
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -60,7 +60,7 @@ def get_config():
     config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['do_image_analysis']  = False
-    config['general_input']['random_seed']        = 123456
+    config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
     
     # -------------------------------------------------------------------------
@@ -73,6 +73,7 @@ def get_config():
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
     config['plasma_input']['use_profiles']        = True
+    config['plasma_input']['use_poisson']         = True
     config['plasma_input']['temperature_data']    = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt'
     config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
@@ -148,7 +149,7 @@ def get_config():
     'velocity'              is the impurity ion velocity vector (m/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
-    config['source_input']['spread']              = 1
+    config['source_input']['spread']              = 2.0
     config['source_input']['temp']                = 1000
     config['source_input']['mass']                = 131.293
     config['source_input']['wavelength']          = 2.7203
@@ -167,6 +168,8 @@ def get_config():
     config['source_input']['width']               = 0.0
     config['source_input']['height']              = 0.0
     config['source_input']['depth']               = 0.0
+    
+    config['source_input']['use_poisson']         = False
     
     # -------------------------------------------------------------------------
     ## Load spherical crystal properties
@@ -243,7 +246,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_sigma.txt'
@@ -319,7 +322,7 @@ def get_config():
     scenario generator defaults to placing the detector at the crystal's
     meridional focus.
     """
-    config['scenario_input']['source_graphite_dist']  = 1
+    config['scenario_input']['source_graphite_dist']  = 2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
     config['scenario_input']['crystal_detector_dist'] = None
     
@@ -379,7 +382,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'load'
+runtype = 'single'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':

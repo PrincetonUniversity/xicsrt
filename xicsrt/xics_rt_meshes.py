@@ -11,9 +11,6 @@ Description
 A standalone script for generating and visualizing advanced lens geometries
 """
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.tri as tri
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import Delaunay
 
 """
@@ -122,20 +119,6 @@ def generate_sinusoidal_spiral(manfred_input):
     mesh_normals  = np.cross((p1 - p2),(p3 - p2), axis = 1)
     mesh_normals /= np.linalg.norm(mesh_normals , axis = 0)
     
-    """
-    #visualize the mesh
-    plt.scatter(0.0, 0.0, color = 'yellow')
-    plt.plot(spiral[:,0], spiral[:,1], color = 'cyan')
-    plt.plot(center[:,0], center[:,1], color = 'blue')
-    plt.plot(detector_points[:,0], detector_points[:,1], color = 'red')
-    
-    fig = plt.figure()
-    ax  = fig.gca(projection='3d')
-    ax.scatter(mesh_points[:,0], mesh_points[:,1], mesh_points[:,2], color = "blue")
-    triangles = tri.Triangulation(mesh_points[:,0], mesh_points[:,1], mesh_faces)
-    ax.plot_trisurf(triangles, mesh_points[:,2], color = 'cyan')
-    fig.show()
-    """
     ## Pack Up the Variables
     manfred_output = {}
     manfred_output['mesh_points']     = mesh_points

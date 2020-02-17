@@ -24,33 +24,36 @@ class GenericOptic(TraceObject):
             optic_input['position']
             ,optic_input['normal']
             ,optic_input['orientation'])
-
+        #spatial information
         self.position       = optic_input['position']
         self.normal         = optic_input['normal']
         self.xorientation   = optic_input['orientation']
         self.yorientation   = np.cross(self.normal, self.xorientation)
         self.yorientation  /= np.linalg.norm(self.yorientation)
-        self.spacing        = optic_input['spacing']
-        self.rocking_curve  = optic_input['rocking_curve']
-        self.reflectivity   = optic_input['reflectivity']
         self.width          = optic_input['width']
         self.height         = optic_input['height']
         self.depth          = 0.0
+        #mesh information
+        self.use_meshgrid   = optic_input['use_meshgrid']
+        self.mesh_points    = optic_input['mesh_points']
+        self.mesh_faces     = optic_input['mesh_faces']
+        #xray optical information and polarization information
+        self.crystal_spacing= optic_input['spacing']
+        self.rocking_curve  = optic_input['rocking_curve']
+        self.reflectivity   = optic_input['reflectivity']
+        self.sigma_data     = optic_input['sigma_data']
+        self.pi_data        = optic_input['pi_data']
+        self.mix_factor     = optic_input['mix_factor']
+        #image information
         self.pixel_size     = self.width / optic_input['pixel_scaling']
         self.pixel_width    = int(round(self.width  / self.pixel_size))
         self.pixel_height   = int(round(self.height / self.pixel_size))
         self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.photon_count   = 0
-        self.sigma_data     = optic_input['sigma_data']
-        self.pi_data        = optic_input['pi_data']
-        self.mix_factor     = optic_input['mix_factor']
+        #boolean settings
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = str.lower(optic_input['rocking_curve_type'])
-        
-        self.use_meshgrid   = optic_input['use_meshgrid']
-        self.mesh_points    = optic_input['mesh_points']
-        self.mesh_faces     = optic_input['mesh_faces']
 
     def normalize(self, vector):
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
@@ -236,17 +239,34 @@ class GenericOptic(TraceObject):
                      * normals[m])
         
         return rays
+    
+    def light(self, rays):
+        m = rays['mask']
+        if self.use_meshgrid is False:
+            distance = self.optic_intersect(rays)
+            X, rays  = self.intersect_check(rays, distance)
+            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0])) 
+            normals  = self.generate_optic_normals(X, rays)
+            rays     = self.reflect_vectors(X, rays, normals)
+            print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
+        else:
+            X, rays, hits = self.mesh_intersect_check(rays)
+            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))  
+            normals  = self.mesh_generate_optic_normals(X, rays, hits)
+            rays     = self.reflect_vectors(X, rays, normals)
+            print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
+        return rays
 
     def collect_rays(self, rays):
         X = rays['origin']
         m = rays['mask'].copy()
-        self.photon_count = len(m[m])
         
         num_lines = np.sum(m)
         if num_lines > 0:
             # Transform the intersection coordinates from external coordinates
             # to local optical coordinates.
             point_loc = self.point_to_local(X[m])
+            
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
             pix = np.round(point_loc / self.pixel_size).astype(int)
@@ -267,23 +287,15 @@ class GenericOptic(TraceObject):
             # Convert from pixels, which are centered around the origin, to
             # channels, which start from the corner of the optic.
             channel    = np.zeros([num_lines, 3], dtype = int)
-            channel[:] = pix[:] + pix_min
+            channel[:] = pix[:] - pix_min
             
-            # Check to see if the pixel is inside the viewing area
-            # Trim away invisible pixels that fall outside the box
-            pix_m  = np.ones([num_lines], dtype = bool)
-            pix_m &= (channel[:,0] < self.pixel_width)
-            pix_m &= (channel[:,1] < self.pixel_height)
-            
-            # I feel like there must be a faster way to do this than to loop 
-            # over every intersection.  This could be slow for large arrays.
-            for ii in range(len(pix_m[pix_m])):
-                chan_x = channel[pix_m][ii,0]
-                chan_y = channel[pix_m][ii,1]
-                self.pixel_array[chan_x,chan_y] += 1
-        
+            # I feel like there must be a faster way to do this than to loop over
+            # every intersection.  This could be slow for large arrays.
+            for ii in range(len(channel)):
+                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+
         return self.pixel_array
-    
+        
     def output_image(self, image_name, rotate=None):
         if rotate:
             out_array = np.rot90(self.pixel_array)
@@ -300,26 +312,9 @@ class SphericalCrystal(GenericOptic):
         
         self.__name__       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
-        self.position       = crystal_input['position']
-        self.normal         = crystal_input['normal']
-        self.xorientation   = crystal_input['orientation']
-        self.yorientation   = np.cross(self.normal, self.xorientation)
-        self.yorientation  /= np.linalg.norm(self.yorientation)
-        self.crystal_spacing= crystal_input['spacing']
-        self.rocking_curve  = crystal_input['rocking_curve']
-        self.reflectivity   = crystal_input['reflectivity']
-        self.width          = crystal_input['width']
-        self.height         = crystal_input['height']
         self.center         = self.radius * self.normal + self.position
-        self.pixel_size     = self.width / crystal_input['pixel_scaling']
-        self.pixel_width    = int(round(self.width / self.pixel_size))
-        self.pixel_height   = int(round(self.height / self.pixel_size))
-        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
-        self.sigma_data     = crystal_input['sigma_data']
-        self.pi_data        = crystal_input['pi_data']
-        self.mix_factor     = crystal_input['mix_factor']
         
-    def spherical_intersect(self, rays):
+    def optic_intersect(self, rays):
         """
         This calculation is copied from:
         https://www.scratchapixel.com/lessons/3d-basic-rendering/
@@ -346,9 +341,9 @@ class SphericalCrystal(GenericOptic):
         #Use mask to only perform calculations on rays that hit the crystal        
         #d is the impact parameter between a ray and center of curvature
         
-        d[m]    = np.sqrt(np.abs(np.einsum('ij,ij->i',L[m] ,L[m])
-                                 - t_ca[m]**2))
-        t_hc[m] = np.sqrt(np.abs(self.radius**2 - d[m]**2))
+        d[m]    = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m])
+                                 - t_ca[m]**2)
+        t_hc[m] = np.sqrt(self.radius**2 - d[m]**2)
         
         t_0[m] = t_ca[m] - t_hc[m]
         t_1[m] = t_ca[m] + t_hc[m]
@@ -356,13 +351,13 @@ class SphericalCrystal(GenericOptic):
         distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
         return distance
     
-    def generate_spherical_normals(self, X, rays):
+    def generate_optic_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.normalize(self.center - X[m])
         return normals
     
-    def mesh_generate_spherical_normals(self, X, rays, hits):
+    def mesh_generate_optic_normals(self, X, rays, hits):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
         for ii in range(len(self.mesh_faces)):
@@ -372,50 +367,16 @@ class SphericalCrystal(GenericOptic):
             normals[test] = tri['normal']
             
         return normals
-
-    def light(self, rays):
-        m = rays['mask']
-        if self.use_meshgrid is False:
-            distance = self.spherical_intersect(rays)
-            X, rays  = self.intersect_check(rays, distance)
-            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0])) 
-            normals  = self.generate_spherical_normals(X, rays)
-            rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from Crystal: {:6.4e}'.format(m[m].shape[0]))
-        else:
-            X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on Crystal:   {:6.4e}'.format(m[m].shape[0]))  
-            normals  = self.mesh_generate_spherical_normals(X, rays, hits)
-            rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from Crystal: {:6.4e}'.format(m[m].shape[0]))
-        return rays
+    
 
 class MosaicGraphite(GenericOptic):
     def __init__(self, graphite_input):
         super().__init__(graphite_input)
         
         self.__name__       = 'MosaicGraphite'
-        self.position       = graphite_input['position']
-        self.normal         = graphite_input['normal']
-        self.xorientation   = graphite_input['orientation']
-        self.yorientation   = np.cross(self.normal, self.xorientation) 
-        self.yorientation  /= np.linalg.norm(self.yorientation)
-        self.crystal_spacing= graphite_input['spacing']
-        self.rocking_curve  = graphite_input['rocking_curve']
-        self.reflectivity   = graphite_input['reflectivity']
         self.mosaic_spread  = graphite_input['mosaic_spread']
-        self.width          = graphite_input['width']
-        self.height         = graphite_input['height']
-        self.pixel_size     = self.width / graphite_input['pixel_scaling'] 
-        self.pixel_width    = int(round(self.width / self.pixel_size))
-        self.pixel_height   = int(round(self.height / self.pixel_size))
-        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
-        self.center         = self.position
-        self.sigma_data     = graphite_input['sigma_data']
-        self.pi_data        = graphite_input['pi_data']
-        self.mix_factor     = graphite_input['mix_factor']
 
-    def planar_intersect(self, rays):
+    def optic_intersect(self, rays):
         #test to see if a ray intersects the mirror plane
         O = rays['origin']
         D = rays['direction']
@@ -429,7 +390,7 @@ class MosaicGraphite(GenericOptic):
         distance = np.where(test, distance, 0)
         return distance
     
-    def generate_mosaic_normals(self, rays):
+    def generate_optic_normals(self, X, rays):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -465,7 +426,7 @@ class MosaicGraphite(GenericOptic):
         normals = np.einsum('ij,ijk->ik', dir_local, R)
         return normals
     
-    def mesh_generate_mosaic_normals(self, rays, hits):
+    def mesh_generate_optic_normals(self, X, rays, hits):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -506,19 +467,4 @@ class MosaicGraphite(GenericOptic):
             
             normals[test] = np.einsum('ij,ijk->ik', dir_local, R)[test]
         return normals
-    
-    def light(self, rays):
-        m = rays['mask']
-        if self.use_meshgrid is False:
-            X, rays = self.intersect_check(rays, self.planar_intersect(rays))
-            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0]))   
-            normals = self.generate_mosaic_normals(rays)
-            rays    = self.reflect_vectors(X, rays, normals)
-            print(' Rays from Graphite:{:6.4e}'.format(m[m].shape[0]))   
-        else:
-            X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on Graphite:  {:6.4e}'.format(m[m].shape[0])) 
-            normals = self.mesh_generate_mosaic_normals(rays, hits)
-            rays    = self.reflect_vectors(X, rays, normals)
-            print(' Rays from Graphite:{:6.4e}'.format(m[m].shape[0]))
-        return rays
+

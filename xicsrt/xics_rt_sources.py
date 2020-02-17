@@ -34,17 +34,23 @@ class GenericSource(TraceObject):
         self.height         = source_input['height']
         self.depth          = source_input['depth']
         self.spread         = source_input['spread']
-        self.intensity      = source_input['intensity']
         self.mass_number    = source_input['mass']   
         self.temp           = source_input['temp']
         self.wavelength     = source_input['wavelength']
         self.linewidth      = source_input['linewidth']
         self.velocity       = source_input['velocity']
+        self.poisson        = source_input['use_poisson']
+        
+        if self.poisson is True:
+            self.intensity = np.random.poisson(source_input['intensity'])
+        else:
+            self.intensity = int(source_input['intensity'])
+        
+        
+
 
     def generate_rays(self):
         rays = dict()
-        
-        self.intensity = np.random.poisson(self.intensity)
 
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
@@ -55,7 +61,7 @@ class GenericSource(TraceObject):
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        rays['wavelength'] = self.generate_wavelength()
+        rays['wavelength'] = self.generate_wavelength(rays['direction'])
         profiler.stop('generate_wavelength')
 
         profiler.start('generate_weight')
@@ -122,13 +128,15 @@ class GenericSource(TraceObject):
         direction = np.einsum('ij,ijk->ik', dir_local, R)
         return direction
 
-    def generate_wavelength(self):
+    def generate_wavelength(self, direction):
         #random_wavelength = self.random_wavelength_normal
         #random_wavelength = self.random_wavelength_cauchy
         random_wavelength = self.random_wavelength_voigt
         wavelength  = random_wavelength(self.intensity)
-        #doppler shift (c = speed of light in vacuum)
-        wavelength *= 1 - (np.dot(self.velocity, self.focus) / 299792458.0)
+        
+        #doppler shift
+        c = const.physical_constants['speed of light in vacuum'][0]
+        wavelength *= 1 - (np.einsum('j,ij->i', self.velocity, direction) / c)
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -201,20 +209,7 @@ class FocusedExtendedSource(GenericSource):
     def __init__(self, source_input):
         super().__init__(source_input)
         
-        self.position       = source_input['position']
-        self.normal         = source_input['normal']
-        self.xorientation   = source_input['orientation']
         self.focus          = source_input['target']
-        self.width          = source_input['width']
-        self.height         = source_input['height']
-        self.depth          = source_input['depth']
-        self.spread         = source_input['spread']
-        self.intensity      = source_input['intensity']
-        self.temp           = source_input['temp']
-        self.mass_number    = source_input['mass']
-        self.wavelength     = source_input['wavelength']
-        self.linewidth      = source_input['linewidth']
-        self.velocity       = source_input['velocity']
 
     def generate_rays(self):
         """
@@ -225,8 +220,6 @@ class FocusedExtendedSource(GenericSource):
            w: weight of ray (UNUSED)
         """
         rays = dict()
-        
-        self.intensity = np.random.poisson(self.intensity)
 
         profiler.start('Generate Origin')
         rays['origin'] = super().generate_origin()
@@ -237,7 +230,7 @@ class FocusedExtendedSource(GenericSource):
         profiler.stop('Generate Direction')
 
         profiler.start('Generate Wavelength')
-        rays['wavelength'] = super().generate_wavelength()
+        rays['wavelength'] = super().generate_wavelength(rays['direction'])
         profiler.stop('Generate Wavelength')
         
         profiler.start('Generate Weight')
@@ -260,19 +253,3 @@ class FocusedExtendedSource(GenericSource):
         normal = self.focus - origin
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
         return normal
-
-class DirectedSource(GenericSource):
-    def __init__(self, source_input, general_input):
-        super().__init__(source_input, general_input)
-        
-        self.position       = source_input['position']
-        self.normal         = source_input['normal']
-        self.width          = 0
-        self.height         = 0
-        self.depth          = 0
-        self.spread         = source_input['spread']
-        self.intensity      = source_input['intensity']
-        self.wavelength     = source_input['wavelength'] 
-        self.temperature    = source_input['temp']
-        self.mass_number    = source_input['mass']
-        self.linewidth      = source_input['linewidth']

@@ -42,28 +42,28 @@ def raytrace_single(source, detector, *optics):
         rays = optic.light(rays)
         profiler.stop('Ray Tracing')
         single_history.append(deepcopy(rays))
-
+        
         profiler.start('Collection: Optics')
         optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
-
+        
         if optic.__name__ == 'SphericalCrystal':
             single_count['total_crystal'] += optic.photon_count
         elif optic.__name__ == 'MosaicGraphite':
             single_count['total_graphite'] += optic.photon_count
-
+            
     profiler.start('Ray Tracing')
     rays = detector.light(rays)
     profiler.stop('Ray Tracing')
     single_history.append(deepcopy(rays))
-
+    
     profiler.start('Collection: Detector')
     detector.collect_rays(rays)
     profiler.stop('Collection: Detector')
-
+    
     single_count['total_detector'] += detector.photon_count
     profiler.stop('Raytrace Run')
-
+    
     return single_history, single_count
 
 
@@ -74,13 +74,13 @@ def raytrace(number_of_runs, source, detector, *optics):
     of all rays in the raytrace run, while 'hits_history' contains the history
     of only the rays that hit the detector.
     """
-
+    
     if number_of_runs is None: number_of_runs = 1
     
     hits_history = []
     
     rays_history = []
-
+    
     rays_count   = {}
     rays_count['total_generated']  = 0
     rays_count['total_graphite']   = 0
