@@ -47,8 +47,6 @@ class GenericSource(TraceObject):
             self.intensity = int(source_input['intensity'])
         
         
-
-
     def generate_rays(self):
         rays = dict()
 

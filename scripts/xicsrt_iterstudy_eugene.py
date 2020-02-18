@@ -51,7 +51,6 @@ def get_config():
     set backwards_raytrace to True to swap the detector and source
     set do_visualizations to toggle the visualizations on or off
     set do_savefiles to toggle whether the program saves .tif files
-    set do_image_analysis to toggle whether the visualizer performs .tif analysis
     change the random seed to alter the random numbers generated
     change xics_temp to test thermal expansion (kelvin)
     """
@@ -120,7 +119,7 @@ def get_config():
     config['plasma_input']['bundle_count']        = int(1e7)
     config['plasma_input']['bundle_factor']       = 1000
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
-    config['plasma_input']['time_resolution']     = 1e-9
+    config['plasma_input']['time_resolution']     = 1e-6
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass']                = 131.293
     config['plasma_input']['wavelength']          = 2.7203
@@ -245,7 +244,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_sigma.txt'

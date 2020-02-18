@@ -50,7 +50,7 @@ def histogram_analysis(tif_list):
         ax[0,0].bar(v_x, v_y, width = 1.0, color = 'gray')
         
         ## Plot horizontal histograms
-        h_x = np.linspace(0, image_array.shape[0], num = image_array.shape[0])
+        h_x = np.linspace(image_array.shape[0], 0, num = image_array.shape[0])
         h_y = np.sum(image_array, axis = 1, dtype = int)
         ax[1,1].barh(h_x, h_y, height = 1.0, color = 'gray')
         
