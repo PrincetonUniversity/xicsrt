@@ -126,7 +126,7 @@ class GenericPlasma(TraceObject):
             # bundle_volume cancels out here, each bundle represents an area of
             # volume/bundle_count.  I am leaving the calculation as is for now
             # for clarity in case a different approach is needed in the future.
-            intensity *= self.volume / (self.bundle_volume * len(m[m]))
+            intensity *= self.volume / (self.bundle_volume * self.bundle_count)
 
             source_input['intensity'] = intensity
             #constants

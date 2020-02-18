@@ -59,7 +59,6 @@ def get_config():
     config['general_input']['backwards_raytrace'] = False
     config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
-    config['general_input']['do_image_analysis']  = False
     config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
     
