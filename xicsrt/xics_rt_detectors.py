@@ -23,7 +23,8 @@ class Detector(TraceObject):
             detector_input['position']
             ,detector_input['normal']
             ,detector_input['orientation'])
-
+        
+        self.__name__       = 'PilatusDetector'
         self.position       = detector_input['position']
         self.normal         = detector_input['normal']
         self.xorientation   = detector_input['orientation']
@@ -38,6 +39,24 @@ class Detector(TraceObject):
         self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.miss_checks    = detector_input['do_miss_checks']
         self.photon_count   = None
+        self.pixel_array_size_check()
+        
+    def pixel_array_size_check(self):
+        ## Before loading anything up, check if the pixel array is mishapen
+        failure  = False
+        failure |= (self.pixel_width  != int(round(self.width  / self.pixel_size)))
+        failure |= (self.pixel_height != int(round(self.height / self.pixel_size)))
+            
+        if failure:
+            print('{} pixel array is mishapen'.format(self.__name__))
+            print('Pixel array width/height and detector width/height are disproportionate')
+            print('Please check {} code'.format(self.__name__))
+            
+            print('{} width  = {}'.format(self.__name__, self.width))
+            print('{} height = {}'.format(self.__name__, self.height))
+            print('{} pixel width  = {}'.format(self.__name__, self.pixel_width))
+            print('{} pixel height = {}'.format(self.__name__, self.pixel_height))
+            raise Exception
         
     def intersect(self, rays):
         O = rays['origin']

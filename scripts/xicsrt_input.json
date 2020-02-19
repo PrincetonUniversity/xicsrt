@@ -1,7 +1,7 @@
 [
  {
   "crystal_input": {
-   "curvature": 1.2,
+   "curvature": 2.4,
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
@@ -70,7 +70,7 @@
   "detector_input": {
    "do_miss_checks": true,
    "height": 0.19999613112507963,
-   "horizontal_pixels": 195,
+   "horizontal_pixels": 1163,
    "normal": [
     -0.02403569011889495,
     0.25817900325111676,
@@ -87,21 +87,20 @@
     17.39883,
     1.10853075
    ],
-   "vertical_pixels": 1475,
+   "vertical_pixels": 1163,
    "width": 0.200003537218722
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": false,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
    "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 100,
+   "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
-   "random_seed": 123456,
+   "random_seed": 12345,
    "scenario": "REAL",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -223,7 +222,8 @@
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
-   "time_resolution": 1e-09,
+   "time_resolution": 1e-06,
+   "use_poisson": true,
    "use_profiles": true,
    "velocity": [
     0.0,
@@ -394,7 +394,7 @@
     ]
    ],
    "graphite_crystal_dist": 8.5,
-   "source_graphite_dist": 1
+   "source_graphite_dist": 2
   },
   "source_input": {
    "depth": 0.0,
@@ -417,13 +417,14 @@
     0.0,
     0.0
    ],
-   "spread": 1,
+   "spread": 2.0,
    "target": [
     1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
+   "use_poisson": false,
    "velocity": [
     0.0,
     0.0,
@@ -435,7 +436,7 @@
  },
  {
   "crystal_input": {
-   "curvature": 1.2,
+   "curvature": 2.4,
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
@@ -504,7 +505,7 @@
   "detector_input": {
    "do_miss_checks": true,
    "height": 0.19999613112507963,
-   "horizontal_pixels": 195,
+   "horizontal_pixels": 1163,
    "normal": [
     -0.02403569011889495,
     0.25817900325111676,
@@ -521,21 +522,20 @@
     17.39883,
     1.10853075
    ],
-   "vertical_pixels": 1475,
+   "vertical_pixels": 1163,
    "width": 0.200003537218722
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": false,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
    "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 100,
+   "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
-   "random_seed": 123456,
+   "random_seed": 12345,
    "scenario": "REAL",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -657,7 +657,8 @@
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
-   "time_resolution": 1e-09,
+   "time_resolution": 1e-06,
+   "use_poisson": true,
    "use_profiles": true,
    "velocity": [
     0.0,
@@ -828,7 +829,7 @@
     ]
    ],
    "graphite_crystal_dist": 8.5,
-   "source_graphite_dist": 1
+   "source_graphite_dist": 2
   },
   "source_input": {
    "depth": 0.0,
@@ -851,13 +852,14 @@
     0.0,
     0.0
    ],
-   "spread": 1,
+   "spread": 2.0,
    "target": [
     1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
+   "use_poisson": false,
    "velocity": [
     0.0,
     0.0,
@@ -869,7 +871,7 @@
  },
  {
   "crystal_input": {
-   "curvature": 1.2,
+   "curvature": 2.4,
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
@@ -938,7 +940,7 @@
   "detector_input": {
    "do_miss_checks": true,
    "height": 0.19999613112507963,
-   "horizontal_pixels": 195,
+   "horizontal_pixels": 1163,
    "normal": [
     -0.02403569011889495,
     0.25817900325111676,
@@ -955,21 +957,20 @@
     17.39883,
     1.10853075
    ],
-   "vertical_pixels": 1475,
+   "vertical_pixels": 1163,
    "width": 0.200003537218722
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": false,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
    "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 100,
+   "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
-   "random_seed": 123456,
+   "random_seed": 12345,
    "scenario": "REAL",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -1091,7 +1092,8 @@
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
-   "time_resolution": 1e-09,
+   "time_resolution": 1e-06,
+   "use_poisson": true,
    "use_profiles": true,
    "velocity": [
     0.0,
@@ -1262,7 +1264,7 @@
     ]
    ],
    "graphite_crystal_dist": 8.5,
-   "source_graphite_dist": 1
+   "source_graphite_dist": 2
   },
   "source_input": {
    "depth": 0.0,
@@ -1285,13 +1287,14 @@
     0.0,
     0.0
    ],
-   "spread": 1,
+   "spread": 2.0,
    "target": [
     1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
+   "use_poisson": false,
    "velocity": [
     0.0,
     0.0,
@@ -1303,7 +1306,7 @@
  },
  {
   "crystal_input": {
-   "curvature": 1.2,
+   "curvature": 2.4,
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
@@ -1372,7 +1375,7 @@
   "detector_input": {
    "do_miss_checks": true,
    "height": 0.19999613112507963,
-   "horizontal_pixels": 195,
+   "horizontal_pixels": 1163,
    "normal": [
     -0.02403569011889495,
     0.25817900325111676,
@@ -1389,21 +1392,20 @@
     17.39883,
     1.10853075
    ],
-   "vertical_pixels": 1475,
+   "vertical_pixels": 1163,
    "width": 0.200003537218722
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": false,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
    "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 100,
+   "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
-   "random_seed": 123456,
+   "random_seed": 12345,
    "scenario": "REAL",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -1525,7 +1527,8 @@
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
-   "time_resolution": 1e-09,
+   "time_resolution": 1e-06,
+   "use_poisson": true,
    "use_profiles": true,
    "velocity": [
     0.0,
@@ -1696,7 +1699,7 @@
     ]
    ],
    "graphite_crystal_dist": 8.5,
-   "source_graphite_dist": 1
+   "source_graphite_dist": 2
   },
   "source_input": {
    "depth": 0.0,
@@ -1719,13 +1722,14 @@
     0.0,
     0.0
    ],
-   "spread": 1,
+   "spread": 2.0,
    "target": [
     1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
+   "use_poisson": false,
    "velocity": [
     0.0,
     0.0,
@@ -1737,7 +1741,7 @@
  },
  {
   "crystal_input": {
-   "curvature": 1.2,
+   "curvature": 2.4,
    "do_bragg_checks": true,
    "do_miss_checks": true,
    "height": 0.05071678617578155,
@@ -1806,7 +1810,7 @@
   "detector_input": {
    "do_miss_checks": true,
    "height": 0.19999613112507963,
-   "horizontal_pixels": 195,
+   "horizontal_pixels": 1163,
    "normal": [
     -0.02403569011889495,
     0.25817900325111676,
@@ -1823,21 +1827,20 @@
     17.39883,
     1.10853075
    ],
-   "vertical_pixels": 1475,
+   "vertical_pixels": 1163,
    "width": 0.200003537218722
   },
   "general_input": {
    "backwards_raytrace": false,
-   "do_image_analysis": false,
    "do_savefiles": true,
    "do_visualizations": true,
    "ideal_geometry": true,
    "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/",
    "number_of_rays": 10000000,
-   "number_of_runs": 100,
+   "number_of_runs": 10,
    "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
    "output_suffix": ".tif",
-   "random_seed": 123456,
+   "random_seed": 12345,
    "scenario": "REAL",
    "shot": 180707017,
    "system": "w7x_ar16",
@@ -1959,7 +1962,8 @@
    ],
    "temperature": 1000,
    "temperature_data": "/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt",
-   "time_resolution": 1e-09,
+   "time_resolution": 1e-06,
+   "use_poisson": true,
    "use_profiles": true,
    "velocity": [
     0.0,
@@ -2130,7 +2134,7 @@
     ]
    ],
    "graphite_crystal_dist": 8.5,
-   "source_graphite_dist": 1
+   "source_graphite_dist": 2
   },
   "source_input": {
    "depth": 0.0,
@@ -2153,13 +2157,14 @@
     0.0,
     0.0
    ],
-   "spread": 1,
+   "spread": 2.0,
    "target": [
     1.0,
     0.0,
     0.0
    ],
    "temp": 1000,
+   "use_poisson": false,
    "velocity": [
     0.0,
     0.0,

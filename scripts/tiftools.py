@@ -26,7 +26,7 @@ for file in range(len(results_list)):
         tif_list.append(results_list[file])
         
 def colorize_png(tif_list):
-    ##Convert the .TIF images into colormapped .PNG images and save them
+    #Convert the .TIF images into colormapped .PNG images and save them
     for file in range(len(tif_list)):
         image_array = np.array(Image.open(results_path + tif_list[file]))
         image = plt.imshow(image_array, interpolation = None)
@@ -39,31 +39,31 @@ def colorize_png(tif_list):
         print(png_name + ' saved!')
         
 def histogram_analysis(tif_list):
-    ##Read the .TIF images and plot two histograms and a spectrogram
+    #Read the .TIF images and plot two histograms and a spectrogram
     for file in range(len(tif_list)):
         image_array = np.array(Image.open(results_path + tif_list[file]))
         fig, ax = plt.subplots(nrows = 2, ncols = 2)
         
-        ## Plot vertical histograms
+        #Plot vertical histograms
         v_x = np.linspace(0, image_array.shape[1], num = image_array.shape[1])
         v_y = np.sum(image_array, axis = 0, dtype = int)
         ax[0,0].bar(v_x, v_y, width = 1.0, color = 'gray')
         
-        ## Plot horizontal histograms
+        #Plot horizontal histograms
         h_x = np.linspace(image_array.shape[0], 0, num = image_array.shape[0])
         h_y = np.sum(image_array, axis = 1, dtype = int)
         ax[1,1].barh(h_x, h_y, height = 1.0, color = 'gray')
         
-        ## Plot numpy arrays as images with logarithmic grayscale colormap
+        #Plot numpy arrays as images with logarithmic grayscale colormap
         ax[1,0].imshow(image_array, cmap = 'gray')
         ax[1,0].axis('off')
         
-        ## Plot Spectrogram
+        #Plot Spectrogram
         image_max = int(np.amax(image_array))
         ax[0,1].hist(image_array.ravel(), bins = image_max, 
                      range = (0, image_max), density = True, color = 'gray')
         
-        ## Save Images
+        #Save Images
         hist_name = results_path + tif_list[file][:-4] + '_histogram.png'
         fig.savefig(hist_name, bbox_inches = 'tight')
         print(hist_name + ' saved!')

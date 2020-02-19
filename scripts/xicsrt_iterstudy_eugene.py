@@ -44,7 +44,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 10
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -211,7 +211,7 @@ def get_config():
     
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.050
-    config['crystal_input']['curvature']          = 1.200
+    config['crystal_input']['curvature']          = 2.400
     
     """
     Rocking curve FWHM:  90.30 urad
@@ -312,7 +312,7 @@ def get_config():
                                                     *config['detector_input']['pixel_size'])
     config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
                                                     *config['detector_input']['pixel_size'])
-    
+
     # -------------------------------------------------------------------------
     ## Load scenario properties
     """
@@ -380,7 +380,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'single'
+runtype = 'load'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':

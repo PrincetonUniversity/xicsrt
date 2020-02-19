@@ -211,11 +211,15 @@ def setup_real_scenario(config):
     config['crystal_input']['width']          = c_width
     config['crystal_input']['height']         = c_height
     
+    d_pix = config['detector_input']['pixel_size']
+    
     config['detector_input']['position']      = d_position
     config['detector_input']['normal']        = d_normal
     config['detector_input']['orientation']   = d_x_vector
     config['detector_input']['width']         = d_width
-    config['detector_input']['height']        = d_height    
+    config['detector_input']['height']        = d_height
+    config['detector_input']['horizontal_pixels'] = int(round(d_width  / d_pix))
+    config['detector_input']['vertical_pixels']   = int(round(d_height / d_pix))
     
     return config
     

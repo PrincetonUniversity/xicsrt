@@ -24,6 +24,7 @@ class GenericOptic(TraceObject):
             optic_input['position']
             ,optic_input['normal']
             ,optic_input['orientation'])
+        
         #spatial information
         self.position       = optic_input['position']
         self.normal         = optic_input['normal']
@@ -54,14 +55,15 @@ class GenericOptic(TraceObject):
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = str.lower(optic_input['rocking_curve_type'])
-    
+            
     def pixel_array_size_check(self):
         ## Before loading anything up, check if the pixel array is large enough
+        failure  = False
+        
         if self.use_meshgrid is True:
             mesh_loc = self.point_to_local(self.mesh_points)
             
             #if any mesh points fall outside of the pixel array, it fails
-            failure  = False
             failure |= np.any(mesh_loc[:,0] < -self.width / 2)
             failure |= np.any(mesh_loc[:,1] < -self.height/ 2)
             failure |= np.any(mesh_loc[:,0] >= self.width / 2)
@@ -72,6 +74,21 @@ class GenericOptic(TraceObject):
                 print('Meshgrid will not fit within its extent')
                 print('Please increase {} width/height'.format(self.__name__))
                 raise Exception
+        
+        ## Before loading anything up, check if the pixel array is mishapen
+        failure |= (self.pixel_width  != int(round(self.width  / self.pixel_size)))
+        failure |= (self.pixel_height != int(round(self.height / self.pixel_size)))
+        
+        if failure:
+            print('{} pixel array is mishapen'.format(self.__name__))
+            print('Pixel array width/height and optic width/height are disproportionate')
+            print('Please check {} code'.format(self.__name__))
+            
+            print('{} width  = {}'.format(self.__name__, self.width))
+            print('{} height = {}'.format(self.__name__, self.height))
+            print('{} pixel width  = {}'.format(self.__name__, self.pixel_width))
+            print('{} pixel height = {}'.format(self.__name__, self.pixel_height))
+            raise Exception
 
     def normalize(self, vector):
         magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
@@ -337,6 +354,7 @@ class SphericalCrystal(GenericOptic):
         self.__name__       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
         self.center         = self.radius * self.normal + self.position
+        
         self.pixel_array_size_check()
         
     def optic_intersect(self, rays):
@@ -400,6 +418,7 @@ class MosaicGraphite(GenericOptic):
         
         self.__name__       = 'MosaicGraphite'
         self.mosaic_spread  = graphite_input['mosaic_spread']
+        
         self.pixel_array_size_check()
 
     def optic_intersect(self, rays):

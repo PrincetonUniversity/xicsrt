@@ -487,6 +487,7 @@ def draw_detector(config_vis, ax):
               color = "red", length = 0.1 , arrow_length_ratio = 0.1, zorder = 10)    
     ax.plot3D(corners[3,:,0], corners[3,:,1], corners[3,:,2], color = "red", zorder = 10)
     
+    
     return ax
 
 def visualize_vectors(config, output, ii):
