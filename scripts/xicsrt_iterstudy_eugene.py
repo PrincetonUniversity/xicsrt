@@ -32,7 +32,7 @@ def get_config():
     possible scenarios include 'REAL', 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
-    config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/'
+    config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/'
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
     config['general_input']['scenario']           = 'REAL'
@@ -72,10 +72,10 @@ def get_config():
     """
     config['plasma_input']['use_profiles']        = True
     config['plasma_input']['use_poisson']         = True
-    config['plasma_input']['temperature_data']    = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_temperature.txt'
-    config['plasma_input']['emissivity_data']     = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/plasma_emissivity_xe44.txt'
+    config['plasma_input']['temperature_data']    = '../inputs/plasma_temperature.txt'
+    config['plasma_input']['emissivity_data']     = '../inputs/plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_data']       = 'FILE MISSING'
-    config['plasma_input']['geometry_data']       = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/wout_iter.nc'
+    config['plasma_input']['geometry_data']       = '../inputs/wout_iter.nc'
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e18
     config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
@@ -185,8 +185,8 @@ def get_config():
     config['crystal_input']['use_meshgrid']       = False
     config['crystal_input']['meshgrid_data']      = ''
     config['crystal_input']['mix_factor']         = 1.0
-    config['crystal_input']['sigma_data']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_sigma.txt'
-    config['crystal_input']['pi_data']            = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_germanium_pi.txt'
+    config['crystal_input']['sigma_data']         = '../inputs/rocking_curve_germanium_sigma.txt'
+    config['crystal_input']['pi_data']            = '../inputs/rocking_curve_germanium_pi.txt'
     
     """Crystal settings
     'spacing'       is the inter-atomic spacing (angstrom)
@@ -247,8 +247,8 @@ def get_config():
     config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
-    config['graphite_input']['sigma_data']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_sigma.txt'
-    config['graphite_input']['pi_data']           = '/Users/Eugene/PPPL_python_project1/xics_rt_code/xicsrt/rocking_curve_graphite_pi.txt'
+    config['graphite_input']['sigma_data']        = '../inputs/rocking_curve_graphite_sigma.txt'
+    config['graphite_input']['pi_data']           = '../inputs/rocking_curve_graphite_pi.txt'
     
     """Graphite settings
     'spacing'       is the inter-atomic spacing (angstrom)
@@ -369,6 +369,26 @@ def get_config_multi(configurations):
         
     return config_multi
 
+def np_to_json(config_multi):
+    # Convert all numpy arrays into json-recognizable lists
+    for configuration in range(len(config_multi)):
+        for element in config_multi[configuration]:
+            for key in config_multi[configuration][element]:
+                if type(config_multi[configuration][element][key]) is np.ndarray:
+                    config_multi[configuration][element][key] = (
+                            config_multi[configuration][element][key].tolist())
+    return config_multi
+
+def json_to_np(config_multi):
+    # Convert all lists back into numpy arrays
+    for configuration in range(len(config_multi)):
+        for element in config_multi[configuration]:
+            for key in config_multi[configuration][element]:
+                if type(config_multi[configuration][element][key]) is list:
+                    config_multi[configuration][element][key] = np.array(
+                            config_multi[configuration][element][key])
+    return config_multi
+
 ## Run the scripts in order (TEMPORARY - Find a better place to put this code)
 import sys
 sys.path.append('/Users/Eugene/PPPL_python_project1')
@@ -380,7 +400,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'load'
+runtype = 'raw_load'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':
@@ -396,31 +416,47 @@ if runtype == 'multi':
 if runtype == 'save':
     config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
-    # Convert all numpy arrays into json-recognizable lists
-    for configuration in range(len(config_multi)):
-        for element in config_multi[configuration]:
-            for key in config_multi[configuration][element]:
-                if type(config_multi[configuration][element][key]) is np.ndarray:
-                    config_multi[configuration][element][key] = (
-                            config_multi[configuration][element][key].tolist())
+    config_multi = np_to_json(config_multi)
 
-    with open('xicsrt_input.json', 'w') as input_file:
+    with open('../inputs/xicsrt_input.json', 'w') as input_file:
         json.dump(config_multi ,input_file, indent = 1, sort_keys = True)
         print('xicsrt_input.json saved!')
-
-if runtype == 'load':
+        
+if runtype == 'init_resave':
     try:
-        with open('xicsrt_input.json', 'r') as input_file:
+        with open('../inputs/xicsrt_input.json', 'r') as input_file:
             config_multi = json.load(input_file)
 
     except FileNotFoundError:
         print('xicsrt_input.json not found!')
 
-    # Convert all lists back into numpy arrays
-    for configuration in range(len(config_multi)):
-        for element in config_multi[configuration]:
-            for key in config_multi[configuration][element]:
-                if type(config_multi[configuration][element][key]) is list:
-                    config_multi[configuration][element][key] = np.array(
-                            config_multi[configuration][element][key])
+    config_multi = json_to_np(config_multi)
+    config_multi = initialize_multi(config_multi)    
+    config_multi = np_to_json(config_multi)
+
+    with open('../inputs/xicsrt_input.json', 'w') as input_file:
+        json.dump(config_multi ,input_file, indent = 1, sort_keys = True)
+        print('xicsrt_input.json saved!')
+
+if runtype == 'raw_load':
+    try:
+        with open('../inputs/xicsrt_input.json', 'r') as input_file:
+            config_multi = json.load(input_file)
+
+    except FileNotFoundError:
+        print('xicsrt_input.json not found!')
+
+    config_multi = json_to_np(config_multi)
+    output_hits, output, meta = run_multi(config_multi)
+    
+if runtype == 'init_load':
+    try:
+        with open('../inputs/xicsrt_input.json', 'r') as input_file:
+            config_multi = json.load(input_file)
+
+    except FileNotFoundError:
+        print('xicsrt_input.json not found!')
+
+    config_multi = json_to_np(config_multi)
+    config_multi = initialize_multi(config_multi)
     output_hits, output, meta = run_multi(config_multi)
