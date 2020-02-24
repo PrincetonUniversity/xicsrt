@@ -83,7 +83,7 @@ def setup_manfred_scenario(config):
     
     manfred_input = {}
     manfred_input['horz_resolution'] = 11
-    manfred_input['vert_resolution'] = 3
+    manfred_input['vert_resolution'] = 31
     manfred_input['base_radius'] = 0.300
     manfred_input['base_height'] = 0.01
     manfred_input['spiral_parameter'] = 0.34
@@ -667,13 +667,16 @@ def setup_graphite_test(config):
     
     #define graphite position and normal relative to source
     g_position  = s_position + (path_vector * distance_s_g)
-    g_z_vector  = np.array([0, 0, 1], dtype = np.float64)
+    g_x_vector  = np.array([0, 0, 1], dtype = np.float64)
     
-    g_y_vector  = np.cross(g_z_vector, path_vector)
+    g_y_vector  = np.cross(g_x_vector, path_vector)
     g_y_vector /= np.linalg.norm(g_y_vector)
     
     g_normal    = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
     g_normal   /= np.linalg.norm(g_normal)
+    
+    g_y_vector  = np.cross(g_normal, g_x_vector)
+    g_y_vector /= np.linalg.norm(g_y_vector)
     
     #for focused extended sources, target them towards the graphite position    
     s_target = g_position
@@ -686,21 +689,33 @@ def setup_graphite_test(config):
     d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
     d_normal    = -path_vector
     
+    #define graphite mesh
+    dx = config['graphite_input']['width']  * g_x_vector / 2
+    dy = config['graphite_input']['height'] * g_y_vector / 2
+    
+    p1 = g_position + dx + dy
+    p2 = g_position - dx + dy
+    p3 = g_position - dx - dy
+    p4 = g_position + dx - dy
+    
+    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
+    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
+    
     # repack variables
     config['source_input']['position']        = s_position
     config['source_input']['normal']          = s_normal
     config['source_input']['orientation']     = s_z_vector
     config['graphite_input']['position']      = g_position
     config['graphite_input']['normal']        = g_normal
-    config['graphite_input']['orientation']   = g_z_vector
+    config['graphite_input']['orientation']   = g_x_vector
     config['crystal_input']['position']       = g_position
     config['crystal_input']['normal']         = g_normal
-    config['crystal_input']['orientation']    = g_z_vector
+    config['crystal_input']['orientation']    = g_x_vector
     config['detector_input']['position']      = d_position
     config['detector_input']['normal']        = d_normal
     config['detector_input']['orientation']   = d_z_vector
     config['source_input']['target']          = s_target
-
+    
     return config
 
 

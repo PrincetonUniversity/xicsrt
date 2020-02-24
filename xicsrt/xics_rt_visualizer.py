@@ -108,7 +108,7 @@ def visualize_layout(config):
     corners[:,2,:]  = (position[:,:] + (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))  
     corners[:,3,:]  = (position[:,:] - (width[:] * orient_x[:,:] / 2) - (height[:] * orient_y[:,:] / 2))  
     corners[:,4,:]  = (position[:,:] - (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))
-        
+    
     ## The crystal's radius of curvature and Rowland circle
     #crystal_center[3D Coodrinates]
     crystal_center  =(config['crystal_input']['curvature'] 
@@ -479,7 +479,6 @@ def draw_detector(config_vis, ax):
     position       = config_vis['position']
     normal         = config_vis['normal']
     corners        = config_vis['corners']
-    
     #draw detector position dot, normal vector, and bounding box
     ax.scatter(position[3,0], position[3,1], position[3,2], color = "red", zorder = 10)
     ax.quiver(position[3,0], position[3,1], position[3,2],

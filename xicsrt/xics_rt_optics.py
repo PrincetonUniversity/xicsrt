@@ -62,12 +62,13 @@ class GenericOptic(TraceObject):
         
         if self.use_meshgrid is True:
             mesh_loc = self.point_to_local(self.mesh_points)
-            
+            mesh_loc = np.round(mesh_loc, decimals = 6)
+
             #if any mesh points fall outside of the pixel array, it fails
             failure |= np.any(mesh_loc[:,0] < -self.width / 2)
             failure |= np.any(mesh_loc[:,1] < -self.height/ 2)
-            failure |= np.any(mesh_loc[:,0] >= self.width / 2)
-            failure |= np.any(mesh_loc[:,1] >= self.height/ 2)
+            failure |= np.any(mesh_loc[:,0] > self.width / 2)
+            failure |= np.any(mesh_loc[:,1] > self.height/ 2)
             
             if failure:
                 print('{} pixel array is too small'.format(self.__name__))
@@ -164,10 +165,9 @@ class GenericOptic(TraceObject):
             # curves to decide whether the ray reflects or not. Use mix factor.
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
             mask = self.mix_factor * sigma_curve + (1 - self.mix_factor) * pi_curve >= test
-
+            
         else:
             raise Exception('Rocking curve type not understood: {}'.format(self.rocking_curve))
-            
         return mask  
     
     def intersect_check(self, rays, distance):
@@ -187,6 +187,7 @@ class GenericOptic(TraceObject):
         yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         if self.miss_checks is True:
             m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
+            
         return X, rays
     
     def mesh_intersect_check(self, rays):
@@ -227,7 +228,7 @@ class GenericOptic(TraceObject):
             beta  /= tri_area
             gamma /= tri_area
             
-            test |= np.round((alpha + beta + gamma), decimals = 6) == 1.000000
+            test |= np.isclose((alpha + beta + gamma), 1.0)
             test &= (distance >= 0)
             
             #append the results to the global impacts arrays
@@ -237,7 +238,6 @@ class GenericOptic(TraceObject):
         #mask all the rays that missed all faces
         if self.miss_checks is True:
             m[m] &= (hits[m] != 0)
-        
         return X, rays, hits
     
     def angle_check(self, rays, normals):
@@ -256,7 +256,7 @@ class GenericOptic(TraceObject):
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.bragg_checks is True:
-            m[m] &= self.rocking_curve_filter(bragg_angle[m],incident_angle[m])
+            m &= self.rocking_curve_filter(bragg_angle,incident_angle)
         return rays, normals
     
     def reflect_vectors(self, X, rays, normals):
@@ -452,18 +452,17 @@ class MosaicGraphite(GenericOptic):
         
         O = rays['origin']
         m = rays['mask']
-        normal = np.ones(O.shape) * self.normal
-        length = len(m)
         normals = np.empty(O.shape)
         rad_spread = np.radians(self.mosaic_spread)
-        dir_local = f(rad_spread, length)
+        dir_local = f(rad_spread, len(m))
         
+        normal = np.ones(O.shape) * self.normal
         o_1     = np.cross(normal, [0,0,1])
         o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
         o_2     = np.cross(normal, o_1)
         o_2[m] /= np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
         
-        R = np.empty((length, 3, 3))
+        R = np.empty((len(m), 3, 3))
         R[:,0,:] = o_1
         R[:,1,:] = o_2
         R[:,2,:] = normal
@@ -486,30 +485,27 @@ class MosaicGraphite(GenericOptic):
             output[:,2]   = z
             return output
         
+        O = rays['origin']
+        m = rays['mask'] 
+        normals = np.empty(O.shape)
+        rad_spread = np.radians(self.mosaic_spread)
+        dir_local = f(rad_spread, len(m))
+        
         for ii in range(len(self.mesh_faces)):
-            O = rays['origin']
-            m = rays['mask']            
-            
             tri  = self.mesh_triangulate(ii)
             test = np.equal(ii, (hits - 1))
             test&= m
             
-            normal = np.ones(O.shape) * tri['normal']
-            length = len(m)
-            normals = np.empty(O.shape)
-            rad_spread = np.radians(self.mosaic_spread)
-            dir_local = f(rad_spread, length)
-            
+            normal  = np.ones(O.shape) * tri['normal']
             o_1     = np.cross(normal, [0,0,1])
             o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
             o_2     = np.cross(normal, o_1)
             o_2[m] /= np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
             
-            R = np.empty((length, 3, 3))
+            R = np.empty((len(m), 3, 3))
             R[:,0,:] = o_1
             R[:,1,:] = o_2
             R[:,2,:] = normal
             
             normals[test] = np.einsum('ij,ijk->ik', dir_local, R)[test]
         return normals
-
