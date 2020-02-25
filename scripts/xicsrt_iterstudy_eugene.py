@@ -244,7 +244,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '../inputs/rocking_curve_graphite_sigma.txt'

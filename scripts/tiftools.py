@@ -133,8 +133,7 @@ def tif_subtract(tif_1, tif_2):
     plt.savefig(png_name, bbox_inches = 'tight')
     print(png_name + ' saved!')
 
-"""
-colorize_png(tif_list)
-histogram_analysis(tif_list)
-tif_overlay(tif_list)
-"""
+#tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
+#colorize_png(tif_list)
+#histogram_analysis(tif_list)
+#tif_overlay(tif_list)

@@ -65,10 +65,8 @@ class GenericOptic(TraceObject):
             mesh_loc = np.round(mesh_loc, decimals = 6)
 
             #if any mesh points fall outside of the pixel array, it fails
-            failure |= np.any(mesh_loc[:,0] < -self.width / 2)
-            failure |= np.any(mesh_loc[:,1] < -self.height/ 2)
-            failure |= np.any(mesh_loc[:,0] > self.width / 2)
-            failure |= np.any(mesh_loc[:,1] > self.height/ 2)
+            failure |= np.any(abs(mesh_loc[:,0]) > self.width / 2)
+            failure |= np.any(abs(mesh_loc[:,1]) > self.height/ 2)
             
             if failure:
                 print('{} pixel array is too small'.format(self.__name__))
@@ -176,17 +174,16 @@ class GenericOptic(TraceObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
-        xproj = np.zeros(m.shape, dtype=np.float64)
-        yproj = np.zeros(m.shape, dtype=np.float64)
+        X_local = np.zeros(O.shape, dtype=np.float64)
         
         #X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
+        X_local = self.point_to_local(X)
         
         #find which rays hit the optic, update mask to remove misses
-        xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
-        yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         if self.miss_checks is True:
-            m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
+            m[m] &= (np.abs(X_local[:,0][m]) <= self.width / 2)
+            m[m] &= (np.abs(X_local[:,1][m]) <= self.height/ 2)
             
         return X, rays
     
@@ -224,11 +221,7 @@ class GenericOptic(TraceObject):
             beta     = self.norm(np.cross((intersect - p3),(intersect - p1)))
             gamma    = self.norm(np.cross((intersect - p1),(intersect - p2)))
             
-            alpha /= tri_area
-            beta  /= tri_area
-            gamma /= tri_area
-            
-            test |= np.isclose((alpha + beta + gamma), 1.0)
+            test |= np.less_equal((alpha + beta + gamma - tri_area), 1e-15)
             test &= (distance >= 0)
             
             #append the results to the global impacts arrays
@@ -280,13 +273,13 @@ class GenericOptic(TraceObject):
         if self.use_meshgrid is False:
             distance = self.optic_intersect(rays)
             X, rays  = self.intersect_check(rays, distance)
-            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0])) 
+            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))
             normals  = self.generate_optic_normals(X, rays)
             rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))  
+            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))
             normals  = self.mesh_generate_optic_normals(X, rays, hits)
             rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
@@ -467,7 +460,7 @@ class MosaicGraphite(GenericOptic):
         R[:,1,:] = o_2
         R[:,2,:] = normal
         
-        normals = np.einsum('ij,ijk->ik', dir_local, R)
+        normals[m] = np.einsum('ij,ijk->ik', dir_local, R)[m]
         return normals
     
     def mesh_generate_optic_normals(self, X, rays, hits):
