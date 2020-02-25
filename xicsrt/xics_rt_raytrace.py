@@ -51,9 +51,9 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
             optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
 
-        if optic.__name__ == 'SphericalCrystal':
+        if optic.name == 'SphericalCrystal':
             rays_count['total_crystal'] += optic.photon_count
-        elif optic.__name__ == 'MosaicGraphite':
+        elif optic.name == 'MosaicGraphite':
             rays_count['total_graphite'] += optic.photon_count
 
     profiler.start('Ray Tracing')
@@ -115,7 +115,7 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
 
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
-        max_lost = 5000
+        max_lost = 100000/number_of_runs
         lost_max = min(max_lost, len(w_lost))
         index_lost = np.arange(len(w_lost))
         np.random.shuffle(index_lost)
@@ -150,6 +150,9 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
             history_final['found'][ii_opt].extend(history['found'][ii_run][ii_opt])
             history_final['lost'][ii_opt].extend(history['lost'][ii_run][ii_opt])
 
+    if count['total_generated'] == 0:
+        raise ValueError('No rays generated. Check inputs.')
+    
     print('')
     print('Final Rays Generated: {:6.4e}'.format(count['total_generated']))
     print('Final Rays on HOPG:   {:6.4e}'.format(count['total_graphite']))

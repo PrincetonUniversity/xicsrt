@@ -14,8 +14,11 @@ from xicsrt.util import profiler
 
 profiler.start('Import Time')
 
+from xicsrt.xics_rt_scenarios import setup_real_scenario
+from xicsrt.xics_rt_scenarios import setup_throughput_scenario
 from xicsrt.xics_rt_scenarios import setup_plasma_scenario
 from xicsrt.xics_rt_scenarios import setup_beam_scenario
+from xicsrt.xics_rt_scenarios import setup_manfred_scenario
 from xicsrt.xics_rt_scenarios import setup_graphite_test
 from xicsrt.xics_rt_scenarios import setup_crystal_test
 from xicsrt.xics_rt_scenarios import setup_source_test
@@ -24,39 +27,39 @@ profiler.stop('Import Time')
 
 
 def initialize(config):
-
     profiler.start('Scenario Setup Time')
 
-    ## Temporary
-
-    scenario = str.lower(config['general_input']['scenario'])
+    scenario = str.upper(config['general_input']['scenario'])
+    
+    ## Set up a real scenario 
+    if   scenario == 'REAL':
+        config = setup_real_scenario(config)
 
     ## Set up a plasma test scenario 
-    if scenario == 'plasma':
+    elif scenario == 'PLASMA':
         config = setup_plasma_scenario(config)
+        
+    ## Set up a throughput test scenario 
+    elif scenario == 'THROUGHPUT':
+        config = setup_throughput_scenario(config)
 
     ## Set up a beamline test scenario 
-    elif scenario == 'beam' or scenario == 'model':
+    elif scenario == 'BEAM' or scenario == 'MODEL':
         config = setup_beam_scenario(config)
+        
+    elif scenario == 'MANFRED':
+        config = setup_manfred_scenario(config)
 
     ## Set up a crystal test scenario 
-    elif scenario == 'crystal':
+    elif scenario == 'CRYSTAL':
         config = setup_crystal_test(config)
 
-        config['graphite_input']['position']     = config['crystal_input']['position']
-        config['graphite_input']['normal']       = config['crystal_input']['normal']
-        config['graphite_input']['orientation']  = config['crystal_input']['orientation']
-
     ## Set up a graphite test scenario 
-    elif scenario == 'graphite':
+    elif scenario == 'GRAPHITE':
         config = setup_graphite_test(config)
 
-        config['crystal_input']['position']       = config['graphite_input']['position']
-        config['crystal_input']['normal']         = config['graphite_input']['normal']
-        config['crystal_input']['orientation']    = config['graphite_input']['orientation']
-
     ## Set up a source test scenario 
-    elif scenario == 'source':
+    elif scenario == 'SOURCE':
         config = setup_source_test(config)
 
     else:
@@ -88,8 +91,8 @@ def initialize(config):
 
 
 def initialize_multi(config_multi):
-    for key in enumerate(config_multi):
-        config_multi[key] = initialize(config_multi[key])
+    for ii in range(len(config_multi)):
+        config_multi[ii] = initialize(config_multi[ii])
 
     return config_multi
 

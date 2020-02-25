@@ -14,7 +14,6 @@ def voigt(x, y):
     I = wofz(z).real
     return I
 
-
 def voigt_physical(intensity, location, sigma, gamma):
     """
     The voigt function in physical parameters.

@@ -4,6 +4,9 @@
 ##
 results
 
+## Data files
+*.nc
+
 ## Large image files
 *.tif
 *.fits

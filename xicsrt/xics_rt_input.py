@@ -23,14 +23,12 @@ def load_config(filepath):
     config_to_numpy(config)
     return config
 
-
 def save_config(filepath, config):
     config_out = deepcopy(config)
     config_out = _dict_to_list(config_out)
     config_to_list(config_out)
     with open(filepath, 'w') as ff:
         json.dump(config_out, ff, indent=1)
-
 
 def config_to_numpy(obj):
     _dict_to_numpy(obj)
@@ -48,7 +46,6 @@ def _dict_to_numpy(obj):
         elif isinstance(obj[key], dict):
             obj[key] = _dict_to_numpy(obj[key])
     return obj
-
 
 def _dict_to_list(obj):
     for key in obj:

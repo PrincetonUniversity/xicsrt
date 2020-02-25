@@ -1,0 +1,2177 @@
+[
+ {
+  "crystal_input": {
+   "curvature": 2.4,
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "normal": [
+    0.01924055918532924,
+    -0.7885475075977576,
+    0.6146727821724338
+   ],
+   "orientation": [
+    -0.9997024528541636,
+    -0.024392739849570536,
+    0.0
+   ],
+   "pi_data": "../inputs/rocking_curve_germanium_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    -0.08,
+    17.892665,
+    -0.74
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../inputs/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "use_meshgrid": false,
+   "width": 0.050014881785324566
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.19999613112507963,
+   "horizontal_pixels": 1163,
+   "normal": [
+    -0.02403569011889495,
+    0.25817900325111676,
+    -0.9657980575051746
+   ],
+   "orientation": [
+    0.0895984153540387,
+    -0.9616329924688862,
+    -0.2592954140770341
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    -0.0339815,
+    17.39883,
+    1.10853075
+   ],
+   "vertical_pixels": 1163,
+   "width": 0.200003537218722
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/",
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 12345,
+   "scenario": "REAL",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mesh_faces": [
+    [
+     2,
+     1,
+     0
+    ],
+    [
+     0,
+     3,
+     2
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.24059,
+     9.18083,
+     -0.5993999999999999
+    ],
+    [
+     0.21203999999999998,
+     9.14138,
+     -0.59875
+    ],
+    [
+     0.20937999999999998,
+     9.21492,
+     -0.63989
+    ],
+    [
+     0.2381,
+     9.25418,
+     -0.6403
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.5331495260634465,
+    0.39814024108312124,
+    0.7464823717199198
+   ],
+   "orientation": [
+    0.029636069261090137,
+    -0.873014329438135,
+    0.48679326617614127
+   ],
+   "pi_data": "../inputs/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    0.2250275,
+    9.197827499999999,
+    -0.6195849999999999
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 0.00262,
+   "rocking_curve_type": "GAUSS",
+   "sigma_data": "../inputs/rocking_curve_graphite_sigma.txt",
+   "spacing": 3.35,
+   "therm_expand": 2e-05,
+   "use_meshgrid": true,
+   "width": 0.125
+  },
+  "plasma_input": {
+   "bundle_count": 10000000,
+   "bundle_factor": 1000,
+   "bundle_type": "POINT",
+   "bundle_volume": 1.0000000000000002e-06,
+   "depth": 7.5,
+   "emissivity": 1e+18,
+   "emissivity_data": "../inputs/plasma_emissivity_xe44.txt",
+   "geometry_data": "../inputs/wout_iter.nc",
+   "height": 4.0,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "max_rays": 10000000,
+   "minor_radius": 2.0,
+   "normal": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "sight_direction": [
+    -0.39809230792751626,
+    -0.6758268152097653,
+    0.6203068838989048
+   ],
+   "sight_position": [
+    0.2250275,
+    9.197827499999999,
+    -0.6195849999999999
+   ],
+   "sight_thickness": 0.1,
+   "spread": 1.0,
+   "target": [
+    0.2250275,
+    9.197827499999999,
+    -0.6195849999999999
+   ],
+   "temperature": 1000,
+   "temperature_data": "../inputs/plasma_temperature.txt",
+   "time_resolution": 1e-06,
+   "use_poisson": true,
+   "use_profiles": true,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "velocity_data": "FILE MISSING",
+   "wavelength": 2.7203,
+   "width": 4.0
+  },
+  "scenario_input": {
+   "chord": 0,
+   "crystal_corners": [
+    [
+     -105.0,
+     17876.47,
+     -760.0
+    ],
+    [
+     -105.0,
+     17907.65,
+     -720.0
+    ],
+    [
+     -55.0,
+     17908.85,
+     -720.0
+    ],
+    [
+     -55.0,
+     17877.69,
+     -760.0
+    ]
+   ],
+   "crystal_detector_dist": null,
+   "detector_corners": [
+    [
+     -124.59,
+     17293.39,
+     1082.6
+    ],
+    [
+     74.544,
+     17311.94,
+     1082.603
+    ],
+    [
+     56.63,
+     17504.27,
+     1134.46
+    ],
+    [
+     -142.51,
+     17485.72,
+     1134.46
+    ]
+   ],
+   "graphite_corners": [
+    [
+     [
+      240.59,
+      9180.83,
+      -599.4
+     ],
+     [
+      212.04,
+      9141.38,
+      -598.75
+     ],
+     [
+      209.38,
+      9214.92,
+      -639.89
+     ],
+     [
+      238.1,
+      9254.18,
+      -640.3
+     ]
+    ],
+    [
+     [
+      185.99,
+      9413.4,
+      -602.6
+     ],
+     [
+      156.61,
+      9395.54,
+      -602.32
+     ],
+     [
+      153.94,
+      9482.08,
+      -643.57
+     ],
+     [
+      183.53,
+      9499.84,
+      -643.75
+     ]
+    ],
+    [
+     [
+      135.88,
+      9539.44,
+      -604.24
+     ],
+     [
+      106.26,
+      9527.76,
+      -604.05
+     ],
+     [
+      104.04,
+      9615.99,
+      -645.31
+     ],
+     [
+      133.87,
+      9627.61,
+      -645.43
+     ]
+    ],
+    [
+     [
+      95.54,
+      9252.32,
+      -600.37
+     ],
+     [
+      66.06,
+      9229.01,
+      -599.99
+     ],
+     [
+      64.4,
+      9313.23,
+      -641.23
+     ],
+     [
+      94.07,
+      9336.41,
+      -641.48
+     ]
+    ],
+    [
+     [
+      50.36,
+      9068.45,
+      -597.8
+     ],
+     [
+      20.78,
+      9043.69,
+      -597.38
+     ],
+     [
+      19.58,
+      9127.13,
+      -638.61
+     ],
+     [
+      49.35,
+      9151.75,
+      -638.89
+     ]
+    ]
+   ],
+   "graphite_crystal_dist": 8.5,
+   "source_graphite_dist": 2
+  },
+  "source_input": {
+   "depth": 0.0,
+   "height": 0.0,
+   "intensity": 10000000,
+   "linewidth": 112900000000000.0,
+   "mass": 131.293,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "spread": 2.0,
+   "target": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "use_poisson": false,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "wavelength": 2.7203,
+   "width": 0.0
+  }
+ },
+ {
+  "crystal_input": {
+   "curvature": 2.4,
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "normal": [
+    0.01924055918532924,
+    -0.7885475075977576,
+    0.6146727821724338
+   ],
+   "orientation": [
+    -0.9997024528541636,
+    -0.024392739849570536,
+    0.0
+   ],
+   "pi_data": "../inputs/rocking_curve_germanium_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    -0.08,
+    17.892665,
+    -0.74
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../inputs/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "use_meshgrid": false,
+   "width": 0.050014881785324566
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.19999613112507963,
+   "horizontal_pixels": 1163,
+   "normal": [
+    -0.02403569011889495,
+    0.25817900325111676,
+    -0.9657980575051746
+   ],
+   "orientation": [
+    0.0895984153540387,
+    -0.9616329924688862,
+    -0.2592954140770341
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    -0.0339815,
+    17.39883,
+    1.10853075
+   ],
+   "vertical_pixels": 1163,
+   "width": 0.200003537218722
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/",
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 12345,
+   "scenario": "REAL",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mesh_faces": [
+    [
+     2,
+     1,
+     0
+    ],
+    [
+     0,
+     3,
+     2
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.18599000000000002,
+     9.4134,
+     -0.6026
+    ],
+    [
+     0.15661000000000003,
+     9.39554,
+     -0.6023200000000001
+    ],
+    [
+     0.15394,
+     9.48208,
+     -0.6435700000000001
+    ],
+    [
+     0.18353,
+     9.49984,
+     -0.64375
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.2417531034759839,
+    0.41146496187445564,
+    0.8787787105462802
+   ],
+   "orientation": [
+    0.02568744418234875,
+    -0.9026108435456286,
+    0.4296903772779041
+   ],
+   "pi_data": "../inputs/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    0.1700175,
+    9.447715,
+    -0.62306
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 0.00262,
+   "rocking_curve_type": "GAUSS",
+   "sigma_data": "../inputs/rocking_curve_graphite_sigma.txt",
+   "spacing": 3.35,
+   "therm_expand": 2e-05,
+   "use_meshgrid": true,
+   "width": 0.125
+  },
+  "plasma_input": {
+   "bundle_count": 10000000,
+   "bundle_factor": 1000,
+   "bundle_type": "POINT",
+   "bundle_volume": 1.0000000000000002e-06,
+   "depth": 7.5,
+   "emissivity": 1e+18,
+   "emissivity_data": "../inputs/plasma_emissivity_xe44.txt",
+   "geometry_data": "../inputs/wout_iter.nc",
+   "height": 4.0,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "max_rays": 10000000,
+   "minor_radius": 2.0,
+   "normal": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "sight_direction": [
+    -0.16682812577566325,
+    -0.6651621036335906,
+    0.7278239844494792
+   ],
+   "sight_position": [
+    0.1700175,
+    9.447715,
+    -0.62306
+   ],
+   "sight_thickness": 0.1,
+   "spread": 1.0,
+   "target": [
+    0.1700175,
+    9.447715,
+    -0.62306
+   ],
+   "temperature": 1000,
+   "temperature_data": "../inputs/plasma_temperature.txt",
+   "time_resolution": 1e-06,
+   "use_poisson": true,
+   "use_profiles": true,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "velocity_data": "FILE MISSING",
+   "wavelength": 2.7203,
+   "width": 4.0
+  },
+  "scenario_input": {
+   "chord": 1,
+   "crystal_corners": [
+    [
+     -105.0,
+     17876.47,
+     -760.0
+    ],
+    [
+     -105.0,
+     17907.65,
+     -720.0
+    ],
+    [
+     -55.0,
+     17908.85,
+     -720.0
+    ],
+    [
+     -55.0,
+     17877.69,
+     -760.0
+    ]
+   ],
+   "crystal_detector_dist": null,
+   "detector_corners": [
+    [
+     -124.59,
+     17293.39,
+     1082.6
+    ],
+    [
+     74.544,
+     17311.94,
+     1082.603
+    ],
+    [
+     56.63,
+     17504.27,
+     1134.46
+    ],
+    [
+     -142.51,
+     17485.72,
+     1134.46
+    ]
+   ],
+   "graphite_corners": [
+    [
+     [
+      240.59,
+      9180.83,
+      -599.4
+     ],
+     [
+      212.04,
+      9141.38,
+      -598.75
+     ],
+     [
+      209.38,
+      9214.92,
+      -639.89
+     ],
+     [
+      238.1,
+      9254.18,
+      -640.3
+     ]
+    ],
+    [
+     [
+      185.99,
+      9413.4,
+      -602.6
+     ],
+     [
+      156.61,
+      9395.54,
+      -602.32
+     ],
+     [
+      153.94,
+      9482.08,
+      -643.57
+     ],
+     [
+      183.53,
+      9499.84,
+      -643.75
+     ]
+    ],
+    [
+     [
+      135.88,
+      9539.44,
+      -604.24
+     ],
+     [
+      106.26,
+      9527.76,
+      -604.05
+     ],
+     [
+      104.04,
+      9615.99,
+      -645.31
+     ],
+     [
+      133.87,
+      9627.61,
+      -645.43
+     ]
+    ],
+    [
+     [
+      95.54,
+      9252.32,
+      -600.37
+     ],
+     [
+      66.06,
+      9229.01,
+      -599.99
+     ],
+     [
+      64.4,
+      9313.23,
+      -641.23
+     ],
+     [
+      94.07,
+      9336.41,
+      -641.48
+     ]
+    ],
+    [
+     [
+      50.36,
+      9068.45,
+      -597.8
+     ],
+     [
+      20.78,
+      9043.69,
+      -597.38
+     ],
+     [
+      19.58,
+      9127.13,
+      -638.61
+     ],
+     [
+      49.35,
+      9151.75,
+      -638.89
+     ]
+    ]
+   ],
+   "graphite_crystal_dist": 8.5,
+   "source_graphite_dist": 2
+  },
+  "source_input": {
+   "depth": 0.0,
+   "height": 0.0,
+   "intensity": 10000000,
+   "linewidth": 112900000000000.0,
+   "mass": 131.293,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "spread": 2.0,
+   "target": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "use_poisson": false,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "wavelength": 2.7203,
+   "width": 0.0
+  }
+ },
+ {
+  "crystal_input": {
+   "curvature": 2.4,
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "normal": [
+    0.01924055918532924,
+    -0.7885475075977576,
+    0.6146727821724338
+   ],
+   "orientation": [
+    -0.9997024528541636,
+    -0.024392739849570536,
+    0.0
+   ],
+   "pi_data": "../inputs/rocking_curve_germanium_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    -0.08,
+    17.892665,
+    -0.74
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../inputs/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "use_meshgrid": false,
+   "width": 0.050014881785324566
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.19999613112507963,
+   "horizontal_pixels": 1163,
+   "normal": [
+    -0.02403569011889495,
+    0.25817900325111676,
+    -0.9657980575051746
+   ],
+   "orientation": [
+    0.0895984153540387,
+    -0.9616329924688862,
+    -0.2592954140770341
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    -0.0339815,
+    17.39883,
+    1.10853075
+   ],
+   "vertical_pixels": 1163,
+   "width": 0.200003537218722
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/",
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 12345,
+   "scenario": "REAL",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mesh_faces": [
+    [
+     2,
+     1,
+     0
+    ],
+    [
+     0,
+     3,
+     2
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.13588,
+     9.53944,
+     -0.60424
+    ],
+    [
+     0.10626000000000001,
+     9.52776,
+     -0.60405
+    ],
+    [
+     0.10404000000000001,
+     9.61599,
+     -0.6453099999999999
+    ],
+    [
+     0.13387000000000002,
+     9.62761,
+     -0.64543
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.15789480171286469,
+    0.4149903993888825,
+    0.8960202006691094
+   ],
+   "orientation": [
+    0.02064978330324125,
+    -0.9058166138541256,
+    0.4231664548559765
+   ],
+   "pi_data": "../inputs/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 0.00262,
+   "rocking_curve_type": "GAUSS",
+   "sigma_data": "../inputs/rocking_curve_graphite_sigma.txt",
+   "spacing": 3.35,
+   "therm_expand": 2e-05,
+   "use_meshgrid": true,
+   "width": 0.125
+  },
+  "plasma_input": {
+   "bundle_count": 10000000,
+   "bundle_factor": 1000,
+   "bundle_type": "POINT",
+   "bundle_volume": 1.0000000000000002e-06,
+   "depth": 7.5,
+   "emissivity": 1e+18,
+   "emissivity_data": "../inputs/plasma_emissivity_xe44.txt",
+   "geometry_data": "../inputs/wout_iter.nc",
+   "height": 4.0,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "max_rays": 10000000,
+   "minor_radius": 2.0,
+   "normal": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "sight_direction": [
+    -0.1042327278369466,
+    -0.6624655030307693,
+    0.7418052276317947
+   ],
+   "sight_position": [
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
+   ],
+   "sight_thickness": 0.1,
+   "spread": 1.0,
+   "target": [
+    0.12001250000000002,
+    9.5777,
+    -0.6247574999999999
+   ],
+   "temperature": 1000,
+   "temperature_data": "../inputs/plasma_temperature.txt",
+   "time_resolution": 1e-06,
+   "use_poisson": true,
+   "use_profiles": true,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "velocity_data": "FILE MISSING",
+   "wavelength": 2.7203,
+   "width": 4.0
+  },
+  "scenario_input": {
+   "chord": 2,
+   "crystal_corners": [
+    [
+     -105.0,
+     17876.47,
+     -760.0
+    ],
+    [
+     -105.0,
+     17907.65,
+     -720.0
+    ],
+    [
+     -55.0,
+     17908.85,
+     -720.0
+    ],
+    [
+     -55.0,
+     17877.69,
+     -760.0
+    ]
+   ],
+   "crystal_detector_dist": null,
+   "detector_corners": [
+    [
+     -124.59,
+     17293.39,
+     1082.6
+    ],
+    [
+     74.544,
+     17311.94,
+     1082.603
+    ],
+    [
+     56.63,
+     17504.27,
+     1134.46
+    ],
+    [
+     -142.51,
+     17485.72,
+     1134.46
+    ]
+   ],
+   "graphite_corners": [
+    [
+     [
+      240.59,
+      9180.83,
+      -599.4
+     ],
+     [
+      212.04,
+      9141.38,
+      -598.75
+     ],
+     [
+      209.38,
+      9214.92,
+      -639.89
+     ],
+     [
+      238.1,
+      9254.18,
+      -640.3
+     ]
+    ],
+    [
+     [
+      185.99,
+      9413.4,
+      -602.6
+     ],
+     [
+      156.61,
+      9395.54,
+      -602.32
+     ],
+     [
+      153.94,
+      9482.08,
+      -643.57
+     ],
+     [
+      183.53,
+      9499.84,
+      -643.75
+     ]
+    ],
+    [
+     [
+      135.88,
+      9539.44,
+      -604.24
+     ],
+     [
+      106.26,
+      9527.76,
+      -604.05
+     ],
+     [
+      104.04,
+      9615.99,
+      -645.31
+     ],
+     [
+      133.87,
+      9627.61,
+      -645.43
+     ]
+    ],
+    [
+     [
+      95.54,
+      9252.32,
+      -600.37
+     ],
+     [
+      66.06,
+      9229.01,
+      -599.99
+     ],
+     [
+      64.4,
+      9313.23,
+      -641.23
+     ],
+     [
+      94.07,
+      9336.41,
+      -641.48
+     ]
+    ],
+    [
+     [
+      50.36,
+      9068.45,
+      -597.8
+     ],
+     [
+      20.78,
+      9043.69,
+      -597.38
+     ],
+     [
+      19.58,
+      9127.13,
+      -638.61
+     ],
+     [
+      49.35,
+      9151.75,
+      -638.89
+     ]
+    ]
+   ],
+   "graphite_crystal_dist": 8.5,
+   "source_graphite_dist": 2
+  },
+  "source_input": {
+   "depth": 0.0,
+   "height": 0.0,
+   "intensity": 10000000,
+   "linewidth": 112900000000000.0,
+   "mass": 131.293,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "spread": 2.0,
+   "target": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "use_poisson": false,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "wavelength": 2.7203,
+   "width": 0.0
+  }
+ },
+ {
+  "crystal_input": {
+   "curvature": 2.4,
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "normal": [
+    0.01924055918532924,
+    -0.7885475075977576,
+    0.6146727821724338
+   ],
+   "orientation": [
+    -0.9997024528541636,
+    -0.024392739849570536,
+    0.0
+   ],
+   "pi_data": "../inputs/rocking_curve_germanium_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    -0.08,
+    17.892665,
+    -0.74
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../inputs/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "use_meshgrid": false,
+   "width": 0.050014881785324566
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.19999613112507963,
+   "horizontal_pixels": 1163,
+   "normal": [
+    -0.02403569011889495,
+    0.25817900325111676,
+    -0.9657980575051746
+   ],
+   "orientation": [
+    0.0895984153540387,
+    -0.9616329924688862,
+    -0.2592954140770341
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    -0.0339815,
+    17.39883,
+    1.10853075
+   ],
+   "vertical_pixels": 1163,
+   "width": 0.200003537218722
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/",
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 12345,
+   "scenario": "REAL",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mesh_faces": [
+    [
+     2,
+     1,
+     0
+    ],
+    [
+     0,
+     3,
+     2
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.09554,
+     9.25232,
+     -0.60037
+    ],
+    [
+     0.06606000000000001,
+     9.22901,
+     -0.59999
+    ],
+    [
+     0.0644,
+     9.313229999999999,
+     -0.64123
+    ],
+    [
+     0.09406999999999999,
+     9.336409999999999,
+     -0.64148
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.3150574923802525,
+    0.4123859904572049,
+    0.8547962162818091
+   ],
+   "orientation": [
+    0.015703012347691118,
+    -0.8982764002158714,
+    0.4391502296691004
+   ],
+   "pi_data": "../inputs/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 0.00262,
+   "rocking_curve_type": "GAUSS",
+   "sigma_data": "../inputs/rocking_curve_graphite_sigma.txt",
+   "spacing": 3.35,
+   "therm_expand": 2e-05,
+   "use_meshgrid": true,
+   "width": 0.125
+  },
+  "plasma_input": {
+   "bundle_count": 10000000,
+   "bundle_factor": 1000,
+   "bundle_type": "POINT",
+   "bundle_volume": 1.0000000000000002e-06,
+   "depth": 7.5,
+   "emissivity": 1e+18,
+   "emissivity_data": "../inputs/plasma_emissivity_xe44.txt",
+   "geometry_data": "../inputs/wout_iter.nc",
+   "height": 4.0,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "max_rays": 10000000,
+   "minor_radius": 2.0,
+   "normal": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "sight_direction": [
+    -0.23743222124604457,
+    -0.664630905774565,
+    0.7084431518502038
+   ],
+   "sight_position": [
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
+   ],
+   "sight_thickness": 0.1,
+   "spread": 1.0,
+   "target": [
+    0.0800175,
+    9.2827425,
+    -0.6207674999999999
+   ],
+   "temperature": 1000,
+   "temperature_data": "../inputs/plasma_temperature.txt",
+   "time_resolution": 1e-06,
+   "use_poisson": true,
+   "use_profiles": true,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "velocity_data": "FILE MISSING",
+   "wavelength": 2.7203,
+   "width": 4.0
+  },
+  "scenario_input": {
+   "chord": 3,
+   "crystal_corners": [
+    [
+     -105.0,
+     17876.47,
+     -760.0
+    ],
+    [
+     -105.0,
+     17907.65,
+     -720.0
+    ],
+    [
+     -55.0,
+     17908.85,
+     -720.0
+    ],
+    [
+     -55.0,
+     17877.69,
+     -760.0
+    ]
+   ],
+   "crystal_detector_dist": null,
+   "detector_corners": [
+    [
+     -124.59,
+     17293.39,
+     1082.6
+    ],
+    [
+     74.544,
+     17311.94,
+     1082.603
+    ],
+    [
+     56.63,
+     17504.27,
+     1134.46
+    ],
+    [
+     -142.51,
+     17485.72,
+     1134.46
+    ]
+   ],
+   "graphite_corners": [
+    [
+     [
+      240.59,
+      9180.83,
+      -599.4
+     ],
+     [
+      212.04,
+      9141.38,
+      -598.75
+     ],
+     [
+      209.38,
+      9214.92,
+      -639.89
+     ],
+     [
+      238.1,
+      9254.18,
+      -640.3
+     ]
+    ],
+    [
+     [
+      185.99,
+      9413.4,
+      -602.6
+     ],
+     [
+      156.61,
+      9395.54,
+      -602.32
+     ],
+     [
+      153.94,
+      9482.08,
+      -643.57
+     ],
+     [
+      183.53,
+      9499.84,
+      -643.75
+     ]
+    ],
+    [
+     [
+      135.88,
+      9539.44,
+      -604.24
+     ],
+     [
+      106.26,
+      9527.76,
+      -604.05
+     ],
+     [
+      104.04,
+      9615.99,
+      -645.31
+     ],
+     [
+      133.87,
+      9627.61,
+      -645.43
+     ]
+    ],
+    [
+     [
+      95.54,
+      9252.32,
+      -600.37
+     ],
+     [
+      66.06,
+      9229.01,
+      -599.99
+     ],
+     [
+      64.4,
+      9313.23,
+      -641.23
+     ],
+     [
+      94.07,
+      9336.41,
+      -641.48
+     ]
+    ],
+    [
+     [
+      50.36,
+      9068.45,
+      -597.8
+     ],
+     [
+      20.78,
+      9043.69,
+      -597.38
+     ],
+     [
+      19.58,
+      9127.13,
+      -638.61
+     ],
+     [
+      49.35,
+      9151.75,
+      -638.89
+     ]
+    ]
+   ],
+   "graphite_crystal_dist": 8.5,
+   "source_graphite_dist": 2
+  },
+  "source_input": {
+   "depth": 0.0,
+   "height": 0.0,
+   "intensity": 10000000,
+   "linewidth": 112900000000000.0,
+   "mass": 131.293,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "spread": 2.0,
+   "target": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "use_poisson": false,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "wavelength": 2.7203,
+   "width": 0.0
+  }
+ },
+ {
+  "crystal_input": {
+   "curvature": 2.4,
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.05071678617578155,
+   "mesh_faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     2,
+     3,
+     0
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     0.02
+    ],
+    [
+     -0.015088885060260182,
+     -0.019933026554897707,
+     -0.02
+    ],
+    [
+     0.015088885060260182,
+     0.019933026554897707,
+     -0.02
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "normal": [
+    0.01924055918532924,
+    -0.7885475075977576,
+    0.6146727821724338
+   ],
+   "orientation": [
+    -0.9997024528541636,
+    -0.024392739849570536,
+    0.0
+   ],
+   "pi_data": "../inputs/rocking_curve_germanium_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    -0.08,
+    17.892665,
+    -0.74
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 9.03e-05,
+   "rocking_curve_type": "FILE",
+   "sigma_data": "../inputs/rocking_curve_germanium_sigma.txt",
+   "spacing": 1.7059,
+   "therm_expand": 5.9e-06,
+   "use_meshgrid": false,
+   "width": 0.050014881785324566
+  },
+  "detector_input": {
+   "do_miss_checks": true,
+   "height": 0.19999613112507963,
+   "horizontal_pixels": 1163,
+   "normal": [
+    -0.02403569011889495,
+    0.25817900325111676,
+    -0.9657980575051746
+   ],
+   "orientation": [
+    0.0895984153540387,
+    -0.9616329924688862,
+    -0.2592954140770341
+   ],
+   "pixel_size": 0.000172,
+   "position": [
+    -0.0339815,
+    17.39883,
+    1.10853075
+   ],
+   "vertical_pixels": 1163,
+   "width": 0.200003537218722
+  },
+  "general_input": {
+   "backwards_raytrace": false,
+   "do_savefiles": true,
+   "do_visualizations": true,
+   "ideal_geometry": true,
+   "input_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/",
+   "number_of_rays": 10000000,
+   "number_of_runs": 10,
+   "output_path": "/Users/Eugene/PPPL_python_project1/xics_rt_code/results/",
+   "output_suffix": ".tif",
+   "random_seed": 12345,
+   "scenario": "REAL",
+   "shot": 180707017,
+   "system": "w7x_ar16",
+   "xics_temp": 273.0
+  },
+  "graphite_input": {
+   "do_bragg_checks": true,
+   "do_miss_checks": true,
+   "height": 0.04,
+   "mesh_faces": [
+    [
+     2,
+     1,
+     0
+    ],
+    [
+     0,
+     3,
+     2
+    ]
+   ],
+   "mesh_points": [
+    [
+     0.05036,
+     9.06845,
+     -0.5978
+    ],
+    [
+     0.02078,
+     9.04369,
+     -0.59738
+    ],
+    [
+     0.019579999999999997,
+     9.12713,
+     -0.63861
+    ],
+    [
+     0.04935,
+     9.15175,
+     -0.63889
+    ]
+   ],
+   "meshgrid_data": "",
+   "mix_factor": 1.0,
+   "mosaic_spread": 0.5,
+   "normal": [
+    -0.3342457313237394,
+    0.4136778921345794,
+    0.8468473254672001
+   ],
+   "orientation": [
+    0.010873235657628143,
+    -0.8967728022578367,
+    0.4423576764078596
+   ],
+   "pi_data": "../inputs/rocking_curve_graphite_pi.txt",
+   "pixel_scaling": 200,
+   "position": [
+    0.0350175,
+    9.097755,
+    -0.61817
+   ],
+   "reflectivity": 1,
+   "rocking_curve": 0.00262,
+   "rocking_curve_type": "GAUSS",
+   "sigma_data": "../inputs/rocking_curve_graphite_sigma.txt",
+   "spacing": 3.35,
+   "therm_expand": 2e-05,
+   "use_meshgrid": true,
+   "width": 0.125
+  },
+  "plasma_input": {
+   "bundle_count": 10000000,
+   "bundle_factor": 1000,
+   "bundle_type": "POINT",
+   "bundle_volume": 1.0000000000000002e-06,
+   "depth": 7.5,
+   "emissivity": 1e+18,
+   "emissivity_data": "../inputs/plasma_emissivity_xe44.txt",
+   "geometry_data": "../inputs/wout_iter.nc",
+   "height": 4.0,
+   "linewidth": 112900000000000.0,
+   "major_radius": 6.2,
+   "mass": 131.293,
+   "max_rays": 10000000,
+   "minor_radius": 2.0,
+   "normal": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "sight_direction": [
+    -0.2584956516512471,
+    -0.6637098133059283,
+    0.7019040403066553
+   ],
+   "sight_position": [
+    0.0350175,
+    9.097755,
+    -0.61817
+   ],
+   "sight_thickness": 0.1,
+   "spread": 1.0,
+   "target": [
+    0.0350175,
+    9.097755,
+    -0.61817
+   ],
+   "temperature": 1000,
+   "temperature_data": "../inputs/plasma_temperature.txt",
+   "time_resolution": 1e-06,
+   "use_poisson": true,
+   "use_profiles": true,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "velocity_data": "FILE MISSING",
+   "wavelength": 2.7203,
+   "width": 4.0
+  },
+  "scenario_input": {
+   "chord": 4,
+   "crystal_corners": [
+    [
+     -105.0,
+     17876.47,
+     -760.0
+    ],
+    [
+     -105.0,
+     17907.65,
+     -720.0
+    ],
+    [
+     -55.0,
+     17908.85,
+     -720.0
+    ],
+    [
+     -55.0,
+     17877.69,
+     -760.0
+    ]
+   ],
+   "crystal_detector_dist": null,
+   "detector_corners": [
+    [
+     -124.59,
+     17293.39,
+     1082.6
+    ],
+    [
+     74.544,
+     17311.94,
+     1082.603
+    ],
+    [
+     56.63,
+     17504.27,
+     1134.46
+    ],
+    [
+     -142.51,
+     17485.72,
+     1134.46
+    ]
+   ],
+   "graphite_corners": [
+    [
+     [
+      240.59,
+      9180.83,
+      -599.4
+     ],
+     [
+      212.04,
+      9141.38,
+      -598.75
+     ],
+     [
+      209.38,
+      9214.92,
+      -639.89
+     ],
+     [
+      238.1,
+      9254.18,
+      -640.3
+     ]
+    ],
+    [
+     [
+      185.99,
+      9413.4,
+      -602.6
+     ],
+     [
+      156.61,
+      9395.54,
+      -602.32
+     ],
+     [
+      153.94,
+      9482.08,
+      -643.57
+     ],
+     [
+      183.53,
+      9499.84,
+      -643.75
+     ]
+    ],
+    [
+     [
+      135.88,
+      9539.44,
+      -604.24
+     ],
+     [
+      106.26,
+      9527.76,
+      -604.05
+     ],
+     [
+      104.04,
+      9615.99,
+      -645.31
+     ],
+     [
+      133.87,
+      9627.61,
+      -645.43
+     ]
+    ],
+    [
+     [
+      95.54,
+      9252.32,
+      -600.37
+     ],
+     [
+      66.06,
+      9229.01,
+      -599.99
+     ],
+     [
+      64.4,
+      9313.23,
+      -641.23
+     ],
+     [
+      94.07,
+      9336.41,
+      -641.48
+     ]
+    ],
+    [
+     [
+      50.36,
+      9068.45,
+      -597.8
+     ],
+     [
+      20.78,
+      9043.69,
+      -597.38
+     ],
+     [
+      19.58,
+      9127.13,
+      -638.61
+     ],
+     [
+      49.35,
+      9151.75,
+      -638.89
+     ]
+    ]
+   ],
+   "graphite_crystal_dist": 8.5,
+   "source_graphite_dist": 2
+  },
+  "source_input": {
+   "depth": 0.0,
+   "height": 0.0,
+   "intensity": 10000000,
+   "linewidth": 112900000000000.0,
+   "mass": 131.293,
+   "normal": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "spread": 2.0,
+   "target": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "temp": 1000,
+   "use_poisson": false,
+   "velocity": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "wavelength": 2.7203,
+   "width": 0.0
+  }
+ }
+]

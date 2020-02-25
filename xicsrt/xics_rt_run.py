@@ -38,7 +38,7 @@ def run(config, name=None):
     # Setup Classes
     profiler.start('Class Setup Time')
 
-    pilatus  = Detector(config['detector_input'])
+    detector  = Detector(config['detector_input'])
     crystal  = SphericalCrystal(config['crystal_input'])
     graphite = MosaicGraphite(config['graphite_input'])
 
@@ -57,52 +57,64 @@ def run(config, name=None):
 
     profiler.stop('Class Setup Time')
 
-    scenario = str.lower(config['general_input']['scenario'])
+    scenario = str.upper(config['general_input']['scenario'])
 
     ## Raytrace Runs
-    if scenario == 'plasma':
+    if scenario == 'PLASMA':
         output, rays_count = raytrace(
-            source, pilatus, graphite, crystal
-            , number_of_runs=config['general_input']['number_of_runs']
-            , collect_optics=True)
+            source, detector, graphite, crystal
+            ,number_of_runs=config['general_input']['number_of_runs']
+            ,collect_optics=True)
 
-    elif scenario == 'beam':
+    elif scenario == 'BEAM':
         if config['general_input']['backwards_raytrace'] is False:
             output, rays_count = raytrace(
-                source, pilatus, graphite, crystal
-                , number_of_runs = config['general_input']['number_of_runs']
-                , collect_optics = True)
+                source, detector, graphite, crystal
+                ,number_of_runs = config['general_input']['number_of_runs']
+                ,collect_optics = True)
 
         if config['general_input']['backwards_raytrace'] is True:
             output, rays_count = raytrace(
-                source, pilatus, crystal, graphite
-                , number_of_runs = config['general_input']['number_of_runs']
-                , collect_optics = True)
+                source, detector, crystal, graphite
+                ,number_of_runs = config['general_input']['number_of_runs']
+                ,collect_optics = True)
 
-    elif scenario == 'crystal':
+    elif scenario == 'CRYSTAL':
         output, rays_count = raytrace(
-            source, pilatus, crystal
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+            source, detector, crystal
+            ,number_of_runs = config['general_input']['number_of_runs']
+            ,collect_optics = True)
 
-    elif scenario == 'graphite':
+    elif scenario == 'GRAPHITE':
         output, rays_count = raytrace(
-            source, pilatus, graphite
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+            source, detector, graphite
+            ,number_of_runs = config['general_input']['number_of_runs']
+            ,collect_optics = True)
 
-    elif scenario == 'source':
+    elif scenario == 'SOURCE':
         output, rays_count = raytrace(
-            source, pilatus
-            , number_of_runs = config['general_input']['number_of_runs']
-            , collect_optics = True)
+            source, detector
+            ,number_of_runs = config['general_input']['number_of_runs']
+            ,collect_optics = True)
+
+    elif scenario == 'THROUGHPUT':
+         output, rays_count = raytrace(
+             source, detector, crystal
+             ,number_of_runs = config['general_input']['number_of_runs']
+             ,collect_optics = True)
+
+    elif scenario == 'MANFRED':
+        output, rays_count = raytrace(
+             source, detector, crystal
+             ,number_of_runs = config['general_input']['number_of_runs']
+             ,collect_optics = True)  
 
     else:
         raise Exception('Scenario unknown: {}'.format(scenario))
 
     #if scenario == 'MODEL':
     #    output, metadata = analytical_model(
-    #        source, crystal, graphite, pilatus
+    #        source, crystal, graphite, detector
     #        , source_input, graphite_input
     #        , crystal_input, detector_input
     #        , general_input)
@@ -120,7 +132,7 @@ def run(config, name=None):
         filename += config['general_input']['output_suffix']
         filepath = os.path.join(config['general_input']['output_path'], filename)
         print('Exporting detector image: {}'.format(filepath))
-        pilatus.output_image(filepath, rotate=False)
+        detector.output_image(filepath, rotate=False)
 
         # create graphite image file
         filename = 'xicsrt_graphite'
@@ -150,9 +162,9 @@ def run_multi(config_multi):
     # create the rays_total dictionary to count the total number of rays
     rays_total = dict()
     rays_total['total_generated'] = 0
-    rays_total['total_graphite'] = 0
-    rays_total['total_crystal'] = 0
-    rays_total['total_detector'] = 0
+    rays_total['total_graphite']  = 0
+    rays_total['total_crystal']   = 0
+    rays_total['total_detector']  = 0
 
     output_final = []
 

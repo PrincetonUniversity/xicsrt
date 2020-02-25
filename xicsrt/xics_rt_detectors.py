@@ -38,6 +38,17 @@ class Detector(TraceObject):
         self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
         self.miss_checks    = detector_input['do_miss_checks']
         self.photon_count   = None
+
+        # Perform checks on the inputs.
+        self.check_inputs()
+        
+    def check_inputs(self):
+        ## Check if the pixel array and optic size match.
+        test  = True
+        test &= (self.pixel_width  == int(round(self.width  / self.pixel_size)))
+        test &= (self.pixel_height == int(round(self.height / self.pixel_size)))
+        if not test:
+            raise Exception('pixel_width/pixel_height and width/height inputs do not match.')
         
     def intersect(self, rays):
         O = rays['origin']

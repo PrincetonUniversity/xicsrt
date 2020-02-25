@@ -106,6 +106,9 @@ class GeometryObject():
             ,xaxis  = None
             ):
 
+        # The name can be set by the user. Set the default value to the ClassName.
+        self.name = self.__class__.__name__
+        
         if origin is None:
             origin = np.array([0.0, 0.0, 0.0])
         if zaxis is None:
