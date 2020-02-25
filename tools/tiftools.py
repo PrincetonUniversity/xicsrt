@@ -68,3 +68,72 @@ def histogram_analysis(tif_list):
         fig.savefig(hist_name, bbox_inches = 'tight')
         print(hist_name + ' saved!')
         
+def tif_overlay(tif_list):
+    #Overlay the .TIF images to create composite .TIF images
+    g_list = list()
+    c_list = list()
+    d_list = list()
+    
+    for file in range(len(tif_list)): 
+        if tif_list[file].startswith('xicsrt_graphite_'):
+            g_list.append(tif_list[file])
+        if tif_list[file].startswith('xicsrt_crystal_'):
+            c_list.append(tif_list[file])
+        if tif_list[file].startswith('xicsrt_detector_'):
+            d_list.append(tif_list[file])
+    
+    g_array = None
+    c_array = None
+    d_array = None
+    
+    for file in range(len(g_list)):
+        image_array = np.array(Image.open(results_path + g_list[file]))
+        if g_array is None:
+            g_array  = image_array
+        else:
+            g_array += image_array
+            
+    for file in range(len(c_list)):
+        image_array = np.array(Image.open(results_path + c_list[file]))
+        if c_array is None:
+            c_array  = image_array
+        else:
+            c_array += image_array
+            
+    for file in range(len(d_list)):
+        image_array = np.array(Image.open(results_path + d_list[file]))
+        if d_array is None:
+            d_array  = image_array
+        else:
+            d_array += image_array
+            
+    g_image = Image.fromarray(g_array)
+    c_image = Image.fromarray(c_array)
+    d_image = Image.fromarray(d_array)
+    
+    g_image.save(results_path + 'xicsrt_graphite_total.tif')
+    print('xicsrt_graphite_total.tif saved!')
+    c_image.save(results_path + 'xicsrt_crystal_total.tif')
+    print('xicsrt_crystal_total.tif saved!')
+    d_image.save(results_path + 'xicsrt_detector_total.tif')
+    print('xicsrt_detector_total.tif saved!')
+    
+def tif_subtract(tif_1, tif_2):
+    #Open two .TIF images, subtract them, and output the difference
+    image_array_1 = np.array(Image.open(results_path + tif_1))
+    image_array_2 = np.array(Image.open(results_path + tif_2))
+    image_array_s = np.abs(image_array_1 - image_array_2)
+    
+    image = plt.imshow(image_array_s, interpolation = None)
+    image.set_cmap('nipy_spectral')
+    image.axes.get_xaxis().set_visible(False)
+    image.axes.get_yaxis().set_visible(False)
+    
+    png_name = results_path + 'tif_difference' + '.png'
+    plt.savefig(png_name, bbox_inches = 'tight')
+    print(png_name + ' saved!')
+
+#tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
+#colorize_png(tif_list)
+#histogram_analysis(tif_list)
+#tif_overlay(tif_list)

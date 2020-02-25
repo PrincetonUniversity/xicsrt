@@ -706,7 +706,7 @@ def setup_graphite_test(config):
     config['source_input']['normal']          = s_normal
     config['source_input']['orientation']     = s_z_vector
     config['graphite_input']['position']      = g_position
-    config['graphite_input']['normal']        = g_normal
+    config['graphite_input']['normal']        =-g_normal
     config['graphite_input']['orientation']   = g_x_vector
     config['crystal_input']['position']       = g_position
     config['crystal_input']['normal']         = g_normal

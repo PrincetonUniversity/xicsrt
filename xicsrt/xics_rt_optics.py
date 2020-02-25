@@ -67,12 +67,10 @@ class GenericOptic(TraceObject):
         if self.use_meshgrid is True:
             mesh_loc = self.point_to_local(self.mesh_points)
 
-            # If any mesh points fall outside of the optic width, it fails
+            # If any mesh points fall outside of the optic width, test fails.
             test = True
-            test |= np.all(mesh_loc[:,0] > -self.width / 2)
-            test |= np.all(mesh_loc[:,1] > -self.height/ 2)
-            test |= np.all(mesh_loc[:,0] < self.width / 2)
-            test |= np.all(mesh_loc[:,1] < self.height/ 2)
+            test |= np.all(abs(mesh_loc[:,0]) > self.width / 2)
+            test |= np.all(abs(mesh_loc[:,1]) < self.height / 2)
             
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
@@ -169,18 +167,16 @@ class GenericOptic(TraceObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
-        xproj = np.zeros(m.shape, dtype=np.float64)
-        yproj = np.zeros(m.shape, dtype=np.float64)
         
-        #X is the 3D point where the ray intersects the optic
+        # X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
+        X_local = self.point_to_local(X)
         
-        #find which rays hit the optic, update mask to remove misses
-        xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
-        yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
+        # Find which rays hit the optic, update mask to remove misses.
         if self.miss_checks is True:
-            m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
-            
+            m[m] &= (np.abs(X_local[:,0][m]) <= self.width / 2)
+            m[m] &= (np.abs(X_local[:,1][m]) <= self.height/ 2)
+
         return X, rays
     
     def mesh_intersect_check(self, rays):
@@ -191,13 +187,13 @@ class GenericOptic(TraceObject):
         X     = np.zeros(D.shape, dtype=np.float64)
         hits  = np.zeros(m.shape, dtype=np.int)
 
-        #loop over each triangular face to find which rays hit
+        # Loop over each triangular face to find which rays hit
         for ii in range(len(self.mesh_faces)):
             intersect= np.zeros(O.shape, dtype=np.float64)
             distance = np.zeros(m.shape, dtype=np.float64)
             test     = np.zeros(m.shape, dtype=np.bool)
             
-            #query the triangle mesh grid
+            # Query the triangle mesh grid
             tri = self.mesh_triangulate(ii)
             p0= tri['center']
             p1= tri['point1']
@@ -205,23 +201,23 @@ class GenericOptic(TraceObject):
             p3= tri['point3']
             n = tri['normal']
 
-            #find the intersection point between the rays and triangle plane
+            # Find the intersection point between the rays and triangle plane
             distance     = np.dot((p0 - O), n) / np.dot(D, n)
             intersect[m] = O[m] + D[m] * distance[m,np.newaxis]
             
-            #test to see if the intersection is inside the triangle
-            #'test' starts as 0 and flips to 1 for each successful hit
-            #uses barycentric coordinate math (compare parallelpiped areas)
+            # Test to see if the intersection is inside the triangle
+            # uses barycentric coordinate math (compare parallelpiped areas)
             tri_area = np.linalg.norm(np.cross((p1 - p2),(p1 - p3)))
             alpha    = self.norm(np.cross((intersect - p2),(intersect - p3)))
             beta     = self.norm(np.cross((intersect - p3),(intersect - p1)))
             gamma    = self.norm(np.cross((intersect - p1),(intersect - p2)))
-            
-            alpha /= tri_area
-            beta  /= tri_area
-            gamma /= tri_area
-            
-            test |= np.isclose((alpha + beta + gamma), 1.0)
+
+            # This test uses an explicit tolerance to account for
+            # floating-point errors in the area calculations.
+            #
+            # It would be better if a test could be found that does not
+            # require this explicit tolerance.
+            test |= np.less_equal((alpha + beta + gamma - tri_area), 1e-15)
             test &= (distance >= 0)
             
             #append the results to the global impacts arrays

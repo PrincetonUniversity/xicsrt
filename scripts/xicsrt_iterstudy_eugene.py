@@ -35,7 +35,7 @@ def get_config():
     config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/'
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'REAL'
+    config['general_input']['scenario']           = 'GRAPHITE'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -44,7 +44,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -244,7 +244,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '../inputs/rocking_curve_graphite_sigma.txt'
@@ -280,18 +280,6 @@ def get_config():
     Taken from Ohler et al. “X-ray topographic determination of the granular
     structure in a graphite mosaic crystal: a three-dimensional reconstruction”
     """
-    bragg = np.arcsin(config['source_input']['wavelength'] / (2 * config['graphite_input']['spacing']))
-    dx = config['graphite_input']['height'] * np.cos(bragg) / 2
-    dy = config['graphite_input']['height'] * np.sin(bragg) / 2
-    dz = config['graphite_input']['width']                  / 2
-    
-    p1 = config['graphite_input']['position'] + np.array([ dx, dy, dz])
-    p2 = config['graphite_input']['position'] + np.array([-dx,-dy, dz])
-    p3 = config['graphite_input']['position'] + np.array([-dx,-dy,-dz])
-    p4 = config['graphite_input']['position'] + np.array([ dx, dy,-dz])
-    
-    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
-    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
     
     # -------------------------------------------------------------------------
     ## Load detector properties
@@ -322,7 +310,7 @@ def get_config():
     """
     config['scenario_input']['source_graphite_dist']  = 2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = None
+    config['scenario_input']['crystal_detector_dist'] = 1
     
     """
     Convert the numbers given in the XICS presentations into useful information.
@@ -400,7 +388,7 @@ import json
 from xicsrt.xics_rt_initialize import initialize, initialize_multi
 from xicsrt.xics_rt_run import run, run_multi
 
-runtype = 'raw_load'
+runtype = 'single'
 logging.info('Starting Ray-Trace Runs...')
 
 if runtype == 'single':
