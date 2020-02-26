@@ -56,7 +56,7 @@ class GenericOptic(TraceObject):
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = str.lower(optic_input['rocking_curve_type'])
 
-        self.check_inputs(self)
+        self.check_inputs()
             
     def check_inputs(self):
 

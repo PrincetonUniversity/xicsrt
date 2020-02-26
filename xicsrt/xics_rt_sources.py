@@ -152,7 +152,12 @@ class GenericSource(TraceObject):
         # Check for the Lorentzian case.
         if (self.temperature == 0.0):
             # I need to update the cauchy routine first.
-            raise NotImplementedError('Random Lorentzian distribution not implemented.')
+            #raise NotImplementedError('Random Lorentzian distribution not implemented.')
+
+            # TEMPORARY:
+            # The raytracer cannot currently accept a zero temperature, so just add 1eV for now.
+            self.temperature += 1.0
+             
         # Check for the Gaussian case.
         if (self.linewidth  == 0.0):
             return self.random_wavelength_normal(size)

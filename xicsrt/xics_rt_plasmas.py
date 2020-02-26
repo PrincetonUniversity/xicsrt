@@ -82,6 +82,7 @@ class GenericPlasma(TraceObject):
         bundle_input['temperature']  = np.ones([self.bundle_count], dtype = np.float64)
         bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
         bundle_input['velocity']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
+        bundle_input['mask']         = np.ones([self.bundle_count], dtype = np.bool)
         
         return bundle_input
 
@@ -108,6 +109,8 @@ class GenericPlasma(TraceObject):
 
         count_rays_in_bundle = []
 
+        m = bundle_input['mask']
+        
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.
         predicted_rays = int(
@@ -122,6 +125,9 @@ class GenericPlasma(TraceObject):
         
         #bundle generation loop
         for ii in range(self.bundle_count):
+            
+            if not bundle_input['mask'][ii]:
+                continue
 
             profiler.start("Ray Bundle Generation")
             source_input = OrderedDict()
@@ -157,9 +163,9 @@ class GenericPlasma(TraceObject):
             source_input['intensity'] = intensity
 
             # constants
-            source_input['width'] = voxel_size
-            source_input['height'] = voxel_size
-            source_input['depth'] = voxel_size
+            source_input['width']       = self.voxel_size
+            source_input['height']      = self.voxel_size
+            source_input['depth']       = self.voxel_size
             source_input['normal']      = self.normal
             source_input['orientation'] = self.xorientation
             source_input['target']      = self.target
@@ -280,7 +286,8 @@ class CylindricalPlasma(GenericPlasma):
         return bundle_input
 
 
-class ToroidalPlasma(GenericPlasma):    """
+class ToroidalPlasma(GenericPlasma):
+    """
     A cylindrical plasma ordiented along the Y axis.
 
     This class is meant only to be used as an exmple for generating 

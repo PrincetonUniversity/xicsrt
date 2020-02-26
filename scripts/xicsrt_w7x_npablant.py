@@ -57,6 +57,7 @@ def get_config():
     config['general_input']['scenario']           = 'beam'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
+    config['general_input']['dryrun']             = False
 
     # Temperature that the optical elements will be cooled to (kelvin)
     config['general_input']['xics_temp'] = 273.0
@@ -103,17 +104,21 @@ def get_config():
     config['source_input']['major_radius']        = 6.2
     config['source_input']['minor_radius']        = 2.0
 
+    config['source_input']['use_poisson']         = True
     config['source_input']['time_resolution']     = 0.01
     config['source_input']['bundle_count']        = 20
     config['source_input']['bundle_volume']       = 0.01**3
     config['source_input']['bundle_type']         = 'point'
     config['source_input']['max_rays']            = 1e7
-
-    config['source_input']['spread']              = 1.0       #Angular spread (degrees)
-    config['source_input']['temp']                = 1000      #Ion temperature (eV)
+    
+    config['source_input']['spread']              = 1.0       # Angular spread (degrees)
     config['source_input']['mass']                = 39.948    # Xenon mass (AMU)
     config['source_input']['wavelength']          = 3.9492    # Line location (angstroms)
     config['source_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
+    config['source_input']['emissivity']          = 1e12      # Emissivity photons/s/m-3
+    config['source_input']['temperature']         = 1000      # Ion temperature (eV)
+    config['source_input']['velocity']            = np.array([0.0,0.0,0.0])      # Velocity in m/s
+    
 
     config['source_input']['plasma_type'] = 'vmec'
     config['source_input']['wout_file'] = '/u/npablant/data/w7x/vmec/webservice/w7x_ref_172/wout.nc'
@@ -157,7 +162,10 @@ def get_config():
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
     config['crystal_input']['rocking_curve_type'] = "gaussian"
-
+    
+    config['crystal_input']['use_meshgrid']       = False
+    config['crystal_input']['mesh_points']        = False
+    config['crystal_input']['mesh_faces']         = False
 
     # -----------------------------------------------------------------------------
     ## Load detector properties
