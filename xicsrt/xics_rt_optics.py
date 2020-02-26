@@ -24,7 +24,6 @@ class GenericOptic(TraceObject):
             optic_input['position']
             ,optic_input['normal']
             ,optic_input['orientation'])
-        
         #spatial information
         self.position       = optic_input['position']
         self.normal         = optic_input['normal']
@@ -69,9 +68,9 @@ class GenericOptic(TraceObject):
             failure |= np.any(abs(mesh_loc[:,1]) > self.height/ 2)
             
             if failure:
-                print('{} pixel array is too small'.format(self.__name__))
+                print('{} pixel array is too small'.format(self.identity))
                 print('Meshgrid will not fit within its extent')
-                print('Please increase {} width/height'.format(self.__name__))
+                print('Please increase {} width/height'.format(self.identity))
                 raise Exception
         
         ## Before loading anything up, check if the pixel array is mishapen
@@ -79,14 +78,14 @@ class GenericOptic(TraceObject):
         failure |= (self.pixel_height != int(round(self.height / self.pixel_size)))
         
         if failure:
-            print('{} pixel array is mishapen'.format(self.__name__))
+            print('{} pixel array is mishapen'.format(self.identity))
             print('Pixel array width/height and optic width/height are disproportionate')
-            print('Please check {} code'.format(self.__name__))
+            print('Please check {} code'.format(self.identity))
             
-            print('{} width  = {}'.format(self.__name__, self.width))
-            print('{} height = {}'.format(self.__name__, self.height))
-            print('{} pixel width  = {}'.format(self.__name__, self.pixel_width))
-            print('{} pixel height = {}'.format(self.__name__, self.pixel_height))
+            print('{} width  = {}'.format(self.identity, self.width))
+            print('{} height = {}'.format(self.identity, self.height))
+            print('{} pixel width  = {}'.format(self.identity, self.pixel_width))
+            print('{} pixel height = {}'.format(self.identity, self.pixel_height))
             raise Exception
 
     def normalize(self, vector):
@@ -273,16 +272,16 @@ class GenericOptic(TraceObject):
         if self.use_meshgrid is False:
             distance = self.optic_intersect(rays)
             X, rays  = self.intersect_check(rays, distance)
-            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))
+            print(' Rays on {}:   {:6.4e}'.format(self.identity, m[m].shape[0]))
             normals  = self.generate_optic_normals(X, rays)
             rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
+            print(' Rays from {}: {:6.4e}'.format(self.identity, m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on {}:   {:6.4e}'.format(self.__name__, m[m].shape[0]))
+            print(' Rays on {}:   {:6.4e}'.format(self.identity, m[m].shape[0]))
             normals  = self.mesh_generate_optic_normals(X, rays, hits)
             rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from {}: {:6.4e}'.format(self.__name__, m[m].shape[0]))
+            print(' Rays from {}: {:6.4e}'.format(self.identity, m[m].shape[0]))
         return rays
 
     def collect_rays(self, rays):
@@ -344,7 +343,7 @@ class SphericalCrystal(GenericOptic):
     def __init__(self, crystal_input):
         super().__init__(crystal_input)
         
-        self.__name__       = 'SphericalCrystal'
+        self.identity       = 'SphericalCrystal'
         self.radius         = crystal_input['curvature']
         self.center         = self.radius * self.normal + self.position
         
@@ -409,7 +408,7 @@ class MosaicGraphite(GenericOptic):
     def __init__(self, graphite_input):
         super().__init__(graphite_input)
         
-        self.__name__       = 'MosaicGraphite'
+        self.identity       = 'MosaicGraphite'
         self.mosaic_spread  = graphite_input['mosaic_spread']
         
         self.pixel_array_size_check()

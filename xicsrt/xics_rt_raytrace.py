@@ -47,9 +47,9 @@ def raytrace_single(source, detector, *optics):
         optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
         
-        if optic.__name__ == 'SphericalCrystal':
+        if optic.identity == 'SphericalCrystal':
             single_count['total_crystal']  += optic.photon_count
-        elif optic.__name__ == 'MosaicGraphite':
+        elif optic.identity == 'MosaicGraphite':
             single_count['total_graphite'] += optic.photon_count
             
     profiler.start('Ray Tracing')

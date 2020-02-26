@@ -7,6 +7,92 @@ Created on Fri Apr 28 12:30:38 2017
 from xicsrt.xics_rt_math import bragg_angle, rotation_matrix, vector_rotate
 import numpy as np
 
+def create_source_basis(distance):
+    """
+    sets up a source to begin each scenario
+    requires a distance between the source and the first optic
+    """
+    position  = np.array([0, 0, 0], dtype = np.float64)
+    basis     = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype = np.float64)
+    path_vector = np.array([1, 0, 0], dtype = np.float64)
+    target    = position + (path_vector * distance)
+    
+    return position, basis, path_vector, target
+
+def create_optic_basis(path_vector, orientation, bragg, width, height):
+    """
+    accepts two normalized vectors and a bragg angle, creates an optic basis
+    path_vector is the incoming rays vector
+    orientation is an arbitrary user-defined vector
+    bragg is the optic's bragg angle
+    """
+    #Create a temporary scenario basis
+    temp_basis = np.zeros([3,3], dtype = np.float64)
+    
+    temp_basis[2,:]  = orientation
+    temp_basis[2,:] /= np.linalg.norm(temp_basis[2,:])
+    
+    temp_basis[0,:]  = path_vector
+    temp_basis[0,:] /= np.linalg.norm(temp_basis[0,:])
+    
+    temp_basis[1,:]  = np.cross(temp_basis[2,:], temp_basis[0,:])
+    temp_basis[1,:] /= np.linalg.norm(temp_basis[1,:])
+    
+    #Derive the normal vector from the temporary basis
+    normal = temp_basis[1,:] * np.cos(bragg) - temp_basis[0,:] * np.sin(bragg)
+    
+    #Reflect the path vector
+    path_vector -= 2 * np.dot(path_vector, normal) * normal
+    path_vector /= np.linalg.norm(path_vector)
+    
+    #Create the optic basis
+    optic_basis = np.zeros([3,3], dtype = np.float64)
+    
+    optic_basis[2,:]  = normal
+    optic_basis[2,:] /= np.linalg.norm(optic_basis[2,:])
+    
+    optic_basis[0,:]  = orientation
+    optic_basis[0,:] /= np.linalg.norm(optic_basis[0,:])
+    
+    optic_basis[1,:]  = np.cross(optic_basis[2,:], optic_basis[0,:])
+    optic_basis[1,:] /= np.linalg.norm(optic_basis[1,:])
+    
+    #Use the basis to create a square mesh at the origin
+    dx = width  * optic_basis[0,:] / 2
+    dy = height * optic_basis[1,:] / 2
+    
+    p1 = + dx + dy
+    p2 = - dx + dy
+    p3 = - dx - dy
+    p4 = + dx - dy
+    
+    mesh_points = np.array([p1, p2, p3, p4])
+    mesh_faces  = np.array([[2,1,0],[0,3,2]])
+    
+    return path_vector, optic_basis, mesh_points, mesh_faces
+
+def create_detector_basis(path_vector, orientation):
+    """
+    accepts two normalized vectors, creates a detector basis
+    path_vector is the incoming rays vector
+    orientation is an arbitrary user-defined vector
+    """    
+    normal = -path_vector
+    
+    #Create the detector basis
+    optic_basis = np.zeros([3,3], dtype = np.float64)
+    
+    optic_basis[2,:]  = normal
+    optic_basis[2,:] /= np.linalg.norm(optic_basis[2,:])
+    
+    optic_basis[0,:]  = orientation
+    optic_basis[0,:] /= np.linalg.norm(optic_basis[0,:])
+    
+    optic_basis[1,:]  = np.cross(optic_basis[2,:], optic_basis[0,:])
+    optic_basis[1,:] /= np.linalg.norm(optic_basis[1,:])
+    
+    return optic_basis
+
 def source_location(distance, vert_displace, config):
     """
     Returns the source location that satisfies the bragg condition met by the
@@ -115,7 +201,6 @@ def setup_manfred_scenario(config):
     #repack variables
     config['crystal_input']['mesh_points']    = mesh_points
     config['crystal_input']['mesh_faces']     = mesh_faces
-    
     config['source_input']['position']        = s_position
     config['source_input']['normal']          = s_normal
     config['source_input']['orientation']     = s_z_vector
@@ -140,7 +225,6 @@ def setup_real_scenario(config):
     generator takes the information provided by the ITER XICS team and fills in
     all the blanks to produce a complete description of the spectrometer layout
     """
-    
     ## Unpack variables and convert to meters
     chord  = config['scenario_input']['chord']
     g_corners  = config['scenario_input']['graphite_corners'][chord] / 1000
@@ -148,47 +232,51 @@ def setup_real_scenario(config):
     d_corners  = config['scenario_input']['detector_corners']        / 1000
 
     #calculate geometric properties of all meshes
-    g_position = np.mean(g_corners, axis = 0)
-    c_position = np.mean(c_corners, axis = 0)
-    d_position = np.mean(d_corners, axis = 0)
+    g_basis      = np.zeros([3,3], dtype = np.float64)
+    c_basis      = np.zeros([3,3], dtype = np.float64)
+    d_basis      = np.zeros([3,3], dtype = np.float64)
     
-    g_width    = np.linalg.norm(g_corners[0] - g_corners[3])
-    c_width    = np.linalg.norm(c_corners[0] - c_corners[3])
-    d_width    = np.linalg.norm(d_corners[0] - d_corners[3])
+    g_position   = np.mean(g_corners, axis = 0)
+    c_position   = np.mean(c_corners, axis = 0)
+    d_position   = np.mean(d_corners, axis = 0)
     
-    g_height   = np.linalg.norm(g_corners[0] - g_corners[1])
-    c_height   = np.linalg.norm(c_corners[0] - c_corners[1])
-    d_height   = np.linalg.norm(d_corners[0] - d_corners[1])
+    g_width      = np.linalg.norm(g_corners[0] - g_corners[3])
+    c_width      = np.linalg.norm(c_corners[0] - c_corners[3])
+    d_width      = np.linalg.norm(d_corners[0] - d_corners[3])
     
-    g_x_vector = g_corners[0] - g_corners[3]
-    c_x_vector = c_corners[0] - c_corners[3]
-    d_x_vector = d_corners[0] - d_corners[3]
+    g_height     = np.linalg.norm(g_corners[0] - g_corners[1])
+    c_height     = np.linalg.norm(c_corners[0] - c_corners[1])
+    d_height     = np.linalg.norm(d_corners[0] - d_corners[1])
     
-    g_x_vector/= g_width
-    c_x_vector/= c_width
-    d_x_vector/= d_width
+    g_basis[0,:] = g_corners[0] - g_corners[3]
+    c_basis[0,:] = c_corners[0] - c_corners[3]
+    d_basis[0,:] = d_corners[0] - d_corners[3]
     
-    g_y_vector = g_corners[0] - g_corners[1]
-    c_y_vector = c_corners[0] - c_corners[1]
-    d_y_vector = d_corners[0] - d_corners[1]
+    g_basis[0,:]/= g_width
+    c_basis[0,:]/= c_width
+    d_basis[0,:]/= d_width
     
-    g_y_vector/= g_height
-    c_y_vector/= c_height
-    d_y_vector/= d_height
+    g_basis[1,:] = g_corners[0] - g_corners[1]
+    c_basis[1,:] = c_corners[0] - c_corners[1]
+    d_basis[1,:] = d_corners[0] - d_corners[1]
     
-    g_normal   = np.cross(g_x_vector, g_y_vector)
-    c_normal   = np.cross(c_x_vector, c_y_vector)
-    d_normal   = np.cross(d_x_vector, d_y_vector)
+    g_basis[1,:]/= g_height
+    c_basis[1,:]/= c_height
+    d_basis[1,:]/= d_height
     
-    g_normal  /= np.linalg.norm(g_normal)
-    c_normal  /= np.linalg.norm(c_normal)
-    d_normal  /= np.linalg.norm(d_normal)
+    g_basis[2,:] = np.cross(g_basis[0,:], g_basis[1,:])
+    c_basis[2,:] = np.cross(c_basis[0,:], c_basis[1,:])
+    d_basis[2,:] = np.cross(d_basis[0,:], d_basis[1,:])
+    
+    g_basis[2,:]/= np.linalg.norm(g_basis[2,:])
+    c_basis[2,:]/= np.linalg.norm(c_basis[2,:])
+    d_basis[2,:]/= np.linalg.norm(d_basis[2,:])
     
     #calculate the graphite pre-reflector's sightline of the plasma
     #start with the crystal-graphite vector, normalize, and reflect it
-    sightline  = g_position - c_position
-    sightline /= np.linalg.norm(sightline)
-    sightline -= 2 * np.dot(sightline, g_normal) * g_normal
+    sightline    = g_position - c_position
+    sightline   /= np.linalg.norm(sightline)
+    sightline   -= 2 * np.dot(sightline, g_basis[2,:]) * g_basis[2,:]
     
     #triangulate the graphite
     config['graphite_input']['mesh_points'] = g_corners
@@ -200,22 +288,22 @@ def setup_real_scenario(config):
     config['plasma_input']['sight_direction'] = sightline
     #graphite dimensions override - remove these hashtags later
     config['graphite_input']['position']      = g_position
-    config['graphite_input']['normal']        = g_normal
-    config['graphite_input']['orientation']   = g_x_vector
+    config['graphite_input']['normal']        = g_basis[2,:]
+    config['graphite_input']['orientation']   = g_basis[0,:]
     #config['graphite_input']['width']         = g_width
     #config['graphite_input']['height']        = g_height
     
     config['crystal_input']['position']       = c_position
-    config['crystal_input']['normal']         = c_normal
-    config['crystal_input']['orientation']    = c_x_vector
+    config['crystal_input']['normal']         = c_basis[2,:]
+    config['crystal_input']['orientation']    = c_basis[0,:]
     config['crystal_input']['width']          = c_width
     config['crystal_input']['height']         = c_height
     
     d_pix = config['detector_input']['pixel_size']
     
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_x_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
     config['detector_input']['width']         = d_width
     config['detector_input']['height']        = d_height
     config['detector_input']['horizontal_pixels'] = int(round(d_width  / d_pix))
@@ -231,113 +319,77 @@ def setup_plasma_scenario(config):
     This is meant to model a basic XRCS spectrometer with a pre-refelctor,
     such as is planned for the ITER XRCS-Core spectrometer.
     """
-
     #unpack variables
     distance_p_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
+    major_radius    = config['plasma_input']['major_radius']
 
-    bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
-    bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
+    c_bragg = bragg_angle(config['source_input']['wavelength'], 
+                          config['crystal_input']['spacing'])
+    g_bragg = bragg_angle(config['source_input']['wavelength'], 
+                          config['graphite_input']['spacing'])
+    
+    c_width = config['graphite_input']['width']
+    c_height= config['graphite_input']['height']
+    
+    g_width = config['graphite_input']['width']
+    g_height= config['graphite_input']['height']
 
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
-    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
         distance_c_d = meridi_focus
 
-    ## Source Placement
-    #souce is placed at origin by default and aimed along the X axis
-    p_position  = np.array([0, 0, 0], dtype = np.float64)
-    p_normal    = np.array([1, 0, 0], dtype = np.float64)
-    p_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    #create a path vector that connects the centers of all optical elements
-    path_vector = np.array([1, 0, 0], dtype = np.float64)
-    path_vector/= np.linalg.norm(path_vector)
+    ## Plasma Placement
+    p_position  = np.array([0, major_radius, 0], dtype = np.float64)
+    p_basis     = np.array([[0,0,1],[1,0,0],[0,1,0]], dtype = np.float64)
+    path_vector = np.array([0, 1, 0], dtype = np.float64)
+    p_target    = p_position + (path_vector * distance_p_g)
     
     ## Graphite Placement
-    #define graphite position, normal, and basis relative to source
     g_position  = p_position + (path_vector * distance_p_g)
-    g_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    g_y_vector  = np.cross(g_z_vector, path_vector)  
-    g_y_vector /= np.linalg.norm(g_y_vector)
-    
-    g_z_vector  = np.cross(path_vector, g_y_vector)
-    g_z_vector /= np.linalg.norm(g_z_vector)
-    
-    g_x_vector  = np.cross(g_y_vector, g_z_vector)
-    g_x_vector /= np.linalg.norm(g_x_vector)
-    
-    #graphite normal is positioned to best reflect X-Rays according to Bragg
-    g_normal    = (g_y_vector * np.cos(bragg_g)) - (g_x_vector * np.sin(bragg_g))
-    g_normal   /= np.linalg.norm(g_normal)
-    
-    #reflect the path vector off of the graphite
-    path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
-    path_vector/= np.linalg.norm(path_vector)
+    g_orient    = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, g_basis, g_mesh_points, g_mesh_faces = create_optic_basis(
+        path_vector, g_orient, g_bragg, g_width, g_height)
 
     ## Crystal Placement
-    #define crystal position, normal, and basis relative to graphite
     c_position  = g_position + (path_vector * distance_g_c)
-    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-
-    c_y_vector  = np.cross(c_z_vector, path_vector)  
-    c_y_vector /= np.linalg.norm(c_y_vector)
-    
-    c_z_vector  = np.cross(path_vector, c_y_vector)
-    c_z_vector /= np.linalg.norm(c_z_vector)
-    
-    c_x_vector  = np.cross(c_y_vector, c_z_vector)
-    c_x_vector /= np.linalg.norm(c_x_vector)
-    
-    #crystal normal is positioned to best reflect X-Rays according to Bragg
-    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
-    c_normal   /= np.linalg.norm(c_normal)
-    
-    #reflect the path vector off of the crystal
-    path_vector-= 2 * np.dot(path_vector, c_normal) * c_normal
-    path_vector/= np.linalg.norm(path_vector)
+    c_orient  = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, c_basis, c_mesh_points, c_mesh_faces = create_optic_basis(
+        path_vector, c_orient, c_bragg, c_width, c_height)
     
     ## Detector Placement
-    #define detector position, normal, and basis relative to crystal
-    d_position  = c_position + (path_vector * distance_c_d)
-    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
-    
-    d_y_vector  = np.cross(d_z_vector, path_vector)  
-    d_y_vector /= np.linalg.norm(d_y_vector)
-    
-    d_z_vector  = np.cross(path_vector, d_y_vector)
-    d_z_vector /= np.linalg.norm(d_z_vector)
-    
-    d_x_vector  = np.cross(d_y_vector, d_z_vector)
-    d_x_vector /= np.linalg.norm(d_x_vector)
-    
-    #detector normal faces crystal
-    d_normal    = -path_vector
-    d_normal   /= np.linalg.norm(d_normal)
+    d_position = c_position + (path_vector * distance_c_d)
+    d_orient   = np.array([0, 0, 1], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
 
     if config['general_input']['backwards_raytrace']:
         p_target = c_position
     else:
         p_target = g_position
     
+    #define meshes
+    config['crystal_input']['mesh_points']  = c_mesh_points + c_position
+    config['crystal_input']['mesh_faces']   = c_mesh_faces    
+    config['graphite_input']['mesh_points'] = g_mesh_points + g_position
+    config['graphite_input']['mesh_faces']  = g_mesh_faces
+    
     ## Repack variables
     config['plasma_input']['position']        = p_position
-    config['plasma_input']['normal']          = p_normal
-    config['plasma_input']['orientation']     = p_z_vector
-    config['plasma_input']['target']          = p_target
-
+    config['plasma_input']['normal']          = p_basis[2,:]
+    config['plasma_input']['orientation']     = p_basis[0,:]
     config['graphite_input']['position']      = g_position
-    config['graphite_input']['normal']        = g_normal
-    config['graphite_input']['orientation']   = g_z_vector
+    config['graphite_input']['normal']        = g_basis[2,:]
+    config['graphite_input']['orientation']   = g_basis[0,:]
     config['crystal_input']['position']       = c_position
-    config['crystal_input']['normal']         = c_normal
-    config['crystal_input']['orientation']    = c_z_vector
+    config['crystal_input']['normal']         = c_basis[2,:]
+    config['crystal_input']['orientation']    = c_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
+    config['source_input']['target']          = p_target
 
     return config
 
@@ -350,87 +402,56 @@ def setup_throughput_scenario(config):
     and without an HOPG pre-reflector. The plasma aims at where the graphite
     normally would be, but the rays continue on towards the crystal.
     """
-
     #unpack variables
     distance_p_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
 
-    bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
+    c_bragg = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
+    c_width = config['graphite_input']['width']
+    c_height= config['graphite_input']['height']
 
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
-    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
         distance_c_d = meridi_focus
 
-    ## Source Placement
-    #souce is placed at origin by default and aimed along the X axis
-    p_position  = np.array([0, 0, 0], dtype = np.float64)
-    p_normal    = np.array([1, 0, 0], dtype = np.float64)
-    p_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    #create a path vector that connects the centers of all optical elements
-    path_vector = np.array([1, 0, 0], dtype = np.float64)
-    path_vector/= np.linalg.norm(path_vector)
+    ## Plasma Placement
+    p_position, p_basis, path_vector, p_target = create_source_basis(distance_p_g)
 
     ## Crystal Placement
-    #define crystal position, normal, and basis relative to graphite
-    p_target    = p_position + (path_vector *  distance_p_g)
     c_position  = p_position + (path_vector * (distance_p_g + distance_g_c))
-    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-
-    c_y_vector  = np.cross(c_z_vector, path_vector)  
-    c_y_vector /= np.linalg.norm(c_y_vector)
-    
-    c_z_vector  = np.cross(path_vector, c_y_vector)
-    c_z_vector /= np.linalg.norm(c_z_vector)
-    
-    c_x_vector  = np.cross(c_y_vector, c_z_vector)
-    c_x_vector /= np.linalg.norm(c_x_vector)
-    
-    #crystal normal is positioned to best reflect X-Rays according to Bragg
-    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
-    c_normal   /= np.linalg.norm(c_normal)
-    
-    #reflect the path vector off of the crystal
-    path_vector-= 2 * np.dot(path_vector, c_normal) * c_normal
-    path_vector/= np.linalg.norm(path_vector)
+    c_orient  = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, c_basis, mesh_points, mesh_faces = create_optic_basis(
+        path_vector, c_orient, c_bragg, c_width, c_height)
     
     ## Detector Placement
-    #define detector position, normal, and basis relative to crystal
-    d_position  = c_position + (path_vector * distance_c_d)
-    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
+    d_position = c_position + (path_vector * distance_c_d)
+    d_orient   = np.array([0, 1, 0], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
     
-    d_y_vector  = np.cross(d_z_vector, path_vector)  
-    d_y_vector /= np.linalg.norm(d_y_vector)
-    
-    d_z_vector  = np.cross(path_vector, d_y_vector)
-    d_z_vector /= np.linalg.norm(d_z_vector)
-    
-    d_x_vector  = np.cross(d_y_vector, d_z_vector)
-    d_x_vector /= np.linalg.norm(d_x_vector)
-    
-    #detector normal faces crystal
-    d_normal    = -path_vector
-    d_normal   /= np.linalg.norm(d_normal)
-
+    #define meshes
+    config['crystal_input']['mesh_points']  = mesh_points + c_position
+    config['crystal_input']['mesh_faces']   = mesh_faces    
+    config['graphite_input']['mesh_points'] = mesh_points + c_position
+    config['graphite_input']['mesh_faces']  = mesh_faces
     
     ## Repack variables
     config['plasma_input']['position']        = p_position
-    config['plasma_input']['normal']          = p_normal
-    config['plasma_input']['orientation']     = p_z_vector
+    config['plasma_input']['normal']          = p_basis[2,:]
+    config['plasma_input']['orientation']     = c_basis[0,:]
     config['plasma_input']['target']          = p_target
-    
     config['graphite_input']['position']      = c_position
-    config['graphite_input']['normal']        = c_normal
-    config['graphite_input']['orientation']   = c_z_vector
+    config['graphite_input']['normal']        = c_basis[2,:]
+    config['graphite_input']['orientation']   = c_basis[0,:]
     config['crystal_input']['position']       = c_position
-    config['crystal_input']['normal']         = c_normal
-    config['crystal_input']['orientation']    = c_z_vector
+    config['crystal_input']['normal']         = c_basis[2,:]
+    config['crystal_input']['orientation']    = c_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['position']      = d_position
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
 
     return config
 
@@ -443,113 +464,73 @@ def setup_beam_scenario(config):
     This is meant to model a basic XRCS spectrometer with a pre-refelctor,
     such as is planned for the ITER XRCS-Core spectrometer.
     """
-
     #unpack variables
     distance_s_g    = config['scenario_input']['source_graphite_dist']
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
-
-    bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
-    bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
-
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
-    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+    
+    c_bragg = bragg_angle(config['source_input']['wavelength'], 
+                          config['crystal_input']['spacing'])
+    g_bragg = bragg_angle(config['source_input']['wavelength'], 
+                          config['graphite_input']['spacing'])
+    
+    c_width = config['graphite_input']['width']
+    c_height= config['graphite_input']['height']
+    
+    g_width = config['graphite_input']['width']
+    g_height= config['graphite_input']['height']
+    
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
         distance_c_d = meridi_focus
 
     ## Source Placement
-    #souce is placed at origin by default and aimed along the X axis
-    s_position  = np.array([0, 0, 0], dtype = np.float64)
-    s_normal    = np.array([1, 0, 0], dtype = np.float64)
-    s_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    #create a path vector that connects the centers of all optical elements
-    path_vector = np.array([1, 0, 0], dtype = np.float64)
-    path_vector/= np.linalg.norm(path_vector)
+    s_position, s_basis, path_vector, s_target = create_source_basis(distance_s_g)
     
     ## Graphite Placement
-    #define graphite position, normal, and basis relative to source
     g_position  = s_position + (path_vector * distance_s_g)
-    g_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    g_y_vector  = np.cross(g_z_vector, path_vector)  
-    g_y_vector /= np.linalg.norm(g_y_vector)
-    
-    g_z_vector  = np.cross(path_vector, g_y_vector)
-    g_z_vector /= np.linalg.norm(g_z_vector)
-    
-    g_x_vector  = np.cross(g_y_vector, g_z_vector)
-    g_x_vector /= np.linalg.norm(g_x_vector)
-    
-    #graphite normal is positioned to best reflect X-Rays according to Bragg
-    g_normal    = (g_y_vector * np.cos(bragg_g)) - (g_x_vector * np.sin(bragg_g))
-    g_normal   /= np.linalg.norm(g_normal)
-    
-    #reflect the path vector off of the graphite
-    path_vector-= 2 * np.dot(path_vector, g_normal) * g_normal
-    path_vector/= np.linalg.norm(path_vector)
+    g_orient    = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, g_basis, g_mesh_points, g_mesh_faces = create_optic_basis(
+        path_vector, g_orient, g_bragg, g_width, g_height)
 
     ## Crystal Placement
-    #define crystal position, normal, and basis relative to graphite
-    c_position  = g_position + (path_vector * distance_g_c)
-    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-
-    c_y_vector  = np.cross(c_z_vector, path_vector)  
-    c_y_vector /= np.linalg.norm(c_y_vector)
-    
-    c_z_vector  = np.cross(path_vector, c_y_vector)
-    c_z_vector /= np.linalg.norm(c_z_vector)
-    
-    c_x_vector  = np.cross(c_y_vector, c_z_vector)
-    c_x_vector /= np.linalg.norm(c_x_vector)
-    
-    #crystal normal is positioned to best reflect X-Rays according to Bragg
-    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
-    c_normal   /= np.linalg.norm(c_normal)
-    
-    #reflect the path vector off of the crystal
-    path_vector-= 2 * np.dot(path_vector, c_normal) * c_normal
-    path_vector/= np.linalg.norm(path_vector)
-    
-    ## Detector Placement
-    #define detector position, normal, and basis relative to crystal
-    d_position  = c_position + (path_vector * distance_c_d)
-    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
-    
-    d_y_vector  = np.cross(d_z_vector, path_vector)  
-    d_y_vector /= np.linalg.norm(d_y_vector)
-    
-    d_z_vector  = np.cross(path_vector, d_y_vector)
-    d_z_vector /= np.linalg.norm(d_z_vector)
-    
-    d_x_vector  = np.cross(d_y_vector, d_z_vector)
-    d_x_vector /= np.linalg.norm(d_x_vector)
-    
-    #detector normal faces crystal
-    d_normal    = -path_vector
-    d_normal   /= np.linalg.norm(d_normal)
+    c_position  = s_position + (path_vector * distance_g_c)
+    c_orient  = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, c_basis, c_mesh_points, c_mesh_faces = create_optic_basis(
+        path_vector, c_orient, c_bragg, c_width, c_height)
 
     if config['general_input']['backwards_raytrace']:
         s_target = c_position
     else:
         s_target = g_position
     
+    ## Detector Placement
+    d_position = c_position + (path_vector * distance_c_d)
+    d_orient   = np.array([0, 0, 1], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
+    
+    #define meshes
+    config['crystal_input']['mesh_points']  = c_mesh_points + c_position
+    config['crystal_input']['mesh_faces']   = c_mesh_faces    
+    config['graphite_input']['mesh_points'] = g_mesh_points + g_position
+    config['graphite_input']['mesh_faces']  = g_mesh_faces
+    
     ## Repack variables
     config['source_input']['position']        = s_position
-    config['source_input']['normal']          = s_normal
-    config['source_input']['orientation']     = s_z_vector
-    config['source_input']['target']          = s_target
-
+    config['source_input']['normal']          = s_basis[2,:]
+    config['source_input']['orientation']     = s_basis[0,:]
     config['graphite_input']['position']      = g_position
-    config['graphite_input']['normal']        = g_normal
-    config['graphite_input']['orientation']   = g_z_vector
+    config['graphite_input']['normal']        = g_basis[2,:]
+    config['graphite_input']['orientation']   = g_basis[0,:]
     config['crystal_input']['position']       = c_position
-    config['crystal_input']['normal']         = c_normal
-    config['crystal_input']['orientation']    = c_z_vector
+    config['crystal_input']['normal']         = c_basis[2,:]
+    config['crystal_input']['orientation']    = c_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
+    config['source_input']['target']          = s_target
 
     return config
 
@@ -563,84 +544,54 @@ def setup_crystal_test(config):
     the crystal is at the position where the pre-reflector used to be.
     """
 
-    distance_s_c    = config['scenario_input']['source_graphite_dist']
-    distance_c_d    = config['scenario_input']['crystal_detector_dist']
+    distance_s_c = config['scenario_input']['source_graphite_dist']
+    distance_c_d = config['scenario_input']['crystal_detector_dist']    
+    c_bragg = bragg_angle(config['source_input']['wavelength'], 
+                          config['crystal_input']['spacing'])
+    c_width = config['graphite_input']['width']
+    c_height= config['graphite_input']['height']
     
-    bragg_c = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
-
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(bragg_c)
-    sagitt_focus = - meridi_focus / np.cos(2 * bragg_c)
+    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
         distance_c_d = meridi_focus
-
+        
     ## Source Placement
-    #souce is placed at origin by default and aimed along the X axis    
-    s_position      = np.array([0, 0, 0], dtype = np.float64)
-    s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    s_position, s_basis, path_vector, s_target = create_source_basis(distance_s_c)
     
-    #create a path vector that connects the centers of all optical elements
-    path_vector     = np.array([1, 0, 0], dtype = np.float64)
-    
-    #define crystal position, normal, and basis relative to graphite
+    ## Crystal Placement
     c_position  = s_position + (path_vector * distance_s_c)
-    c_z_vector  = np.array([0, 0, 1], dtype = np.float64)
-    
-    c_y_vector  = np.cross(c_z_vector, path_vector)  
-    c_y_vector /= np.linalg.norm(c_y_vector)
-    
-    c_z_vector  = np.cross(path_vector, c_y_vector)
-    c_z_vector /= np.linalg.norm(c_z_vector)
-    
-    c_x_vector  = np.cross(c_y_vector, c_z_vector)
-    c_x_vector /= np.linalg.norm(c_x_vector)
-    
-    #crystal normal is positioned to best reflect X-Rays according to Bragg
-    c_normal    = (c_y_vector * np.cos(bragg_c)) - (c_x_vector * np.sin(bragg_c))
-    c_normal   /= np.linalg.norm(c_normal)
-    
-    #for focused extended sources, target them towards the crystal position    
-    s_target = c_position
-    
-    #alternatively, target them towards where the graphite would be in the beam
-    #s_target = path_vector * 1
-    
-    #reflect the path vector off of the crystal
-    path_vector    -= 2 * np.dot(path_vector, c_normal) * c_normal
+    c_orient  = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, c_basis, mesh_points, mesh_faces = create_optic_basis(
+        path_vector, c_orient, c_bragg, c_width, c_height)
 
-    #define detector position, normal, and basis relative to crystal
-    d_position  = c_position + (path_vector * distance_c_d)
-    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
+    ## Detector Placement
+    d_position = c_position + (path_vector * distance_c_d)
+    d_orient   = np.array([0, 0, 1], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
     
-    d_y_vector  = np.cross(d_z_vector, path_vector)  
-    d_y_vector /= np.linalg.norm(d_y_vector)
+    #define meshes
+    config['crystal_input']['mesh_points']  = mesh_points + c_position
+    config['crystal_input']['mesh_faces']   = mesh_faces    
+    config['graphite_input']['mesh_points'] = mesh_points + c_position
+    config['graphite_input']['mesh_faces']  = mesh_faces
     
-    d_z_vector  = np.cross(path_vector, d_y_vector)
-    d_z_vector /= np.linalg.norm(d_z_vector)
-    
-    d_x_vector  = np.cross(d_y_vector, d_z_vector)
-    d_x_vector /= np.linalg.norm(d_x_vector)
-    
-    #detector normal faces crystal
-    d_normal    = -path_vector
-    d_normal   /= np.linalg.norm(d_normal)
-    
-    # repack variables
+    ## Repack variables
     config['source_input']['position']        = s_position
-    config['source_input']['normal']          = s_normal
-    config['source_input']['orientation']     = s_z_vector
+    config['source_input']['normal']          = s_basis[2,:]
+    config['source_input']['orientation']     = s_basis[0,:]
     config['graphite_input']['position']      = c_position
-    config['graphite_input']['normal']        = c_normal
-    config['graphite_input']['orientation']   = c_z_vector
+    config['graphite_input']['normal']        = c_basis[2,:]
+    config['graphite_input']['orientation']   = c_basis[0,:]
     config['crystal_input']['position']       = c_position
-    config['crystal_input']['normal']         = c_normal
-    config['crystal_input']['orientation']    = c_z_vector
+    config['crystal_input']['normal']         = c_basis[2,:]
+    config['crystal_input']['orientation']    = c_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
     config['source_input']['target']          = s_target
-
+    
     return config
 
 
@@ -653,67 +604,46 @@ def setup_graphite_test(config):
     the crystal is removed and the detector is placed at the
     crystal-detector distance.
     """
-    distance_s_g    = config['scenario_input']['source_graphite_dist']
-    distance_g_d    = config['scenario_input']['crystal_detector_dist']
-
-    bragg_g = bragg_angle(config['source_input']['wavelength'], config['graphite_input']['spacing'])
-
-    s_position  = np.array([0, 0, 0], dtype = np.float64)
-    s_normal    = np.array([1, 0, 0], dtype = np.float64)
-    s_z_vector  = np.array([0, 0, 1], dtype = np.float64)
+    distance_s_g = config['scenario_input']['source_graphite_dist']
+    distance_g_d = config['scenario_input']['crystal_detector_dist']
+    g_bragg = bragg_angle(config['source_input']['wavelength'],
+                          config['graphite_input']['spacing'])
+    g_width = config['graphite_input']['width']
+    g_height= config['graphite_input']['height']
     
-    #create a path vector that connects the centers of all optical elements
-    path_vector= np.array([1, 0, 0], dtype = np.float64)
+    ## Source Placement
+    s_position, s_basis, path_vector, s_target = create_source_basis(distance_s_g)
     
-    #define graphite position and normal relative to source
+    ## Graphite Placement
     g_position  = s_position + (path_vector * distance_s_g)
-    g_x_vector  = np.array([0, 0, 1], dtype = np.float64)
+    g_orient    = np.array([0, 0, 1], dtype = np.float64)
+    path_vector, g_basis, mesh_points, mesh_faces = create_optic_basis(
+        path_vector, g_orient, g_bragg, g_width, g_height)
     
-    g_y_vector  = np.cross(g_x_vector, path_vector)
-    g_y_vector /= np.linalg.norm(g_y_vector)
+    ## Detector Placement
+    d_position = g_position + (path_vector * distance_g_d)
+    d_orient   = np.array([0, 0, 1], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
     
-    g_normal    = (g_y_vector * np.cos(bragg_g)) - (path_vector * np.sin(bragg_g))
-    g_normal   /= np.linalg.norm(g_normal)
+    #define meshes
+    config['graphite_input']['mesh_points'] = mesh_points + g_position
+    config['graphite_input']['mesh_faces']  = mesh_faces
+    config['crystal_input']['mesh_points']  = mesh_points + g_position
+    config['crystal_input']['mesh_faces']   = mesh_faces
     
-    g_y_vector  = np.cross(g_normal, g_x_vector)
-    g_y_vector /= np.linalg.norm(g_y_vector)
-    
-    #for focused extended sources, target them towards the graphite position    
-    s_target = g_position
-    
-    #reflect the path vector off of the graohite
-    path_vector    -= 2 * np.dot(path_vector, g_normal) * g_normal
-
-    #define detector position and normal relative to graphite
-    d_position  = g_position + (path_vector * distance_g_d)
-    d_z_vector  = np.array([0, 1, 0], dtype = np.float64)
-    d_normal    = -path_vector
-    
-    #define graphite mesh
-    dx = config['graphite_input']['width']  * g_x_vector / 2
-    dy = config['graphite_input']['height'] * g_y_vector / 2
-    
-    p1 = g_position + dx + dy
-    p2 = g_position - dx + dy
-    p3 = g_position - dx - dy
-    p4 = g_position + dx - dy
-    
-    config['graphite_input']['mesh_points'] = np.array([p1, p2, p3, p4])
-    config['graphite_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
-    
-    # repack variables
+    ## Repack variables
     config['source_input']['position']        = s_position
-    config['source_input']['normal']          = s_normal
-    config['source_input']['orientation']     = s_z_vector
+    config['source_input']['normal']          = s_basis[2,:]
+    config['source_input']['orientation']     = s_basis[0,:]
     config['graphite_input']['position']      = g_position
-    config['graphite_input']['normal']        =-g_normal
-    config['graphite_input']['orientation']   = g_x_vector
+    config['graphite_input']['normal']        = g_basis[2,:]
+    config['graphite_input']['orientation']   = g_basis[0,:]
     config['crystal_input']['position']       = g_position
-    config['crystal_input']['normal']         = g_normal
-    config['crystal_input']['orientation']    = g_x_vector
+    config['crystal_input']['normal']         = g_basis[2,:]
+    config['crystal_input']['orientation']    = g_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
     config['source_input']['target']          = s_target
     
     return config
@@ -730,23 +660,22 @@ def setup_source_test(config):
     """
     distance_s_d    = config['scenario_input']['source_graphite_dist']
     
-    s_position      = np.array([0, 0, 0], dtype = np.float64)
-    s_normal        = np.array([1, 0, 0], dtype = np.float64)
-    s_z_vector      = np.array([0, 0, 1], dtype = np.float64)
+    ## Source Placement
+    s_position, s_basis, path_vector, s_target = create_source_basis(distance_s_d)
         
-    d_position      = s_position + (s_normal * distance_s_d)
-    d_z_vector      = np.array([0, 0, 1], dtype = np.float64)
-    d_normal        = -s_normal
+    ## Detector Placement
+    d_position = s_position + (path_vector * distance_s_d)
+    d_orient   = np.array([0, 0, 1], dtype = np.float64)
+    d_basis    = create_detector_basis(path_vector, d_orient)
     
-    s_target = d_position
-    
-    #repack vectors
+    ## Repack variables
     config['source_input']['position']        = s_position
-    config['source_input']['normal']          = s_normal
-    config['source_input']['orientation']     = s_z_vector
+    config['source_input']['normal']          = s_basis[2,:]
+    config['source_input']['orientation']     = s_basis[0,:]
     config['detector_input']['position']      = d_position
-    config['detector_input']['normal']        = d_normal
-    config['detector_input']['orientation']   = d_z_vector
+    config['detector_input']['normal']        = d_basis[2,:]
+    config['detector_input']['orientation']   = d_basis[0,:]
     config['source_input']['target']          = s_target
 
     return config
+

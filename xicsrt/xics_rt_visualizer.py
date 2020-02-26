@@ -225,7 +225,7 @@ def visualize_layout(config):
             beamline[3,:] = plasma_center
                     
         #draw plasma, graphite, crystal, detector
-        draw_torus(config_vis, ax)
+        draw_torus(config, ax)
         draw_graphite(config_vis, graphite_mesh, ax)
         draw_crystal(config_vis, crystal_mesh, True, ax)
         draw_detector(config_vis, ax)

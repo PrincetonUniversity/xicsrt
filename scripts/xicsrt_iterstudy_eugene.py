@@ -35,7 +35,7 @@ def get_config():
     config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/'
     config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'GRAPHITE'
+    config['general_input']['scenario']           = 'REAL'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -213,24 +213,18 @@ def get_config():
     config['crystal_input']['height']             = 0.050
     config['crystal_input']['curvature']          = 2.400
     
+    config['crystal_input']['mesh_points']        = np.array([[.01, 0.0, 0.0],
+                                                              [0.0, .01, 0.0],
+                                                              [0.0, 0.0, .01]])
+    config['crystal_input']['mesh_faces']         = np.array([0,1,2])
+    
     """
     Rocking curve FWHM:  90.30 urad
     Darwin Curve, sigma: 48.070 urad
     Darwin Curve, pi:    14.043 urad
     Taken from XoP
     """
-    bragg = np.arcsin(config['source_input']['wavelength'] / (2 * config['crystal_input']['spacing']))
-    dx = config['crystal_input']['height'] * np.cos(bragg) / 2
-    dy = config['crystal_input']['height'] * np.sin(bragg) / 2
-    dz = config['crystal_input']['width']                  / 2
-    
-    p1 = config['crystal_input']['position'] + np.array([ dx, dy, dz])
-    p2 = config['crystal_input']['position'] + np.array([-dx,-dy, dz])
-    p3 = config['crystal_input']['position'] + np.array([-dx,-dy,-dz])
-    p4 = config['crystal_input']['position'] + np.array([ dx, dy,-dz])
-        
-    config['crystal_input']['mesh_points'] = np.array([p1, p2, p3, p4])
-    config['crystal_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
+
     # -------------------------------------------------------------------------
     ## Load mosaic graphite properties
     """Type and file settings
@@ -244,7 +238,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_curve_type']= "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['meshgrid_data']     = ''
     config['graphite_input']['mix_factor']        = 1.0
     config['graphite_input']['sigma_data']        = '../inputs/rocking_curve_graphite_sigma.txt'
@@ -275,6 +269,11 @@ def get_config():
     config['graphite_input']['width']             = 0.125
     config['graphite_input']['height']            = 0.040
     
+    config['graphite_input']['mesh_points']       = np.array([[.01, 0.0, 0.0],
+                                                              [0.0, .01, 0.0],
+                                                              [0.0, 0.0, .01]])
+    config['graphite_input']['mesh_faces']        = np.array([0,1,2])
+    
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
     Taken from Ohler et al. “X-ray topographic determination of the granular
@@ -294,8 +293,8 @@ def get_config():
     config['detector_input']['orientation']       = np.array([0.0, 0.0, 0.0])
     
     config['detector_input']['pixel_size']        = 0.000172
-    config['detector_input']['horizontal_pixels'] = 195
-    config['detector_input']['vertical_pixels']   = 1475
+    config['detector_input']['horizontal_pixels'] = 1475
+    config['detector_input']['vertical_pixels']   = 195
     config['detector_input']['width']             = (config['detector_input']['horizontal_pixels']
                                                     *config['detector_input']['pixel_size'])
     config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
