@@ -167,16 +167,17 @@ class GenericOptic(TraceObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
+        X_local = np.zeros(O.shape, dtype=np.float64)
         
         # X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
 
-        X_local = self.point_to_local(X[m])
+        X_local[m] = self.point_to_local(X[m])
         
         #find which rays hit the optic, update mask to remove misses
         if self.miss_checks is True:
-            m[m] &= (np.abs(X_local[:,0]) <= self.width / 2)
-            m[m] &= (np.abs(X_local[:,1]) <= self.height / 2)
+            m[m] &= (np.abs(X_local[m,0]) <= self.width / 2)
+            m[m] &= (np.abs(X_local[m,1]) <= self.height / 2)
 
         return X, rays
     
