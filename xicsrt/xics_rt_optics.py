@@ -174,12 +174,12 @@ class GenericOptic(TraceObject):
         
         #X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
+
+        X_local = self.point_to_local(X[m])
         
         #find which rays hit the optic, update mask to remove misses
-        xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
-        yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
         if self.miss_checks is True:
-            m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height / 2))
+            m[m] &= ((np.abs(X_local[:,0]) <= self.width / 2) & (np.abs(X_local[:,1]) <= self.height / 2))
             
         return X, rays
     
@@ -287,13 +287,24 @@ class GenericOptic(TraceObject):
         return rays
 
     def collect_rays(self, rays):
+        """
+        Collect the rays that his this optic into a pixel array that can be used
+        for further analysis or visualization.
+
+        Programming Notes
+        -----------------
+
+        It is important thas this calculation is compatible with intersect_check
+        in terms of floating point errors.  The simple way to achive this is
+        to ensure that both use the same calculation method.
+        """
         X = rays['origin']
         m = rays['mask'].copy()
         
         num_lines = np.sum(m)
         self.photon_count = num_lines
         
-        ##Add the ray hits to the pixel array
+        # Add the ray hits to the pixel array
         if num_lines > 0:
             # Transform the intersection coordinates from external coordinates
             # to local optical coordinates.
