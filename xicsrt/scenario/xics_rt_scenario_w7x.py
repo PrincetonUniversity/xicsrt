@@ -26,7 +26,7 @@ from xicsrt import xics_rt_input
 
 from xicsrt.xics_rt_detectors  import Detector
 from xicsrt.xics_rt_optics     import SphericalCrystal
-from xicsrt.plasma.xics_rt_plasma_w7x_simple import W7xSimplePlasma
+from xicsrt.plasma._XicsrtPlasmaW7xSimple import XicsrtPlasmaW7xSimple
 
 profiler.stop('Import Time')
 
@@ -56,7 +56,7 @@ def run(config, name=None, do_random_seed=True):
 
     detector = Detector(config['detector_input'])
     crystal = SphericalCrystal(config['crystal_input'])
-    source = W7xSimplePlasma(config['source_input'])
+    source = XicsrtPlasmaW7xSimple(config['source_input'])
 
     profiler.stop('Class Setup Time')
 

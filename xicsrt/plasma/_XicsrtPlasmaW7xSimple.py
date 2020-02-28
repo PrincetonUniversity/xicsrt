@@ -2,29 +2,24 @@
 """
 Authors
 -------
+  - Novimir A. Pablant <nablant@pppl.gov>
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
-
-Description
------------
-A plasma source based on a VMEC equilibrium.
 """
 
 import numpy as np
 import logging
 
-from xicsrt.plasma.xics_rt_plasma_vmec import FluxSurfacePlasma
+from xicsrt.plasma._XicsrtPlasmaVmec import XicsrtPlasmaVmec
 
-from mirutil import hdf5
+class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
+    """
+    A simple set of plasma profiles based on polynomials.
 
-from mirutil.classes import MirSignalObject
-from mirfusion.xics.analysis.config._XcSystemPaths import XcSystemPaths
+    This class is meant to be used for a specific XICS validation
+    study undertaken by N. Pablant in 2020-02.
+    """
 
-
-class W7xSimplePlasma(FluxSurfacePlasma):
-    def __init__(self, config):
-        super().__init__(config)
-
-    def getEmissivity(self, rho):
+    def get_emissivity(self, rho):
         """
         A made up emissivity profile with moderate hollowness.
         Peak value at 1.0.
@@ -40,7 +35,7 @@ class W7xSimplePlasma(FluxSurfacePlasma):
         value = np.polyval(coeff, rho)
         return value
 
-    def getTemperature(self, rho):
+    def get_temperature(self, rho):
         """
         A made up temperature profile with moderate flatness.
         Peak value at 1.0

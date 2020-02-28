@@ -221,6 +221,7 @@ class GenericPlasma(TraceObject):
         rays = self.create_sources(bundle_input)
         
         return rays
+
     
 class CubicPlasma(GenericPlasma):
     """
