@@ -10,6 +10,8 @@ A set of base objects for xicsrt.
 """
 
 import numpy as np
+from collections import OrderedDict
+
 import xicsrt.tool
 
 class RayArray(dict):
@@ -96,10 +98,57 @@ class RayArray(dict):
             self[key] = np.concatenate((self[key], ray_in[key]))
 
 
-class GeometryObject():
+class ConfigObject():
+    """
+    A base class for any objects with a configuration.
+    """
+
+    def __init__(self, config=None):
+        self.config = self.getDefaultConfig()
+        self.updateConfig(config)
+    
+    def getDefaultConfig(self):
+        config = OrderedDict()
+        return config
+
+    def updateConfig(self, config, strict=None):
+        self._updateConfigDict(self.config, config, strict=strict)
+
+    def _updateConfigDict(self, config, user_config, strict=None):
+        """
+        Overwrite any values in the given options dict with the values in the
+        user dict.  This will be done recursively to allow nested dictionaries.
+
+        keywords:
+          strict (True)
+            If True then an error will be raised if an option is found in
+            the user dict that is not found in the default dict. If False
+            any unmatched options will simplly be ignored.
+        """
+        if strict is None:
+            strict = True
+            
+        if user_config is None:
+            return
+        
+        for key in user_config:
+            if not key in config:
+                if strict:
+                   raise Exception("User option not recognized: {}".format(key))
+                else:
+                    config[key] = user_config[key]
+            else:
+                if isinstance(config[key], dict):
+                    self._updateConfigDict(config[key], user_config[key], strict=strict)
+                else:
+                    config[key] = user_config[key]
+
+    
+class GeometryObject(ConfigObject):
     """
     The base class for any geometrical objects used in XICSRT.
     """
+    
     def __init__(self
             ,origin = None
             ,zaxis  = None
@@ -231,6 +280,7 @@ class GeometryObject():
         else:
             return vector_in
 
+        
 class TraceObject(GeometryObject):
     """
     An object to use for raytracing.
@@ -241,9 +291,9 @@ class TraceObject(GeometryObject):
         Trace the given input ray in local coordinates.
         Individual components should reimplement this method.
         """
-
         return ray
 
+    
 class TraceLocalObject(TraceObject):
     """
     An object to use for ray tracing using local TraceObject coordinates.
