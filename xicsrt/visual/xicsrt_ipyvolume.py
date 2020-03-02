@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 
 from xicsrt.xics_rt_sources import GenericSource
-from xicsrt.xics_rt_plasmas import GenericPlasma
+from xicsrt.plasma._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
@@ -524,7 +524,7 @@ def add_optics(inputs):
         obj.material.transparent = True
 
 def add_optics_volume(config):
-    source = GenericPlasma(config['source_input'])
+    source = XicsrtPlasmaGeneric(config['source_input'])
     add_surf(source)
 
 def show():

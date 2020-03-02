@@ -2,6 +2,7 @@
 """
 Authors
 -------
+  - Novimir A. Pablant <nablant@pppl.gov>
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
 
 Description
@@ -16,11 +17,10 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.xics_rt_math    import cart2cyl, cart2toro
 from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_objects import TraceObject
 
-class GenericPlasma(TraceObject):
+class XicsrtPlasmaGeneric(TraceObject):
     """
     A generic plasma object.
 
@@ -64,6 +64,9 @@ class GenericPlasma(TraceObject):
         self.velocity       = config['velocity']
         self.use_poisson    = config['use_poisson']
 
+        # Filters
+        self.bundle_filters = []
+
         self.check_inputs()
 
     def check_inputs(self):
@@ -87,6 +90,11 @@ class GenericPlasma(TraceObject):
         return bundle_input
 
     def bundle_generate(self, bundle_input):
+        return bundle_input
+
+    def bundle_filter(self, bundle_input):
+        for filter in self.bundle_filters:
+            bundle_input = filter.filter(bundle_input)
         return bundle_input
     
     def create_sources(self, bundle_input):
@@ -221,109 +229,3 @@ class GenericPlasma(TraceObject):
         rays = self.create_sources(bundle_input)
         
         return rays
-
-    
-class CubicPlasma(GenericPlasma):
-    """
-    A cubic plasma.
-    """
-                
-    def bundle_generate(self, bundle_input):
-        #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
-        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.bundle_count)        
-                
-        bundle_input['position'][:] = (self.position
-                  + np.einsum('i,j', x_offset, self.xorientation)
-                  + np.einsum('i,j', y_offset, self.yorientation)
-                  + np.einsum('i,j', z_offset, self.normal))
-        
-        #evaluate temperature at each point
-        #plasma cube has consistent temperature throughout
-        bundle_input['temperature'][:] = self.temperature
-        
-        #evaluate emissivity at each point
-        #plasma cube has a constant emissivity througout.
-        bundle_input['emissivity'][:] = self.emissivity
-            
-        return bundle_input
-
-
-class CylindricalPlasma(GenericPlasma):
-    """
-    A cylindrical plasma ordiented along the Y axis.
-
-    This class is meant only to be used as an exmple for generating 
-    more complecated classes for specific plasmas.
-
-    plasma normal           = absolute X
-    plasma x orientation    = absolute Z
-    plasma y orientation    = absolute Y
-    """
-                
-    def bundle_generate(self, bundle_input):
-        #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
-        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.bundle_count)        
-        
-        bundle_input['position'][:] = (
-            self.position
-            + np.einsum('i,j', x_offset, self.xorientation)
-            + np.einsum('i,j', y_offset, self.yorientation)
-            + np.einsum('i,j', z_offset, self.normal))
-        
-        #convert from cartesian coordinates to cylindrical coordinates [radius, azimuth, height]
-        radius, azimuth, height = cart2cyl(z_offset, x_offset, y_offset)
-
-        
-        # Let plasma temperature and emissivity fall off as a function of
-        # radius.
-        bundle_input['emissivity'][step_test]  = self.emissivity / radius
-        bundle_input['temperature'][step_test] = self.temperature / radius
-        bundle_input['velocity'][step_test]  = self.velocity
-        
-        return bundle_input
-
-
-class ToroidalPlasma(GenericPlasma):
-    """
-    A cylindrical plasma ordiented along the Y axis.
-
-    This class is meant only to be used as an exmple for generating 
-    more complecated classes for specific plasmas.
-    """
-    def __init__(self, config):
-        super().__init__(config)
-
-        self.major_radius   = config['major_radius']
-        self.minor_radius   = config['minor_radius']
-        
-    def bundle_generate(self, bundle_input):
-        #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2 , self.width/2,  self.bundle_count)
-        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth/2 , self.depth/2,  self.bundle_count)        
-        
-        #unlike the other plasmas, the toroidal plasma has fixed orientation to
-        #prevent confusion
-        bundle_input['position'][:] = (
-            self.position
-            + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
-            + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
-            + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
-        
-        #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
-        #torus is oriented along the Z axis
-        rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.major_radius)
-        
-        step_test = (rad <= self.minor_radius)
-
-        # Let plasma temperature and emissivity fall off as a function of
-        # radius.
-        bundle_input['emissivity'][step_test]  = self.emissivity / radius
-        bundle_input['temperature'][step_test] = self.temperature / radius
-        bundle_input['velocity'][step_test]  = self.velocity
-        
-        return bundle_input

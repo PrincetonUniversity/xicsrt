@@ -11,12 +11,12 @@ A plasma source based on a VMEC equilibrium.
 
 import numpy as np
 
-from xicsrt.xics_rt_plasmas import GenericPlasma
+from xicsrt.plasma._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 from xicsrt.util import profiler
 
 import stelltools
 
-class XicsrtPlasmaVmec(GenericPlasma):
+class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
 
     def initialize_vmec(self, wout=None):
         if wout is None:
