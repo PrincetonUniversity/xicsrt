@@ -176,8 +176,8 @@ class GenericOptic(TraceObject):
         
         #find which rays hit the optic, update mask to remove misses
         if self.miss_checks is True:
-            m[m] &= (np.abs(X_local[m,0]) <= self.width / 2)
-            m[m] &= (np.abs(X_local[m,1]) <= self.height / 2)
+            m[m] &= (np.abs(X_local[m,0]) < self.width / 2)
+            m[m] &= (np.abs(X_local[m,1]) < self.height / 2)
 
         return X, rays
     
@@ -310,7 +310,7 @@ class GenericOptic(TraceObject):
             
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.round(point_loc / self.pixel_size).astype(int)
+            pix = np.floor(point_loc / self.pixel_size).astype(int)
             
             # Check to ascertain if origin pixel is even or odd
             if (self.pixel_width % 2) == 0:
@@ -334,7 +334,7 @@ class GenericOptic(TraceObject):
             # every intersection.  This could be slow for large arrays.
             for ii in range(len(channel)):
                 self.pixel_array[channel[ii,0], channel[ii,1]] += 1
-                
+        
         return self.pixel_array
         
     def output_image(self, image_name, rotate=None):
