@@ -19,7 +19,8 @@ import json
 from xicsrt.util import profiler
 
 def load_config(filepath):
-    config = json.load(filepath)
+    with open(filepath, 'r') as ff:
+        config = json.load(ff)
     config_to_numpy(config)
     return config
 
@@ -33,7 +34,6 @@ def save_config(filepath, config):
 def config_to_numpy(obj):
     _dict_to_numpy(obj)
     return obj
-
 
 def config_to_list(obj):
     _dict_to_list(obj)
@@ -50,7 +50,7 @@ def _dict_to_numpy(obj):
 def _dict_to_list(obj):
     for key in obj:
         if isinstance(obj[key], np.ndarray):
-            obj[key] = obj[key].toList()
+            obj[key] = obj[key].tolist()
         elif isinstance(obj[key], dict):
             obj[key] = _dict_to_list(obj[key])
     return obj

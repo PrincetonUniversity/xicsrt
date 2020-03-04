@@ -151,6 +151,7 @@ def get_config():
     config['crystal_input']['reflectivity']       = 1
     config['crystal_input']['rocking_curve']      = 48.070e-6
     config['crystal_input']['pixel_scaling']      = int(200)
+    config['crystal_input']['pixel_size']         = None
 
     config['crystal_input']['therm_expand']       = 5.9e-6
     #config['crystal_input']['sigma_data']         = '../xicsrt/rocking_curve_germanium_sigma.txt'
@@ -183,6 +184,10 @@ def get_config():
                                                     * config['detector_input']['pixel_size'])
 
     config['detector_input']['do_miss_checks']    = True
+
+    config['detector_input']['use_meshgrid'] = False
+    config['detector_input']['mesh_points'] = None
+    config['detector_input']['mesh_faces'] = None
 
 
     return config

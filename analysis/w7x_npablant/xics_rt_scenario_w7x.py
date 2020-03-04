@@ -183,6 +183,7 @@ def run_multiprocessing(config_multi):
         for ii, name in enumerate(config_multi):
             logging.info('Launching raytrace for Configuration: {}'.format(name))
 
+            # Make sure each run uses a unique random seed.
             if config_multi[name]['general_input']['random_seed'] is not None:
                 config_multi[name]['general_input']['random_seed'] += ii
             arg = (config_multi[name], name)
