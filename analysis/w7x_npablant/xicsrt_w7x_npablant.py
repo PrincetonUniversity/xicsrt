@@ -23,10 +23,7 @@ def get_config():
 
     config = OrderedDict()
     config['general_input']   = OrderedDict()
-    config['scenario_input']  = OrderedDict()
-    config['plasma_input']    = OrderedDict()
     config['source_input']    = OrderedDict()
-    config['graphite_input']  = OrderedDict()
     config['crystal_input']   = OrderedDict()
     config['detector_input']  = OrderedDict()
 
@@ -64,25 +61,6 @@ def get_config():
 
 
     # -----------------------------------------------------------------------------
-    # Scenario properties
-
-    # Each of these scenarios corresponds to a script located in xics_rt_tools.py
-    # which assembles the optical elements into a specific configuration based on
-    # input parameters
-
-    # Load scenario properties
-    config['scenario_input']['source_graphite_dist']  = 4.5
-    config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = None
-    config['scenario_input']['graphite_offset']       = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['graphite_tilt']         = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['crystal_offset']        = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['crystal_tilt']          = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['detector_offset']       = np.array([0,0,0], dtype = np.float64)
-    config['scenario_input']['detector_tilt']         = np.array([0,0,0], dtype = np.float64)
-
-
-    # -----------------------------------------------------------------------------
     ## Load plasma properties
 
     # bundle_count
@@ -93,9 +71,9 @@ def get_config():
     #
     #   This currently only has an effect of bundle_type is 'voxel'.
 
-    config['source_input']['position']            = np.array([-5.5, 0, 0])
-    config['source_input']['normal']              = np.array([0, 0, 1])
-    config['source_input']['orientation']         = np.array([0, 1, 0])
+    config['source_input']['origin']              = np.array([-5.5, 0, 0])
+    config['source_input']['zaxis']               = np.array([0, 0, 1])
+    config['source_input']['xaxis']               = np.array([0, 1, 0])
     config['source_input']['target']              = np.array([0, 0, 0])
     config['source_input']['width']               = 2.0
     config['source_input']['height']              = 2.0
@@ -112,15 +90,12 @@ def get_config():
     config['source_input']['max_rays']            = 1e7
     
     config['source_input']['spread']              = 1.0       # Angular spread (degrees)
-    config['source_input']['mass']                = 39.948    # Xenon mass (AMU)
+    config['source_input']['mass_number']         = 39.948    # Argon mass (AMU)
     config['source_input']['wavelength']          = 3.9492    # Line location (angstroms)
     config['source_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
     config['source_input']['emissivity']          = 1e12      # Emissivity photons/s/m-3
     config['source_input']['temperature']         = 1000      # Ion temperature (eV)
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])      # Velocity in m/s
-    
-
-    config['source_input']['plasma_type'] = 'vmec'
     config['source_input']['wout_file'] = '/u/npablant/data/w7x/vmec/webservice/w7x_ref_172/wout.nc'
 
 
@@ -134,35 +109,30 @@ def get_config():
     # Graphite Rocking Curve FWHM in radians
     # Taken from XOP: 8765 urad
 
-    config['crystal_input']['position']           = [-8.6068906812402943e+00,  3.2920701414857128e+00,  7.3539419063116812e-02]
-    config['crystal_input']['normal']             = [ 5.3519444199135369e-01, -8.4134020987066793e-01,  7.5588097716134145e-02]
-    config['crystal_input']['orientation']        = [-8.4083033364093662e-01, -5.3917440198461375e-01, -4.7909438253911078e-02]
+    config['crystal_input']['origin'] = [-8.6068906812402943e+00,  3.2920701414857128e+00,  7.3539419063116812e-02]
+    config['crystal_input']['zaxis']  = [ 5.3519444199135369e-01, -8.4134020987066793e-01,  7.5588097716134145e-02]
+    config['crystal_input']['xaxis']  = [-8.4083033364093662e-01, -5.3917440198461375e-01, -4.7909438253911078e-02]
 
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.100
-    config['crystal_input']['curvature']          = 1.4503999999999999e+00
+    config['crystal_input']['radius']             = 1.4503999999999999e+00
 
 
     # Rocking curve FWHM in radians.
     # This is taken from x0h for quarts 1,1,-2,0
     # Darwin Curve, sigma: 48.070 urad
     # Darwin Curve, pi:    14.043 urad
-    config['crystal_input']['spacing']            = 2.4567600000000001e+00
+    config['crystal_input']['crystal_spacing']            = 2.4567600000000001e+00
     config['crystal_input']['reflectivity']       = 1
-    config['crystal_input']['rocking_curve']      = 48.070e-6
-    config['crystal_input']['pixel_scaling']      = int(200)
+    config['crystal_input']['rocking_type']       = 'gaussian'
+    config['crystal_input']['rocking_fwhm']       = 48.070e-6
     config['crystal_input']['pixel_size']         = None
 
     config['crystal_input']['therm_expand']       = 5.9e-6
-    #config['crystal_input']['sigma_data']         = '../xicsrt/rocking_curve_germanium_sigma.txt'
-    #config['crystal_input']['pi_data']            = '../xicsrt/rocking_curve_germanium_pi.txt'
-    config['crystal_input']['sigma_data']         = '/u/npablant/code/mirproject/xicsrt/xicsrt/rocking_curve_germanium_sigma.txt'
-    config['crystal_input']['pi_data']            = '/u/npablant/code/mirproject/xicsrt/xicsrt/rocking_curve_germanium_pi.txt'
     config['crystal_input']['mix_factor']         = 1.0
 
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
-    config['crystal_input']['rocking_curve_type'] = "gaussian"
     
     config['crystal_input']['use_meshgrid']       = False
     config['crystal_input']['mesh_points']        = False
@@ -171,9 +141,9 @@ def get_config():
     # -----------------------------------------------------------------------------
     ## Load detector properties
 
-    config['detector_input']['position']          = [-8.6738784071336230e+00,  2.1399015950319900e+00,  1.0399766774640780e-01]
-    config['detector_input']['normal']            = [ 5.9585883616345793e-02,  9.9785215153757567e-01, -2.7214079912620245e-02]
-    config['detector_input']['orientation']       = [-9.9464373245879134e-01,  5.7043480061171735e-02, -8.6196791488749647e-02]
+    config['detector_input']['origin'] = [-8.6738784071336230e+00,  2.1399015950319900e+00,  1.0399766774640780e-01]
+    config['detector_input']['zaxis']  = [ 5.9585883616345793e-02,  9.9785215153757567e-01, -2.7214079912620245e-02]
+    config['detector_input']['xaxis']  = [-9.9464373245879134e-01,  5.7043480061171735e-02, -8.6196791488749647e-02]
 
     config['detector_input']['pixel_size']        = 0.000172
     config['detector_input']['horizontal_pixels'] = 195

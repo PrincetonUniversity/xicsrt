@@ -10,6 +10,7 @@ A set of base objects for xicsrt.
 """
 
 import numpy as np
+import copy
 from collections import OrderedDict
 
 import xicsrt.tool
@@ -103,18 +104,28 @@ class ConfigObject():
     A base class for any objects with a configuration.
     """
 
-    def __init__(self, config=None):
-        self.config = self.getDefaultConfig()
-        self.updateConfig(config)
-    
-    def getDefaultConfig(self):
+    def __init__(self, config=None, strict=None):
+        self.name = self.__class__.__name__
+        
+        self.config = self.get_default_config()
+        self.update_config(config, strict)
+        self.check_config()
+        self.initialize()
+
+    def get_default_config(self):
         config = OrderedDict()
         return config
+        
+    def check_config(self):
+        pass
+    
+    def initialize(self):
+        self.param =  copy.deepcopy(self.config)
+    
+    def update_config(self, config, strict=None):
+        self._update_config_dict(self.config, config, strict)
 
-    def updateConfig(self, config, strict=None):
-        self._updateConfigDict(self.config, config, strict=strict)
-
-    def _updateConfigDict(self, config, user_config, strict=None):
+    def _update_config_dict(self, config, user_config, strict=None):
         """
         Overwrite any values in the given options dict with the values in the
         user dict.  This will be done recursively to allow nested dictionaries.
@@ -135,11 +146,9 @@ class ConfigObject():
             if not key in config:
                 if strict:
                    raise Exception("User option not recognized: {}".format(key))
-                else:
-                    config[key] = user_config[key]
             else:
                 if isinstance(config[key], dict):
-                    self._updateConfigDict(config[key], user_config[key], strict=strict)
+                    self._update_config_dict(config[key], user_config[key], strict=strict)
                 else:
                     config[key] = user_config[key]
 
@@ -148,24 +157,13 @@ class GeometryObject(ConfigObject):
     """
     The base class for any geometrical objects used in XICSRT.
     """
-    
-    def __init__(self
-            ,origin = None
-            ,zaxis  = None
-            ,xaxis  = None
-            ):
-
-        # The name can be set by the user. Set the default value to the ClassName.
-        self.name = self.__class__.__name__
         
-        if origin is None:
-            origin = np.array([0.0, 0.0, 0.0])
-        if zaxis is None:
-            zaxis = np.array([0.0, 0.0, 1.0])
+    def initialize(self):
+        super().initialize()
 
         # Location with respect to the external coordinate system.
-        self.origin = origin
-        self.set_orientation(zaxis, xaxis)
+        self.origin = self.config['origin']
+        self.set_orientation(self.config['zaxis'], self.config['xaxis'])
 
     def __getattr__(self, key):
         """
@@ -180,6 +178,14 @@ class GeometryObject(ConfigObject):
         else:
             raise AttributeError()
 
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['origin'] = [0.0, 0.0, 0.0]
+        config['zaxis'] = [0.0, 0.0, 1.0]
+        config['xaxis'] = None
+
+        return config
+        
     def set_orientation(self, zaxis, xaxis=None):
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)
@@ -256,13 +262,15 @@ class GeometryObject(ConfigObject):
         Set the Z-Axis to aim at a particular point.
         """
 
-        self.zaxis = aim_point - self.origin
-        xicsrt.math.normalize(self.zaxis)
+        zaxis = aim_point - self.origin
+        xicsrt.math.normalize(zaxis)
 
-        if xaxis is not None:
-            self.xaxis = xaxis
-        else:
-            self.set_default_xaxis()
+        if xaxis is None:
+            xaxis = self.get_default_xaxis(zaxis)
+
+        output = {'zaxis':zaxis, 'xaxis':xaxis}
+        
+        return output
 
     def to_ndarray(self, vector_in):
         if not isinstance(vector_in, np.ndarray):

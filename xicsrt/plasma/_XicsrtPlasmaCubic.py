@@ -20,21 +20,22 @@ class XicsrtPlasmaCubic(XicsrtPlasmaGeneric):
                 
     def bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.bundle_count)
-        y_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        z_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.bundle_count)        
+        x_offset = np.random.uniform(-1 * self.param['width']/2,  self.param['width']/2,  self.param['bundle_count'])
+        y_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
+        z_offset = np.random.uniform(-1 * self.param['depth']/2,  self.param['depth']/2,  self.param['bundle_count'])
                 
-        bundle_input['position'][:] = (self.position
-                  + np.einsum('i,j', x_offset, self.xorientation)
-                  + np.einsum('i,j', y_offset, self.yorientation)
-                  + np.einsum('i,j', z_offset, self.normal))
+        bundle_input['origin'][:] = (
+            self.origin
+            + np.einsum('i,j', x_offset, self.xaxis)
+            + np.einsum('i,j', y_offset, self.yaxis)
+            + np.einsum('i,j', z_offset, self.zaxis))
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
-        bundle_input['temperature'][:] = self.temperature
+        bundle_input['temperature'][:] = self.param['temperature']
         
         #evaluate emissivity at each point
         #plasma cube has a constant emissivity througout.
-        bundle_input['emissivity'][:] = self.emissivity
+        bundle_input['emissivity'][:] = self.param['emissivity']
             
         return bundle_input

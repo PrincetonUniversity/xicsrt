@@ -133,14 +133,14 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         m = bundle_input['mask']
         
         # create a long list containing random points within the cube's dimensions
-        offset = np.zeros((self.config['bundle_count'],3))
-        offset[:,0] = np.random.uniform(-1 * self.width/2, self.width/2, self.bundle_count)
-        offset[:,1] = np.random.uniform(-1 * self.height/2, self.height/2, self.bundle_count)
-        offset[:,2] = np.random.uniform(-1 * self.depth/2, self.depth/2, self.bundle_count)
+        offset = np.zeros((self.param['bundle_count'], 3))
+        offset[:,0] = np.random.uniform(-1 * self.param['width']/2, self.param['width']/2, self.param['bundle_count'])
+        offset[:,1] = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
+        offset[:,2] = np.random.uniform(-1 * self.param['depth']/2, self.param['depth']/2, self.param['bundle_count'])
 
         # unlike the other plasmas, the toroidal plasma has fixed orientation to
         # prevent confusion
-        bundle_input['position'][:] = self.point_to_external(offset)
+        bundle_input['origin'][:] = self.point_to_external(offset)
 
         # Attempt to generate the specified number of bundles, but throw out
         # bundles that our outside of the last closed flux surface.
@@ -148,12 +148,12 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         # Currently stelltools can only handle one point at a time, so a
         # loop is required. This will be improved eventually.
         flx = np.zeros((len(m),3))
-        for ii in range(self.config['bundle_count']):
+        for ii in range(self.param['bundle_count']):
 
             # convert from cartesian coordinates to normalized radial coordinate.
             profiler.start("Fluxspace from Realspace")
             try:
-                flx[ii,:] = self.flx_from_car(bundle_input['position'][ii,:])
+                flx[ii,:] = self.flx_from_car(bundle_input['origin'][ii,:])
             except stelltools.DomainError:
                 flx[ii,0] = np.nan
             profiler.stop("Fluxspace from Realspace")
@@ -162,9 +162,9 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         m &= np.isfinite(flx[:,0])
         
         # evaluate emissivity, temperature and velocity at each bundle location.
-        bundle_input['temperature'][m] = self.get_temperature(flx[m]) * self.config['temperature_scale']
-        bundle_input['emissivity'][m] = self.get_emissivity(flx[m]) * self.config['emissivity_scale']
-        bundle_input['velocity'][m] = self.get_velocity(flx[m]) * self.config['velocity_scale']
+        bundle_input['temperature'][m] = self.get_temperature(flx[m]) * self.param['temperature_scale']
+        bundle_input['emissivity'][m] = self.get_emissivity(flx[m]) * self.param['emissivity_scale']
+        bundle_input['velocity'][m] = self.get_velocity(flx[m]) * self.param['velocity_scale']
 
         profiler.stop("Bundle Input Generation")
 

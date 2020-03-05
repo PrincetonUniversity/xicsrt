@@ -19,63 +19,54 @@ import numpy as np
 from xicsrt.xics_rt_objects import TraceObject
 
 class GenericOptic(TraceObject):
-    def __init__(self, config):
-        super().__init__(
-            config['position']
-            ,config['normal']
-            ,config['orientation'])
+        
+    def get_default_config(self):
+        config = super().get_default_config()
+        
+        # boolean settings
+        config['do_miss_checks'] = False
         
         # spatial information
-        self.position       = config['position']
-        self.normal         = config['normal']
-        self.xorientation   = config['orientation']
-        self.yorientation   = np.cross(self.normal, self.xorientation)
-        self.yorientation  /= np.linalg.norm(self.yorientation)
-        self.width          = config['width']
-        self.height         = config['height']
-        self.depth          = 0.0
+        config['width']          = 0.0
+        config['height']         = 0.0
+        config['depth']          = 0.0
+        config['pixel_size']     = None
+        
         # mesh information
-        self.use_meshgrid   = config['use_meshgrid']
-        self.mesh_points    = config['mesh_points']
-        self.mesh_faces     = config['mesh_faces']
-        # image information
-        if config['pixel_size']:
-            self.pixel_size = config['pixel_size']
-        elif config['pixel_scaling']:
-            self.pixel_size     = self.width / config['pixel_scaling']
-        self.pixel_width    = int(round(self.width  / self.pixel_size))
-        self.pixel_height   = int(round(self.height / self.pixel_size))
-        self.pixel_array    = np.zeros((self.pixel_width, self.pixel_height))
-        self.photon_count   = 0
-        # boolean settings
-        self.miss_checks    = config['do_miss_checks']
+        config['use_meshgrid']   = False
+        config['mesh_points']    = None
+        config['mesh_faces']     = None
 
-        self.check_inputs()
-            
-    def check_inputs(self):
+        return config
 
+    def check_config(self):
+        super().check_config()
+        
         # Check the optic size compare to the meshgrid size.
         #
         # This is a temporary solution for plotting mesh intersections.
         # This check should eventually be removed. See todo file.
-        if self.use_meshgrid is True:
-            mesh_loc = self.point_to_local(self.mesh_points)
+        if self.config['use_meshgrid'] is True:
+            mesh_loc = self.point_to_local(self.config['mesh_points'])
 
             # If any mesh points fall outside of the optic width, test fails.
             test = True
-            test |= np.all(abs(mesh_loc[:,0]) > self.width / 2)
-            test |= np.all(abs(mesh_loc[:,1]) < self.height / 2)
+            test |= np.all(abs(mesh_loc[:,0]) > self.config['width'] / 2)
+            test |= np.all(abs(mesh_loc[:,1]) < self.config['height'] / 2)
             
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
 
-        ## Check if the pixel array and optic size match.
-        test  = True
-        test &= (self.pixel_width  == int(round(self.width  / self.pixel_size)))
-        test &= (self.pixel_height == int(round(self.height / self.pixel_size)))
-        if not test:
-            raise Exception('pixel_width/pixel_height and width/height inputs do not match.')
-
+    def initialize(self):
+        super().initialize()
+        
+        if self.param['pixel_size'] is None:
+            self.param['pixel_size'] = self.param['width']/100
+            
+        self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
+        self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
+        self.pixel_array = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+        
     def normalize(self, vector):
         magnitude = self.norm(vector)
         vector_norm = vector / magnitude[:, np.newaxis]
@@ -95,7 +86,7 @@ class GenericOptic(TraceObject):
         m = rays['mask']
         
         distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m] = np.dot((self.position - O[m]), self.normal) / np.dot(D[m], self.normal)
+        distance[m] = np.dot((self.param['origin'] - O[m]), self.param['zaxis']) / np.dot(D[m], self.param['zaxis'])
 
         # Update the mask to only include positive distances.
         m &= (distance >= 0)
@@ -115,17 +106,17 @@ class GenericOptic(TraceObject):
 
         X_local[m] = self.point_to_local(X[m])
         
-        #find which rays hit the optic, update mask to remove misses
-        if self.miss_checks is True:
-            m[m] &= (np.abs(X_local[m,0]) < self.width / 2)
-            m[m] &= (np.abs(X_local[m,1]) < self.height / 2)
+        # Find which rays hit the optic, update mask to remove misses
+        if self.param['do_miss_checks'] is True:
+            m[m] &= (np.abs(X_local[m,0]) < self.param['width'] / 2)
+            m[m] &= (np.abs(X_local[m,1]) < self.param['height'] / 2)
 
         return X, rays
     
     def generate_optic_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
-        normals[m] = self.normal
+        normals[m] = self.param['zaxis']
         return normals
     
     def reflect_vectors(self, X, rays, normals=None):
@@ -138,14 +129,15 @@ class GenericOptic(TraceObject):
         return rays
             
     def mesh_triangulate(self, ii):
-        points = self.mesh_points
-        faces  = self.mesh_faces
-        #find which points belong to the triangle face
+        points = self.param['mesh_points']
+        faces  = self.param['mesh_faces']
+        
+        # Find which points belong to the triangle face
         p1 = points[faces[ii,0],:]
         p2 = points[faces[ii,1],:]
         p3 = points[faces[ii,2],:]
 
-        #calculate the centerpoint and normal of the triangle face
+        # Calculate the centerpoint and normal of the triangle face
         p0 = np.mean(np.array([p1, p2, p3]), 0)
         n  = np.cross((p1 - p2),(p3 - p2))
         n /= np.linalg.norm(n)
@@ -169,7 +161,7 @@ class GenericOptic(TraceObject):
         hits  = np.zeros(m.shape, dtype=np.int)
 
         # Loop over each triangular face to find which rays hit
-        for ii in range(len(self.mesh_faces)):
+        for ii in range(len(self.param['mesh_faces'])):
             intersect= np.zeros(O.shape, dtype=np.float64)
             distance = np.zeros(m.shape, dtype=np.float64)
             test     = np.zeros(m.shape, dtype=np.bool)
@@ -201,18 +193,18 @@ class GenericOptic(TraceObject):
             test |= np.less_equal((alpha + beta + gamma - tri_area), 1e-15)
             test &= (distance >= 0)
             
-            #append the results to the global impacts arrays
+            # Append the results to the global impacts arrays
             X[test]    = intersect[test]
             hits[test] = ii + 1
         
         #mask all the rays that missed all faces
-        if self.miss_checks is True:
+        if self.param['do_miss_checks'] is True:
             m[m] &= (hits[m] != 0)
         return X, rays, hits
     
     def light(self, rays):
         m = rays['mask']
-        if self.use_meshgrid is False:
+        if self.param['use_meshgrid'] is False:
             distance = self.intersect(rays)
             X, rays  = self.intersect_check(rays, distance)
             # print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0])) 
@@ -253,18 +245,18 @@ class GenericOptic(TraceObject):
             
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.floor(point_loc / self.pixel_size).astype(int)
+            pix = np.floor(point_loc / self.param['pixel_size']).astype(int)
             
             # Check to ascertain if origin pixel is even or odd
-            if (self.pixel_width % 2) == 0:
-                pix_min_x = self.pixel_width//2
+            if (self.param['pixel_width'] % 2) == 0:
+                pix_min_x = self.param['pixel_width']//2
             else:
-                pix_min_x = (self.pixel_width + 1)//2
+                pix_min_x = (self.param['pixel_width'] + 1)//2
                 
-            if (self.pixel_height % 2) == 0:
-                pix_min_y = self.pixel_height//2
+            if (self.param['pixel_height'] % 2) == 0:
+                pix_min_y = self.param['pixel_height']//2
             else:
-                pix_min_y = (self.pixel_height + 1)//2
+                pix_min_y = (self.param['pixel_height'] + 1)//2
             
             pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
             
@@ -292,29 +284,34 @@ class GenericOptic(TraceObject):
 
 class GenericCrystal(GenericOptic):
 
-    def __init__(self, config):
-        super().__init__(config)
-
+    def get_default_config(self):
+        config = super().get_default_config()
+        
         # xray optical information and polarization information
-        self.crystal_spacing= config['spacing']
-        self.rocking_curve  = config['rocking_curve']
-        self.reflectivity   = config['reflectivity']
-        self.sigma_data     = config['sigma_data']
-        self.pi_data        = config['pi_data']
-        self.mix_factor     = config['mix_factor']
+        config['crystal_spacing'] = 0.0
+        config['reflectivity']    = 1.0
 
-        # boolean settings
-        self.bragg_checks   = config['do_bragg_checks']
-        self.rocking_type   = str.lower(config['rocking_curve_type'])
+        config['do_bragg_checks']    = True
+        config['rocking_type']       = 'gaussian'
+        config['rocking_fwhm']       = None
+        config['rocking_sigma_file'] = None
+        config['rocking_pi_file']    = None
+        config['rocking_mix']        = 0.5 
+
+        return config
+    
+    def initialize(self):
+        super().initialize()
+        self.param['rocking_type'] = str.lower(self.param['rocking_type'])
         
     def rocking_curve_filter(self, incident_angle, bragg_angle):
-        if "step" in self.rocking_type:
+        if "step" in self.param['rocking_type']:
             # Step Function
-            mask = (abs(incident_angle - bragg_angle) <= self.rocking_curve)
+            mask = (abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'])
             
-        elif "gauss" in self.rocking_type:
+        elif "gauss" in self.param['rocking_type']:
             # Convert from FWHM to sigma.
-            sigma = self.rocking_curve / np.sqrt(2 * np.log(2)) / 2
+            sigma = self.param['rocking_fwhm'] / np.sqrt(2 * np.log(2)) / 2
             
             # evaluate rocking curve reflectivity value for each ray
             p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
@@ -324,10 +321,10 @@ class GenericCrystal(GenericOptic):
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
             mask = p.flatten() > test
             
-        elif "file" in self.rocking_type:
+        elif "file" in self.param['rocking_type']:
             # read datafiles and extract points
-            sigma_data  = np.loadtxt(self.sigma_data, dtype = np.float64)
-            pi_data     = np.loadtxt(self.pi_data, dtype = np.float64)
+            sigma_data  = np.loadtxt(self.param['rocking_sigma_file'], dtype = np.float64)
+            pi_data     = np.loadtxt(self.param['rocking_pi_file'], dtype = np.float64)
             
             # convert data from arcsec to rad
             sigma_data[:,0] *= np.pi / (180 * 3600)
@@ -348,10 +345,11 @@ class GenericCrystal(GenericOptic):
             # give each ray a random number and compare that number to the reflectivity 
             # curves to decide whether the ray reflects or not. Use mix factor.
             test = np.random.uniform(0.0, 1.0, len(incident_angle))
-            mask = self.mix_factor * sigma_curve + (1 - self.mix_factor) * pi_curve >= test
+            prob = self.param['rocking_mix'] * sigma_curve + (1 - self.param['rocking_mix']) * pi_curve
+            mask = prob >= test
             
         else:
-            raise Exception('Rocking curve type not understood: {}'.format(self.rocking_curve))
+            raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
         return mask
     
     def angle_check(self, rays, normals):
@@ -365,12 +363,12 @@ class GenericCrystal(GenericOptic):
         
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
-        bragg_angle[m] = np.arcsin( W[m] / (2 * self.crystal_spacing))
+        bragg_angle[m] = np.arcsin( W[m] / (2 * self.param['crystal_spacing']))
         dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * normals[m]))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         
         #check which rays satisfy bragg, update mask to remove those that don't
-        if self.bragg_checks is True:
+        if self.param['do_bragg_checks'] is True:
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
         return rays, normals
     
@@ -391,12 +389,16 @@ class GenericCrystal(GenericOptic):
         return rays
     
 class SphericalCrystal(GenericCrystal):
-    def __init__(self, crystal_input):
-        super().__init__(crystal_input)
-        
-        self.radius         = crystal_input['curvature']
-        self.center         = self.radius * self.normal + self.position
-        
+
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['radius'] = 0.0
+        return config
+
+    def initialize(self):
+        super().initialize()
+        self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
+    
     def intersect(self, rays):
         """
         Calulate the distance to the intersection of the rays with the
@@ -420,7 +422,7 @@ class SphericalCrystal(GenericCrystal):
 
         # L is the destance from the ray origin to the center of the sphere.
         # t_ca is the projection of this distance along the ray direction.
-        L     = self.center - O
+        L     = self.param['center'] - O
         t_ca  = np.einsum('ij,ij->i', L, D)
         
         # If t_ca is less than zero, then there is no intersection in the
@@ -432,10 +434,10 @@ class SphericalCrystal(GenericCrystal):
         d[m] = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
 
         # If d is larger than the radius, the ray misses the sphere.
-        m[m] &= (d[m] <= self.radius)
+        m[m] &= (d[m] <= self.param['radius'])
         
         # t_hc is the distance from d to the intersection points.
-        t_hc[m] = np.sqrt(self.radius**2 - d[m]**2)
+        t_hc[m] = np.sqrt(self.param['radius']**2 - d[m]**2)
         
         t_0[m] = t_ca[m] - t_hc[m]
         t_1[m] = t_ca[m] + t_hc[m]
@@ -447,13 +449,13 @@ class SphericalCrystal(GenericCrystal):
     def generate_optic_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
-        normals[m] = self.normalize(self.center - X[m])
+        normals[m] = self.normalize(self.param['center'] - X[m])
         return normals
     
     def mesh_generate_optic_normals(self, X, rays, hits):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
-        for ii in range(len(self.mesh_faces)):
+        for ii in range(len(self.param['mesh_faces'])):
             tri   = self.mesh_triangulate(ii)
             test  = np.equal(ii, (hits - 1))
             test &= m
@@ -463,11 +465,11 @@ class SphericalCrystal(GenericCrystal):
     
 
 class MosaicGraphite(GenericCrystal):
-    def __init__(self, graphite_input):
-        super().__init__(graphite_input)
-        
-        self.__name__       = 'MosaicGraphite'
-        self.mosaic_spread  = graphite_input['mosaic_spread']
+
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['mosaic_spread'] = 0.0
+        return config
 
     def intersect(self, rays):
         """
@@ -481,8 +483,8 @@ class MosaicGraphite(GenericCrystal):
         m = rays['mask']
         
         distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m]  = np.dot((self.position - O[m]), self.normal)
-        distance[m] /= np.dot(D[m], self.normal)
+        distance[m]  = np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
+        distance[m] /= np.dot(D[m], self.param['zaxis'])
 
         # Update the mask to count only intersections with the plain.
         m[m] &= (distance[m] > 0)
@@ -508,12 +510,12 @@ class MosaicGraphite(GenericCrystal):
         m = rays['mask']
         
         normals = np.zeros(O.shape)
-        rad_spread = np.radians(self.mosaic_spread)
+        rad_spread = np.radians(self.param['mosaic_spread'])
         dir_local = f(rad_spread, len(m))
 
         # Create two vectors perpendicular to the surface normal,
         # it doesn't matter how they are oriented otherwise.
-        norm_surf = np.ones(O.shape) * self.normal
+        norm_surf = np.ones(O.shape) * self.param['zaxis']
         o_1     = np.zeros(O.shape)
         o_1[m]  = np.cross(norm_surf[m], [0,0,1])
         o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
@@ -550,10 +552,10 @@ class MosaicGraphite(GenericCrystal):
         m = rays['mask']
         
         normals = np.zeros(O.shape)
-        rad_spread = np.radians(self.mosaic_spread)
+        rad_spread = np.radians(self.param['mosaic_spread'])
         dir_local = f(rad_spread, len(m))
 
-        for ii in range(len(self.mesh_faces)):
+        for ii in range(len(self.param['mesh_faces'])):
             tri   = self.mesh_triangulate(ii)
             test  = np.equal(ii, (hits - 1))
             test &= m

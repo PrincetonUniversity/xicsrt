@@ -33,17 +33,16 @@ profiler.stop('Import Time')
 def initialize(config):
 
     # Setup our plasma box to be radial.
-    config['source_input']['normal'] = config['source_input']['position']
-    config['source_input']['normal'] /= np.linalg.norm(config['source_input']['normal'])
+    config['source_input']['zaxis'] = config['source_input']['origin']
+    config['source_input']['zaxis'] /= np.linalg.norm(config['source_input']['zaxis'])
 
-    config['source_input']['orientation'] = np.cross(config['source_input']['normal'], np.array([0,0,1]))
-    config['source_input']['orientation'] /= np.linalg.norm(config['source_input']['orientation'])
+    config['source_input']['xaxis'] = np.cross(config['source_input']['zaxis'], np.array([0,0,1]))
+    config['source_input']['xaxis'] /= np.linalg.norm(config['source_input']['xaxis'])
 
-    config['source_input']['target'] = config['crystal_input']['position']
+    config['source_input']['target'] = config['crystal_input']['origin']
 
     xics_rt_input.config_to_numpy(config)
     return config
-
 
 def run(config, name=None, do_random_seed=True):
 
@@ -54,9 +53,9 @@ def run(config, name=None, do_random_seed=True):
 
     profiler.start('Class Setup Time')
 
-    detector = Detector(config['detector_input'])
-    crystal = SphericalCrystal(config['crystal_input'])
-    source = XicsrtPlasmaW7xSimple(config['source_input'])
+    detector = Detector(config['detector_input'], strict=False)
+    crystal = SphericalCrystal(config['crystal_input'], strict=False)
+    source = XicsrtPlasmaW7xSimple(config['source_input'], strict=False)
 
     profiler.stop('Class Setup Time')
 

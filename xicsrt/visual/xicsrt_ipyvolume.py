@@ -256,9 +256,9 @@ def add_rays(output, inputs):
                 obj.line_material.linewidth = 10.0
 
 def add_surf(obj):
-    w = obj.width / 2.0
-    h = obj.height / 2.0
-    d = obj.depth / 2.0
+    w = obj.param['width'] / 2.0
+    h = obj.param['height'] / 2.0
+    d = obj.param['depth'] / 2.0
 
     points = np.zeros((8, 3))
     points[0, :] = [w, h, d]
@@ -312,7 +312,7 @@ def add_surf(obj):
 def add_optics(inputs):
 
     if True:
-        crystal_center = inputs['crystal_input']['position'] + inputs['crystal_input']['normal'] * inputs['crystal_input']['curvature']
+        crystal_center = inputs['crystal_input']['origin'] + inputs['crystal_input']['zaxis'] * inputs['crystal_input']['radius']
         x = np.array([crystal_center[0]])
         y = np.array([crystal_center[1]])
         z = np.array([crystal_center[2]])
@@ -320,16 +320,16 @@ def add_optics(inputs):
 
         # Plot the crystal circle.
         num = 1000
-        crystal_radius = inputs['crystal_input']['curvature']
-        x = np.sin(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['curvature'] + crystal_center[0]
-        y = np.cos(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['curvature'] + crystal_center[1]
+        crystal_radius = inputs['crystal_input']['radius']
+        x = np.sin(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['radius'] + crystal_center[0]
+        y = np.cos(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['radius'] + crystal_center[1]
         z = np.zeros(num) + crystal_center[2]
         lines = np.zeros((num, 2), dtype=int)
         lines[:, 0] = np.arange(num)
         lines[:, 1] = np.roll(lines[:, 0], 1)
         obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
 
-        rowland_center = inputs['crystal_input']['position'] + inputs['crystal_input']['normal'] * inputs['crystal_input']['curvature'] / 2
+        rowland_center = inputs['crystal_input']['origin'] + inputs['crystal_input']['zaxis'] * inputs['crystal_input']['radius'] / 2
         rowland_radius = crystal_radius / 2
         x = np.sin(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[0]
         y = np.cos(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[1]
@@ -342,20 +342,20 @@ def add_optics(inputs):
     if True:
         w = inputs['crystal_input']['width'] / 2.0
         h = inputs['crystal_input']['height'] / 2.0
-        cx = inputs['crystal_input']['orientation']
-        cy = np.cross(inputs['crystal_input']['orientation'], inputs['crystal_input']['normal'])
+        cx = inputs['crystal_input']['xaxis']
+        cy = np.cross(inputs['crystal_input']['xaxis'], inputs['crystal_input']['zaxis'])
 
-        point0 = w * cx + h * cy + inputs['crystal_input']['position']
-        point1 = h * cy + inputs['crystal_input']['position']
-        point2 = -1 * w * cx + h * cy + inputs['crystal_input']['position']
+        point0 = w * cx + h * cy + inputs['crystal_input']['origin']
+        point1 = h * cy + inputs['crystal_input']['origin']
+        point2 = -1 * w * cx + h * cy + inputs['crystal_input']['origin']
 
-        point3 = w * cx + inputs['crystal_input']['position']
-        point4 = inputs['crystal_input']['position']
-        point5 = -1 * w * cx + inputs['crystal_input']['position']
+        point3 = w * cx + inputs['crystal_input']['origin']
+        point4 = inputs['crystal_input']['origin']
+        point5 = -1 * w * cx + inputs['crystal_input']['origin']
 
-        point6 = w * cx - h * cy + inputs['crystal_input']['position']
-        point7 = -1 * h * cy + inputs['crystal_input']['position']
-        point8 = -1 * w * cx - h * cy + inputs['crystal_input']['position']
+        point6 = w * cx - h * cy + inputs['crystal_input']['origin']
+        point7 = -1 * h * cy + inputs['crystal_input']['origin']
+        point8 = -1 * w * cx - h * cy + inputs['crystal_input']['origin']
 
         points = np.array([
             point0
@@ -388,20 +388,20 @@ def add_optics(inputs):
     if False:
         w = inputs['graphite_input']['width'] / 2.0
         h = inputs['graphite_input']['height'] / 2.0
-        cx = inputs['graphite_input']['orientation']
-        cy = np.cross(inputs['graphite_input']['orientation'], inputs['graphite_input']['normal'])
+        cx = inputs['graphite_input']['xaxis']
+        cy = np.cross(inputs['graphite_input']['xaxis'], inputs['graphite_input']['zaxis'])
 
-        point0 = w * cx + h * cy + inputs['graphite_input']['position']
-        point1 = h * cy + inputs['graphite_input']['position']
-        point2 = -1 * w * cx + h * cy + inputs['graphite_input']['position']
+        point0 = w * cx + h * cy + inputs['graphite_input']['origin']
+        point1 = h * cy + inputs['graphite_input']['origin']
+        point2 = -1 * w * cx + h * cy + inputs['graphite_input']['origin']
 
-        point3 = w * cx + inputs['graphite_input']['position']
-        point4 = inputs['graphite_input']['position']
-        point5 = -1 * w * cx + inputs['graphite_input']['position']
+        point3 = w * cx + inputs['graphite_input']['origin']
+        point4 = inputs['graphite_input']['origin']
+        point5 = -1 * w * cx + inputs['graphite_input']['origin']
 
-        point6 = w * cx - h * cy + inputs['graphite_input']['position']
-        point7 = -1 * h * cy + inputs['graphite_input']['position']
-        point8 = -1 * w * cx - h * cy + inputs['graphite_input']['position']
+        point6 = w * cx - h * cy + inputs['graphite_input']['origin']
+        point7 = -1 * h * cy + inputs['graphite_input']['origin']
+        point8 = -1 * w * cx - h * cy + inputs['graphite_input']['origin']
 
         points = np.array([
             point0
@@ -434,20 +434,20 @@ def add_optics(inputs):
     if True:
         w = inputs['detector_input']['width'] / 2.0
         h = inputs['detector_input']['height'] / 2.0
-        cx = inputs['detector_input']['orientation']
-        cy = np.cross(inputs['detector_input']['orientation'], inputs['detector_input']['normal'])
+        cx = inputs['detector_input']['xaxis']
+        cy = np.cross(inputs['detector_input']['xaxis'], inputs['detector_input']['zaxis'])
 
-        point0 = w * cx + h * cy + inputs['detector_input']['position']
-        point1 = h * cy + inputs['detector_input']['position']
-        point2 = -1 * w * cx + h * cy + inputs['detector_input']['position']
+        point0 = w * cx + h * cy + inputs['detector_input']['origin']
+        point1 = h * cy + inputs['detector_input']['origin']
+        point2 = -1 * w * cx + h * cy + inputs['detector_input']['origin']
 
-        point3 = w * cx + inputs['detector_input']['position']
-        point4 = inputs['detector_input']['position']
-        point5 = -1 * w * cx + inputs['detector_input']['position']
+        point3 = w * cx + inputs['detector_input']['origin']
+        point4 = inputs['detector_input']['origin']
+        point5 = -1 * w * cx + inputs['detector_input']['origin']
 
-        point6 = w * cx - h * cy + inputs['detector_input']['position']
-        point7 = -1 * h * cy + inputs['detector_input']['position']
-        point8 = -1 * w * cx - h * cy + inputs['detector_input']['position']
+        point6 = w * cx - h * cy + inputs['detector_input']['origin']
+        point7 = -1 * h * cy + inputs['detector_input']['origin']
+        point8 = -1 * w * cx - h * cy + inputs['detector_input']['origin']
 
         points = np.array([
             point0
@@ -480,20 +480,20 @@ def add_optics(inputs):
     if False:
         w = inputs['source_input']['width'] / 2.0
         h = inputs['source_input']['height'] / 2.0
-        cx = inputs['source_input']['orientation']
-        cy = np.cross(inputs['source_input']['orientation'], inputs['source_input']['normal'])
+        cx = inputs['source_input']['xaxis']
+        cy = np.cross(inputs['source_input']['xaxis'], inputs['source_input']['zaxis'])
 
-        point0 = w * cx + h * cy + inputs['source_input']['position']
-        point1 = h * cy + inputs['source_input']['position']
-        point2 = -1 * w * cx + h * cy + inputs['source_input']['position']
+        point0 = w * cx + h * cy + inputs['source_input']['origin']
+        point1 = h * cy + inputs['source_input']['origin']
+        point2 = -1 * w * cx + h * cy + inputs['source_input']['origin']
 
-        point3 = w * cx + inputs['source_input']['position']
-        point4 = inputs['source_input']['position']
-        point5 = -1 * w * cx + inputs['source_input']['position']
+        point3 = w * cx + inputs['source_input']['origin']
+        point4 = inputs['source_input']['origin']
+        point5 = -1 * w * cx + inputs['source_input']['origin']
 
-        point6 = w * cx - h * cy + inputs['source_input']['position']
-        point7 = -1 * h * cy + inputs['source_input']['position']
-        point8 = -1 * w * cx - h * cy + inputs['source_input']['position']
+        point6 = w * cx - h * cy + inputs['source_input']['origin']
+        point7 = -1 * h * cy + inputs['source_input']['origin']
+        point8 = -1 * w * cx - h * cy + inputs['source_input']['origin']
 
         points = np.array([
             point0
@@ -524,7 +524,7 @@ def add_optics(inputs):
         obj.material.transparent = True
 
 def add_optics_volume(config):
-    source = XicsrtPlasmaGeneric(config['source_input'])
+    source = XicsrtPlasmaGeneric(config['source_input'], strict=False)
     add_surf(source)
 
 def show():

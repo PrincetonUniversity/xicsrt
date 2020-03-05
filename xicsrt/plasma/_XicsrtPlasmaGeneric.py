@@ -27,65 +27,60 @@ class XicsrtPlasmaGeneric(TraceObject):
     Plasma object will generate a set of ray bundles where each ray
     bundle has the properties of the plamsa at one particular real-space point.
     """
-    def __init__(self, config):
-        super().__init__(
-            config['position']
-            ,config['normal']
-            ,config['orientation'])
 
-        self.config   = config
-        self.max_rays       = config['max_rays']
-        self.position       = config['position']
-        self.normal         = config['normal']
-        self.xorientation   = config['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.target         = config['target']
-        self.width          = config['width']
-        self.height         = config['height']
-        self.depth          = config['depth']
-        self.volume         = self.width * self.height * self.depth
-
-        # Bundle parameters.
-        # Voxels are 3D pixels, Chronons are time pixels
-        self.spread         = config['spread']
-        self.solid_angle    = 4 * np.pi * np.sin(config['spread'] * np.pi / 360)**2
-        self.chronon_size   = config['time_resolution']
-        self.bundle_count   = config['bundle_count']
-        self.bundle_volume  = config['bundle_volume']
-        self.bundle_type    = config['bundle_type']
-
-        # Plasma parameters.
-        self.mass_number    = config['mass']
-        self.wavelength     = config['wavelength']
-        self.linewidth      = config['linewidth']
-        self.emissivity     = config['emissivity']
-        self.temperature    = config['temperature']
-        self.velocity       = config['velocity']
-        self.use_poisson    = config['use_poisson']
-
-        # Filters
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.bundle_filters = []
 
-        self.check_inputs()
-
-    def check_inputs(self):
-        self.bundle_type = str.upper(self.bundle_type)
+    def get_default_config(self):
+        config = super().get_default_config()
+                
+        config['width']          = 0.0
+        config['height']         = 0.0
+        config['depth']          = 0.0
+        
+        config['spread']         = 2*np.pi
+        config['target']         = None
+        
+        config['mass_number']    = 1.0
+        config['wavelength']     = 1.0
+        config['linewidth']      = 0.0
+        config['intensity']      = 0.0
+        config['temperature']    = 0.0
+        config['velocity']       = 0.0
+        config['use_poisson']    = False
+        
+        config['emissivity']      = 0.0
+        config['max_rays']        = int(1e7)
+        config['time_resolution'] = 1e-3
+        config['bundle_count']    = int(1e5)
+        config['bundle_volume']   = 1e-3
+        config['bundle_type']     = 'voxel'
+        return config
+ 
+    def initialize(self):
+        super().initialize()
+        self.param['max_rays'] = int(self.param['max_rays'])
+        self.param['bundle_type']  = str.lower(self.param['bundle_type'])
+        self.param['bundle_count'] = int(self.param['bundle_count'])
+        
+        self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
+        self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread'] * np.pi / 360)**2
         
     def setup_bundles(self):
         
-        if self.bundle_type == 'POINT':
-            self.voxel_size = 0.0
-        elif self.bundle_type == 'VOXEL':
-            self.voxel_size = self.bundle_volume ** (1/3)
+        if self.param['bundle_type'] == 'point':
+            self.param['voxel_size'] = 0.0
+        elif self.param['bundle_type'] == 'voxel':
+            self.param['voxel_size'] = self.param['bundle_volume'] ** (1/3)
 
         # These values should be overwritten in a derived class.
         bundle_input = {}
-        bundle_input['position']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
-        bundle_input['temperature']  = np.ones([self.bundle_count], dtype = np.float64)
-        bundle_input['emissivity']   = np.ones([self.bundle_count], dtype = np.int)
-        bundle_input['velocity']     = np.zeros([self.bundle_count, 3], dtype = np.float64)
-        bundle_input['mask']         = np.ones([self.bundle_count], dtype = np.bool)
+        bundle_input['origin']       = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
+        bundle_input['temperature']  = np.ones([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.int)
+        bundle_input['velocity']     = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
+        bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool)
         
         return bundle_input
 
@@ -123,35 +118,35 @@ class XicsrtPlasmaGeneric(TraceObject):
         # This is only approximate since poisson statistics may be in use.
         predicted_rays = int(
             np.sum(bundle_input['emissivity'][m])
-            * self.chronon_size
-            * self.bundle_volume
-            * self.solid_angle / (4 * np.pi)
-            * self.volume / (self.bundle_count * self.bundle_volume))
+            * self.param['time_resolution']
+            * self.param['bundle_volume']
+            * self.param['solid_angle'] / (4 * np.pi)
+            * self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume']))
 
-        if predicted_rays >= self.max_rays:
+        if predicted_rays >= self.param['max_rays']:
             raise ValueError('Current settings will produce too many rays. Please reduce integration time.')
         
         #bundle generation loop
-        for ii in range(self.bundle_count):
+        for ii in range(self.param['bundle_count']):
             
             if not bundle_input['mask'][ii]:
                 continue
 
             profiler.start("Ray Bundle Generation")
-            source_input = OrderedDict()
+            source_config = OrderedDict()
             
             #spacially-dependent parameters
-            source_input['position']    = bundle_input['position'][ii]
-            source_input['temperature'] = bundle_input['temperature'][ii]
-            source_input['velocity'] = bundle_input['velocity'][ii]
+            source_config['origin']      = bundle_input['origin'][ii]
+            source_config['temperature'] = bundle_input['temperature'][ii]
+            source_config['velocity']    = bundle_input['velocity'][ii]
 
             # Calculate the total number of photons to launch from this bundle
             # volume. Since the source can use poisson statistics, this should
             # be of floating point type.
             intensity = (bundle_input['emissivity'][ii]
-                         * self.chronon_size
-                         * self.bundle_volume
-                         * self.solid_angle / (4 * np.pi))
+                         * self.param['time_resolution']
+                         * self.param['bundle_volume']
+                         * self.param['solid_angle'] / (4 * np.pi))
 
             # Scale the number of photons based on the number of bundles.
             #
@@ -166,25 +161,25 @@ class XicsrtPlasmaGeneric(TraceObject):
             #
             # In doing so bundle_volume cancels out, but I am leaving the
             # calculation separate for clarity.
-            intensity *= self.volume / (self.bundle_count * self.bundle_volume)
+            intensity *= self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume'])
 
-            source_input['intensity'] = intensity
-
-            # constants
-            source_input['width']       = self.voxel_size
-            source_input['height']      = self.voxel_size
-            source_input['depth']       = self.voxel_size
-            source_input['normal']      = self.normal
-            source_input['orientation'] = self.xorientation
-            source_input['target']      = self.target
-            source_input['mass']        = self.mass_number
-            source_input['wavelength']  = self.wavelength
-            source_input['linewidth']   = self.linewidth
-            source_input['spread']      = self.config['spread']
-            source_input['use_poisson'] = self.use_poisson
+            source_config['intensity'] = intensity
             
+            # constants
+            source_config['width']       = self.param['voxel_size']
+            source_config['height']      = self.param['voxel_size']
+            source_config['depth']       = self.param['voxel_size']
+            source_config['zaxis']       = self.param['zaxis']
+            source_config['xaxis']       = self.param['xaxis']
+            source_config['target']      = self.param['target']
+            source_config['mass_number'] = self.param['mass_number']
+            source_config['wavelength']  = self.param['wavelength']
+            source_config['linewidth']   = self.param['linewidth']
+            source_config['spread']      = self.param['spread']
+            source_config['use_poisson'] = self.param['use_poisson']
+                
             #create ray bundle sources and generate bundled rays
-            source       = FocusedExtendedSource(source_input)
+            source       = FocusedExtendedSource(source_config)
             bundled_rays = source.generate_rays()
 
             count_rays_in_bundle.append(len(bundled_rays['mask']))
@@ -195,11 +190,11 @@ class XicsrtPlasmaGeneric(TraceObject):
             # pythorn dictionary, then do the collection at the end. This wolud
             # take more memory though.
             profiler.start('Ray Bundle Collection')
-            rays['origin'] = np.append(rays['origin'], bundled_rays['origin'], axis=0)
-            rays['direction'] = np.append(rays['direction'], bundled_rays['direction'], axis=0)
+            rays['origin']     = np.append(rays['origin'], bundled_rays['origin'], axis=0)
+            rays['direction']  = np.append(rays['direction'], bundled_rays['direction'], axis=0)
             rays['wavelength'] = np.append(rays['wavelength'], bundled_rays['wavelength'])
-            rays['weight'] = np.append(rays['weight'], bundled_rays['weight'])
-            rays['mask'] = np.append(rays['mask'], bundled_rays['mask'])
+            rays['weight']     = np.append(rays['weight'], bundled_rays['weight'])
+            rays['mask']       = np.append(rays['mask'], bundled_rays['mask'])
             profiler.start('Ray Bundle Collection')
 
             profiler.stop("Ray Bundle Generation")

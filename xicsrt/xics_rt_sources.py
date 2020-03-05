@@ -17,43 +17,38 @@ from xicsrt.tool import voigt
 from xicsrt.xics_rt_objects import TraceObject
 
 class GenericSource(TraceObject):
-    #Source class to hold basic functions for each source type
-    def __init__(self, source_input):
-        super().__init__(
-            source_input['position']
-            ,source_input['normal']
-            ,source_input['orientation'])
+            
+    def get_default_config(self):
+        config = super().get_default_config()
+        
+        config['width']          = 0.0
+        config['height']         = 0.0
+        config['depth']          = 0.0
+        
+        config['spread']         = 2*np.pi
+        
+        config['mass_number']    = 1.0
+        config['wavelength']     = 1.0
+        config['linewidth']      = 0.0
+        config['intensity']      = 0.0
+        config['temperature']    = 0.0
+        config['velocity']       = 0.0
+        config['use_poisson']    = False
 
-        self.position       = source_input['position']
-        self.normal         = source_input['normal']
-        self.xorientation   = source_input['orientation']
-        self.yorientation   = (np.cross(self.normal, self.xorientation) / 
-                               np.linalg.norm(np.cross(self.normal, self.xorientation)))
-        self.width          = source_input['width']
-        self.height         = source_input['height']
-        self.depth          = source_input['depth']
-        self.spread         = source_input['spread']
-        self.mass_number    = source_input['mass']   
-        self.wavelength     = source_input['wavelength']
-        self.linewidth      = source_input['linewidth']
-        self.intensity      = source_input['intensity']
-        self.temperature    = source_input['temperature']
-        self.velocity       = source_input['velocity']
-        self.use_poisson    = source_input['use_poisson']
+        return config
 
-        # Check the inputs and perform calculations.
-        # (This should eventually be put into a separate method.)
-        if self.use_poisson:
-            self.intensity = np.random.poisson(self.intensity)
+    def initialize(self):
+        super().initialize()
+        
+        if self.param['use_poisson']:
+            self.param['intensity'] = np.random.poisson(self.param['intensity'])
         else:
-            if (self.intensity < 1) and (self.intensity > 0):
+            if self.param['intensity'] < 1:
                 raise ValueError('intensity of less than one encountered. Turn on poisson statistics.')
-            self.intenisty = int(self.intensity)
-
+        self.param['intensity'] = int(self.param['intensity'])
+        
     def generate_rays(self):
         rays = dict()
-
-        self.intensity = int(self.intensity)
 
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
@@ -77,17 +72,16 @@ class GenericSource(TraceObject):
         
         return rays
      
-    
     def generate_origin(self):
         # generic origin for isotropic rays
-        w_offset = np.random.uniform(-1 * self.width/2,  self.width/2,  self.intensity)
-        h_offset = np.random.uniform(-1 * self.height/2, self.height/2, self.intensity)
-        d_offset = np.random.uniform(-1 * self.depth/2,  self.depth/2,  self.intensity)        
-                
-        origin = (self.position
-                  + np.einsum('i,j', w_offset, self.xorientation)
-                  + np.einsum('i,j', h_offset, self.yorientation)
-                  + np.einsum('i,j', d_offset, self.normal))
+        w_offset = np.random.uniform(-1 * self.param['width']/2,  self.param['width']/2,  self.param['intensity'])
+        h_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['intensity'])
+        d_offset = np.random.uniform(-1 * self.param['depth']/2,  self.param['depth']/2,  self.param['intensity'])
+        
+        origin = (self.origin
+                  + np.einsum('i,j', w_offset, self.xaxis)
+                  + np.einsum('i,j', h_offset, self.yaxis)
+                  + np.einsum('i,j', d_offset, self.zaxis))
         return origin
 
     def generate_direction(self, origin):
@@ -96,8 +90,8 @@ class GenericSource(TraceObject):
         return D
 
     def make_normal(self):
-        array = np.empty((self.intensity, 3))
-        array[:] = self.normal
+        array = np.empty((self.param['intensity'], 3))
+        array[:] = self.param['zaxis']
         normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
         return normal
         
@@ -115,15 +109,15 @@ class GenericSource(TraceObject):
             return output
         
         direction  = np.empty(origin.shape)
-        rad_spread = np.radians(self.spread)
-        dir_local  = f(rad_spread, self.intensity)
+        rad_spread = np.radians(self.param['spread'])
+        dir_local  = f(rad_spread, self.param['intensity'])
         
         o_1  = np.cross(normal, [0,0,1])
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
         
-        R        = np.empty((self.intensity, 3, 3))
+        R        = np.empty((self.param['intensity'], 3, 3))
         R[:,0,:] = o_1
         R[:,1,:] = o_2
         R[:,2,:] = normal
@@ -135,11 +129,11 @@ class GenericSource(TraceObject):
         #random_wavelength = self.random_wavelength_normal
         #random_wavelength = self.random_wavelength_cauchy
         random_wavelength = self.random_wavelength_voigt
-        wavelength = random_wavelength(self.intensity)
+        wavelength = random_wavelength(self.param['intensity'])
         
         #doppler shift
         c = const.physical_constants['speed of light in vacuum'][0]
-        wavelength *= 1 - (np.einsum('j,ij->i', self.velocity, direction) / c)
+        wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
         
         return wavelength
 
@@ -147,19 +141,19 @@ class GenericSource(TraceObject):
         #Units: wavelength (angstroms), natural_linewith (1/s), temperature (eV)
         
         # Check for the trivial case.
-        if (self.linewidth  == 0.0 and self.temperature == 0.0):
-            return np.ones(size)*self.wavelength
+        if (self.param['linewidth']  == 0.0 and self.param['temperature'] == 0.0):
+            return np.ones(size)*self.param['wavelength']
         # Check for the Lorentzian case.
-        if (self.temperature == 0.0):
+        if (self.param['temperature'] == 0.0):
             # I need to update the cauchy routine first.
             #raise NotImplementedError('Random Lorentzian distribution not implemented.')
 
             # TEMPORARY:
             # The raytracer cannot currently accept a zero temperature, so just add 1eV for now.
-            self.temperature += 1.0
+            self.param['temperature'] += 1.0
              
         # Check for the Gaussian case.
-        if (self.linewidth  == 0.0):
+        if (self.param['linewidth']  == 0.0):
             return self.random_wavelength_normal(size)
 
         c = const.physical_constants['speed of light in vacuum'][0]
@@ -167,14 +161,14 @@ class GenericSource(TraceObject):
         ev_J = const.physical_constants['electron volt-joule relationship'][0]
         
         # Natural line width.
-        gamma = (self.linewidth * self.wavelength**2 / (4 * np.pi * c * 1e10))
+        gamma = (self.param['linewidth'] * self.param['wavelength']**2 / (4 * np.pi * c * 1e10))
 
         # Doppler broadened line width.
-        sigma = (np.sqrt(self.temperature / self.mass_number / amu_kg / c**2 * ev_J)
-                  * self.wavelength )
+        sigma = (np.sqrt(self.param['temperature'] / self.param['mass_number'] / amu_kg / c**2 * ev_J)
+                  * self.param['wavelength'] )
 
         rand_wave  = voigt.voigt_random(gamma, sigma, size)
-        rand_wave += self.wavelength
+        rand_wave += self.param['wavelength']
         return rand_wave
 
     def random_wavelength_normal(self, size=None):
@@ -184,10 +178,10 @@ class GenericSource(TraceObject):
         ev_J    = const.physical_constants['electron volt-joule relationship'][0]
         
         # Doppler broadened line width.
-        sigma = ( np.sqrt(self.temperature / self.mass_number / amu_kg / c**2 * ev_J)
-                  * self.wavelength )
+        sigma = ( np.sqrt(self.param['temperature'] / self.param['mass_number'] / amu_kg / c**2 * ev_J)
+                  * self.param['wavelength'] )
 
-        rand_wave = np.random.normal(self.wavelength, sigma, size)
+        rand_wave = np.random.normal(self.param['wavelength'], sigma, size)
         return rand_wave
     
     def random_wavelength_cauchy(self, size=None):
@@ -200,26 +194,27 @@ class GenericSource(TraceObject):
         # It also may make sense to add some sort of cutoff here.
         # the extreme tails of the distribution are not really useful
         # for ray tracing.
-        fwhm = self.linewidth
-        rand_wave = cauchy.rvs(loc=self.wavelength, scale=fwhm, size=size)
+        fwhm = self.param['linewidth']
+        rand_wave = cauchy.rvs(loc=self.param['wavelength'], scale=fwhm, size=size)
         return rand_wave
     
     def generate_weight(self):
         #weight is not yet implemented
-        intensity = self.intensity
+        intensity = self.param['intensity']
         w = np.ones((intensity,1), dtype=np.float64)
         return w
     
     def generate_mask(self):
-        intensity = self.intensity
+        intensity = self.param['intensity']
         m = np.ones((intensity), dtype=np.bool)
         return m
 
 class FocusedExtendedSource(GenericSource):
-    def __init__(self, source_input):
-        super().__init__(source_input)
-        
-        self.target          = source_input['target']
+    
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['target'] = None
+        return config
     
     def generate_direction(self, origin):
         normal = self.make_normal_focused(origin)
@@ -228,15 +223,15 @@ class FocusedExtendedSource(GenericSource):
     
     def make_normal_focused(self, origin):
         # Generate ray from the origin to the focus.
-        normal = self.target - origin
+        normal = self.param['target'] - origin
         normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
         return normal
 
 class DirectedSource(GenericSource):
-    def __init__(self, source_input, general_input):
-        super().__init__(source_input, general_input)
-        
-        self.width          = 0
-        self.height         = 0
-        self.depth          = 0
+    
+    def initialize(self):
+        super().initialize()
+        self.param['width']  = 0
+        self.param['height'] = 0
+        self.param['depth']  = 0
 
