@@ -12,7 +12,7 @@ A plasma source based on a VMEC equilibrium.
 import numpy as np
 import logging
 
-from xicsrt.sources.xics_rt_vmec import FluxSurfacePlasma
+from xicsrt.sources.xicsrt_vmec import FluxSurfacePlasma
 
 from mirutil import hdf5
 

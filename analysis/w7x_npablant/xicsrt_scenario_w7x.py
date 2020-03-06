@@ -21,8 +21,8 @@ from collections import OrderedDict
 
 from multiprocessing import Pool
 
-from xicsrt.xics_rt_raytrace   import raytrace
-from xicsrt import xics_rt_input
+from xicsrt.xicsrt_raytrace   import raytrace
+from xicsrt import xicsrt_input
 
 from xicsrt.optics._XicsrtOpticDetector import XicsrtOpticDetector
 from xicsrt.optics._XicsrtOpticCrystalSpherical import XicsrtOpticCrystalSpherical
@@ -41,7 +41,7 @@ def initialize(config):
 
     config['source_input']['target'] = config['crystal_input']['origin']
 
-    xics_rt_input.config_to_numpy(config)
+    xicsrt_input.config_to_numpy(config)
     return config
 
 def run(config, name=None, do_random_seed=True):

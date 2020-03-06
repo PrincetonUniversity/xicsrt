@@ -14,7 +14,7 @@ import scipy.constants as const
 from xicsrt.util import profiler
 from xicsrt.tool import voigt
 
-from xicsrt.xics_rt_objects import TraceObject
+from xicsrt.xicsrt_objects import TraceObject
 
 class XicsrtSourceGeneric(TraceObject):
             

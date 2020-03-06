@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import Delaunay
-from xicsrt.xics_rt_scenarios import bragg_angle
+from xicsrt.xicsrt_scenarios import bragg_angle
 from PIL import Image
 import stelltools
 

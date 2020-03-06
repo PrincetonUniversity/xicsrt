@@ -7,7 +7,7 @@ Authors
 
 import numpy as np
 
-from xicsrt.xics_rt_objects import ConfigObject
+from xicsrt.xicsrt_objects import ConfigObject
 
 class XicsrtBundleFilter(ConfigObject):
     """

@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 from xicsrt.util import profiler
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
-from xicsrt.xics_rt_math    import cart2cyl, cart2toro
+from xicsrt.xicsrt_math    import cart2cyl, cart2toro
 
 class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     """

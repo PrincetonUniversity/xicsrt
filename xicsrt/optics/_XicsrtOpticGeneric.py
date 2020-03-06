@@ -9,7 +9,7 @@ Authors
 from PIL import Image
 import numpy as np
 
-from xicsrt.xics_rt_objects import TraceObject
+from xicsrt.xicsrt_objects import TraceObject
 
 class XicsrtOpticGeneric(TraceObject):
     """

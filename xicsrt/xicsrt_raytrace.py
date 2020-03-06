@@ -9,7 +9,7 @@ from copy import deepcopy
 
 from xicsrt.util import profiler
 
-from xicsrt.xics_rt_objects import RayArray
+from xicsrt.xicsrt_objects import RayArray
 
 def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_optics=None):
     """ 

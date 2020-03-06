@@ -17,7 +17,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.xics_rt_objects import TraceObject
+from xicsrt.xicsrt_objects import TraceObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
 class XicsrtPlasmaGeneric(TraceObject):

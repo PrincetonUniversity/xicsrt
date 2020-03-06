@@ -18,14 +18,14 @@ import logging
 import os
 import numpy as np
 
-from xicsrt.xics_rt_sources    import FocusedExtendedSource
-from xicsrt.xics_rt_detectors  import Detector
-from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace   import raytrace
-from xicsrt.xics_rt_model      import analytical_model
+from xicsrt.xicsrt_sources    import FocusedExtendedSource
+from xicsrt.xicsrt_detectors  import Detector
+from xicsrt.xicsrt_optics     import SphericalCrystal, MosaicGraphite
+from xicsrt.xicsrt_raytrace   import raytrace
+from xicsrt.xicsrt_model      import analytical_model
 
-from xicsrt.xics_rt_plasmas            import ToroidalPlasma, CubicPlasma
-from xicsrt.plasma.xics_rt_plasma_vmec import FluxSurfacePlasma
+from xicsrt.xicsrt_plasmas            import ToroidalPlasma, CubicPlasma
+from xicsrt.plasma.xicsrt_plasma_vmec import FluxSurfacePlasma
 
 profiler.stop('Import Time')
 
