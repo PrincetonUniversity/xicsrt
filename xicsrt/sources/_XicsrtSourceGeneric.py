@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 13 10:12:15 2017
-Edited on Fri Sep 06 11:46:40 2019
-
-@author: James Kring
-@editor: Eugene
+Authors
+-------
+  - Novimir Pablant <npablant@pppl.gov>
+  - James Kring <jdk0026@tigermail.auburn.edu>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 
 import numpy as np   
@@ -16,7 +16,7 @@ from xicsrt.tool import voigt
 
 from xicsrt.xics_rt_objects import TraceObject
 
-class GenericSource(TraceObject):
+class XicsrtSourceGeneric(TraceObject):
             
     def get_default_config(self):
         config = super().get_default_config()
@@ -209,29 +209,4 @@ class GenericSource(TraceObject):
         m = np.ones((intensity), dtype=np.bool)
         return m
 
-class FocusedExtendedSource(GenericSource):
-    
-    def get_default_config(self):
-        config = super().get_default_config()
-        config['target'] = None
-        return config
-    
-    def generate_direction(self, origin):
-        normal = self.make_normal_focused(origin)
-        D = super().random_direction(origin, normal)
-        return D
-    
-    def make_normal_focused(self, origin):
-        # Generate ray from the origin to the focus.
-        normal = self.param['target'] - origin
-        normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
-        return normal
-
-class DirectedSource(GenericSource):
-    
-    def initialize(self):
-        super().initialize()
-        self.param['width']  = 0
-        self.param['height'] = 0
-        self.param['depth']  = 0
 

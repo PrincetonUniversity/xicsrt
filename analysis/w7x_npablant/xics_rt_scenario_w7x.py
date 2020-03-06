@@ -24,9 +24,9 @@ from multiprocessing import Pool
 from xicsrt.xics_rt_raytrace   import raytrace
 from xicsrt import xics_rt_input
 
-from xicsrt.xics_rt_detectors  import Detector
-from xicsrt.xics_rt_optics     import SphericalCrystal
-from xicsrt.plasma._XicsrtPlasmaW7xSimple import XicsrtPlasmaW7xSimple
+from xicsrt.optics._XicsrtOpticDetector import XicsrtOpticDetector
+from xicsrt.optics._XicsrtOpticCrystalSpherical import XicsrtOpticCrystalSpherical
+from xicsrt.sources._XicsrtPlasmaW7xSimple import XicsrtPlasmaW7xSimple
 
 profiler.stop('Import Time')
 
@@ -53,8 +53,8 @@ def run(config, name=None, do_random_seed=True):
 
     profiler.start('Class Setup Time')
 
-    detector = Detector(config['detector_input'], strict=False)
-    crystal = SphericalCrystal(config['crystal_input'], strict=False)
+    detector = XicsrtOpticDetector(config['detector_input'], strict=False)
+    crystal = XicsrtOpticCrystalSpherical(config['crystal_input'], strict=False)
     source = XicsrtPlasmaW7xSimple(config['source_input'], strict=False)
 
     profiler.stop('Class Setup Time')

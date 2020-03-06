@@ -11,7 +11,7 @@ A plasma source based on a VMEC equilibrium.
 
 import numpy as np
 
-from xicsrt.plasma._XicsrtPlasmaVmec import XicsrtPlasmaVmec
+from xicsrt.sources._XicsrtPlasmaVmec import XicsrtPlasmaVmec
 from xicsrt.util import profiler
 
 import stelltools

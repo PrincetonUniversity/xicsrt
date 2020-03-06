@@ -17,8 +17,8 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.xics_rt_sources import FocusedExtendedSource
 from xicsrt.xics_rt_objects import TraceObject
+from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
 class XicsrtPlasmaGeneric(TraceObject):
     """
@@ -179,7 +179,7 @@ class XicsrtPlasmaGeneric(TraceObject):
             source_config['use_poisson'] = self.param['use_poisson']
                 
             #create ray bundle sources and generate bundled rays
-            source       = FocusedExtendedSource(source_config)
+            source       = XicsrtSourceFocused(source_config)
             bundled_rays = source.generate_rays()
 
             count_rays_in_bundle.append(len(bundled_rays['mask']))

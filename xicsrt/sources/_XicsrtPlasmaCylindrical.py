@@ -10,7 +10,7 @@ import logging
 import numpy as np   
 from collections import OrderedDict
 
-from xicsrt.plasma._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
+from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 from xicsrt.util import profiler
 from xicsrt_rt_math import cart2cyl
 

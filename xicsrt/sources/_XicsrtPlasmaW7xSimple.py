@@ -13,7 +13,7 @@ import stelltools
 from mirutil.math import vector
 
 from xicsrt.util import profiler
-from xicsrt.plasma._XicsrtPlasmaVmec import XicsrtPlasmaVmec
+from xicsrt.sources._XicsrtPlasmaVmec import XicsrtPlasmaVmec
 
 
 

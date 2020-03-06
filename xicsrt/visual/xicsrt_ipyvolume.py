@@ -4,8 +4,8 @@ import numpy as np
 
 import matplotlib
 
-from xicsrt.xics_rt_sources import GenericSource
-from xicsrt.plasma._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
+from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
+from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
