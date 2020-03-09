@@ -44,7 +44,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 100
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -133,7 +133,7 @@ def get_config():
     """
     config['plasma_input']['sight_position']  = np.array([0.0, 0.0, 0.0])
     config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
-    config['plasma_input']['sight_thickness'] = 0.100
+    config['plasma_input']['sight_thickness'] = 0.050
     
     # -------------------------------------------------------------------------
     ## Load source properties
@@ -316,7 +316,7 @@ def get_config():
     When copying values from the XICS presentations, please place them here.
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
-    config['scenario_input']['chord']               = 0
+    config['scenario_input']['chord']               = 2
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],

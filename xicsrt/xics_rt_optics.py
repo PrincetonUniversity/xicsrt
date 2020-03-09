@@ -54,7 +54,7 @@ class GenericOptic(TraceObject):
         self.bragg_checks   = optic_input['do_bragg_checks']
         self.miss_checks    = optic_input['do_miss_checks']
         self.rocking_type   = str.lower(optic_input['rocking_curve_type'])
-            
+        
     def pixel_array_size_check(self):
         ## Before loading anything up, check if the pixel array is large enough
         failure  = False
@@ -299,7 +299,7 @@ class GenericOptic(TraceObject):
             
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.round(point_loc / self.pixel_size).astype(int)
+            pix = np.floor(point_loc / self.pixel_size).astype(int)
             
             #check to ascertain if origin pixel is even or odd
             if (self.pixel_width % 2) == 0:

@@ -59,12 +59,14 @@ class Detector(TraceObject):
             raise Exception
         
     def intersect(self, rays):
+        #test to see if a ray intersects the mirror plane
         O = rays['origin']
         D = rays['direction']
         m = rays['mask']
         
         distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m] = np.dot((self.position - O[m]), self.normal) / np.dot(D[m], self.normal)
+        distance[m]  = np.dot((self.position - O[m]), self.normal)
+        distance[m] /= np.dot(D[m], self.normal)
         
         test = (distance > 0) & (distance < 10)
         distance = np.where(test, distance, 0)
@@ -76,30 +78,29 @@ class Detector(TraceObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
-        xproj = np.zeros(m.shape, dtype=np.float64)
-        yproj = np.zeros(m.shape, dtype=np.float64)
+        X_local = np.zeros(O.shape, dtype=np.float64)
         
-        #X is the 3D point where the ray intersects the detector
+        #X is the 3D point where the ray intersects the optic
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
+        X_local = self.point_to_local(X)
         
-        #find which rays hit detector, update mask to remove those that don't    
-        xproj[m] = abs(np.dot(X[m] - self.position, self.xorientation))
-        yproj[m] = abs(np.dot(X[m] - self.position, self.yorientation))
+        #find which rays hit the optic, update mask to remove misses
         if self.miss_checks is True:
-            m[m] &= ((xproj[m] <= self.width / 2) & (yproj[m] <= self.height/ 2))
+            m[m] &= (np.abs(X_local[:,0][m]) <= self.width / 2)
+            m[m] &= (np.abs(X_local[:,1][m]) <= self.height/ 2)
+            
         return X, rays
     
     def light(self, rays):
         O = rays['origin']
-        D = rays['direction']
         m = rays['mask']
         X, rays = self.intersect_check(rays, self.intersect(rays))
-        print(' Rays on Detector:  {:6.4e}'.format(D[m].shape[0]))
+        print(' Rays on Detector:  {:6.4e}'.format(m[m].shape[0]))
         O[:] = X[:]
         return rays
     
     def collect_rays(self, rays):
-        X = rays['origin']
+        X = rays['origin'].copy()
         m = rays['mask'].copy()
         
         num_lines = np.sum(m)
@@ -110,7 +111,7 @@ class Detector(TraceObject):
             
             # Bin the intersections into pixels using integer math.
             pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.round(point_loc / self.pixel_size).astype(int)
+            pix = np.floor(point_loc / self.pixel_size).astype(int)
             
             # Check to ascertain if origin pixel is even or odd
             if (self.pixel_width % 2) == 0:
@@ -128,7 +129,7 @@ class Detector(TraceObject):
             # Convert from pixels, which are centered around the origin, to
             # channels, which start from the corner of the optic.
             channel    = np.zeros([num_lines, 3], dtype = int)
-            channel[:] = pix[:] - pix_min
+            channel[:] = pix[:] + pix_min
             
             # I feel like there must be a faster way to do this than to loop over
             # every intersection.  This could be slow for large arrays.

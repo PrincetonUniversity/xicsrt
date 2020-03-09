@@ -215,7 +215,8 @@ def setup_manfred_scenario(config):
     config['detector_input']['position']      = d_position
     config['detector_input']['normal']        = d_normal
     config['detector_input']['orientation']   = d_z_vector
-    config['detector_input']['width']         = d_width
+    config['detector_input']['height']        = d_width
+    config['detector_input']['vertical_pixels'] = int(round(d_width / config['detector_input']['pixel_size']))
     
     return config
 

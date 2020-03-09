@@ -553,3 +553,42 @@ def visualize_model(config, rays_history, rays_metadata):
                               color = "green", normalize = True)
                     
     return fig, ax
+
+def visualize_probe(config, output_hits, distance):
+    ## Create a virtual detector to probe the rays output and create a .tif
+    #output_hits should be one segment of one configuration, dict()
+    
+    #setup the probe
+    from xicsrt.xics_rt_detectors import Detector
+    probe_input = dict()
+    probe_input['position']    = np.array([0.0, 0.0, 0.0])
+    probe_input['normal']      = np.array([0.0, 0.0, 1.0])
+    probe_input['orientation'] = np.array([1.0, 0.0, 0.0])
+    probe_input['width']       = 0.200
+    probe_input['height']      = 0.200
+    probe_input['pixel_size']  = 0.001
+    probe_input['horizontal_pixels'] = int(round(probe_input['width']  / probe_input['pixel_size']))
+    probe_input['vertical_pixels']   = int(round(probe_input['height'] / probe_input['pixel_size']))
+    probe_input['do_miss_checks']    = True
+    
+    #place the probe along the plasma sightline
+    probe_input['position'] =(config['plasma_input']['sight_position'] 
+                               + distance * config['plasma_input']['sight_direction'])
+    probe_input['normal']   = config['plasma_input']['sight_direction']
+    probe_input['orientation'] = np.cross(probe_input['normal'],
+                                          probe_input['orientation'])
+    #probe the ray output, preferably without contaminating it (use deepcopy)
+    from copy import deepcopy 
+    
+    probe = Detector(probe_input)
+    rays  = probe.light(deepcopy(output_hits))
+    probe.collect_rays(rays)
+    
+    # create detector image file
+    import os
+    filename = 'xicsrt_probe'
+    filename+= config['general_input']['output_suffix']
+    filepath = os.path.join(config['general_input']['output_path'], filename)
+    print('Exporting detector image: {}'.format(filepath))
+    probe.output_image(filepath, rotate=False)
+    

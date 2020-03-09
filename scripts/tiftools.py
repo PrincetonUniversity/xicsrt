@@ -132,8 +132,16 @@ def tif_subtract(tif_1, tif_2):
     png_name = results_path + 'tif_difference' + '.png'
     plt.savefig(png_name, bbox_inches = 'tight')
     print(png_name + ' saved!')
+    
+def hit_count(tif_list):
+    for file in range(len(tif_list)):
+        image_array = np.array(Image.open(results_path + tif_list[file]))
+        hits = int(np.sum(image_array))
+        print('Hits on {}: {}'.format(tif_list[file], hits))
 
-tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
+
+#tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
 #colorize_png(tif_list)
 #histogram_analysis(tif_list)
 #tif_overlay(tif_list)
+#hit_count(tif_list)
