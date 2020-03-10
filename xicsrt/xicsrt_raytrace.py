@@ -30,7 +30,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
 
     # Rays history resets after every run and only returns on the last one
     rays_history = []
-
+    
     profiler.start('Ray Generation')
     rays = source.generate_rays()
     profiler.stop('Ray Generation')

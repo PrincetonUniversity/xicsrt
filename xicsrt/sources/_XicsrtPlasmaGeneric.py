@@ -60,10 +60,9 @@ class XicsrtPlasmaGeneric(TraceObject):
  
     def initialize(self):
         super().initialize()
-        self.param['max_rays'] = int(self.param['max_rays'])
+        self.param['max_rays']     = int(self.param['max_rays'])
         self.param['bundle_type']  = str.lower(self.param['bundle_type'])
         self.param['bundle_count'] = int(self.param['bundle_count'])
-        
         self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
         self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread'] * np.pi / 360)**2
         

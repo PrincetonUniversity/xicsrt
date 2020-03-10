@@ -10,24 +10,20 @@ Description
 Initializes and runs the ray-tracer for a given set of configurations.
 """
 
-from xicsrt.util import profiler
-
-profiler.start('Import Time')
-
 import logging
 import os
 import numpy as np
 
-from xicsrt.xics_rt_sources    import FocusedExtendedSource
-from xicsrt.xics_rt_plasmas    import RealPlasma, ToroidalPlasma
-from xicsrt.xics_rt_detectors  import Detector
-from xicsrt.xics_rt_optics     import SphericalCrystal, MosaicGraphite
-from xicsrt.xics_rt_raytrace   import raytrace
-from xicsrt.xics_rt_model      import analytical_model
-from xicsrt.xics_rt_visualizer import visualize_layout, visualize_model
-from xicsrt.xics_rt_visualizer import visualize_vectors, visualize_bundles
+from xicsrt.sources._XicsrtSourceFocused        import XicsrtSourceFocused
+from xicsrt.sources._XicsrtPlasmaVmecDatafile   import XicsrtPlasmaVmecDatafile
+from xicsrt.optics._XicsrtOpticDetector         import XicsrtOpticDetector
+from xicsrt.optics._XicsrtOpticCrystalSpherical import XicsrtOpticCrystalSpherical
+from xicsrt.optics._XicsrtOpticMosaicGraphite   import XicsrtOpticMosaicGraphite
+from xicsrt.visual.xicsrt_visualizer            import visualize_layout
+from xicsrt.visual.xicsrt_visualizer            import visualize_vectors, visualize_bundles
 
-profiler.stop('Import Time')
+from xicsrt.xicsrt_raytrace   import raytrace
+
 
 def run(config, config_number = None):
     ## Initial Setup
@@ -36,15 +32,13 @@ def run(config, config_number = None):
     np.random.seed(config['general_input']['random_seed'])
     
     # Setup Classes
-    profiler.start('Class Setup Time')
-    pilatus  = Detector(                config['detector_input'])
-    crystal  = SphericalCrystal(        config['crystal_input'])
-    graphite = MosaicGraphite(          config['graphite_input'])
-    source   = FocusedExtendedSource(   config['source_input'])
-    plasma   = RealPlasma(              config['plasma_input'])
+    pilatus  = XicsrtOpticDetector(        config['detector_input'])
+    crystal  = XicsrtOpticCrystalSpherical(config['crystal_input'])
+    graphite = XicsrtOpticMosaicGraphite(  config['graphite_input'])
+    source   = XicsrtSourceFocused(        config['source_input'])
+    plasma   = XicsrtPlasmaVmecDatafile(   config['plasma_input'])
     
-    profiler.stop('Class Setup Time')
-
+    runs     = config['general_input']['number_of_runs']
     scenario = str.upper(config['general_input']['scenario'])
     
     ## Initial Visualization
@@ -54,37 +48,29 @@ def run(config, config_number = None):
 
     ## Raytrace Runs
     if scenario == 'REAL' or scenario == 'PLASMA':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            plasma, pilatus, graphite, crystal)
+        output, rays_count = raytrace(plasma, pilatus, graphite, crystal, number_of_runs = runs)
 
     elif scenario == 'THROUGHPUT':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            plasma, pilatus, crystal)
+        output, rays_count = raytrace(plasma, pilatus, crystal, number_of_runs = runs)
 
     elif scenario == 'BEAM':
         if config['general_input']['backwards_raytrace'] is False:
-            output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-                source, pilatus, graphite, crystal)
+            output, rays_count = raytrace(source, pilatus, graphite, crystal, number_of_runs = runs)
 
         if config['general_input']['backwards_raytrace'] is True:
-            output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-                source, pilatus, crystal, graphite)
+            output, rays_count = raytrace(source, pilatus, crystal, graphite, number_of_runs = runs)
 
     elif scenario == 'MANFRED':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            source, pilatus, crystal)
+        output, rays_count = raytrace(source, pilatus, crystal, number_of_runs = runs)
 
     elif scenario == 'CRYSTAL':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            source, pilatus, crystal)
+        output, rays_count = raytrace(source, pilatus, crystal, number_of_runs = runs)
 
     elif scenario == 'GRAPHITE':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            source, pilatus, graphite)
+        output, rays_count = raytrace(source, pilatus, graphite, number_of_runs = runs)
 
     elif scenario == 'SOURCE':
-        output_hits, output, rays_count = raytrace(config['general_input']['number_of_runs'],
-            source, pilatus)
+        output, rays_count = raytrace(source, pilatus, number_of_runs = runs)
 
     else:
         raise Exception('Scenario unknown: {}'.format(scenario))
@@ -140,12 +126,10 @@ def run(config, config_number = None):
         print('Exporting crystal image:  {}'.format(filepath))
         crystal.output_image(filepath, rotate=False)
 
-    return output_hits, output, rays_count
+    return output, rays_count
 
 
 def run_multi(config_multi):
-
-    profiler.start('XICSRT Run')
 
     # create the rays_total dictionary to count the total number of rays
     rays_total = dict()
@@ -165,7 +149,7 @@ def run_multi(config_multi):
         print('Setting Up Optics for Configuration: {} of {}'.format(
             jj + 1, len(config_multi)))
 
-        output_hits, output, rays_count = run(config_multi[jj], jj)
+        output, rays_count = run(config_multi[jj], jj)
         
         hits_final.append(output_hits)
         output_final.append(output)
@@ -183,7 +167,5 @@ def run_multi(config_multi):
         np.sqrt(rays_total['total_detector']) / rays_total['total_generated'],
         rays_total['total_detector'] / rays_total['total_generated'] * 100))
     print('')
-
-    profiler.stop('XICSRT Run')
 
     return hits_final, output_final, rays_total

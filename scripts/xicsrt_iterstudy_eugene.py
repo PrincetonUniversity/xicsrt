@@ -32,21 +32,17 @@ def get_config():
     possible scenarios include 'REAL', 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
-    inpath = '/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/xrcscore_eugene/inputs/'
-    outpath= '/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/results/'
-    config['general_input']['input_path']         = inpath
-    config['general_input']['output_path']        = outpath
+    config['general_input']['input_path']         = '/Users/Eugene/PPPL_python_project1/xics_rt_code/inputs/'
+    config['general_input']['output_path']        = '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['output_suffix']      = '.tif'
     config['general_input']['scenario']           = 'REAL'
-    config['general_input']['system']             = 'w7x_ar16'
-    config['general_input']['shot']               = 180707017
     
     """Ray emission settings
     'number_of_rays' typically should not exceed 1e7 unless running on a cluster
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 100
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -58,7 +54,7 @@ def get_config():
     """
     config['general_input']['ideal_geometry']     = True
     config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = False
+    config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
@@ -72,12 +68,12 @@ def get_config():
     'emissivity' instead, as flat step-function distributions
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
-    #config['plasma_input']['use_profiles']        = True
+    config['plasma_input']['use_profiles']        = True
     config['plasma_input']['use_poisson']         = True
-    config['plasma_input']['temperature_file']    = inpath + 'plasma_temperature.txt'
-    config['plasma_input']['emissivity_file']     = inpath + 'plasma_emissivity_xe44.txt'
-    config['plasma_input']['velocity_file']       = inpath + 'plasma_velocity.txt'
-    config['plasma_input']['wout_file']           = inpath + 'wout_iter.nc'
+    config['plasma_input']['temperature_data']    = '../inputs/plasma_temperature.txt'
+    config['plasma_input']['emissivity_data']     = '../inputs/plasma_emissivity_xe44.txt'
+    config['plasma_input']['velocity_data']       = 'FILE MISSING'
+    config['plasma_input']['geometry_data']       = '../inputs/wout_iter.nc'
     config['plasma_input']['temperature']         = 1000
     config['plasma_input']['emissivity']          = 1e18
     config['plasma_input']['velocity']            = np.array([0.0,0.0,0.0])
@@ -87,13 +83,13 @@ def get_config():
     Only a small cubic chunk of the plasma is rendered and emits rays
     This cubic chunk has a 'width', 'height', and 'depth' (meters)
     """
-    config['plasma_input']['origin']              = np.array([0.0, 0.0, 0.0])
-    config['plasma_input']['zaxis']               = np.array([0.0, 1.0, 0.0])
-    config['plasma_input']['xaxis']               = np.array([0.0, 0.0, 1.0])
+    config['plasma_input']['position']            = np.array([0.0, 0.0, 0.0])
+    config['plasma_input']['normal']              = np.array([0.0, 1.0, 0.0])
+    config['plasma_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['plasma_input']['target']              = np.array([1.0, 0.0, 0.0])
     
-    #config['plasma_input']['major_radius']        = 6.2
-    #config['plasma_input']['minor_radius']        = 2.0
+    config['plasma_input']['major_radius']        = 6.2
+    config['plasma_input']['minor_radius']        = 2.0
     config['plasma_input']['width']               = 4.0
     config['plasma_input']['height']              = 4.0
     config['plasma_input']['depth']               = 7.5
@@ -112,17 +108,18 @@ def get_config():
     'bundle_volume'         is the volume of each bundle        (meters^3)
     'time_resolution'       is the emissivity integration time  (sec)
     'spread'                is the angular spread               (degrees)
-    'mass_number'           is the impurity mass                (AMU)
+    'mass'                  is the impurity mass                (AMU)
     'wavelength'            is the x-ray emission line location (angstroms)
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
     config['plasma_input']['bundle_type']         = 'POINT'
-    config['plasma_input']['bundle_count']        = int(1e5)
+    config['plasma_input']['bundle_count']        = int(1e7)
+    config['plasma_input']['bundle_factor']       = 1000
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
     config['plasma_input']['time_resolution']     = 1e-6
     config['plasma_input']['spread']              = 1.0
-    config['plasma_input']['mass_number']         = 131.293
+    config['plasma_input']['mass']                = 131.293
     config['plasma_input']['wavelength']          = 2.7203
     config['plasma_input']['linewidth']           = 1.129e+14
     
@@ -131,26 +128,26 @@ def get_config():
     pre-reflector to the plasma. This improves rendering efficiency since the 
     plasma only needs to render bundles near the sightline.
     The sightline has a thickness (meters)
-    config['plasma_input']['sight_origin']    = np.array([0.0, 0.0, 0.0])
-    config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
-    config['plasma_input']['sight_thickness'] = 0.100
     """
+    config['plasma_input']['sight_position']  = np.array([0.0, 0.0, 0.0])
+    config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
+    config['plasma_input']['sight_thickness'] = 0.050
     
     # -------------------------------------------------------------------------
     ## Load source properties
     """Source Settings
     'intensity' should equal config['general_input']['number_of_rays']
     'spread'                is the angular spread               (degrees)
-    'temperature'           is the ion temperature              (eV)
-    'mass_number'           is the impurity mass                (AMU)
+    'temp'                  is the ion temperature              (eV)
+    'mass'                  is the impurity mass                (AMU)
     'wavelength'            is the x-ray emission line location (angstroms)
     'linewidth'             is the x-ray natural linewidth      (1/s)
     'velocity'              is the impurity ion velocity vector (m/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
     config['source_input']['spread']              = 2.0
-    config['source_input']['temperature']         = 1000
-    config['source_input']['mass_number']         = 131.293
+    config['source_input']['temp']                = 1000
+    config['source_input']['mass']                = 131.293
     config['source_input']['wavelength']          = 2.7203
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
@@ -159,9 +156,9 @@ def get_config():
     'width', 'height', and 'depth' of source (meters)
     These values are arbitrary for now. Set to 0.0 for point source.
     """
-    config['source_input']['origin']              = np.array([0.0, 0.0, 0.0])
-    config['source_input']['zaxis']               = np.array([1.0, 0.0, 0.0])
-    config['source_input']['xaxis']               = np.array([0.0, 0.0, 1.0])
+    config['source_input']['position']            = np.array([0.0, 0.0, 0.0])
+    config['source_input']['normal']              = np.array([1.0, 0.0, 0.0])
+    config['source_input']['orientation']         = np.array([0.0, 0.0, 1.0])
     config['source_input']['target']              = np.array([1.0, 0.0, 0.0])
     
     config['source_input']['width']               = 0.0
@@ -177,41 +174,47 @@ def get_config():
     setting 'do_miss_checks'  to False prevents the crystal from masking missed rays
     setting 'use_trimesh' to False defaults to using simple rectangle geometry
     possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
-    sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
-    A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
+    sigma and pi are polarized rocking curves. 'mix_factor' interpolates between them.
+    A 'mix_factor' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
-    config['crystal_input']['rocking_type']       = 'FILE'
+    config['crystal_input']['rocking_curve_type'] = 'FILE'
     config['crystal_input']['use_meshgrid']       = False
-    config['crystal_input']['rocking_mix']        = 1.0
-    config['crystal_input']['rocking_sigma_file'] = inpath + 'rocking_curve_germanium_sigma.txt'
-    config['crystal_input']['rocking_pi_file']    = inpath + 'rocking_curve_germanium_pi.txt'
+    config['crystal_input']['meshgrid_data']      = ''
+    config['crystal_input']['mix_factor']         = 1.0
+    config['crystal_input']['sigma_data']         = '../inputs/rocking_curve_germanium_sigma.txt'
+    config['crystal_input']['pi_data']            = '../inputs/rocking_curve_germanium_pi.txt'
     
     """Crystal settings
-    'crystal_spacing'is the inter-atomic spacing (angstrom)
-    'reflectivity'   is the maximum reflectivity used for 'STEP' and 'GAUSS'
-    'rocking_type'   is the rocking curve FWHM (rad) used for 'STEP' and 'GAUSS'
-    'pixel_size'     is the size of the pixels used by the image generator
-    'therm_expand'   is the thermal expansion coefficient (1/kelvin)
+    'spacing'       is the inter-atomic spacing (angstrom)
+    'reflectivity'  is the maximum reflectivity used for 'STEP' and 'GAUSS'
+    'rocking_curve' is the rocking curve FWHM (rad) used for 'STEP' and 'GAUSS'
+    'pixel_scaling' is the number of horizontal pixels used by the image generator
+    'therm_expand'  is the thermal expansion coefficient (1/kelvin)
     """
-    config['crystal_input']['crystal_spacing']    = 1.7059
+    config['crystal_input']['spacing']            = 1.7059
     config['crystal_input']['reflectivity']       = 1
-    config['crystal_input']['rocking_fwhm']       = 90.30e-6
-    config['crystal_input']['pixel_size']         = 0.0001
-    #config['crystal_input']['therm_expand']       = 5.9e-6
+    config['crystal_input']['rocking_curve']      = 90.30e-6
+    config['crystal_input']['pixel_scaling']      = int(200)
+    config['crystal_input']['therm_expand']       = 5.9e-6
     
     """Geometry Settings
     crystal 'width' and 'height' (meters) only matter when 'use_trimesh' is False
-    'radius' is the crystal's radius of curvature (meters)
+    'curvature' is the crystal's radius of curvature (meters)
     """
-    config['crystal_input']['origin']             = np.array([0.0, 0.0, 0.0])
-    config['crystal_input']['zaxis']              = np.array([0.0, 0.0, 0.0])
-    config['crystal_input']['xaxis']              = np.array([0.0, 0.0, 0.0])
+    config['crystal_input']['position']           = np.array([0.0, 0.0, 0.0])
+    config['crystal_input']['normal']             = np.array([0.0, 0.0, 0.0])
+    config['crystal_input']['orientation']        = np.array([0.0, 0.0, 0.0])
     
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.050
-    config['crystal_input']['radius']             = 2.400
+    config['crystal_input']['curvature']          = 2.400
+    
+    config['crystal_input']['mesh_points']        = np.array([[.01, 0.0, 0.0],
+                                                              [0.0, .01, 0.0],
+                                                              [0.0, 0.0, .01]])
+    config['crystal_input']['mesh_faces']         = np.array([0,1,2])
     
     """
     Rocking curve FWHM:  90.30 urad
@@ -219,18 +222,7 @@ def get_config():
     Darwin Curve, pi:    14.043 urad
     Taken from XoP
     """
-    bragg = np.arcsin(config['source_input']['wavelength'] / (2 * config['crystal_input']['crystal_spacing']))
-    dx = config['crystal_input']['height'] * np.cos(bragg) / 2
-    dy = config['crystal_input']['height'] * np.sin(bragg) / 2
-    dz = config['crystal_input']['width']                  / 2
-    
-    p1 = config['crystal_input']['origin'] + np.array([ dx, dy, dz])
-    p2 = config['crystal_input']['origin'] + np.array([-dx,-dy, dz])
-    p3 = config['crystal_input']['origin'] + np.array([-dx,-dy,-dz])
-    p4 = config['crystal_input']['origin'] + np.array([ dx, dy,-dz])
-        
-    config['crystal_input']['mesh_points'] = np.array([p1, p2, p3, p4])
-    config['crystal_input']['mesh_faces']  = np.array([[0,1,2],[2,3,0]])
+
     # -------------------------------------------------------------------------
     ## Load mosaic graphite properties
     """Type and file settings
@@ -238,41 +230,47 @@ def get_config():
     setting 'do_miss_checks'  to False prevents the graphite from masking missed rays
     setting 'use_trimesh' to False defaults to using simple rectangle geometry
     possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
-    sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
-    A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
+    sigma and pi are polarized rocking curves. 'mix_factor' interpolates between them.
+    A 'mix_factor' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
-    config['graphite_input']['rocking_type']      = "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
-    config['graphite_input']['rocking_mix']       = 1.0
-    config['graphite_input']['rocking_sigma_file']= inpath + 'rocking_curve_graphite_sigma.txt'
-    config['graphite_input']['rocking_pi_file']   = inpath + 'rocking_curve_graphite_pi.txt'
+    config['graphite_input']['rocking_curve_type']= "GAUSS"
+    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['meshgrid_data']     = ''
+    config['graphite_input']['mix_factor']        = 1.0
+    config['graphite_input']['sigma_data']        = '../inputs/rocking_curve_graphite_sigma.txt'
+    config['graphite_input']['pi_data']           = '../inputs/rocking_curve_graphite_pi.txt'
     
     """Graphite settings
-    'crystal_spacing'is the inter-atomic spacing (angstrom)
-    'reflectivity'   is the maximum reflectivity used for 'STEP' and 'GAUSS'
-    'mosaic_spread'  is the crystallite mosaic spread FWHM (degrees)
-    'rocking_type'   is the rocking curve FWHM (rad) used for 'STEP' and 'GAUSS'
-    'pixel_size'     is the size of the pixels used by the image generator
-    'therm_expand'   is the thermal expansion coefficient (1/kelvin)
+    'spacing'       is the inter-atomic spacing (angstrom)
+    'reflectivity'  is the maximum reflectivity used for 'STEP' and 'GAUSS'
+    'mosaic_spread' is the crystallite mosaic spread FWHM (degrees)
+    'rocking_curve' is the rocking curve FWHM (rad) used for 'STEP' and 'GAUSS'
+    'pixel_scaling' is the number of horizontal pixels used by the image generator
+    'therm_expand'  is the thermal expansion coefficient (1/kelvin)
     """
-    config['graphite_input']['crystal_spacing']   = 3.35
+    config['graphite_input']['spacing']           = 3.35
     config['graphite_input']['reflectivity']      = 1
     config['graphite_input']['mosaic_spread']     = 0.5
-    config['graphite_input']['rocking_fwhm']      = 2620e-6
-    config['graphite_input']['pixel_size']        = 0.0001
-    #config['graphite_input']['therm_expand']      = 20e-6
+    config['graphite_input']['rocking_curve']     = 2620e-6
+    config['graphite_input']['pixel_scaling']     = int(200)
+    config['graphite_input']['therm_expand']      = 20e-6
     
     """Geometry Settings
     graphite 'width' and 'height' (meters) only matter when 'use_meshgrid' is False
     """
-    config['graphite_input']['origin']            = np.array([1.0, 0.0, 0.0])
-    config['graphite_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
-    config['graphite_input']['xaxis']             = np.array([0.0, 0.0, 1.0])
+    config['graphite_input']['position']          = np.array([1.0, 0.0, 0.0])
+    config['graphite_input']['normal']            = np.array([0.0, 0.0, 0.0])
+    config['graphite_input']['orientation']       = np.array([0.0, 0.0, 1.0])
     
     config['graphite_input']['width']             = 0.125
     config['graphite_input']['height']            = 0.040
+    
+    config['graphite_input']['mesh_points']       = np.array([[.01, 0.0, 0.0],
+                                                              [0.0, .01, 0.0],
+                                                              [0.0, 0.0, .01]])
+    config['graphite_input']['mesh_faces']        = np.array([0,1,2])
     
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
@@ -288,15 +286,17 @@ def get_config():
     """
     config['detector_input']['do_miss_checks']    = True
     
-    config['detector_input']['origin']            = np.array([0.0, 0.0, 0.0])
-    config['detector_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
-    config['detector_input']['xaxis']             = np.array([0.0, 0.0, 0.0])
+    config['detector_input']['position']          = np.array([0.0, 0.0, 0.0])
+    config['detector_input']['normal']            = np.array([0.0, 0.0, 0.0])
+    config['detector_input']['orientation']       = np.array([0.0, 0.0, 0.0])
     
     config['detector_input']['pixel_size']        = 0.000172
-    #config['detector_input']['pixel_width']       = 195
-    #config['detector_input']['pixel_height']      = 1475
-    config['detector_input']['width']             = (195  * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (1475 * config['detector_input']['pixel_size'])
+    config['detector_input']['horizontal_pixels'] = 1475
+    config['detector_input']['vertical_pixels']   = 195
+    config['detector_input']['width']             = (config['detector_input']['horizontal_pixels']
+                                                    *config['detector_input']['pixel_size'])
+    config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
+                                                    *config['detector_input']['pixel_size'])
 
     # -------------------------------------------------------------------------
     ## Load scenario properties
@@ -314,7 +314,7 @@ def get_config():
     When copying values from the XICS presentations, please place them here.
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
-    config['scenario_input']['chord']               = 0
+    config['scenario_input']['chord']               = 2
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],
@@ -356,33 +356,26 @@ def get_config_multi(configurations):
 
 ## Run the scripts in order (TEMPORARY - Find a better place to put this code)
 import sys
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/')
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/')
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/xrcscore_eugene/')
+sys.path.append('/Users/Eugene/PPPL_python_project1')
+sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code')
 
-from xrcscore_eugene.xicsrt_initialize import initialize, initialize_multi
-from xrcscore_eugene.xicsrt_run import run, run_multi
 from xicsrt.xicsrt_input import save_config, load_config
 
-runtype = 'single'
-filepath= 'xicsrt_input.json'
+from xicsrt.xicsrt_initialize import initialize, initialize_multi
+from xicsrt.xicsrt_run import run, run_multi
 
-"""Something is wrong with xicsrt_input load_config, investigate later
-try:
-    load_config(filepath)
-except FileNotFoundError:
-    print(filepath + ' not found!')
-"""
+runtype = 'single'
+filepath= '../inputs/xicsrt_input.json'
 
 if runtype == 'single':
     config = get_config()
     config = initialize(config)
-    output, meta = run(config)
+    output_hits, output, meta = run(config)
 
 if runtype == 'multi':
     config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
-    output, meta = run_multi(config_multi)
+    output_hits, output, meta = run_multi(config_multi)
 
 if runtype == 'save':
     config_multi = get_config_multi(5)
@@ -390,15 +383,27 @@ if runtype == 'save':
     save_config(filepath, config)
         
 if runtype == 'init_resave':
-    config_multi = load_config(filepath)
+    try:
+        config_multi = load_config(filepath)
+    except FileNotFoundError:
+        print('xicsrt_input.json not found!')
+    
     config_multi = initialize_multi(config_multi)    
     save_config(filepath, config)
 
 if runtype == 'raw_load':
-    config_multi = load_config(filepath)
-    output, meta = run_multi(config_multi)
+    try:
+        config_multi = load_config(filepath)
+    except FileNotFoundError:
+        print('xicsrt_input.json not found!')
+
+    output_hits, output, meta = run_multi(config_multi)
     
 if runtype == 'init_load':
-    config_multi = load_config(filepath)
+    try:
+        config_multi = load_config(filepath)
+    except FileNotFoundError:
+        print('xicsrt_input.json not found!')
+
     config_multi = initialize_multi(config_multi)
-    output, meta = run_multi(config_multi)
+    output_hits, output, meta = run_multi(config_multi)

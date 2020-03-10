@@ -279,9 +279,3 @@ class XicsrtOpticGeneric(TraceObject):
             
         generated_image = Image.fromarray(out_array)
         generated_image.save(image_name)
-
-
-    
-
-    
-
