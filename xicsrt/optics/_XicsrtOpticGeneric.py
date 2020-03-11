@@ -8,6 +8,7 @@ Authors
 """
 from PIL import Image
 import numpy as np
+import logging
 
 from xicsrt.xicsrt_objects import TraceObject
 
@@ -30,6 +31,8 @@ class XicsrtOpticGeneric(TraceObject):
         config['height']         = 0.0
         config['depth']          = 0.0
         config['pixel_size']     = None
+        config['pixel_width']    = None
+        config['pixel_height']   = None
         
         # mesh information
         config['use_meshgrid']   = False
@@ -56,14 +59,17 @@ class XicsrtOpticGeneric(TraceObject):
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
 
+        if self.config['pixel_size'] is None:
+            raise Exception('pixel_size is currently required as an input.')
+        
     def initialize(self):
         super().initialize()
-        
-        if self.param['pixel_size'] is None:
-            self.param['pixel_size'] = self.param['width']/100
+
+        if self.param['pixel_width'] is None:
+            self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
+        if self.param['pixel_height'] is None:
+            self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
             
-        self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
-        self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
         self.pixel_array = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         
     def normalize(self, vector):
@@ -239,35 +245,39 @@ class XicsrtOpticGeneric(TraceObject):
         # Add the ray hits to the pixel array
         if num_lines > 0:
             # Transform the intersection coordinates from external coordinates
-            # to local optical coordinates.
+            # to local optical 'pixel' coordinates.
             point_loc = self.point_to_local(X[m])
-            
-            # Bin the intersections into pixels using integer math.
-            pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.floor(point_loc / self.param['pixel_size']).astype(int)
-            
-            # Check to ascertain if origin pixel is even or odd
-            if (self.param['pixel_width'] % 2) == 0:
-                pix_min_x = self.param['pixel_width']//2
-            else:
-                pix_min_x = (self.param['pixel_width'] + 1)//2
+            pix = point_loc / self.param['pixel_size']
                 
-            if (self.param['pixel_height'] % 2) == 0:
-                pix_min_y = self.param['pixel_height']//2
-            else:
-                pix_min_y = (self.param['pixel_height'] + 1)//2
+            # Convert from pixels to channels.
+            # The channel coordinate is defined from the *center* of the bottom left
+            # pixel. The pixel coordinate is define from the geometrical center of
+            # the detector (this could be in the middle of or in between pixels).
+            channel = np.zeros(pix.shape)
+            channel[:,0] = pix[:,0] + (self.param['pixel_width'] - 1)/2
+            channel[:,1] = pix[:,1] + (self.param['pixel_height'] - 1)/2
             
-            pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
-            
-            # Convert from pixels, which are centered around the origin, to
-            # channels, which start from the corner of the optic.
-            channel    = np.zeros(pix.shape, dtype = int)
-            channel[:] = pix[:] + pix_min
+            # Bin the channels into integer values so that we can use them as
+            # indexes into the pixel_array. Keep in mind that channel coordinate
+            # system is defined from the center of the pixel.
+            channel = np.round(channel).astype(int)
+                       
+            # Check for any hits that are outside of the pixel_array.
+            # These are possible due to floating point calculations.
+            m = np.ones(num_lines, dtype=bool)
+            m &= channel[:,0] >= 0
+            m &= channel[:,0] < self.param['pixel_width']
+            m &= channel[:,1] >= 0
+            m &= channel[:,1] < self.param['pixel_height']
+            num_out = np.sum(~m)
+            if num_out > 0:
+                logging.warning('Rays found outside of pixel grid ({}).'.format(num_out))
             
             # I feel like there must be a faster way to do this than to loop over
             # every intersection.  This could be slow for large arrays.
-            for ii in range(len(channel)):
-                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+            for ii in range(num_lines):
+                if m[ii]:
+                    self.pixel_array[channel[ii,0], channel[ii,1]] += 1
         
         return self.pixel_array
         

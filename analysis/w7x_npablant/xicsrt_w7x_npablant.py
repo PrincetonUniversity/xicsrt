@@ -56,10 +56,6 @@ def get_config():
     config['general_input']['shot']               = 180707017
     config['general_input']['dryrun']             = False
 
-    # Temperature that the optical elements will be cooled to (kelvin)
-    config['general_input']['xics_temp'] = 273.0
-
-
     # -----------------------------------------------------------------------------
     ## Load plasma properties
 
@@ -78,9 +74,6 @@ def get_config():
     config['source_input']['width']               = 2.0
     config['source_input']['height']              = 2.0
     config['source_input']['depth']               = 2.0
-
-    config['source_input']['major_radius']        = 6.2
-    config['source_input']['minor_radius']        = 2.0
 
     config['source_input']['use_poisson']         = True
     config['source_input']['time_resolution']     = 0.01
@@ -122,14 +115,11 @@ def get_config():
     # This is taken from x0h for quarts 1,1,-2,0
     # Darwin Curve, sigma: 48.070 urad
     # Darwin Curve, pi:    14.043 urad
-    config['crystal_input']['crystal_spacing']            = 2.4567600000000001e+00
+    config['crystal_input']['crystal_spacing']    = 2.4567600000000001e+00
     config['crystal_input']['reflectivity']       = 1
     config['crystal_input']['rocking_type']       = 'gaussian'
     config['crystal_input']['rocking_fwhm']       = 48.070e-6
-    config['crystal_input']['pixel_size']         = None
-
-    config['crystal_input']['therm_expand']       = 5.9e-6
-    config['crystal_input']['mix_factor']         = 1.0
+    config['crystal_input']['pixel_size']         = 0.040/100
 
     config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
@@ -146,11 +136,11 @@ def get_config():
     config['detector_input']['xaxis']  = [-9.9464373245879134e-01,  5.7043480061171735e-02, -8.6196791488749647e-02]
 
     config['detector_input']['pixel_size']        = 0.000172
-    config['detector_input']['horizontal_pixels'] = 195
-    config['detector_input']['vertical_pixels']   = 1475
-    config['detector_input']['width']             = (config['detector_input']['horizontal_pixels']
+    config['detector_input']['pixel_width']       = 195
+    config['detector_input']['pixel_height']      = 1475
+    config['detector_input']['width']             = (config['detector_input']['pixel_width']
                                                     * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
+    config['detector_input']['height']            = (config['detector_input']['pixel_height']
                                                     * config['detector_input']['pixel_size'])
 
     config['detector_input']['do_miss_checks']    = True

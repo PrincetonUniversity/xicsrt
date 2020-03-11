@@ -49,7 +49,8 @@ class XicsrtSourceGeneric(TraceObject):
         
     def generate_rays(self):
         rays = dict()
-
+        profiler.start('generate_rays')
+        
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
         profiler.stop('generate_origin')
@@ -70,6 +71,7 @@ class XicsrtSourceGeneric(TraceObject):
         rays['mask'] = self.generate_mask()
         profiler.stop('generate_mask')
         
+        profiler.stop('generate_rays')
         return rays
      
     def generate_origin(self):
@@ -131,10 +133,10 @@ class XicsrtSourceGeneric(TraceObject):
         random_wavelength = self.random_wavelength_voigt
         wavelength = random_wavelength(self.param['intensity'])
         
-        #doppler shift
+        # Doppler shift
         c = const.physical_constants['speed of light in vacuum'][0]
-        wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
-        
+        wavelength *= (1 + np.einsum('j,ij->i', self.param['velocity'], direction) / c)
+
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -199,14 +201,13 @@ class XicsrtSourceGeneric(TraceObject):
         return rand_wave
     
     def generate_weight(self):
-        #weight is not yet implemented
-        intensity = self.param['intensity']
-        w = np.ones((intensity,1), dtype=np.float64)
+        # Weight is not currently used within XICSRT but might be useful
+        # in the future.
+        w = np.ones((self.param['intensity']), dtype=np.float64)
         return w
     
     def generate_mask(self):
-        intensity = self.param['intensity']
-        m = np.ones((intensity), dtype=np.bool)
+        m = np.ones((self.param['intensity']), dtype=np.bool)
         return m
 
 

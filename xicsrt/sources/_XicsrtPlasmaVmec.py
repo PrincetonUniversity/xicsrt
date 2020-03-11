@@ -75,7 +75,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         offset[:,0] = np.random.uniform(-1 * self.param['width']/2, self.param['width']/2, self.param['bundle_count'])
         offset[:,1] = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
         offset[:,2] = np.random.uniform(-1 * self.param['depth']/2, self.param['depth']/2, self.param['bundle_count'])
-
+        
         # unlike the other plasmas, the toroidal plasma has fixed orientation to
         # prevent confusion
         bundle_input['origin'][:] = self.point_to_external(offset)

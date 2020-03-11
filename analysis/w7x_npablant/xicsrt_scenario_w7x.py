@@ -57,6 +57,8 @@ def run(config, name=None, do_random_seed=True):
     crystal = XicsrtOpticCrystalSpherical(config['crystal_input'], strict=False)
     source = XicsrtPlasmaW7xSimple(config['source_input'], strict=False)
 
+    objects = {'source':source, 'crystal':crystal, 'detector':detector}
+    
     profiler.stop('Class Setup Time')
 
     scenario = str.lower(config['general_input']['scenario'])
@@ -109,7 +111,7 @@ def run(config, name=None, do_random_seed=True):
             print('Exporting detector image: {}'.format(filepath))
             detector.output_image(filepath, rotate=False)
 
-    return output, meta
+    return output, meta, objects
 
 
 def run_multi(config_multi):
@@ -139,7 +141,7 @@ def run_multi(config_multi):
         else:
             do_random_seed = False
 
-        output, rays_count = run(config_multi[key], key, do_random_seed=do_random_seed)
+        output, rays_count, objects = run(config_multi[key], key, do_random_seed=do_random_seed)
 
         output_final.append(output)
         rays_final.append(rays_count)
@@ -174,6 +176,7 @@ def run_multiprocessing(config_multi):
 
     output_final = []
     rays_final = []
+    objects_final = []
 
     result_list = []
     with Pool() as pool:
@@ -193,10 +196,11 @@ def run_multiprocessing(config_multi):
 
     # Gather all the results together.
     for result in result_list:
-        output, rays_count = result.get()
+        output, rays_count, objects = result.get()
 
         output_final.append(output)
         rays_final.append(rays_count)
+        objects_final.append(objects)
         for key in rays_total:
             rays_total[key] += rays_count[key]
 
