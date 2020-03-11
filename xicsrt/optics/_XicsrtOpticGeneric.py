@@ -40,6 +40,9 @@ class XicsrtOpticGeneric(TraceObject):
 
     def check_config(self):
         super().check_config()
+
+    def initialize(self):
+        super().initialize()
         
         # Check the optic size compare to the meshgrid size.
         #
@@ -55,15 +58,13 @@ class XicsrtOpticGeneric(TraceObject):
             
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
-
-    def initialize(self):
-        super().initialize()
         
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
-            
-        self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
-        self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
+        
+        self.photon_count = 0
+        self.param['pixel_width']  = int(np.ceil(self.param['width']  / self.param['pixel_size']))
+        self.param['pixel_height'] = int(np.ceil(self.param['height'] / self.param['pixel_size']))
         self.pixel_array = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         
     def normalize(self, vector):
@@ -206,16 +207,16 @@ class XicsrtOpticGeneric(TraceObject):
         if self.param['use_meshgrid'] is False:
             distance = self.intersect(rays)
             X, rays  = self.intersect_check(rays, distance)
-            # print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0])) 
+            print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0])) 
             normals  = self.generate_optic_normals(X, rays)
             rays     = self.reflect_vectors(X, rays, normals)
-            # print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+            print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            # print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))  
+            print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))  
             normals  = self.mesh_generate_optic_normals(X, rays, hits)
             rays     = self.reflect_vectors(X, rays, normals)
-            # print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+            print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
 
     def collect_rays(self, rays):
@@ -234,7 +235,7 @@ class XicsrtOpticGeneric(TraceObject):
         m = rays['mask'].copy()
         
         num_lines = np.sum(m)
-        self.photon_count = num_lines
+        self.photon_count += num_lines
         
         # Add the ray hits to the pixel array
         if num_lines > 0:

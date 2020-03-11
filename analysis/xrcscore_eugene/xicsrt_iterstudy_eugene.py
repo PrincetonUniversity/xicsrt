@@ -29,7 +29,7 @@ def get_config():
     # -------------------------------------------------------------------------
     ## General raytracer properties
     """File and type settings
-    possible scenarios include 'REAL', 'MODEL', 'PLASMA', 'THROUGHPUT', 'BEAM',
+    possible scenarios include 'REAL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
     inpath = '/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/xrcscore_eugene/inputs/'
@@ -37,7 +37,7 @@ def get_config():
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'REAL'
+    config['general_input']['scenario']           = 'BEAM'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -58,7 +58,7 @@ def get_config():
     """
     config['general_input']['ideal_geometry']     = True
     config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = False
+    config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
@@ -244,7 +244,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_type']      = "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['rocking_mix']       = 1.0
     config['graphite_input']['rocking_sigma_file']= inpath + 'rocking_curve_graphite_sigma.txt'
     config['graphite_input']['rocking_pi_file']   = inpath + 'rocking_curve_graphite_pi.txt'
@@ -307,7 +307,7 @@ def get_config():
     """
     config['scenario_input']['source_graphite_dist']  = 2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = 1
+    config['scenario_input']['crystal_detector_dist'] = 2.4
     
     """
     Convert the numbers given in the XICS presentations into useful information.

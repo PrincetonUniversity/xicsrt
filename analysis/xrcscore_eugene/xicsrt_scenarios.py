@@ -101,8 +101,8 @@ def source_location(distance, vert_displace, config):
     """
     crystal_location    = config['crystal_input']['origin']
     crystal_normal      = config['crystal_input']['zaxis']
-    crystal_curvature   = config['crystal_input']['curvature']
-    crystal_spacing     = config['crystal_input']['spacing']
+    crystal_curvature   = config['crystal_input']['radius']
+    crystal_spacing     = config['crystal_input']['crystal_spacing']
     detector_location   = config['detector_input']['origin']
     wavelength          = config['source_input']['wavelength']
     
@@ -133,7 +133,7 @@ def source_location_bragg(config, distance ,vert_displace ,horiz_displace):
 
     crystal_location    = config['crystal_input']['origin']
     crystal_normal      = config['crystal_input']['zaxis']
-    crystal_curvature   = config['crystal_input']['curvature']
+    crystal_curvature   = config['crystal_input']['radius']
     crystal_bragg       = config['crystal_input']['bragg']
     detector_location   = config['detector_input']['origin']
 
@@ -169,9 +169,9 @@ def setup_manfred_scenario(config):
     manfred_input = {}
     manfred_input['horz_resolution'] = 11
     manfred_input['vert_resolution'] = 31
-    manfred_input['base_radius'] = 0.300
-    manfred_input['base_height'] = 0.01
-    manfred_input['spiral_parameter'] = 0.34
+    manfred_input['base_radius']     = 0.300
+    manfred_input['base_height']     = 0.01
+    manfred_input['spiral_parameter']= 0.34
     manfred_input['crystal_spacing'] = 2.82868 / 2
     
     manfred_output = generate_sinusoidal_spiral(manfred_input)
@@ -210,7 +210,7 @@ def setup_manfred_scenario(config):
     config['crystal_input']['xaxis']          = c_x_vector
     config['crystal_input']['height']         = c_width
     config['crystal_input']['width']          = manfred_input['base_height']
-    config['crystal_input']['spacing']        = manfred_input['crystal_spacing']
+    config['crystal_input']['crystal_spacing']= manfred_input['crystal_spacing']
     config['detector_input']['origin']        = d_origin
     config['detector_input']['zaxis']         = d_normal
     config['detector_input']['xaxis']         = d_x_vector
@@ -322,9 +322,9 @@ def setup_plasma_scenario(config):
     major_radius    = config['plasma_input']['major_radius']
 
     c_bragg = bragg_angle(config['source_input']['wavelength'], 
-                          config['crystal_input']['spacing'])
+                          config['crystal_input']['crystal_spacing'])
     g_bragg = bragg_angle(config['source_input']['wavelength'], 
-                          config['graphite_input']['spacing'])
+                          config['graphite_input']['crystal_spacing'])
     
     c_width = config['graphite_input']['width']
     c_height= config['graphite_input']['height']
@@ -332,7 +332,7 @@ def setup_plasma_scenario(config):
     g_width = config['graphite_input']['width']
     g_height= config['graphite_input']['height']
 
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    meridi_focus = config['crystal_input']['radius'] * np.sin(c_bragg)
     sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
@@ -403,11 +403,11 @@ def setup_throughput_scenario(config):
     distance_g_c    = config['scenario_input']['graphite_crystal_dist']
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
 
-    c_bragg = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['spacing'])
-    c_width = config['graphite_input']['width']
-    c_height= config['graphite_input']['height']
+    c_bragg = bragg_angle(config['source_input']['wavelength'], config['crystal_input']['crystal_spacing'])
+    c_width = config['crystal_input']['width']
+    c_height= config['crystal_input']['height']
 
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    meridi_focus = config['crystal_input']['radius'] * np.sin(c_bragg)
     sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
@@ -466,17 +466,17 @@ def setup_beam_scenario(config):
     distance_c_d    = config['scenario_input']['crystal_detector_dist']
     
     c_bragg = bragg_angle(config['source_input']['wavelength'], 
-                          config['crystal_input']['spacing'])
+                          config['crystal_input']['crystal_spacing'])
     g_bragg = bragg_angle(config['source_input']['wavelength'], 
-                          config['graphite_input']['spacing'])
+                          config['graphite_input']['crystal_spacing'])
     
-    c_width = config['graphite_input']['width']
-    c_height= config['graphite_input']['height']
+    c_width = config['crystal_input']['width']
+    c_height= config['crystal_input']['height']
     
     g_width = config['graphite_input']['width']
     g_height= config['graphite_input']['height']
     
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    meridi_focus = config['crystal_input']['radius'] * np.sin(c_bragg)
     sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
@@ -487,12 +487,12 @@ def setup_beam_scenario(config):
     
     ## Graphite Placement
     g_origin  = s_origin + (path_vector * distance_s_g)
-    g_orient    = np.array([0, 0, 1], dtype = np.float64)
+    g_orient  = np.array([0, 0, 1], dtype = np.float64)
     path_vector, g_basis, g_mesh_points, g_mesh_faces = create_optic_basis(
         path_vector, g_orient, g_bragg, g_width, g_height)
 
     ## Crystal Placement
-    c_origin  = s_origin + (path_vector * distance_g_c)
+    c_origin  = g_origin + (path_vector * distance_g_c)
     c_orient  = np.array([0, 0, 1], dtype = np.float64)
     path_vector, c_basis, c_mesh_points, c_mesh_faces = create_optic_basis(
         path_vector, c_orient, c_bragg, c_width, c_height)
@@ -503,7 +503,7 @@ def setup_beam_scenario(config):
         s_target = g_origin
     
     ## Detector Placement
-    d_origin = c_origin + (path_vector * distance_c_d)
+    d_origin   = c_origin + (path_vector * distance_c_d)
     d_orient   = np.array([0, 0, 1], dtype = np.float64)
     d_basis    = create_detector_basis(path_vector, d_orient)
     
@@ -543,11 +543,11 @@ def setup_crystal_test(config):
     distance_s_c = config['scenario_input']['source_graphite_dist']
     distance_c_d = config['scenario_input']['crystal_detector_dist']    
     c_bragg = bragg_angle(config['source_input']['wavelength'], 
-                          config['crystal_input']['spacing'])
+                          config['crystal_input']['crystal_spacing'])
     c_width = config['graphite_input']['width']
     c_height= config['graphite_input']['height']
     
-    meridi_focus = config['crystal_input']['curvature'] * np.sin(c_bragg)
+    meridi_focus = config['crystal_input']['radius'] * np.sin(c_bragg)
     sagitt_focus = - meridi_focus / np.cos(2 * c_bragg)
 
     if distance_c_d is None:
@@ -603,7 +603,7 @@ def setup_graphite_test(config):
     distance_s_g = config['scenario_input']['source_graphite_dist']
     distance_g_d = config['scenario_input']['crystal_detector_dist']
     g_bragg = bragg_angle(config['source_input']['wavelength'],
-                          config['graphite_input']['spacing'])
+                          config['graphite_input']['crystal_spacing'])
     g_width = config['graphite_input']['width']
     g_height= config['graphite_input']['height']
     

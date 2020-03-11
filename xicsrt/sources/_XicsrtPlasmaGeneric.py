@@ -112,6 +112,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         count_rays_in_bundle = []
 
         m = bundle_input['mask']
+        print(' Bundles Generated: {:6.4e}'.format(len(m[m])))
         
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.

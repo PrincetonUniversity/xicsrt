@@ -39,38 +39,48 @@ def run(config, config_number = None):
     plasma   = XicsrtPlasmaVmecDatafile(   config['plasma_input'])
     
     runs     = config['general_input']['number_of_runs']
+    save     = config['general_input']['do_savefiles']
+    view     = config['general_input']['do_visualizations']
     scenario = str.upper(config['general_input']['scenario'])
     
     ## Initial Visualization
-    if config['general_input']['do_visualizations'] is True:
+    if view is True:
         fig1, ax1 = visualize_layout(config)
         fig1.show()
 
     ## Raytrace Runs
     if scenario == 'REAL' or scenario == 'PLASMA':
-        output, rays_count = raytrace(plasma, pilatus, graphite, crystal, number_of_runs = runs)
+        output, rays_count = raytrace(plasma, pilatus, graphite, crystal,
+                                      number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'THROUGHPUT':
-        output, rays_count = raytrace(plasma, pilatus, crystal, number_of_runs = runs)
+        output, rays_count = raytrace(plasma, pilatus, crystal,
+                                      number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'BEAM':
         if config['general_input']['backwards_raytrace'] is False:
-            output, rays_count = raytrace(source, pilatus, graphite, crystal, number_of_runs = runs)
+            output, rays_count = raytrace(source, pilatus, graphite, crystal,
+                                          number_of_runs = runs, collect_optics = save)
 
         if config['general_input']['backwards_raytrace'] is True:
-            output, rays_count = raytrace(source, pilatus, crystal, graphite, number_of_runs = runs)
+            output, rays_count = raytrace(source, pilatus, crystal, graphite,
+                                          number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'MANFRED':
-        output, rays_count = raytrace(source, pilatus, crystal, number_of_runs = runs)
+        output, rays_count = raytrace(source, pilatus, crystal,
+                                      number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'CRYSTAL':
-        output, rays_count = raytrace(source, pilatus, crystal, number_of_runs = runs)
+        output, rays_count = raytrace(source, pilatus, crystal,
+                                      number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'GRAPHITE':
-        output, rays_count = raytrace(source, pilatus, graphite, number_of_runs = runs)
+        output, rays_count = raytrace(source, pilatus, graphite,
+                                      number_of_runs = runs, collect_optics = save)
 
     elif scenario == 'SOURCE':
-        output, rays_count = raytrace(source, pilatus, number_of_runs = runs)
+        output, rays_count = raytrace(source, pilatus,
+                                      number_of_runs = runs, collect_optics = save)
 
     else:
         raise Exception('Scenario unknown: {}'.format(scenario))
@@ -83,7 +93,7 @@ def run(config, config_number = None):
     #        , general_input)
     
     ## Final Visualization
-    if config['general_input']['do_visualizations'] is True:
+    if view is True:
         fig2, ax2 = visualize_bundles(config, output)
         fig2.show()
         for ii in range(len(output)):
@@ -91,7 +101,7 @@ def run(config, config_number = None):
             fig3.show()
     
     ## Save Outputs
-    if config['general_input']['do_savefiles'] is True:
+    if save is True:
         ## Create the output path if needed
         if not os.path.exists(config['general_input']['output_path']):
             os.mkdir(config['general_input']['output_path'])
@@ -151,7 +161,7 @@ def run_multi(config_multi):
 
         output, rays_count = run(config_multi[jj], jj)
         
-        hits_final.append(output_hits)
+        hits_final.append(output)
         output_final.append(output)
         for key in rays_total:
             rays_total[key] += rays_count[key]

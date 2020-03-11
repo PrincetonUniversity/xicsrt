@@ -36,7 +36,6 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
     profiler.stop('Ray Generation')
     rays_history.append(deepcopy(rays))
 
-
     print(' Rays Generated:    {:6.4e}'.format(rays['direction'].shape[0]))
     rays_count['total_generated'] += rays['direction'].shape[0]
 
@@ -51,9 +50,9 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
             optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
 
-        if optic.name == 'SphericalCrystal':
-            rays_count['total_crystal'] += optic.photon_count
-        elif optic.name == 'MosaicGraphite':
+        if optic.name == 'XicsrtOpticCrystalSpherical':
+            rays_count['total_crystal']  += optic.photon_count
+        elif optic.name == 'XicsrtOpticMosaicGraphite':
             rays_count['total_graphite'] += optic.photon_count
 
     profiler.start('Ray Tracing')
