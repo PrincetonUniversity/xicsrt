@@ -30,14 +30,12 @@ flags['enabled'] = False
 def isEnabled():
     return flags['enabled']
 
-
 def startProfiler(reset=False):
     if reset:
         resetProfiler()
         
     flags['enabled'] = True
 
-    
 def stopProfiler():
     flags['enabled'] = False
 
@@ -46,12 +44,10 @@ def stopProfiler():
     for key in profiler_results:
         profiler_results[key]['time_start'] = None
 
-        
 def resetProfiler():
     global profiler_results
     profiler_results = OrderedDict()
 
-    
 def report():
     names = list(profiler_results.keys())
     totals = [profiler_results[xx]['time_total'] for xx in profiler_results]
@@ -72,7 +68,12 @@ def report():
                 ,profiler_results[name]['time_total']/profiler_results[name]['num_calls']
                 ,profiler_results[name]['num_calls']))
 
-    
+def getTimeTotal(name):
+    return profiler_results[name]['time_total']
+
+def getTimeSingle(name):
+    return profiler_results[name]['time_total']/profiler_results[name]['num_calls']
+
 def start(name):
     if flags['enabled']:
         if not name in profiler_results:
@@ -80,7 +81,6 @@ def start(name):
             
         profiler_results[name]['time_start'] = datetime.datetime.now()
 
-        
 def stop(name):
     if flags['enabled']:
         if profiler_results[name]['time_start'] is not None:
@@ -88,12 +88,11 @@ def stop(name):
             profiler_results[name]['num_calls'] += 1
             profiler_results[name]['time_start'] = None
 
-            
 def _newProfile(name):
     profiler_results[name] = {
         'time_total':datetime.timedelta(0)
         ,'time_start':None
         ,'num_calls':0
         }
-    
+
     

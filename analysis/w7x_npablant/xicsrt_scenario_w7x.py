@@ -217,4 +217,4 @@ def run_multiprocessing(config_multi):
 
     profiler.stop('XICSRT Run')
 
-    return output_final, rays_final
+    return output_final, rays_final, objects_final
