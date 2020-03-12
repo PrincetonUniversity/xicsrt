@@ -19,8 +19,8 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
     def __init__(self, config=None):
         super().__init__(config)    
         
-    def getDefaultConfig(self):
-        config = super().getDefaultConfig()
+    def get_default_config(self):
+        config = super().get_default_config()
 
         config['origin'] = None
         config['direction'] = None
@@ -32,7 +32,7 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
 
         # Calculate whether the ray bundles are within range of the sightline
         # vector from sightline origin to bundle position.
-        l_0 = self.config['origin'] - bundle_input['position']
+        l_0 = self.config['origin'] - bundle_input['origin']
         
         # Projection of l_0 onto the sightline
         proj = np.einsum('j,ij->i', self.config['direction'], l_0)[np.newaxis]
@@ -47,7 +47,7 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
         
         # Check to see if the bundle is close enough to the sightline
         mask = (self.config['radius'] >= distance)
-
+        
         bundle_input['mask'] &= mask
-
+        
         return bundle_input

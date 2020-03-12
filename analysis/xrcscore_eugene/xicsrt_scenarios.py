@@ -284,8 +284,8 @@ def setup_real_scenario(config):
     
     ## Repack variables
     config['plasma_input']['target']          = g_origin
-    #config['plasma_input']['sight_origin']    = g_origin
-    #config['plasma_input']['sight_direction'] = sightline
+    config['filter_input']['origin']          = g_origin
+    config['filter_input']['direction']       = sightline
     #graphite dimensions override - remove these hashtags later
     config['graphite_input']['origin']        = g_origin
     config['graphite_input']['zaxis']         = g_basis[2,:]

@@ -21,6 +21,7 @@ from xicsrt.optics._XicsrtOpticCrystalSpherical import XicsrtOpticCrystalSpheric
 from xicsrt.optics._XicsrtOpticMosaicGraphite   import XicsrtOpticMosaicGraphite
 from xicsrt.visual.xicsrt_visualizer            import visualize_layout
 from xicsrt.visual.xicsrt_visualizer            import visualize_vectors, visualize_bundles
+from xicsrt.filters._XicsrtBundleFilterSightline import XicsrtBundleFilterSightline
 
 from xicsrt.xicsrt_raytrace   import raytrace
 
@@ -37,6 +38,7 @@ def run(config, config_number = None):
     graphite = XicsrtOpticMosaicGraphite(  config['graphite_input'])
     source   = XicsrtSourceFocused(        config['source_input'])
     plasma   = XicsrtPlasmaVmecDatafile(   config['plasma_input'])
+    filter   = XicsrtBundleFilterSightline(config['filter_input'])
     
     runs     = config['general_input']['number_of_runs']
     save     = config['general_input']['do_savefiles']
@@ -50,6 +52,7 @@ def run(config, config_number = None):
 
     ## Raytrace Runs
     if scenario == 'REAL' or scenario == 'PLASMA':
+        plasma.filter_list.append(filter)
         output, rays_count = raytrace(plasma, pilatus, graphite, crystal,
                                       number_of_runs = runs, collect_optics = save)
 

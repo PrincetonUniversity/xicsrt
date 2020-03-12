@@ -22,6 +22,7 @@ def get_config():
     config['scenario_input']  = OrderedDict()
     config['plasma_input']    = OrderedDict()
     config['source_input']    = OrderedDict()
+    config['filter_input']    = OrderedDict()
     config['graphite_input']  = OrderedDict()
     config['crystal_input']   = OrderedDict()
     config['detector_input']  = OrderedDict()
@@ -37,7 +38,7 @@ def get_config():
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'BEAM'
+    config['general_input']['scenario']           = 'REAL'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -87,9 +88,9 @@ def get_config():
     Only a small cubic chunk of the plasma is rendered and emits rays
     This cubic chunk has a 'width', 'height', and 'depth' (meters)
     """
-    config['plasma_input']['origin']              = np.array([0.0, 0.0, 0.0])
-    config['plasma_input']['zaxis']               = np.array([0.0, 1.0, 0.0])
-    config['plasma_input']['xaxis']               = np.array([0.0, 0.0, 1.0])
+    config['plasma_input']['origin']              = np.array([0.0, 6.2, 0.5])
+    config['plasma_input']['zaxis']               = np.array([0.0, 0.0, 1.0])
+    config['plasma_input']['xaxis']               = np.array([1.0, 0.0, 0.0])
     config['plasma_input']['target']              = np.array([1.0, 0.0, 0.0])
     
     #config['plasma_input']['major_radius']        = 6.2
@@ -117,24 +118,26 @@ def get_config():
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
-    config['plasma_input']['bundle_type']         = 'POINT'
-    config['plasma_input']['bundle_count']        = int(1e5)
+    config['plasma_input']['bundle_type']         = 'VOXEL'
+    config['plasma_input']['bundle_count']        = int(1e6)
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
-    config['plasma_input']['time_resolution']     = 1e-6
+    config['plasma_input']['time_resolution']     = 1e-4
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass_number']         = 131.293
     config['plasma_input']['wavelength']          = 2.7203
     config['plasma_input']['linewidth']           = 1.129e+14
     
+    # -------------------------------------------------------------------------
+    ## Load filter properties
     """Sightline Settings
     The plasma sightline is a vector that extends from the graphite 
     pre-reflector to the plasma. This improves rendering efficiency since the 
     plasma only needs to render bundles near the sightline.
     The sightline has a thickness (meters)
-    config['plasma_input']['sight_origin']    = np.array([0.0, 0.0, 0.0])
-    config['plasma_input']['sight_direction'] = np.array([0.0, 1.0, 0.0])
-    config['plasma_input']['sight_thickness'] = 0.100
     """
+    config['filter_input']['origin']    = np.array([0.0, 0.0, 0.0])
+    config['filter_input']['direction'] = np.array([0.0, 1.0, 0.0])
+    config['filter_input']['radius']    = 0.100
     
     # -------------------------------------------------------------------------
     ## Load source properties

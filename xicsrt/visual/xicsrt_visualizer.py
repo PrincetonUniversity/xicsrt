@@ -98,20 +98,19 @@ def visualize_layout(config):
     config_vis = {'origin':origin,'normal':normal,'orient_x':orient_x,
                   'orient_y':orient_y,'width':width,'height':height,
                   'corners':corners}
-    
-    #plasma sightline[3D Coordinates]
-    #plasma_sight    = config['plasma_input']['sight_origin'] + 7 * config['plasma_input']['sight_direction']
 
     ## Plot everything
     if scenario == "REAL" or scenario == "PLASMA":
         #resize and recenter axes on graphite
         view_center = 1
         
+        #plasma sightline[3D Coordinates]
+        plasma_sight = config['filter_input']['origin'] + 7 * config['filter_input']['direction']
+        
         #draw beamline
         beamline = np.zeros([4,3], dtype = np.float64)
         if config['general_input']['backwards_raytrace'] is False:
-            #beamline[0,:] = plasma_sight
-            beamline[1,:] = origin[4,:]
+            beamline[0,:] = plasma_sight
             beamline[1,:] = origin[1,:]
             beamline[2,:] = origin[2,:]
             beamline[3,:] = origin[3,:]
@@ -120,8 +119,7 @@ def visualize_layout(config):
             beamline[0,:] = origin[3,:]
             beamline[1,:] = origin[2,:]
             beamline[2,:] = origin[1,:]
-            #beamline[3,:] = plasma_sight
-            beamline[3,:] = origin[4,:]
+            beamline[3,:] = plasma_sight
                     
         #draw plasma, graphite, crystal, detector
         draw_flux(config, ax)
@@ -248,8 +246,8 @@ def draw_flux(config, ax):
     
     #flux toroid resolution (number of points)
     num_r = 1
-    num_m = 51
-    num_n = 51
+    num_m = 25
+    num_n = 25
 
     num_points = num_r * num_m * num_n
     flux_points = np.empty((num_points, 3))
@@ -278,7 +276,25 @@ def draw_flux(config, ax):
     
     triangles = tri.Triangulation(x_array, y_array, mesh_faces)
     ax.plot_trisurf(triangles, z_array, color = 'yellow', alpha = 0.25, zorder = 0)
-        
+    
+    #plot the plasma bounding box
+    plasma_corners = np.zeros([8,3], dtype = np.float64)
+    dx = config['plasma_input']['width']  / 2
+    dy = config['plasma_input']['height'] / 2
+    dz = config['plasma_input']['depth']  / 2
+    
+    plasma_corners[0,:] = [ dx, dy, dz]
+    plasma_corners[1,:] = [-dx, dy, dz]
+    plasma_corners[2,:] = [ dx,-dy, dz]
+    plasma_corners[3,:] = [-dx,-dy, dz]
+    plasma_corners[4,:] = [ dx, dy,-dz]
+    plasma_corners[5,:] = [-dx, dy,-dz]
+    plasma_corners[6,:] = [ dx,-dy,-dz]
+    plasma_corners[7,:] = [-dx,-dy,-dz]
+    plasma_corners     += config['plasma_input']['origin']
+    
+    ax.scatter(plasma_corners[:,0], plasma_corners[:,1], plasma_corners[:,2], color = "yellow")
+    
     return ax
 
 def draw_torus(config, ax):
