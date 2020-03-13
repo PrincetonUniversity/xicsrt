@@ -121,7 +121,7 @@ def get_config():
     config['plasma_input']['bundle_type']         = 'VOXEL'
     config['plasma_input']['bundle_count']        = int(1e6)
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
-    config['plasma_input']['time_resolution']     = 1e-4
+    config['plasma_input']['time_resolution']     = 1e-7
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass_number']         = 131.293
     config['plasma_input']['wavelength']          = 2.7203

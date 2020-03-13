@@ -125,13 +125,13 @@ class XicsrtPlasmaGeneric(TraceObject):
         
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.
-        predicted_rays = int(
-            np.sum(bundle_input['emissivity'][m])
+        predicted_rays = int(np.sum(
+            bundle_input['emissivity'][m]
             * self.param['time_resolution']
             * self.param['bundle_volume']
             * self.param['solid_angle'] / (4 * np.pi)
-            * self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume']))
-        
+            * self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume'])))
+
         if predicted_rays >= self.param['max_rays']:
             raise ValueError('Current settings will produce too many rays. Please reduce integration time.')
         
@@ -139,7 +139,6 @@ class XicsrtPlasmaGeneric(TraceObject):
         for ii in range(self.param['bundle_count']):
             if not bundle_input['mask'][ii]:
                 continue
-            
             profiler.start("Ray Bundle Generation")
             source_config = OrderedDict()
             
@@ -155,7 +154,7 @@ class XicsrtPlasmaGeneric(TraceObject):
                          * self.param['time_resolution']
                          * self.param['bundle_volume']
                          * self.param['solid_angle'] / (4 * np.pi))
-
+            
             # Scale the number of photons based on the number of bundles.
             #
             # Ultimately we allow bundle_volume and bundle_count to be
@@ -170,7 +169,7 @@ class XicsrtPlasmaGeneric(TraceObject):
             # In doing so bundle_volume cancels out, but I am leaving the
             # calculation separate for clarity.
             intensity *= self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume'])
-
+            
             source_config['intensity'] = intensity
             
             # constants

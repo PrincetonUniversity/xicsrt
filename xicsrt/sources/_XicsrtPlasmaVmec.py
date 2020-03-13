@@ -72,7 +72,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         #
         # Currently stelltools can only handle one point at a time, so a
         # loop is required. This will be improved eventually.
-        rho = np.zeros(len(m))
+        rho = np.zeros(len(m[m]))
         for ii in range(len(m[m])):
             # convert from cartesian coordinates to normalized radial coordinate.
             profiler.start("Fluxspace from Realspace")
@@ -81,14 +81,15 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
             except stelltools.DomainError:
                 rho[ii] = np.nan
             profiler.stop("Fluxspace from Realspace")
-            
-        m &= np.isfinite(rho)
         
         # evaluate emissivity, temperature and velocity at each bundle location.
-        bundle_input['temperature'][m] = self.get_temperature(rho[m]) * self.param['temperature_scale']
-        bundle_input['emissivity'][m]  = self.get_emissivity(rho[m])  * self.param['emissivity_scale']
-        bundle_input['velocity'][m]    = self.get_velocity(rho[m])    * self.param['velocity_scale']
-
+        bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']
+        bundle_input['emissivity'][m]  = self.get_emissivity(rho)  * self.param['emissivity_scale']
+        bundle_input['velocity'][m]    = self.get_velocity(rho)    * self.param['velocity_scale']
+        
+        fintest = np.isfinite(bundle_input['temperature'])
+        m &= fintest
+        
         profiler.stop("Bundle Input Generation")
 
         return bundle_input

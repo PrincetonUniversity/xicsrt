@@ -29,7 +29,6 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
         return config
 
     def filter(self, bundle_input):
-
         # Calculate whether the ray bundles are within range of the sightline
         # vector from sightline origin to bundle position.
         l_0 = self.config['origin'] - bundle_input['origin']

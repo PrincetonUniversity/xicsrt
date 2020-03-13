@@ -115,10 +115,10 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
         max_lost = int(10000/number_of_runs)
-        lost_max = min(max_lost, len(w_lost))
+        max_lost = min(max_lost, len(w_lost))
         index_lost = np.arange(len(w_lost))
         np.random.shuffle(index_lost)
-        w_lost = w_lost[index_lost[:lost_max]]
+        w_lost = w_lost[index_lost[:max_lost]]
 
         found = []
         lost  = []
