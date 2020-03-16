@@ -33,8 +33,8 @@ def get_config():
     possible scenarios include 'REAL', 'PLASMA', 'THROUGHPUT', 'BEAM',
     'CRYSTAL', 'GRAPHITE', 'SOURCE'
     """
-    inpath = '/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/xrcscore_eugene/inputs/'
-    outpath= '/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/results/'
+    inpath = '/Users/Eugene/PPPL_python_project1/xics_rt_code/analysis/xrcscore_eugene/inputs/'
+    outpath= '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
@@ -47,7 +47,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 100
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -359,9 +359,9 @@ def get_config_multi(configurations):
 
 ## Run the scripts in order (TEMPORARY - Find a better place to put this code)
 import sys
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/')
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/')
-sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code_temp_gitmerge/analysis/xrcscore_eugene/')
+sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code/')
+sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code/analysis/')
+sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code/analysis/xrcscore_eugene/')
 
 from xrcscore_eugene.xicsrt_initialize import initialize, initialize_multi
 from xrcscore_eugene.xicsrt_run import run, run_multi
