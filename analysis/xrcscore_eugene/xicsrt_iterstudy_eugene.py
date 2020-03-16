@@ -47,7 +47,7 @@ def get_config():
     If more rays are necessary, increase 'number of runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 100
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -119,7 +119,7 @@ def get_config():
     """
     config['plasma_input']['max_rays']            = config['general_input']['number_of_rays']
     config['plasma_input']['bundle_type']         = 'VOXEL'
-    config['plasma_input']['bundle_count']        = int(1e6)
+    config['plasma_input']['bundle_count']        = int(1e5)
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
     config['plasma_input']['time_resolution']     = 1e-7
     config['plasma_input']['spread']              = 1.0
