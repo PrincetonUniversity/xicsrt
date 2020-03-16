@@ -12,14 +12,9 @@ from xicsrt.xicsrt_objects import ConfigObject
 class XicsrtBundleFilter(ConfigObject):
     """
     A base class for bundle filters.
-    """
-
-    def __init__(self, config=None):
-        self.config = self.getDefaultConfig()
-        self.updateConfig(config)
-    
-    def getDefaultConfig(self):
-        config = super().getDefaultConfig()
+    """    
+    def get_default_config(self):
+        config = super().get_default_config()
         return config
     
     def filter(self, bundle_input):

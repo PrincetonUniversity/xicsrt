@@ -74,7 +74,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         # improve speed or actually make it worse.
         R[:,0,:] = o_1
         R[:,1,:] = o_2
-        R[:,2,:] = norm_orig
+        R[:,2,:] = norm_surf
 
         normals[m] = np.einsum('ij,ijk->ik', dir_local[m], R[m])
         return normals
@@ -119,7 +119,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             # improve speed or actually make it worse.
             R[:,0,:] = o_1
             R[:,1,:] = o_2
-            R[:,2,:] = normal
+            R[:,2,:] = norm_surf
             
             normals[test] = np.einsum('ij,ijk->ik', dir_local[test], R[test])
             

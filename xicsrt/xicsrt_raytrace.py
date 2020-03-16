@@ -30,12 +30,11 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
 
     # Rays history resets after every run and only returns on the last one
     rays_history = []
-
+    
     profiler.start('Ray Generation')
     rays = source.generate_rays()
     profiler.stop('Ray Generation')
     rays_history.append(deepcopy(rays))
-
 
     print(' Rays Generated:    {:6.4e}'.format(rays['direction'].shape[0]))
     rays_count['total_generated'] += rays['direction'].shape[0]
@@ -51,10 +50,10 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
             optic.collect_rays(rays)
         profiler.stop('Collection: Optics')
 
-        if optic.name == 'SphericalCrystal':
-            rays_count['total_crystal'] += optic.photon_count
-        elif optic.name == 'MosaicGraphite':
-            rays_count['total_graphite'] += optic.photon_count
+        if optic.name == 'XicsrtOpticCrystalSpherical':
+            rays_count['total_crystal']  += np.sum(rays['mask'])
+        elif optic.name == 'XicsrtOpticMosaicGraphite':
+            rays_count['total_graphite'] += np.sum(rays['mask'])
 
     profiler.start('Ray Tracing')
     rays = detector.light(rays)
@@ -65,7 +64,7 @@ def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_opt
     detector.collect_rays(rays)
     profiler.stop('Collection: Detector')
 
-    rays_count['total_detector'] += detector.photon_count
+    rays_count['total_detector'] += np.sum(rays['mask'])
     profiler.stop('Raytrace Run')
 
 
@@ -116,10 +115,10 @@ def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
         max_lost = int(10000/number_of_runs)
-        lost_max = min(max_lost, len(w_lost))
+        max_lost = min(max_lost, len(w_lost))
         index_lost = np.arange(len(w_lost))
         np.random.shuffle(index_lost)
-        w_lost = w_lost[index_lost[:lost_max]]
+        w_lost = w_lost[index_lost[:max_lost]]
 
         found = []
         lost  = []

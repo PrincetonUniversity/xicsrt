@@ -130,19 +130,8 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
 
         self.initialize_vmec()
         
-        profiler.start("Bundle Input Generation")
-        
+        profiler.start("Bundle Input Generation")        
         m = bundle_input['mask']
-        
-        # create a long list containing random points within the cube's dimensions
-        offset = np.zeros((self.param['bundle_count'], 3))
-        offset[:,0] = np.random.uniform(-1 * self.param['width']/2, self.param['width']/2, self.param['bundle_count'])
-        offset[:,1] = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        offset[:,2] = np.random.uniform(-1 * self.param['depth']/2, self.param['depth']/2, self.param['bundle_count'])
-        
-        # unlike the other plasmas, the toroidal plasma has fixed orientation to
-        # prevent confusion
-        bundle_input['origin'][:] = self.point_to_external(offset)
         
         # Attempt to generate the specified number of bundles, but throw out
         # bundles that our outside of the last closed flux surface.

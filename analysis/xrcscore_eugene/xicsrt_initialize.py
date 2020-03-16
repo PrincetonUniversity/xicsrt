@@ -10,25 +10,17 @@ Takes the config dictionary created by xicsrt_iterstudy.py and runs it through
 one of the scenarios in xicsrt_scenarios.py, returning a modified config
 dictionary.
 """
-from xicsrt.util import profiler
-
-profiler.start('Import Time')
-
-from xicsrt.xicsrt_scenarios import setup_real_scenario
-from xicsrt.xicsrt_scenarios import setup_throughput_scenario
-from xicsrt.xicsrt_scenarios import setup_plasma_scenario
-from xicsrt.xicsrt_scenarios import setup_beam_scenario
-from xicsrt.xicsrt_scenarios import setup_manfred_scenario
-from xicsrt.xicsrt_scenarios import setup_graphite_test
-from xicsrt.xicsrt_scenarios import setup_crystal_test
-from xicsrt.xicsrt_scenarios import setup_source_test
-
-profiler.stop('Import Time')
+from xicsrt_scenarios import setup_real_scenario
+from xicsrt_scenarios import setup_throughput_scenario
+from xicsrt_scenarios import setup_plasma_scenario
+from xicsrt_scenarios import setup_beam_scenario
+from xicsrt_scenarios import setup_manfred_scenario
+from xicsrt_scenarios import setup_graphite_test
+from xicsrt_scenarios import setup_crystal_test
+from xicsrt_scenarios import setup_source_test
 
 
 def initialize(config):
-    profiler.start('Scenario Setup Time')
-
     scenario = str.upper(config['general_input']['scenario'])
     
     ## Set up a real scenario 
@@ -84,8 +76,6 @@ def initialize(config):
     if config['general_input']['ideal_geometry'] is False:
         config['crystal_input']['spacing']  *= 1 + config['crystal_input']['therm_expand']  * (config['general_input']['xics_temp'] - 273)
         config['graphite_input']['spacing'] *= 1 + config['graphite_input']['therm_expand'] * (config['general_input']['xics_temp'] - 273)
-
-    profiler.stop('Scenario Setup Time')
 
     return config
 
