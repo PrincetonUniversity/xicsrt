@@ -350,10 +350,10 @@ def get_config():
     return config
 
 def get_config_multi(configurations):
-    config_multi = list()
-    for i in range(configurations):
+    config_multi = dict()
+    for ii in range(configurations):
         config = get_config()
-        config_multi.append(config)
+        config_multi[str(ii)] = config
         
     return config_multi
 
@@ -370,12 +370,10 @@ from xicsrt.xicsrt_input import save_config, load_config
 runtype = 'single'
 filepath= 'xicsrt_input.json'
 
-"""Something is wrong with xicsrt_input load_config, investigate later
 try:
     load_config(filepath)
 except FileNotFoundError:
     print(filepath + ' not found!')
-"""
 
 if runtype == 'single':
     config = get_config()
@@ -390,7 +388,7 @@ if runtype == 'multi':
 if runtype == 'save':
     config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
-    save_config(filepath, config)
+    save_config(filepath, config_multi)
         
 if runtype == 'init_resave':
     config_multi = load_config(filepath)
