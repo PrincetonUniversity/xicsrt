@@ -164,7 +164,7 @@ def setup_manfred_scenario(config):
     A Multi-toroidal mirror designed for x-rays with energies 9.750-10.560 keV
     intended for Ge[400] crystal with inter-atomic distance 2d = 2.82868 A
     """
-    from xicsrt.xics_rt_meshes import generate_sinusoidal_spiral
+    from xicsrt.meshes.xicsrt_meshes import generate_sinusoidal_spiral
     
     manfred_input = {}
     manfred_input['horz_resolution'] = 11
@@ -193,13 +193,16 @@ def setup_manfred_scenario(config):
     d_x_vector = np.array([0.0, 0.0, 1.0])
     
     s_normal   = c_origin / np.linalg.norm(c_origin)
-    c_normal   = np.mean(mesh_normals, axis = 0)
+    c_normal   = -np.mean(mesh_normals, axis = 0)
     d_normal   = np.cross(detector_points[-1,:] - detector_points[0,:], d_x_vector)
     s_target   = c_origin
     
     #repack variables
     config['crystal_input']['mesh_points']    = mesh_points
     config['crystal_input']['mesh_faces']     = mesh_faces
+    config['graphite_input']['mesh_points']   = mesh_points
+    config['graphite_input']['mesh_faces']    = mesh_faces    
+    
     config['source_input']['origin']          = s_origin
     config['source_input']['zaxis']           = s_normal
     config['source_input']['xaxis']           = s_x_vector
@@ -209,13 +212,12 @@ def setup_manfred_scenario(config):
     config['crystal_input']['zaxis']          = c_normal
     config['crystal_input']['xaxis']          = c_x_vector
     config['crystal_input']['height']         = c_width
-    config['crystal_input']['width']          = manfred_input['base_height']
+    config['crystal_input']['width']          = manfred_input['base_height']/1.9
     config['crystal_input']['crystal_spacing']= manfred_input['crystal_spacing']
     config['detector_input']['origin']        = d_origin
     config['detector_input']['zaxis']         = d_normal
     config['detector_input']['xaxis']         = d_x_vector
     config['detector_input']['height']        = d_width
-    config['detector_input']['vertical_pixels'] = int(round(d_width / config['detector_input']['pixel_size']))
     
     return config
 

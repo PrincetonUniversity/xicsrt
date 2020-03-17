@@ -134,6 +134,6 @@ def tif_subtract(tif_1, tif_2):
     print(png_name + ' saved!')
 
 #tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
-#colorize_png(tif_list)
-#histogram_analysis(tif_list)
+colorize_png(tif_list)
+histogram_analysis(tif_list)
 #tif_overlay(tif_list)

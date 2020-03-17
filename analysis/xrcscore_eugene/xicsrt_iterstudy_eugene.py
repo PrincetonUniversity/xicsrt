@@ -38,7 +38,7 @@ def get_config():
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'REAL'
+    config['general_input']['scenario']           = 'MANFRED'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -183,10 +183,10 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['crystal_input']['do_bragg_checks']    = True
+    config['crystal_input']['do_bragg_checks']    = False
     config['crystal_input']['do_miss_checks']     = True
     config['crystal_input']['rocking_type']       = 'FILE'
-    config['crystal_input']['use_meshgrid']       = False
+    config['crystal_input']['use_meshgrid']       = True
     config['crystal_input']['rocking_mix']        = 1.0
     config['crystal_input']['rocking_sigma_file'] = inpath + 'rocking_curve_germanium_sigma.txt'
     config['crystal_input']['rocking_pi_file']    = inpath + 'rocking_curve_germanium_pi.txt'
@@ -201,7 +201,7 @@ def get_config():
     config['crystal_input']['crystal_spacing']    = 1.7059
     config['crystal_input']['reflectivity']       = 1
     config['crystal_input']['rocking_fwhm']       = 90.30e-6
-    config['crystal_input']['pixel_size']         = 0.0001
+    config['crystal_input']['pixel_size']         = 0.00001
     #config['crystal_input']['therm_expand']       = 5.9e-6
     
     """Geometry Settings

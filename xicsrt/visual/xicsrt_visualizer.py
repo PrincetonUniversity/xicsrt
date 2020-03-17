@@ -430,7 +430,7 @@ def draw_crystal(config, config_vis, crystal_mesh, crystal_guides, ax):
                   color = "cyan", length = 0.1, arrow_length_ratio = 0.1, zorder = 10)
         ax.scatter(crystal_center[0], crystal_center[1], crystal_center[2], color = "blue")
         ax.plot3D(corners[2,:,0], corners[2,:,1], corners[2,:,2], color = "cyan", zorder = 10)
-    
+        
     if crystal_guides is True:
         #draw crystal foci and circles
         ax.plot3D(crystal_circle[:,0], crystal_circle[:,1], crystal_circle[:,2], color = "blue", zorder = 5)

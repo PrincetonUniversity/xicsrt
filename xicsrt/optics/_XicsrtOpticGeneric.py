@@ -48,14 +48,14 @@ class XicsrtOpticGeneric(TraceObject):
         #
         # This is a temporary solution for plotting mesh intersections.
         # This check should eventually be removed. See todo file.
+        
         if self.config['use_meshgrid'] is True:
             mesh_loc = self.point_to_local(self.config['mesh_points'])
-
+            
             # If any mesh points fall outside of the optic width, test fails.
             test = True
-            test |= np.all(abs(mesh_loc[:,0]) > self.config['width'] / 2)
-            test |= np.all(abs(mesh_loc[:,1]) < self.config['height'] / 2)
-            
+            test &= np.all(abs(mesh_loc[:,0]) < (self.config['width']  / 2))
+            test &= np.all(abs(mesh_loc[:,1]) < (self.config['height'] / 2))
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
         
