@@ -207,7 +207,7 @@ def setup_manfred_scenario(config):
     config['source_input']['zaxis']           = s_normal
     config['source_input']['xaxis']           = s_x_vector
     config['source_input']['target']          = s_target
-    config['source_input']['wavelength']      = 10.25 / 12.398425
+    config['source_input']['wavelength']      = 12.398425 / 10.25
     config['crystal_input']['origin']         = c_origin
     config['crystal_input']['zaxis']          = c_normal
     config['crystal_input']['xaxis']          = c_x_vector
@@ -229,9 +229,10 @@ def setup_real_scenario(config):
     """
     ## Unpack variables and convert to meters
     chord  = config['scenario_input']['chord']
-    g_corners  = config['scenario_input']['graphite_corners'][chord] / 1000
-    c_corners  = config['scenario_input']['crystal_corners']         / 1000
-    d_corners  = config['scenario_input']['detector_corners']        / 1000
+    sight  = config['scenario_input']['sight']
+    g_corners  = config['scenario_input']['graphite_corners'][chord,sight]  / 1000
+    c_corners  = config['scenario_input']['crystal_corners'][chord]         / 1000
+    d_corners  = config['scenario_input']['detector_corners'][chord]        / 1000
 
     #calculate geometric properties of all meshes
     g_basis      = np.zeros([3,3], dtype = np.float64)
@@ -643,6 +644,9 @@ def setup_graphite_test(config):
     config['detector_input']['zaxis']       = d_basis[2,:]
     config['detector_input']['xaxis']       = d_basis[0,:]
     config['source_input']['target']        = s_target
+    
+    config['crystal_input']['width']  = config['graphite_input']['width']
+    config['crystal_input']['height'] = config['graphite_input']['height']
     
     return config
 

@@ -10,6 +10,7 @@ Run this code once to initialize, then type the necessary functions.
 """
 #Imports
 from PIL import Image
+from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -38,6 +39,7 @@ def colorize_png(tif_list):
         plt.savefig(png_name, bbox_inches = 'tight')
         print(png_name + ' saved!')
         
+    
 def histogram_analysis(tif_list):
     #Read the .TIF images and plot two histograms and a spectrogram
     for file in range(len(tif_list)):
@@ -59,7 +61,8 @@ def histogram_analysis(tif_list):
         ax[1,0].axis('off')
         
         #Plot Spectrogram
-        image_max = int(np.amax(image_array))
+        image_max = int(np.amax(image_array)) + 1
+            
         ax[0,1].hist(image_array.ravel(), bins = image_max, 
                      range = (0, image_max), density = True, color = 'gray')
         
@@ -68,6 +71,7 @@ def histogram_analysis(tif_list):
         fig.savefig(hist_name, bbox_inches = 'tight')
         print(hist_name + ' saved!')
         
+    
 def tif_overlay(tif_list):
     #Overlay the .TIF images to create composite .TIF images
     g_list = list()
@@ -118,6 +122,7 @@ def tif_overlay(tif_list):
     d_image.save(results_path + 'xicsrt_detector_total.tif')
     print('xicsrt_detector_total.tif saved!')
     
+
 def tif_subtract(tif_1, tif_2):
     #Open two .TIF images, subtract them, and output the difference
     image_array_1 = np.array(Image.open(results_path + tif_1))
@@ -133,7 +138,55 @@ def tif_subtract(tif_1, tif_2):
     plt.savefig(png_name, bbox_inches = 'tight')
     print(png_name + ' saved!')
 
+
+def gaussian_fit(tif, transpose = False):
+    #Open a .TIF image, make it into a histogram, and fit a gaussian curve
+    image_array = np.array(Image.open(results_path + tif))
+    
+    if transpose:
+        image_array = np.transpose(image_array)
+        
+    xdata = np.linspace(0, image_array.shape[1], num = image_array.shape[1])
+    ydata = np.sum(image_array, axis = 0, dtype = int)
+    
+    #fit a gaussian to the data
+    def gaussian(x, H, A, x0, sigma):
+        return A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+    
+    def optimize_gaussian(x, y):
+        mean = sum(x * y) / sum(y)
+        sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
+        popt, pcov = curve_fit(gaussian, x, y, p0=[min(y), max(y), mean, sigma])
+        return popt
+    
+    H, A, x0, sigma = optimize_gaussian(xdata, ydata)
+    FWHM = 2.35482 * sigma
+    
+    print('Gaussian Mean:  ' + str(x0))
+    print('Gaussian Sigma: ' + str(sigma))
+    print()
+    print('Gaussian Amp:   ' + str(A))
+    print('Gaussian FWHM:  ' + str(FWHM))
+    print()
+    print('Gaussian Vertical Offset: ' + str(H))
+    
+    #plot everything using matplotlib
+    fig, ax = plt.subplots(nrows = 2)
+    ax[0].bar(xdata, ydata, width = 1.0, color = 'gray')
+    ax[0].plot(gaussian(xdata, H, A, x0, sigma), color = 'black')
+    
+    
+    ax[1].imshow(image_array, cmap = 'gray')
+    ax[1].axis('off')
+
+    #save image
+    gauss_name = results_path + tif[:-4] + '_gaussian.png'
+    fig.savefig(gauss_name, bbox_inches = 'tight')
+    print(gauss_name + ' saved!')
+
+
 #tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
 colorize_png(tif_list)
-histogram_analysis(tif_list)
+#histogram_analysis(tif_list)
 #tif_overlay(tif_list)
+gaussian_fit('xicsrt_detector.tif')

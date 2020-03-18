@@ -34,6 +34,7 @@ class XicsrtSourceGeneric(TraceObject):
         config['temperature']    = 0.0
         config['velocity']       = 0.0
         config['use_poisson']    = False
+        config['do_monochrome']  = False
 
         return config
 
@@ -126,14 +127,18 @@ class XicsrtSourceGeneric(TraceObject):
         return direction
 
     def generate_wavelength(self, direction):
-        #random_wavelength = self.random_wavelength_normal
-        #random_wavelength = self.random_wavelength_cauchy
-        random_wavelength = self.random_wavelength_voigt
-        wavelength = random_wavelength(self.param['intensity'])
-        
-        #doppler shift
-        c = const.physical_constants['speed of light in vacuum'][0]
-        wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
+        if self.param['do_monochrome']:
+            wavelength  = np.ones(self.param['intensity'], dtype = np.float64)
+            wavelength *= self.param['wavelength']
+        else:
+            #random_wavelength = self.random_wavelength_normal
+            #random_wavelength = self.random_wavelength_cauchy
+            random_wavelength = self.random_wavelength_voigt
+            wavelength = random_wavelength(self.param['intensity'])
+            
+            #doppler shift
+            c = const.physical_constants['speed of light in vacuum'][0]
+            wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
         
         return wavelength
 

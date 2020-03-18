@@ -8,6 +8,7 @@ Authors
 """
 from PIL import Image
 import numpy as np
+import logging
 
 from xicsrt.xicsrt_objects import TraceObject
 
@@ -30,6 +31,8 @@ class XicsrtOpticGeneric(TraceObject):
         config['height']         = 0.0
         config['depth']          = 0.0
         config['pixel_size']     = None
+        config['pixel_width']    = None
+        config['pixel_height']   = None  
         
         # mesh information
         config['use_meshgrid']   = False
@@ -54,13 +57,20 @@ class XicsrtOpticGeneric(TraceObject):
             
             # If any mesh points fall outside of the optic width, test fails.
             test = True
-            test &= np.all(abs(mesh_loc[:,0]) < (self.config['width']  / 2))
-            test &= np.all(abs(mesh_loc[:,1]) < (self.config['height'] / 2))
+            test &= np.all(abs(mesh_loc[:,0]) <= (self.config['width']  / 2))
+            test &= np.all(abs(mesh_loc[:,1]) <= (self.config['height'] / 2))
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
         
+        # autofill pixel grid sizes
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
+        if self.param['pixel_width'] is None:
+            self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
+        if self.param['pixel_height'] is None:
+            self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
+
+        self.pixel_array = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         
         self.photon_count = 0
         self.param['pixel_width']  = int(np.ceil(self.param['width']  / self.param['pixel_size']))
@@ -218,9 +228,9 @@ class XicsrtOpticGeneric(TraceObject):
             rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
-
+    """
     def collect_rays(self, rays):
-        """
+        
         Collect the rays that his this optic into a pixel array that can be used
         for further analysis or visualization.
 
@@ -230,7 +240,7 @@ class XicsrtOpticGeneric(TraceObject):
         It is important thas this calculation is compatible with intersect_check
         in terms of floating point errors.  The simple way to achive this is
         to ensure that both use the same calculation method.
-        """
+        
         X = rays['origin']
         m = rays['mask'].copy()
         
@@ -271,7 +281,64 @@ class XicsrtOpticGeneric(TraceObject):
                 self.pixel_array[channel[ii,0], channel[ii,1]] += 1
         
         return self.pixel_array
+    """
+    def collect_rays(self, rays):
+        """
+        Collect the rays that his this optic into a pixel array that can be used
+        for further analysis or visualization.
+
+        Programming Notes
+        -----------------
+
+        It is important thas this calculation is compatible with intersect_check
+        in terms of floating point errors.  The simple way to achive this is
+        to ensure that both use the same calculation method.
+        """
+        X = rays['origin']
+        m = rays['mask'].copy()
         
+        num_lines = np.sum(m)
+        self.photon_count += num_lines
+        
+        # Add the ray hits to the pixel array
+        if num_lines > 0:
+            # Transform the intersection coordinates from external coordinates
+            # to local optical 'pixel' coordinates.
+            point_loc = self.point_to_local(X[m])
+            pix = point_loc / self.param['pixel_size']
+                
+            # Convert from pixels to channels.
+            # The channel coordinate is defined from the *center* of the bottom left
+            # pixel. The pixel coordinate is define from the geometrical center of
+            # the detector (this could be in the middle of or in between pixels).
+            channel = np.zeros(pix.shape)
+            channel[:,0] = pix[:,0] + (self.param['pixel_width'] - 1)/2
+            channel[:,1] = pix[:,1] + (self.param['pixel_height'] - 1)/2
+            
+            # Bin the channels into integer values so that we can use them as
+            # indexes into the pixel_array. Keep in mind that channel coordinate
+            # system is defined from the center of the pixel.
+            channel = np.round(channel).astype(int)
+            
+            # Check for any hits that are outside of the pixel_array.
+            # These are possible due to floating point calculations.
+            m = np.ones(num_lines, dtype=bool)
+            m &= channel[:,0] >= 0
+            m &= channel[:,0] < self.param['pixel_width']
+            m &= channel[:,1] >= 0
+            m &= channel[:,1] < self.param['pixel_height']
+            num_out = np.sum(~m)
+            if num_out > 0:
+                logging.warning('Rays found outside of pixel grid ({}).'.format(num_out))
+            
+            # I feel like there must be a faster way to do this than to loop over
+            # every intersection.  This could be slow for large arrays.
+            for ii in range(num_lines):
+                if m[ii]:
+                    self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+        
+        return self.pixel_array
+
     def output_image(self, image_name, rotate=None):
         if rotate:
             out_array = np.rot90(self.pixel_array)

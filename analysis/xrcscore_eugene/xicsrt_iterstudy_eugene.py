@@ -38,16 +38,16 @@ def get_config():
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'MANFRED'
+    config['general_input']['scenario']           = 'GRAPHITE'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
     """Ray emission settings
     'number_of_rays' typically should not exceed 1e7 unless running on a cluster
-    If more rays are necessary, increase 'number of runs'.
+    If more rays are necessary, increase 'number_of_runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 1
+    config['general_input']['number_of_runs']     = 10
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -75,6 +75,7 @@ def get_config():
     """
     #config['plasma_input']['use_profiles']        = True
     config['plasma_input']['use_poisson']         = True
+    config['plasma_input']['do_monochrome']       = True
     config['plasma_input']['temperature_file']    = inpath + 'plasma_temperature.txt'
     config['plasma_input']['emissivity_file']     = inpath + 'plasma_emissivity_xe44.txt'
     config['plasma_input']['velocity_file']       = inpath + 'plasma_velocity.txt'
@@ -108,8 +109,6 @@ def get_config():
     
     'max_rays' should equal config['general_input']['number_of_rays']
     'bundle_count' typically should not exceed 1e7 unless running on a cluster
-    'bundle_factor' lets you interchange generating more bundles or more rays
-    per bundle. Decreasing 'bundle_factor' results in better sampling, but slower.
     'bundle_volume'         is the volume of each bundle        (meters^3)
     'time_resolution'       is the emissivity integration time  (sec)
     'spread'                is the angular spread               (degrees)
@@ -151,16 +150,20 @@ def get_config():
     'velocity'              is the impurity ion velocity vector (m/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
-    config['source_input']['spread']              = 2.0
+    config['source_input']['spread']              = 0.01
     config['source_input']['temperature']         = 1000
     config['source_input']['mass_number']         = 131.293
-    config['source_input']['wavelength']          = 2.7203
+    config['source_input']['wavelength']          = 12.398425 / 10.0 #2.7203
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
     
     """Geometry Settings
     'width', 'height', and 'depth' of source (meters)
     These values are arbitrary for now. Set to 0.0 for point source.
+    Setting 'do_monochrome' to True causes all rays to have the same wavelength
+    Setting 'use_poisson' to True causes the source to use a random intensity
+    poisson-distributed around its input intensity. This preserves ray statistics
+    in situations with very low intensity.
     """
     config['source_input']['origin']              = np.array([0.0, 0.0, 0.0])
     config['source_input']['zaxis']               = np.array([1.0, 0.0, 0.0])
@@ -171,6 +174,7 @@ def get_config():
     config['source_input']['height']              = 0.0
     config['source_input']['depth']               = 0.0
     
+    config['source_input']['do_monochrome']       = True
     config['source_input']['use_poisson']         = False
     
     # -------------------------------------------------------------------------
@@ -183,10 +187,10 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['crystal_input']['do_bragg_checks']    = False
+    config['crystal_input']['do_bragg_checks']    = True
     config['crystal_input']['do_miss_checks']     = True
     config['crystal_input']['rocking_type']       = 'FILE'
-    config['crystal_input']['use_meshgrid']       = True
+    config['crystal_input']['use_meshgrid']       = False
     config['crystal_input']['rocking_mix']        = 1.0
     config['crystal_input']['rocking_sigma_file'] = inpath + 'rocking_curve_germanium_sigma.txt'
     config['crystal_input']['rocking_pi_file']    = inpath + 'rocking_curve_germanium_pi.txt'
@@ -244,10 +248,10 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = True
+    config['graphite_input']['do_bragg_checks']   = False
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_type']      = "GAUSS"
-    config['graphite_input']['use_meshgrid']      = True
+    config['graphite_input']['use_meshgrid']      = False
     config['graphite_input']['rocking_mix']       = 1.0
     config['graphite_input']['rocking_sigma_file']= inpath + 'rocking_curve_graphite_sigma.txt'
     config['graphite_input']['rocking_pi_file']   = inpath + 'rocking_curve_graphite_pi.txt'
@@ -264,7 +268,7 @@ def get_config():
     config['graphite_input']['reflectivity']      = 1
     config['graphite_input']['mosaic_spread']     = 0.5
     config['graphite_input']['rocking_fwhm']      = 2620e-6
-    config['graphite_input']['pixel_size']        = 0.0001
+    config['graphite_input']['pixel_size']        = 0.00001
     #config['graphite_input']['therm_expand']      = 20e-6
     
     """Geometry Settings
@@ -274,8 +278,8 @@ def get_config():
     config['graphite_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
     config['graphite_input']['xaxis']             = np.array([0.0, 0.0, 1.0])
     
-    config['graphite_input']['width']             = 0.125
-    config['graphite_input']['height']            = 0.040
+    config['graphite_input']['width']             = 0.0001 #0.125
+    config['graphite_input']['height']            = 0.0001 #0.040
     
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
@@ -295,11 +299,11 @@ def get_config():
     config['detector_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
     config['detector_input']['xaxis']             = np.array([0.0, 0.0, 0.0])
     
-    config['detector_input']['pixel_size']        = 0.000172
+    config['detector_input']['pixel_size']        = 0.0001 #0.000172
     #config['detector_input']['pixel_width']       = 195
     #config['detector_input']['pixel_height']      = 1475
-    config['detector_input']['width']             = (195  * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (1475 * config['detector_input']['pixel_size'])
+    config['detector_input']['width']             = (300 * config['detector_input']['pixel_size'])
+    config['detector_input']['height']            = (400 * config['detector_input']['pixel_size'])
 
     # -------------------------------------------------------------------------
     ## Load scenario properties
@@ -308,9 +312,9 @@ def get_config():
     scenario generator defaults to placing the detector at the crystal's
     meridional focus.
     """
-    config['scenario_input']['source_graphite_dist']  = 2
+    config['scenario_input']['source_graphite_dist']  = 1 #2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = 2.4
+    config['scenario_input']['crystal_detector_dist'] = 1 #2.4
     
     """
     Convert the numbers given in the XICS presentations into useful information.
@@ -318,6 +322,7 @@ def get_config():
     config['graphite_input'][chord number][corner number][3D coordinates]
     """
     config['scenario_input']['chord']               = 0
+    config['scenario_input']['sight']               = 0
     config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
                                                                  [212.04, 9141.38, -598.75],
                                                                  [209.38, 9214.92, -639.89],
