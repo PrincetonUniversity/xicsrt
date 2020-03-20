@@ -111,6 +111,8 @@ def run(config, name=None, do_random_seed=True):
             print('Exporting detector image: {}'.format(filepath))
             detector.output_image(filepath, rotate=False)
 
+    profiler.report()
+    
     return output, meta, objects
 
 

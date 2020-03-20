@@ -32,7 +32,7 @@ class XicsrtSourceGeneric(TraceObject):
         config['linewidth']      = 0.0
         config['intensity']      = 0.0
         config['temperature']    = 0.0
-        config['velocity']       = 0.0
+        config['velocity']       = np.array([0.0, 0.0, 0.0])
         config['use_poisson']    = False
 
         return config
@@ -113,8 +113,10 @@ class XicsrtSourceGeneric(TraceObject):
         direction  = np.empty(origin.shape)
         rad_spread = np.radians(self.param['spread'])
         dir_local  = f(rad_spread, self.param['intensity'])
-        
-        o_1  = np.cross(normal, [0,0,1])
+
+        # Generate some basis vectors that are perpendicular
+        # to the normal. The orientation does not matter here.
+        o_1  = np.cross(normal, np.array([0,0,1])) + np.cross(normal, np.array([0,1,0]))
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
@@ -135,7 +137,7 @@ class XicsrtSourceGeneric(TraceObject):
         
         # Doppler shift
         c = const.physical_constants['speed of light in vacuum'][0]
-        wavelength *= (1 + np.einsum('j,ij->i', self.param['velocity'], direction) / c)
+        wavelength *= (1 - np.einsum('j,ij->i', self.param['velocity'], direction) / c)
 
         return wavelength
 

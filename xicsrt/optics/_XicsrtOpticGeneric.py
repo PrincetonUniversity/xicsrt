@@ -24,7 +24,7 @@ class XicsrtOpticGeneric(TraceObject):
         config = super().get_default_config()
         
         # boolean settings
-        config['do_miss_checks'] = False
+        config['do_miss_check'] = False
         
         # spatial information
         config['width']          = 0.0
@@ -112,7 +112,7 @@ class XicsrtOpticGeneric(TraceObject):
         X_local[m] = self.point_to_local(X[m])
         
         # Find which rays hit the optic, update mask to remove misses
-        if self.param['do_miss_checks'] is True:
+        if self.param['do_miss_check'] is True:
             m[m] &= (np.abs(X_local[m,0]) < self.param['width'] / 2)
             m[m] &= (np.abs(X_local[m,1]) < self.param['height'] / 2)
 
@@ -203,7 +203,7 @@ class XicsrtOpticGeneric(TraceObject):
             hits[test] = ii + 1
         
         #mask all the rays that missed all faces
-        if self.param['do_miss_checks'] is True:
+        if self.param['do_miss_check'] is True:
             m[m] &= (hits[m] != 0)
         return X, rays, hits
     

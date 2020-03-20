@@ -10,6 +10,8 @@ A set of base objects for xicsrt.
 """
 
 import numpy as np
+import logging
+
 import copy
 from collections import OrderedDict
 
@@ -104,16 +106,22 @@ class ConfigObject():
     A base class for any objects with a configuration.
     """
 
-    def __init__(self, config=None, strict=None):
-        self.name = self.__class__.__name__
+    def __init__(self, config=None, strict=None, initialize=None):
+        if initialize is None: initialize = True
         
+        self.name = self.__class__.__name__
+        self.log = logging.getLogger(self.name)
+    
         self.config = self.get_default_config()
         self.update_config(config, strict)
-        self.check_config()
-        self.initialize()
+
+        if initialize:
+            self.check_config()
+            self.initialize()
 
     def get_default_config(self):
         config = OrderedDict()
+        config['class_name'] = self.__class__.__name__
         return config
         
     def check_config(self):
@@ -161,9 +169,14 @@ class GeometryObject(ConfigObject):
     def initialize(self):
         super().initialize()
 
+        self.param['origin'] = np.array(self.param['origin'])
+        self.param['zaxis'] = np.array(self.param['zaxis'])
+        if self.param['xaxis'] is not None:
+            self.param['xaxis'] = np.array(self.param['xaxis'])
+        
         # Location with respect to the external coordinate system.
-        self.origin = self.config['origin']
-        self.set_orientation(self.config['zaxis'], self.config['xaxis'])
+        self.origin = self.param['origin']
+        self.set_orientation(self.param['zaxis'], self.param['xaxis'])
 
     def __getattr__(self, key):
         """
@@ -180,8 +193,8 @@ class GeometryObject(ConfigObject):
 
     def get_default_config(self):
         config = super().get_default_config()
-        config['origin'] = [0.0, 0.0, 0.0]
-        config['zaxis'] = [0.0, 0.0, 1.0]
+        config['origin'] = np.array([0.0, 0.0, 0.0])
+        config['zaxis'] = np.array([0.0, 0.0, 1.0])
         config['xaxis'] = None
 
         return config
@@ -203,7 +216,7 @@ class GeometryObject(ConfigObject):
 
         xaxis = np.cross(np.array([0.0, 0.0, 1.0]), zaxis)
         if not np.all(xaxis == 0.0):
-            xicsrt.math.normalize(xaxis)
+            xicsrt.tool.normalize(xaxis)
         else:
             xaxis = np.array([1.0, 0.0, 0.0])
 
@@ -263,7 +276,7 @@ class GeometryObject(ConfigObject):
         """
 
         zaxis = aim_point - self.origin
-        xicsrt.math.normalize(zaxis)
+        xicsrt.tool.normalize(zaxis)
 
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)

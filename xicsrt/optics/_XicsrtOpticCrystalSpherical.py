@@ -14,7 +14,7 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
 
     def get_default_config(self):
         config = super().get_default_config()
-        config['radius'] = 0.0
+        config['radius'] = 1.0
         return config
 
     def initialize(self):
