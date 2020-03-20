@@ -47,7 +47,7 @@ def get_config():
     If more rays are necessary, increase 'number_of_runs'.
     """
     config['general_input']['number_of_rays']     = int(1e7)
-    config['general_input']['number_of_runs']     = 10
+    config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
     set ideal_geometry to False to enable thermal expansion
@@ -153,7 +153,7 @@ def get_config():
     config['source_input']['spread']              = 0.01
     config['source_input']['temperature']         = 1000
     config['source_input']['mass_number']         = 131.293
-    config['source_input']['wavelength']          = 12.398425 / 10.0 #2.7203
+    config['source_input']['wavelength']          = 12.398425 / 3.0 #2.7203
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
     
@@ -248,7 +248,7 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = False
+    config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_type']      = "GAUSS"
     config['graphite_input']['use_meshgrid']      = False
@@ -266,7 +266,7 @@ def get_config():
     """
     config['graphite_input']['crystal_spacing']   = 3.35
     config['graphite_input']['reflectivity']      = 1
-    config['graphite_input']['mosaic_spread']     = 0.5
+    config['graphite_input']['mosaic_spread']     = 0.4
     config['graphite_input']['rocking_fwhm']      = 2620e-6
     config['graphite_input']['pixel_size']        = 0.00001
     #config['graphite_input']['therm_expand']      = 20e-6
@@ -302,8 +302,8 @@ def get_config():
     config['detector_input']['pixel_size']        = 0.0001 #0.000172
     #config['detector_input']['pixel_width']       = 195
     #config['detector_input']['pixel_height']      = 1475
-    config['detector_input']['width']             = (300 * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (400 * config['detector_input']['pixel_size'])
+    config['detector_input']['width']             = (500 * config['detector_input']['pixel_size'])
+    config['detector_input']['height']            = (500 * config['detector_input']['pixel_size'])
 
     # -------------------------------------------------------------------------
     ## Load scenario properties

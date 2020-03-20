@@ -35,7 +35,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
     def rocking_curve_filter(self, incident_angle, bragg_angle):
         if "step" in self.param['rocking_type']:
             # Step Function
-            mask = (abs(incident_angle - bragg_angle) / 2 <= self.param['rocking_fwhm'])
+            mask = (abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'] / 2)
             
         elif "gauss" in self.param['rocking_type']:
             # Convert from FWHM to sigma.

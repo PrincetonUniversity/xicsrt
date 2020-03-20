@@ -36,28 +36,50 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         m[m] &= (distance[m] > 0)
         
         return distance
+    """#Uniformly distributed crystallite normals
+    def f(self, theta, number):
+        output = np.empty((number, 3))
+        
+        z   = np.random.uniform(np.cos(theta),1, number)
+        phi = np.random.uniform(0, 2 * np.pi, number)
+        
+        output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
+        output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
+        output[:,2]   = z
+        return output
+    """
+    
+    #Gaussian distributed crystallite normals
+    def f(self, FWHM, number):
+        output = np.empty((number, 3))
+        
+        #convert the angular FWHM into a linear-displacement-from-vertical FWHM
+        disp = 1 - np.cos(FWHM)
+        
+        #convert from linear-displacement FWHM to standard deviation
+        sigma = disp / np.sqrt(2 * np.log(2)) / 2
+        
+        #create the half-normal distribution of off-vertical vectors
+        z   = 1 - np.abs(np.random.normal(0, sigma, number))
+        phi = np.random.uniform(0, 2 * np.pi, number)
+        
+        output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
+        output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
+        output[:,2]   = z
+        
+        return output
+    
     
     def generate_optic_normals(self, X, rays):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
-        # average graphite mirror norm
-        def f(theta, number):
-            output = np.empty((number, 3))
-            
-            z   = np.random.uniform(np.cos(theta),1, number)
-            phi = np.random.uniform(0, np.pi * 2, number)
-            
-            output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
-            output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
-            output[:,2]   = z
-            return output
-        
+        # average graphite mirror norm       
         O = rays['origin']
         m = rays['mask']
         
         normals = np.zeros(O.shape)
         rad_spread = np.radians(self.param['mosaic_spread'])
-        dir_local = f(rad_spread, len(m))
+        dir_local = self.f(rad_spread, len(m))
 
         # Create two vectors perpendicular to the surface normal,
         # it doesn't matter how they are oriented otherwise.
@@ -83,23 +105,12 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
-        def f(theta, number):
-            output = np.empty((number, 3))
-            
-            z   = np.random.uniform(np.cos(theta),1, number)
-            phi = np.random.uniform(0, np.pi * 2, number)
-            
-            output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
-            output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
-            output[:,2]   = z
-            return output
-        
         O = rays['origin']
         m = rays['mask']
         
         normals = np.zeros(O.shape)
         rad_spread = np.radians(self.param['mosaic_spread'])
-        dir_local = f(rad_spread, len(m))
+        dir_local = self.f(rad_spread, len(m))
 
         for ii in range(len(self.param['mesh_faces'])):
             tri   = self.mesh_triangulate(ii)
@@ -107,10 +118,10 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             test &= m
             
             norm_surf  = np.ones(O.shape) * tri['normal']
-            o_1     = np.zeros(O.shape)
+            o_1        = np.zeros(O.shape)
             o_1[test]  = np.cross(norm_surf[test], [0,0,1])
             o_1[test] /= np.linalg.norm(o_1[test], axis=1)[:, np.newaxis]
-            o_2     = np.zeros(O.shape)
+            o_2        = np.zeros(O.shape)
             o_2[test]  = np.cross(norm_surf[test], o_1[test])
             o_2[test] /= np.linalg.norm(o_2[test], axis=1)[:, np.newaxis]
             

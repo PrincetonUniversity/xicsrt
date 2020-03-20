@@ -228,60 +228,7 @@ class XicsrtOpticGeneric(TraceObject):
             rays     = self.reflect_vectors(X, rays, normals)
             print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
-    """
-    def collect_rays(self, rays):
-        
-        Collect the rays that his this optic into a pixel array that can be used
-        for further analysis or visualization.
-
-        Programming Notes
-        -----------------
-
-        It is important thas this calculation is compatible with intersect_check
-        in terms of floating point errors.  The simple way to achive this is
-        to ensure that both use the same calculation method.
-        
-        X = rays['origin']
-        m = rays['mask'].copy()
-        
-        num_lines = np.sum(m)
-        self.photon_count += num_lines
-        
-        # Add the ray hits to the pixel array
-        if num_lines > 0:
-            # Transform the intersection coordinates from external coordinates
-            # to local optical coordinates.
-            point_loc = self.point_to_local(X[m])
-            
-            # Bin the intersections into pixels using integer math.
-            pix = np.zeros([num_lines, 3], dtype = int)
-            pix = np.floor(point_loc / self.param['pixel_size']).astype(int)
-            
-            # Check to ascertain if origin pixel is even or odd
-            if (self.param['pixel_width'] % 2) == 0:
-                pix_min_x = self.param['pixel_width']//2
-            else:
-                pix_min_x = (self.param['pixel_width'] + 1)//2
-                
-            if (self.param['pixel_height'] % 2) == 0:
-                pix_min_y = self.param['pixel_height']//2
-            else:
-                pix_min_y = (self.param['pixel_height'] + 1)//2
-            
-            pix_min = np.array([pix_min_x, pix_min_y, 0], dtype = int)
-            
-            # Convert from pixels, which are centered around the origin, to
-            # channels, which start from the corner of the optic.
-            channel    = np.zeros(pix.shape, dtype = int)
-            channel[:] = pix[:] + pix_min
-            
-            # I feel like there must be a faster way to do this than to loop over
-            # every intersection.  This could be slow for large arrays.
-            for ii in range(len(channel)):
-                self.pixel_array[channel[ii,0], channel[ii,1]] += 1
-        
-        return self.pixel_array
-    """
+    
     def collect_rays(self, rays):
         """
         Collect the rays that his this optic into a pixel array that can be used
