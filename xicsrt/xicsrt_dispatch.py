@@ -54,7 +54,8 @@ class XicsrtDispatcher():
 
             if history:
                 self.history[key] = deepcopy(rays)
-
+                self.meta[key]['num_out'] = np.sum(rays['mask'])
+                
         return rays
             
     def raytrace(self, rays, images=None, history=None):
@@ -72,7 +73,7 @@ class XicsrtDispatcher():
             rays = obj.light(rays)
             profiler.stop('Dispatcher: light')
 
-            self.meta[key]['num_hit'] = np.sum(rays['mask'])
+            self.meta[key]['num_out'] = np.sum(rays['mask'])
             
             if history:
                 self.history[key] = deepcopy(rays)
