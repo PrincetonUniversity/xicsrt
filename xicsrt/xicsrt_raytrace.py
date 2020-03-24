@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-@author: James
-@editor: Eugene
+Authors
+-------
+  - Novimir pablant <npablant@pppl.gov>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+  - James Kring <jdk0026@tigermail.auburn.edu>
 """
 
 import numpy as np
@@ -15,6 +18,48 @@ from xicsrt.util import profiler
 from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 from xicsrt.xicsrt_objects import RayArray
 
+def raytrace(config):
+    """
+    Perform a series of ray tracing iterations.
+
+    If history is enabled, sort the rays into those that are detected and 
+    those that are lost (found and lost). The found ray history will be 
+    returned in full. The lost ray history will be truncated to allow 
+    visualizaiton while still limited memory usage.
+    """
+    
+    num_iter = config['general']['number_of_iterations']
+    
+    output_list = []
+    for ii in range(num_iter):
+        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
+        
+        single = raytrace_single(config)
+        sorted = sort_raytrace(single)
+        output_list.append(sorted)
+        
+    output = combine_raytrace(output_list)
+    return output
+
+def raytrace_multi(config):
+    """
+    Perform a series of ray tracing runs.
+
+    Each raytracing run will perform the requested number of iterations.
+    Each run will produce a single output image.
+    """
+
+    num_runs = config['general']['number_of_runs']
+    output_list = []
+    for ii in range(num_runs):
+        logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        
+        iteration = raytrace(config)
+        output_list.append(iteration)
+        
+    output = combine_raytrace(output_list)
+    return output
+    
 def raytrace_single(config):
     """ 
     Rays are generated from sources and then passed through 
@@ -116,7 +161,7 @@ def combine_raytrace(input_list):
     output['lost']['meta'] = OrderedDict()
     output['lost']['history'] = OrderedDict()
 
-    num_runs = len(input_list)
+    num_iter = len(input_list)
     key_opt_list = list(input_list[0]['found']['history'].keys())
     key_opt_last = key_opt_list[-1]
         
@@ -126,13 +171,13 @@ def combine_raytrace(input_list):
         key_meta_list = list(input_list[0]['total']['meta'][key_opt].keys())
         for key_meta in key_meta_list:
             output['total']['meta'][key_opt][key_meta] = 0
-            for ii_run in range(num_runs):
+            for ii_run in range(num_iter):
                 output['total']['meta'][key_opt][key_meta] += input_list[ii_run]['total']['meta'][key_opt][key_meta]
         
     # Combine all the histories
     final_num_found = 0
     final_num_lost = 0
-    for ii_run in range(num_runs):
+    for ii_run in range(num_iter):
         final_num_found += len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
         final_num_lost += len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
         
@@ -148,7 +193,7 @@ def combine_raytrace(input_list):
 
     index_found = 0
     index_lost = 0
-    for ii_run in range(num_runs):
+    for ii_run in range(num_iter):
         num_found = len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
         num_lost = len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
 
@@ -161,54 +206,17 @@ def combine_raytrace(input_list):
     
     return output
        
-def raytrace(config):
-    """
-    Run a series of ray tracing runs.  Save all rays that make it to the detector
-    and a subset of rays that are lost.
-    """
+def print_raytrace(input):
 
-    # This needs to be moved to a default config method.
-    if config['general']['number_of_runs'] is None:
-        config['general']['number_of_runs'] = number_of_runs = 1
-    num_runs = config['general']['number_of_runs']
+    key_opt_list = list(input['total']['meta'].keys())
+    num_source = input['total']['meta'][key_opt_list[0]]['num_out']
+    num_detector = input['total']['meta'][key_opt_list[-1]]['num_out']
     
-    output_list = []
-    for ii in range(num_runs):
-        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_runs))
-        
-        single = raytrace_single(config)
-        sorted = sort_raytrace(single)
-        output_list.append(sorted)
-        
-    output = combine_raytrace(output_list)
-
-    return output
-
-    #if count['total_generated'] == 0:
-    #    raise ValueError('No rays generated. Check inputs.')
-    
-    #print('')
-    #print('Final Rays Generated: {:6.4e}'.format(count['total_generated']))
-    #print('Final Rays on HOPG:   {:6.4e}'.format(count['total_graphite']))
-    #print('Final Rays on Crystal:{:6.4e}'.format(count['total_crystal']))
-    #print('Final Rays Detected:  {:6.4e}'.format(count['total_detector']))
-    #print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-    #    count['total_detector'] / count['total_generated'],
-    #    np.sqrt(count['total_detector']) / count['total_generated'],
-    #    count['total_detector'] / count['total_generated'] * 100))
-    #print('')
-
-    
-    #output['sources'] = sources
-    #output['optics'] = optics
-    
-    #meta = {}
-    #meta['total_rays'] = np.len(rays['mask'])
-    
-    #print('')
-    #print('Rays Generated: {:6.4e}'.format(meta['total_rays'])
-    #print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-    #    rays_count['total_detector'] / rays_count['total_generated'],
-    #    np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
-    #    rays_count['total_detector'] / rays_count['total_generated'] * 100))
-    #print('')
+    print('')
+    print('Rays Generated: {:6.3e}'.format(num_source))
+    print('Rays Detected:  {:6.3e}'.format(num_detector))
+    print('Efficiency:     {:6.3e} ± {:3.1e} ({:7.5f}%)'.format(
+        num_detector / num_source,
+        np.sqrt(num_detector / num_source),
+        num_detector / num_source * 100))
+    print('')

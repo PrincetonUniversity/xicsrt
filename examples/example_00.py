@@ -51,5 +51,5 @@ config['optics']['crystal']['crystal_spacing'] = 2.45676
 config['optics']['crystal']['rocking_type'] = 'gaussian'
 config['optics']['crystal']['rocking_fwhm'] = 48.070e-6
 
-output = xicsrt_raytrace.raytrace_single(config)
-
+output = xicsrt_raytrace.raytrace(config)
+xicsrt_raytrace.print_raytrace(output)
