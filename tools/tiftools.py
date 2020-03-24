@@ -175,7 +175,6 @@ def gaussian_fit(tif, transpose = False):
     ax[0].bar(xdata, ydata, width = 1.0, color = 'gray')
     ax[0].plot(gaussian(xdata, H, A, x0, sigma), color = 'black')
     
-    
     ax[1].imshow(image_array, cmap = 'gray')
     ax[1].axis('off')
 

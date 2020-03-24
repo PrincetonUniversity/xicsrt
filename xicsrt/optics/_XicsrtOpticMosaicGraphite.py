@@ -40,7 +40,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
     def f(self, theta, number):
         output = np.empty((number, 3))
         
-        z   = np.random.uniform(np.cos(theta),1, number)
+        z   = np.random.uniform(np.cos(theta/2),1, number)
         phi = np.random.uniform(0, 2 * np.pi, number)
         
         output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
@@ -54,13 +54,15 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         output = np.empty((number, 3))
         
         #convert the angular FWHM into a linear-displacement-from-vertical FWHM
-        disp = 1 - np.cos(FWHM)
+        disp = 1 - np.cos(FWHM / 2)
         
         #convert from linear-displacement FWHM to standard deviation
-        sigma = disp / np.sqrt(2 * np.log(2)) / 2
+        sigma = disp / (2 * np.sqrt(2 * np.log(2)))
         
         #create the half-normal distribution of off-vertical vectors
-        z   = 1 - np.abs(np.random.normal(0, sigma, number))
+        z = 1
+        if sigma > 0:
+            z -= np.abs(np.random.normal(0, sigma, number))
         phi = np.random.uniform(0, 2 * np.pi, number)
         
         output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)

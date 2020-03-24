@@ -59,7 +59,7 @@ def get_config():
     """
     config['general_input']['ideal_geometry']     = True
     config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = True
+    config['general_input']['do_visualizations']  = False
     config['general_input']['do_savefiles']       = True
     config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
@@ -153,7 +153,7 @@ def get_config():
     config['source_input']['spread']              = 0.01
     config['source_input']['temperature']         = 1000
     config['source_input']['mass_number']         = 131.293
-    config['source_input']['wavelength']          = 12.398425 / 3.0 #2.7203
+    config['source_input']['wavelength']          = 12.398425 / 17.0 #2.7203
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
     
@@ -170,9 +170,9 @@ def get_config():
     config['source_input']['xaxis']               = np.array([0.0, 0.0, 1.0])
     config['source_input']['target']              = np.array([1.0, 0.0, 0.0])
     
-    config['source_input']['width']               = 0.0
-    config['source_input']['height']              = 0.0
-    config['source_input']['depth']               = 0.0
+    config['source_input']['width']               = 0.00
+    config['source_input']['height']              = 0.00
+    config['source_input']['depth']               = 0.00
     
     config['source_input']['do_monochrome']       = True
     config['source_input']['use_poisson']         = False
@@ -203,7 +203,7 @@ def get_config():
     'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     """
     config['crystal_input']['crystal_spacing']    = 1.7059
-    config['crystal_input']['reflectivity']       = 1
+    config['crystal_input']['reflectivity']       = 1.0
     config['crystal_input']['rocking_fwhm']       = 90.30e-6
     config['crystal_input']['pixel_size']         = 0.00001
     #config['crystal_input']['therm_expand']       = 5.9e-6
@@ -265,8 +265,8 @@ def get_config():
     'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     """
     config['graphite_input']['crystal_spacing']   = 3.35
-    config['graphite_input']['reflectivity']      = 1
-    config['graphite_input']['mosaic_spread']     = 0.4
+    config['graphite_input']['reflectivity']      = 0.80
+    config['graphite_input']['mosaic_spread']     = 0.2
     config['graphite_input']['rocking_fwhm']      = 2620e-6
     config['graphite_input']['pixel_size']        = 0.00001
     #config['graphite_input']['therm_expand']      = 20e-6
