@@ -15,6 +15,7 @@ from collections import OrderedDict
 
 from xicsrt.util import profiler
 
+from xicsrt import xicsrt_config
 from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 from xicsrt.xicsrt_objects import RayArray
 
@@ -27,6 +28,9 @@ def raytrace(config):
     returned in full. The lost ray history will be truncated to allow 
     visualizaiton while still limited memory usage.
     """
+    
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
     
     num_iter = config['general']['number_of_iterations']
     
@@ -49,10 +53,13 @@ def raytrace_multi(config):
     Each run will produce a single output image.
     """
 
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    
     num_runs = config['general']['number_of_runs']
     output_list = []
     for ii in range(num_runs):
-        logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        logging.info('Starting run: {} of {}'.format(ii + 1, num_iter))
         
         iteration = raytrace(config)
         output_list.append(iteration)
@@ -69,8 +76,11 @@ def raytrace_single(config):
     """
     profiler.start('raytrace_single')
     
-    sources = XicsrtDispatcher(config['sources'], config['general']['class_pathlist'])
-    optics  = XicsrtDispatcher(config['optics'],  config['general']['class_pathlist'])
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    
+    sources = XicsrtDispatcher(config['sources'], config['general']['optics_pathlist'])
+    optics  = XicsrtDispatcher(config['optics'],  config['general']['optics_pathlist'])
 
     sources.instantiate_objects()
     sources.initialize()

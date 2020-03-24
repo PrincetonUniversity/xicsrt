@@ -123,6 +123,9 @@ class ConfigObject():
         config = OrderedDict()
         config['class_name'] = self.__class__.__name__
         return config
+
+    def get_config(self):
+        return self.config
         
     def check_config(self):
         pass
@@ -130,10 +133,10 @@ class ConfigObject():
     def initialize(self):
         self.param =  copy.deepcopy(self.config)
     
-    def update_config(self, config, strict=None):
-        self._update_config_dict(self.config, config, strict)
+    def update_config(self, config, strict=None, update=None):
+        self._update_config_dict(self.config, config, strict, update)
 
-    def _update_config_dict(self, config, user_config, strict=None):
+    def _update_config_dict(self, config, user_config, strict=None, update=None):
         """
         Overwrite any values in the given options dict with the values in the
         user dict.  This will be done recursively to allow nested dictionaries.
@@ -146,6 +149,8 @@ class ConfigObject():
         """
         if strict is None:
             strict = True
+        if update is None:
+            update = False
             
         if user_config is None:
             return
@@ -153,10 +158,12 @@ class ConfigObject():
         for key in user_config:
             if not key in config:
                 if strict:
-                   raise Exception("User option not recognized: {}".format(key))
+                    raise Exception("User option not recognized: {}".format(key))
+                if update:
+                    config[key] = user_config[key]    
             else:
                 if isinstance(config[key], dict):
-                    self._update_config_dict(config[key], user_config[key], strict=strict)
+                    self._update_config_dict(config[key], user_config[key], strict=strict, update=update)
                 else:
                     config[key] = user_config[key]
 
