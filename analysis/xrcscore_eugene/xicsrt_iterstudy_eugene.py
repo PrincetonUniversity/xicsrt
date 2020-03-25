@@ -38,7 +38,7 @@ def get_config():
     config['general_input']['input_path']         = inpath
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
-    config['general_input']['scenario']           = 'GRAPHITE'
+    config['general_input']['scenario']           = 'REAL'
     config['general_input']['system']             = 'w7x_ar16'
     config['general_input']['shot']               = 180707017
     
@@ -59,7 +59,7 @@ def get_config():
     """
     config['general_input']['ideal_geometry']     = True
     config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = False
+    config['general_input']['do_visualizations']  = True
     config['general_input']['do_savefiles']       = True
     config['general_input']['random_seed']        = 12345
     config['general_input']['xics_temp']          = 273.0
@@ -73,11 +73,10 @@ def get_config():
     'emissivity' instead, as flat step-function distributions
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
-    #config['plasma_input']['use_profiles']        = True
     config['plasma_input']['use_poisson']         = True
-    config['plasma_input']['do_monochrome']       = True
+    config['plasma_input']['do_monochrome']       = False
     config['plasma_input']['temperature_file']    = inpath + 'plasma_temperature.txt'
-    config['plasma_input']['emissivity_file']     = inpath + 'plasma_emissivity_xe44.txt'
+    config['plasma_input']['emissivity_file']     = inpath + 'plasma_emissivity_xe51.txt'
     config['plasma_input']['velocity_file']       = inpath + 'plasma_velocity.txt'
     config['plasma_input']['wout_file']           = inpath + 'wout_iter.nc'
     config['plasma_input']['temperature']         = 1000
@@ -120,10 +119,10 @@ def get_config():
     config['plasma_input']['bundle_type']         = 'VOXEL'
     config['plasma_input']['bundle_count']        = int(1e5)
     config['plasma_input']['bundle_volume']       = 0.01 ** 3
-    config['plasma_input']['time_resolution']     = 1e-7
+    config['plasma_input']['time_resolution']     = 1e-5
     config['plasma_input']['spread']              = 1.0
     config['plasma_input']['mass_number']         = 131.293
-    config['plasma_input']['wavelength']          = 2.7203
+    config['plasma_input']['wavelength']          = 2.19 #2.7203 
     config['plasma_input']['linewidth']           = 1.129e+14
     
     # -------------------------------------------------------------------------
@@ -150,10 +149,10 @@ def get_config():
     'velocity'              is the impurity ion velocity vector (m/s)
     """
     config['source_input']['intensity']           = config['general_input']['number_of_rays']
-    config['source_input']['spread']              = 0.01
+    config['source_input']['spread']              = 1.0
     config['source_input']['temperature']         = 1000
     config['source_input']['mass_number']         = 131.293
-    config['source_input']['wavelength']          = 12.398425 / 17.0 #2.7203
+    config['source_input']['wavelength']          = 2.19 #2.7203 
     config['source_input']['linewidth']           = 1.129e+14
     config['source_input']['velocity']            = np.array([0.0,0.0,0.0])
     
@@ -170,11 +169,11 @@ def get_config():
     config['source_input']['xaxis']               = np.array([0.0, 0.0, 1.0])
     config['source_input']['target']              = np.array([1.0, 0.0, 0.0])
     
-    config['source_input']['width']               = 0.00
-    config['source_input']['height']              = 0.00
-    config['source_input']['depth']               = 0.00
+    config['source_input']['width']               = 0.0
+    config['source_input']['height']              = 0.0
+    config['source_input']['depth']               = 0.0
     
-    config['source_input']['do_monochrome']       = True
+    config['source_input']['do_monochrome']       = False
     config['source_input']['use_poisson']         = False
     
     # -------------------------------------------------------------------------
@@ -202,10 +201,10 @@ def get_config():
     'pixel_size'     is the size of the pixels used by the image generator
     'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     """
-    config['crystal_input']['crystal_spacing']    = 1.7059
+    config['crystal_input']['crystal_spacing']    = 1.42 #1.7059
     config['crystal_input']['reflectivity']       = 1.0
     config['crystal_input']['rocking_fwhm']       = 90.30e-6
-    config['crystal_input']['pixel_size']         = 0.00001
+    config['crystal_input']['pixel_size']         = 0.0001
     #config['crystal_input']['therm_expand']       = 5.9e-6
     
     """Geometry Settings
@@ -218,7 +217,7 @@ def get_config():
     
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.050
-    config['crystal_input']['radius']             = 2.400
+    config['crystal_input']['radius']             = 2.000 # 2.400
     
     """
     Rocking curve FWHM:  90.30 urad
@@ -251,7 +250,7 @@ def get_config():
     config['graphite_input']['do_bragg_checks']   = True
     config['graphite_input']['do_miss_checks']    = True
     config['graphite_input']['rocking_type']      = "GAUSS"
-    config['graphite_input']['use_meshgrid']      = False
+    config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['rocking_mix']       = 1.0
     config['graphite_input']['rocking_sigma_file']= inpath + 'rocking_curve_graphite_sigma.txt'
     config['graphite_input']['rocking_pi_file']   = inpath + 'rocking_curve_graphite_pi.txt'
@@ -265,10 +264,10 @@ def get_config():
     'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     """
     config['graphite_input']['crystal_spacing']   = 3.35
-    config['graphite_input']['reflectivity']      = 0.80
-    config['graphite_input']['mosaic_spread']     = 0.2
+    config['graphite_input']['reflectivity']      = 1.0
+    config['graphite_input']['mosaic_spread']     = 0.5
     config['graphite_input']['rocking_fwhm']      = 2620e-6
-    config['graphite_input']['pixel_size']        = 0.00001
+    config['graphite_input']['pixel_size']        = 0.0001
     #config['graphite_input']['therm_expand']      = 20e-6
     
     """Geometry Settings
@@ -278,8 +277,8 @@ def get_config():
     config['graphite_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
     config['graphite_input']['xaxis']             = np.array([0.0, 0.0, 1.0])
     
-    config['graphite_input']['width']             = 0.0001 #0.125
-    config['graphite_input']['height']            = 0.0001 #0.040
+    config['graphite_input']['width']             = 0.200
+    config['graphite_input']['height']            = 0.200
     
     """
     HOPG Crystallite Rocking Curve FWHM: 2620 urad (0.15 degrees)
@@ -299,11 +298,11 @@ def get_config():
     config['detector_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
     config['detector_input']['xaxis']             = np.array([0.0, 0.0, 0.0])
     
-    config['detector_input']['pixel_size']        = 0.0001 #0.000172
+    config['detector_input']['pixel_size']        = 0.000172
     #config['detector_input']['pixel_width']       = 195
     #config['detector_input']['pixel_height']      = 1475
-    config['detector_input']['width']             = (500 * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (500 * config['detector_input']['pixel_size'])
+    config['detector_input']['width']             = (195  * config['detector_input']['pixel_size'])
+    config['detector_input']['height']            = (1475 * config['detector_input']['pixel_size'])
 
     # -------------------------------------------------------------------------
     ## Load scenario properties
@@ -312,48 +311,98 @@ def get_config():
     scenario generator defaults to placing the detector at the crystal's
     meridional focus.
     """
-    config['scenario_input']['source_graphite_dist']  = 1 #2
+    config['scenario_input']['source_graphite_dist']  = 2
     config['scenario_input']['graphite_crystal_dist'] = 8.5
-    config['scenario_input']['crystal_detector_dist'] = 1 #2.4
+    config['scenario_input']['crystal_detector_dist'] = 2.4
     
     """
     Convert the numbers given in the XICS presentations into useful information.
     When copying values from the XICS presentations, please place them here.
-    config['graphite_input'][chord number][corner number][3D coordinates]
+    
+    Chords 0 and 1 use Xe44+, while chords 2 and 3 use Xe55+
+    config['scenario_input']['graphite_corners'][chord number, sight number, corner number, 3D coordinates]
+    config['scenario_input']['crystal_corners'][chord number, corner number, 3D coordinates]
+    config['scenario_input']['detector_centers'][chord number, 3D coordinates]
     """
-    config['scenario_input']['chord']               = 0
-    config['scenario_input']['sight']               = 0
-    config['scenario_input']['graphite_corners']    = np.array([[[240.59, 9180.83, -599.40],
-                                                                 [212.04, 9141.38, -598.75],
-                                                                 [209.38, 9214.92, -639.89],
-                                                                 [238.10, 9254.18, -640.30]],
-                                                                [[185.99, 9413.40, -602.60],
-                                                                 [156.61, 9395.54, -602.32],
-                                                                 [153.94, 9482.08, -643.57],
-                                                                 [183.53, 9499.84, -643.75]],
-                                                                [[135.88, 9539.44, -604.24],
-                                                                 [106.26, 9527.76, -604.05],
-                                                                 [104.04, 9615.99, -645.31],
-                                                                 [133.87, 9627.61, -645.43]],
-                                                                [[095.54, 9252.32, -600.37],
-                                                                 [066.06, 9229.01, -599.99],
-                                                                 [064.40, 9313.23, -641.23],
-                                                                 [094.07, 9336.41, -641.48]],
-                                                                [[050.36, 9068.45, -597.80],
-                                                                 [020.78, 9043.69, -597.38],
-                                                                 [019.58, 9127.13, -638.61],
-                                                                 [049.35, 9151.75, -638.89]]])
-    config['scenario_input']['crystal_corners']     =  np.array([[-105., 17876.47, -760.],
-                                                                 [-105., 17907.65, -720.],
-                                                                 [-055., 17908.85, -720.],
-                                                                 [-055., 17877.69, -760.]])
-    config['scenario_input']['detector_corners']    =  np.array([[-124.590, 17293.39, 1082.600],
-                                                                 [ 074.544, 17311.94, 1082.603],
-                                                                 [ 056.630, 17504.27, 1134.460],
-                                                                 [-142.510, 17485.72, 1134.460]])
+    config['scenario_input']['graphite_corners'] = np.empty([4,3,4,3], dtype = np.float64)
+    config['scenario_input']['crystal_corners']  = np.empty([4,4,3], dtype = np.float64)
+    config['scenario_input']['detector_centers'] = np.empty([4,3], dtype = np.float64)
+    config['scenario_input']['chord']            = 2
+    config['scenario_input']['sight']            = 0
+    
+    config['scenario_input']['graphite_corners'][0,0,0,:] = np.array([048.5, 9324.9, -619.5])
+    config['scenario_input']['graphite_corners'][0,0,1,:] = np.array([018.7, 9312.7, -619.4])
+    config['scenario_input']['graphite_corners'][0,0,2,:] = np.array([017.4, 9400.8, -660.3])
+    config['scenario_input']['graphite_corners'][0,0,3,:] = np.array([047.4, 9413.0, -660.5])
+    config['scenario_input']['graphite_corners'][0,1,0,:] = np.array([094.6, 9224.8, -618.5])
+    config['scenario_input']['graphite_corners'][0,1,1,:] = np.array([065.1, 9205.1, -618.2])
+    config['scenario_input']['graphite_corners'][0,1,2,:] = np.array([063.3, 9290.9, -659.2])
+    config['scenario_input']['graphite_corners'][0,1,3,:] = np.array([093.1, 9310.6, -659.4])
+    config['scenario_input']['graphite_corners'][0,2,0,:] = np.array([140.6, 9166.1, -617.9])
+    config['scenario_input']['graphite_corners'][0,2,1,:] = np.array([111.4, 9137.9, -617.5])
+    config['scenario_input']['graphite_corners'][0,2,2,:] = np.array([109.3, 9219.6, -658.4])
+    config['scenario_input']['graphite_corners'][0,2,3,:] = np.array([138.7, 9247.8, -658.7])
+    config['scenario_input']['graphite_corners'][1,0,0,:] = np.array([057.2, 9787.3,  588.4])
+    config['scenario_input']['graphite_corners'][1,0,1,:] = np.array([027.3, 9776.8,  590.2])
+    config['scenario_input']['graphite_corners'][1,0,2,:] = np.array([028.9, 9682.3,  566.3])
+    config['scenario_input']['graphite_corners'][1,0,3,:] = np.array([058.6, 9692.8,  564.5])
+    config['scenario_input']['graphite_corners'][1,1,0,:] = np.array([102.9, 9575.8,  625.7])
+    config['scenario_input']['graphite_corners'][1,1,1,:] = np.array([073.2, 9558.5,  628.7])
+    config['scenario_input']['graphite_corners'][1,1,2,:] = np.array([075.2, 9465.8,  604.4])
+    config['scenario_input']['graphite_corners'][1,1,3,:] = np.array([104.8, 9483.1,  601.5])
+    config['scenario_input']['graphite_corners'][1,2,0,:] = np.array([150.6, 9415.4,  654.1])
+    config['scenario_input']['graphite_corners'][1,2,1,:] = np.array([121.1, 9388.9,  658.6])
+    config['scenario_input']['graphite_corners'][1,2,2,:] = np.array([123.6, 9300.3,  633.6])
+    config['scenario_input']['graphite_corners'][1,2,3,:] = np.array([152.8, 9326.8,  629.1])
+    config['scenario_input']['graphite_corners'][2,0,0,:] = np.array([053.1, 9252.0, -669.9])
+    config['scenario_input']['graphite_corners'][2,0,1,:] = np.array([018.6, 9222.5, -669.9])
+    config['scenario_input']['graphite_corners'][2,0,2,:] = np.array([016.8, 9333.6, -709.9])
+    config['scenario_input']['graphite_corners'][2,0,3,:] = np.array([051.5, 9362.9, -709.9])
+    config['scenario_input']['graphite_corners'][2,1,0,:] = np.array([100.0, 9151.7, -670.0])
+    config['scenario_input']['graphite_corners'][2,1,1,:] = np.array([066.1, 9102.3, -669.9])
+    config['scenario_input']['graphite_corners'][2,1,2,:] = np.array([063.9, 9204.1, -710.0])
+    config['scenario_input']['graphite_corners'][2,1,3,:] = np.array([098.0, 9253.2, -709.9])
+    config['scenario_input']['graphite_corners'][2,2,0,:] = np.array([145.8, 9141.4, -670.0])
+    config['scenario_input']['graphite_corners'][2,2,1,:] = np.array([112.5, 9075.5, -669.9])
+    config['scenario_input']['graphite_corners'][2,2,2,:] = np.array([110.2, 9164.5, -710.0])
+    config['scenario_input']['graphite_corners'][2,2,3,:] = np.array([143.6, 9230.2, -709.9])
+    config['scenario_input']['graphite_corners'][3,0,0,:] = np.array([069.2, 9228.1,  633.8])
+    config['scenario_input']['graphite_corners'][3,0,1,:] = np.array([034.9, 9181.4,  641.5])
+    config['scenario_input']['graphite_corners'][3,0,2,:] = np.array([036.9, 9073.4,  618.6])
+    config['scenario_input']['graphite_corners'][3,0,3,:] = np.array([071.0, 9120.3,  611.1])
+    config['scenario_input']['graphite_corners'][3,1,0,:] = np.array([116.8, 9152.1,  646.4])
+    config['scenario_input']['graphite_corners'][3,1,1,:] = np.array([083.4, 9079.2,  658.4])
+    config['scenario_input']['graphite_corners'][3,1,2,:] = np.array([085.4, 8993.6,  631.8])
+    config['scenario_input']['graphite_corners'][3,1,3,:] = np.array([118.6, 9066.8,  620.0])
+    config['scenario_input']['graphite_corners'][3,2,0,:] = np.array([163.5, 9122.5,  651.2])
+    config['scenario_input']['graphite_corners'][3,2,1,:] = np.array([130.8, 9034.8,  665.6])
+    config['scenario_input']['graphite_corners'][3,2,2,:] = np.array([132.7, 8971.5,  635.4])
+    config['scenario_input']['graphite_corners'][3,2,3,:] = np.array([165.2, 9059.3,  621.2])
+    
+    config['scenario_input']['crystal_corners'][0,0,:]    = np.array([-055.0, 17704.9, -714.9])
+    config['scenario_input']['crystal_corners'][0,1,:]    = np.array([-105.0, 17704.0, -714.9])
+    config['scenario_input']['crystal_corners'][0,2,:]    = np.array([-105.0, 17680.6, -745.1])
+    config['scenario_input']['crystal_corners'][0,3,:]    = np.array([-055.0, 17681.5, -745.1])
+    config['scenario_input']['crystal_corners'][1,0,:]    = np.array([-055.0, 17585.6, -793.5])
+    config['scenario_input']['crystal_corners'][1,1,:]    = np.array([-105.0, 17584.6, -793.5])
+    config['scenario_input']['crystal_corners'][1,2,:]    = np.array([-105.0, 17559.8, -816.5])
+    config['scenario_input']['crystal_corners'][1,3,:]    = np.array([-055.0, 17560.9, -816.5])
+    config['scenario_input']['crystal_corners'][2,0,:]    = np.array([-075.0, 18076.2, -674.1])
+    config['scenario_input']['crystal_corners'][2,1,:]    = np.array([-125.0, 18075.2, -674.1])
+    config['scenario_input']['crystal_corners'][2,2,:]    = np.array([-125.0, 18049.1, -705.9])
+    config['scenario_input']['crystal_corners'][2,3,:]    = np.array([-075.0, 18050.1, -705.9])
+    config['scenario_input']['crystal_corners'][3,0,:]    = np.array([-075.0, 17997.3, -817.7])
+    config['scenario_input']['crystal_corners'][3,1,:]    = np.array([-125.0, 17996.2, -817.7])
+    config['scenario_input']['crystal_corners'][3,2,:]    = np.array([-125.0, 17968.0, -842.3])
+    config['scenario_input']['crystal_corners'][3,3,:]    = np.array([-075.0, 17969.1, -842.3])
+    
+    config['scenario_input']['detector_centers'][0,:]     = np.array([-68.8, 17193.2, 1117.6])
+    config['scenario_input']['detector_centers'][1,:]     = np.array([-67.4, 17381.1, 1099.3])
+    config['scenario_input']['detector_centers'][2,:]     = np.array([-93.2, 17732.9,  977.6])
+    config['scenario_input']['detector_centers'][3,:]     = np.array([-94.0, 17928.6,  869.1])
     
     return config
-
+    
 def get_config_multi(configurations):
     config_multi = dict()
     for ii in range(configurations):

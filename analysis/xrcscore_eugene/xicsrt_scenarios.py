@@ -230,9 +230,9 @@ def setup_real_scenario(config):
     ## Unpack variables and convert to meters
     chord  = config['scenario_input']['chord']
     sight  = config['scenario_input']['sight']
-    g_corners  = config['scenario_input']['graphite_corners'][chord,sight]  / 1000
-    c_corners  = config['scenario_input']['crystal_corners'][chord]         / 1000
-    d_corners  = config['scenario_input']['detector_corners'][chord]        / 1000
+    g_corners  = config['scenario_input']['graphite_corners'][chord,sight] / 1000
+    c_corners  = config['scenario_input']['crystal_corners'][chord]        / 1000
+    d_centers  = config['scenario_input']['detector_centers'][chord]       / 1000
 
     #calculate geometric properties of all meshes
     g_basis      = np.zeros([3,3], dtype = np.float64)
@@ -241,39 +241,46 @@ def setup_real_scenario(config):
     
     g_origin     = np.mean(g_corners, axis = 0)
     c_origin     = np.mean(c_corners, axis = 0)
-    d_origin     = np.mean(d_corners, axis = 0)
+    #d_origin     = np.mean(d_corners, axis = 0)
+    d_origin     = d_centers
     
-    g_width      = np.linalg.norm(g_corners[0] - g_corners[3])
-    c_width      = np.linalg.norm(c_corners[0] - c_corners[3])
-    d_width      = np.linalg.norm(d_corners[0] - d_corners[3])
+    g_width      = np.linalg.norm(g_corners[0] - g_corners[1])
+    c_width      = np.linalg.norm(c_corners[0] - c_corners[1])
+    #d_width      = np.linalg.norm(d_corners[0] - d_corners[1])
     
-    g_height     = np.linalg.norm(g_corners[0] - g_corners[1])
-    c_height     = np.linalg.norm(c_corners[0] - c_corners[1])
-    d_height     = np.linalg.norm(d_corners[0] - d_corners[1])
+    g_height     = np.linalg.norm(g_corners[0] - g_corners[3])
+    c_height     = np.linalg.norm(c_corners[0] - c_corners[3])
+    #d_height     = np.linalg.norm(d_corners[0] - d_corners[3])
     
-    g_basis[0,:] = g_corners[0] - g_corners[3]
-    c_basis[0,:] = c_corners[0] - c_corners[3]
-    d_basis[0,:] = d_corners[0] - d_corners[3]
+    g_basis[0,:] = g_corners[0] - g_corners[1]
+    c_basis[0,:] = c_corners[0] - c_corners[1]
+    #d_basis[0,:] = d_corners[0] - d_corners[1]
     
     g_basis[0,:]/= g_width
     c_basis[0,:]/= c_width
-    d_basis[0,:]/= d_width
+    #d_basis[0,:]/= d_width
     
-    g_basis[1,:] = g_corners[0] - g_corners[1]
-    c_basis[1,:] = c_corners[0] - c_corners[1]
-    d_basis[1,:] = d_corners[0] - d_corners[1]
+    g_basis[1,:] = g_corners[0] - g_corners[3]
+    c_basis[1,:] = c_corners[0] - c_corners[3]
+    #d_basis[1,:] = d_corners[0] - d_corners[3]
     
     g_basis[1,:]/= g_height
     c_basis[1,:]/= c_height
-    d_basis[1,:]/= d_height
+    #d_basis[1,:]/= d_height
     
     g_basis[2,:] = np.cross(g_basis[0,:], g_basis[1,:])
     c_basis[2,:] = np.cross(c_basis[0,:], c_basis[1,:])
-    d_basis[2,:] = np.cross(d_basis[0,:], d_basis[1,:])
+    #d_basis[2,:] = np.cross(d_basis[0,:], d_basis[1,:])
+    d_basis[2,:] = c_origin - d_origin
+    d_basis[1,:] = np.array([-1.0, 0.0, 0.0])
+    d_basis[0,:] = np.cross(d_basis[2,:], d_basis[1,:])
+
     
     g_basis[2,:]/= np.linalg.norm(g_basis[2,:])
     c_basis[2,:]/= np.linalg.norm(c_basis[2,:])
     d_basis[2,:]/= np.linalg.norm(d_basis[2,:])
+    
+    d_basis[0,:]/= np.linalg.norm(d_basis[0,:])
     
     #calculate the graphite pre-reflector's sightline of the plasma
     #start with the crystal-graphite vector, normalize, and reflect it
@@ -305,8 +312,6 @@ def setup_real_scenario(config):
     config['detector_input']['origin']        = d_origin
     config['detector_input']['zaxis']         = d_basis[2,:]
     config['detector_input']['xaxis']         = d_basis[0,:]
-    config['detector_input']['width']         = d_width
-    config['detector_input']['height']        = d_height
     
     return config
     
