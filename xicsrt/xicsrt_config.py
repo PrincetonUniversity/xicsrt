@@ -12,6 +12,7 @@ import numpy as np
 import logging
 from collections import OrderedDict
 
+from xicsrt import xicsrt_input
 from xicsrt.xicsrt_objects import ConfigObject
 
 class XicsrtGeneralConfig(ConfigObject):
@@ -19,7 +20,7 @@ class XicsrtGeneralConfig(ConfigObject):
         config = super().get_default_config()
 
         config['general'] = OrderedDict()
-        config['general']['number_of_iterations'] = 1
+        config['general']['number_of_iter'] = 1
         config['general']['number_of_runs'] = 1
         config['general']['random_seed'] = None
         config['general']['optics_pathlist'] = []
@@ -34,4 +35,10 @@ def get_config(config_user=None):
     obj_config =  XicsrtGeneralConfig()
     obj_config.update_config(config_user, strict=False, update=True)
     config = obj_config.get_config()
+    return config
+
+def config_to_numpy(config):
+    # Temporarily just call the routine from xicsrt_input.
+    # This should actually go the opposite way.
+    config = xicsrt_input.config_to_numpy(config)
     return config

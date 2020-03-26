@@ -28,11 +28,11 @@ def raytrace(config):
     returned in full. The lost ray history will be truncated to allow 
     visualizaiton while still limited memory usage.
     """
-    
+    profiler.start('raytrace')
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     
-    num_iter = config['general']['number_of_iterations']
+    num_iter = config['general']['number_of_iter']
     
     output_list = []
     for ii in range(num_iter):
@@ -43,6 +43,8 @@ def raytrace(config):
         output_list.append(sorted)
         
     output = combine_raytrace(output_list)
+    
+    profiler.stop('raytrace')
     return output
 
 def raytrace_multi(config):
@@ -52,19 +54,22 @@ def raytrace_multi(config):
     Each raytracing run will perform the requested number of iterations.
     Each run will produce a single output image.
     """
-
+    profiler.start('raytrace_multi')
+    
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     
     num_runs = config['general']['number_of_runs']
     output_list = []
     for ii in range(num_runs):
-        logging.info('Starting run: {} of {}'.format(ii + 1, num_iter))
+        logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         
         iteration = raytrace(config)
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
+    
+    profiler.stop('raytrace_multi')
     return output
     
 def raytrace_single(config):
@@ -78,19 +83,18 @@ def raytrace_single(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+    config = xicsrt_config.config_to_numpy(config)
     
-    sources = XicsrtDispatcher(config['sources'], config['general']['optics_pathlist'])
-    optics  = XicsrtDispatcher(config['optics'],  config['general']['optics_pathlist'])
+    sources = XicsrtDispatcher(config['sources'], config['general']['pathlist_objects'])
+    optics  = XicsrtDispatcher(config['optics'],  config['general']['pathlist_objects'])
 
     sources.instantiate_objects()
     sources.initialize()
-    rays = sources.generate_rays(history=True)
+    rays = sources.generate_rays(history=False)
     
     optics.instantiate_objects()
     optics.initialize()
-    rays = optics.raytrace(rays, history=True)
-
-    profiler.stop('raytrace_single')
+    rays = optics.raytrace(rays, history=False, images=True)
 
     # Combine sources and optics.
     meta = OrderedDict()
@@ -116,54 +120,65 @@ def raytrace_single(config):
     output['image'] = image
     output['history'] = history
 
+    profiler.stop('raytrace_single')
     return output
 
 def sort_raytrace(input, max_lost=None):
     if max_lost is None:
         max_lost = 1000
-        
+    
+    profiler.start('sort_raytrace')
+    
     output = OrderedDict()
     output['total'] = OrderedDict()
     output['total']['meta'] = OrderedDict()
+    output['total']['image'] = OrderedDict()
     output['found'] = OrderedDict()
     output['found']['meta'] = OrderedDict()
     output['found']['history'] = OrderedDict()
     output['lost'] = OrderedDict()
     output['lost']['meta'] = OrderedDict()
     output['lost']['history'] = OrderedDict()
-    
-    key_opt_list = list(input['history'].keys())
-    key_opt_last = key_opt_list[-1]
-
-    w_found = np.flatnonzero(input['history'][key_opt_last]['mask'])
-    w_lost  = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
-
-    # Save only a portion of the lost rays so that our lost history does
-    # not become too large.
-    max_lost = min(max_lost, len(w_lost))
-    index_lost = np.arange(len(w_lost))
-    np.random.shuffle(index_lost)
-    w_lost = w_lost[index_lost[:max_lost]]
-
-    for key_opt in key_opt_list:
-        output['found']['history'][key_opt] = OrderedDict()
-        output['lost']['history'][key_opt] = OrderedDict()
-
-        for key_ray in input['history'][key_opt]:
-            output['found']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_found]
-            output['lost']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_lost]
 
     output['total']['meta'] = input['meta']
+    output['total']['image'] = input['image']
 
+    if len(input['history']) > 0:
+        key_opt_list = list(input['history'].keys())
+        key_opt_last = key_opt_list[-1]
+
+        w_found = np.flatnonzero(input['history'][key_opt_last]['mask'])
+        w_lost  = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
+
+        # Save only a portion of the lost rays so that our lost history does
+        # not become too large.
+        max_lost = min(max_lost, len(w_lost))
+        index_lost = np.arange(len(w_lost))
+        np.random.shuffle(index_lost)
+        w_lost = w_lost[index_lost[:max_lost]]
+
+        for key_opt in key_opt_list:
+            output['found']['history'][key_opt] = OrderedDict()
+            output['lost']['history'][key_opt] = OrderedDict()
+
+            for key_ray in input['history'][key_opt]:
+                output['found']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_found]
+                output['lost']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_lost]
+
+    profiler.stop('sort_raytrace')
+        
     return output
     
 def combine_raytrace(input_list):
     """
     Produce a combined output from a list of raytrace_single outputs into a combined 
     """
+    profiler.start('combine_raytrace')
+        
     output = OrderedDict()
     output['total'] = OrderedDict()
     output['total']['meta'] = OrderedDict()
+    output['total']['image'] = OrderedDict()
     output['found'] = OrderedDict()
     output['found']['meta'] = OrderedDict()
     output['found']['history'] = OrderedDict()
@@ -172,10 +187,10 @@ def combine_raytrace(input_list):
     output['lost']['history'] = OrderedDict()
 
     num_iter = len(input_list)
-    key_opt_list = list(input_list[0]['found']['history'].keys())
+    key_opt_list = list(input_list[0]['total']['meta'].keys())
     key_opt_last = key_opt_list[-1]
-        
-    # Combine the meta data
+    
+    # Combine the meta data.
     for key_opt in key_opt_list:
         output['total']['meta'][key_opt] = OrderedDict()
         key_meta_list = list(input_list[0]['total']['meta'][key_opt].keys())
@@ -183,37 +198,46 @@ def combine_raytrace(input_list):
             output['total']['meta'][key_opt][key_meta] = 0
             for ii_run in range(num_iter):
                 output['total']['meta'][key_opt][key_meta] += input_list[ii_run]['total']['meta'][key_opt][key_meta]
-        
-    # Combine all the histories
-    final_num_found = 0
-    final_num_lost = 0
-    for ii_run in range(num_iter):
-        final_num_found += len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
-        final_num_lost += len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
-        
-    rays_found_temp = RayArray()
-    rays_found_temp.zeros(final_num_found)
-    
-    rays_lost_temp = RayArray()
-    rays_lost_temp.zeros(final_num_lost)
-    
-    for key_opt in key_opt_list:
-        output['found']['history'][key_opt] = rays_found_temp.copy()
-        output['lost']['history'][key_opt] = rays_lost_temp.copy()
 
-    index_found = 0
-    index_lost = 0
-    for ii_run in range(num_iter):
-        num_found = len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
-        num_lost = len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
+    # Combine the images.
+    for key_opt in key_opt_list:
+        if key_opt in input_list[0]['total']['image']:
+            output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
+            for ii_run in range(num_iter):
+                output['total']['image'][key_opt] += input_list[ii_run]['total']['image'][key_opt]
+
+    # Combine all the histories
+    if len(input_list[ii_run]['found']['history']) > 0:
+        final_num_found = 0
+        final_num_lost = 0
+        for ii_run in range(num_iter):
+            final_num_found += len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
+            final_num_lost += len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
+
+        rays_found_temp = RayArray()
+        rays_found_temp.zeros(final_num_found)
+
+        rays_lost_temp = RayArray()
+        rays_lost_temp.zeros(final_num_lost)
 
         for key_opt in key_opt_list:
-            for key_ray in output['found']['history'][key_opt]:
-                output['found']['history'][key_opt][key_ray][index_found:index_found+num_found] = (
-                    input_list[ii_run]['found']['history'][key_opt][key_ray][:])
-                output['lost']['history'][key_opt][key_ray][index_lost:index_lost+num_lost] = (
-                    input_list[ii_run]['lost']['history'][key_opt][key_ray][:])
-    
+            output['found']['history'][key_opt] = rays_found_temp.copy()
+            output['lost']['history'][key_opt] = rays_lost_temp.copy()
+
+        index_found = 0
+        index_lost = 0
+        for ii_run in range(num_iter):
+            num_found = len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
+            num_lost = len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
+
+            for key_opt in key_opt_list:
+                for key_ray in output['found']['history'][key_opt]:
+                    output['found']['history'][key_opt][key_ray][index_found:index_found+num_found] = (
+                        input_list[ii_run]['found']['history'][key_opt][key_ray][:])
+                    output['lost']['history'][key_opt][key_ray][index_lost:index_lost+num_lost] = (
+                        input_list[ii_run]['lost']['history'][key_opt][key_ray][:])
+ 
+    profiler.stop('combine_raytrace')
     return output
        
 def print_raytrace(input):

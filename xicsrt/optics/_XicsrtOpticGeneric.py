@@ -70,7 +70,7 @@ class XicsrtOpticGeneric(TraceObject):
         if self.param['pixel_height'] is None:
             self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
 
-        self.pixel_array = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+        self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         
     def normalize(self, vector):
         magnitude = self.norm(vector)
@@ -212,19 +212,20 @@ class XicsrtOpticGeneric(TraceObject):
         if self.param['use_meshgrid'] is False:
             distance = self.intersect(rays)
             X, rays  = self.intersect_check(rays, distance)
-            print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0])) 
+            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0])) 
             normals  = self.generate_optic_normals(X, rays)
             rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_check(rays)
-            print(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))  
+            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))  
             normals  = self.mesh_generate_optic_normals(X, rays, hits)
             rays     = self.reflect_vectors(X, rays, normals)
-            print(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
 
-    def collect_rays(self, rays):
+    
+    def make_image(self, rays):
         """
         Collect the rays that his this optic into a pixel array that can be used
         for further analysis or visualization.
@@ -236,6 +237,7 @@ class XicsrtOpticGeneric(TraceObject):
         in terms of floating point errors.  The simple way to achive this is
         to ensure that both use the same calculation method.
         """
+        image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         X = rays['origin']
         m = rays['mask'].copy()
         
@@ -257,11 +259,11 @@ class XicsrtOpticGeneric(TraceObject):
             channel[:,1] = pix[:,1] + (self.param['pixel_height'] - 1)/2
             
             # Bin the channels into integer values so that we can use them as
-            # indexes into the pixel_array. Keep in mind that channel coordinate
+            # indexes into the image. Keep in mind that channel coordinate
             # system is defined from the center of the pixel.
             channel = np.round(channel).astype(int)
                        
-            # Check for any hits that are outside of the pixel_array.
+            # Check for any hits that are outside of the image.
             # These are possible due to floating point calculations.
             m = np.ones(num_lines, dtype=bool)
             m &= channel[:,0] >= 0
@@ -276,15 +278,24 @@ class XicsrtOpticGeneric(TraceObject):
             # every intersection.  This could be slow for large arrays.
             for ii in range(num_lines):
                 if m[ii]:
-                    self.pixel_array[channel[ii,0], channel[ii,1]] += 1
+                    image[channel[ii,0], channel[ii,1]] += 1
+
+        return image
+    
+    def collect_rays(self, rays):
+        """
+        Perform ongoing collection into an internal image.
+        """
+        image = self.make_image(rays)
+        self.image[:,:] += image
         
-        return self.pixel_array
+        return self.image[:,:] 
         
     def output_image(self, image_name, rotate=None):
         if rotate:
-            out_array = np.rot90(self.pixel_array)
+            out_array = np.rot90(self.image)
         else:
-            out_array = self.pixel_array
+            out_array = self.image
             
         generated_image = Image.fromarray(out_array)
         generated_image.save(image_name)

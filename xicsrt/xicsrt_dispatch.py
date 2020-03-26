@@ -52,9 +52,10 @@ class XicsrtDispatcher():
         for key, obj in self.objects.items():
             rays = obj.generate_rays()
 
+            self.meta[key]['num_out'] = np.sum(rays['mask'])
+            
             if history:
                 self.history[key] = deepcopy(rays)
-                self.meta[key]['num_out'] = np.sum(rays['mask'])
                 
         return rays
             
@@ -80,7 +81,7 @@ class XicsrtDispatcher():
 
             if images:
                 profiler.start('Dispatcher: collect')
-                self.image[key] = obj.collect_rays(rays)
+                self.image[key] = obj.make_image(rays)
                 profiler.stop('Dispatcher: collect')
                 
         profiler.stop('Dispatcher: raytrace')
@@ -90,7 +91,7 @@ class XicsrtDispatcher():
     def instantiate_objects(self):
         obj_info = self.find_xicsrt_objects(self.pathlist)
         
-        self.log.debug(obj_info)
+        # self.log.debug(obj_info)
 
         for key in self.config:
             obj = self._instantiate_object_single(obj_info, self.config[key])

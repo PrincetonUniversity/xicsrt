@@ -27,7 +27,8 @@ def raytrace_multiprocessing(config):
     Each raytracing run will perform the requested number of iterations.
     Each run will produce a single output image.
     """
-
+    profiler.start('raytrace_multiprocessing')
+    
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     
@@ -57,11 +58,14 @@ def raytrace_multiprocessing(config):
         pool.close()
         pool.join()
 
+    profiler.start('multiprocessing: gathering')
     # Gather all the results together.
     for mp_result in mp_result_list:
         output = mp_result.get()
         output_list.append(output)
+    profiler.stop('multiprocessing: gathering')
 
     output = combine_raytrace(output_list)
 
+    profiler.stop('raytrace_multiprocessing')
     return output
