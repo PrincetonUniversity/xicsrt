@@ -52,6 +52,9 @@ def raytrace(config, internal=False):
         if config['general']['print_results']:
             print_raytrace(output)
 
+    if config['general']['save_run_images']:
+        save_images(output)
+
     profiler.stop('raytrace')
     #profiler.report()
     return output
@@ -67,16 +70,20 @@ def raytrace_multi(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+
     
     num_runs = config['general']['number_of_runs']
     output_list = []
     for ii in range(num_runs):
         logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        config_run = deepcopy(config)
+        config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
         
-        iteration = raytrace(config, internal=True)
+        iteration = raytrace(config_run, internal=True)
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
+    output['config'] = config
 
     if config['general']['save_images']:
         save_images(output)
@@ -284,11 +291,12 @@ def save_images(results):
 
     prefix = results['config']['general']['output_prefix']
     suffix = results['config']['general']['output_suffix']
+    run_suffix = results['config']['general']['output_run_suffix']
     ext = results['config']['general']['image_extension']
     
     for key_opt in results['config']['optics']:
         if key_opt in results['total']['image']:
-            filename = '_'.join(filter(None, (prefix, key_opt, suffix)))+ext
+            filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext
             filepath = os.path.join(results['config']['general']['output_path'], filename)
             
             image_temp = results['total']['image'][key_opt]

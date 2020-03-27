@@ -45,14 +45,15 @@ def raytrace_multiprocessing(config):
             logging.info('Adding run to pool: {} of {}'.format(ii + 1, num_runs))
 
             # Make a copy of the configuration.              
-            config_temp = deepcopy(config)
+            config_run = deepcopy(config)         
+            config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
             
             # Make sure each run uses a unique random seed.
             if random_seed is not None:
                 random_seed += ii
-            config_temp['general']['random_seed'] = random_seed
+            config_run['general']['random_seed'] = random_seed
                 
-            arg = (config,)
+            arg = (config_run,)
             mp_result = pool.apply_async(raytrace, arg)
             mp_result_list.append(mp_result)
         pool.close()
@@ -66,6 +67,7 @@ def raytrace_multiprocessing(config):
     profiler.stop('mp: gathering')
 
     output = combine_raytrace(output_list)
+    output['config'] = config
 
     if config['general']['save_images']:
         save_images(output)
