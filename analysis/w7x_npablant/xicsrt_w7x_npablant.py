@@ -27,13 +27,9 @@ def get_config():
     # General raytracer properties
     config['general']['number_of_iter']                = 1
     config['general']['number_of_runs']                = 1
-
-    config['general']['pathlist_objects']              = [
-        '/u/npablant/code/mirproject/xicsrt/xicsrt/sources'
-        ,'/u/npablant/code/mirproject/xicsrt/xicsrt/optics']
     
-    config['general']['path_ouput']                    = '/u/npablant/code/mirproject/xicsrt/results/temp'
-    config['general']['do_savefiles']                  = False
+    config['general']['output_path']                    = '/u/npablant/code/mirproject/xicsrt/results/temp'
+    config['general']['save_images']                   = False
     config['general']['random_seed']                   = 0
 
 
@@ -59,7 +55,7 @@ def get_config():
     config['sources']['plasma']['depth']               = 1.5
 
     config['sources']['plasma']['use_poisson']         = True
-    config['sources']['plasma']['time_resolution']     = 1e-5
+    config['sources']['plasma']['time_resolution']     = 1e-4
     config['sources']['plasma']['bundle_count']        = 1e4
     config['sources']['plasma']['bundle_volume']       = 0.01**3
     config['sources']['plasma']['bundle_type']         = 'point'

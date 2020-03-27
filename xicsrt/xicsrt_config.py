@@ -11,6 +11,7 @@ Authors
 import numpy as np
 import logging
 from collections import OrderedDict
+import os
 
 from xicsrt import xicsrt_input
 from xicsrt.xicsrt_objects import ConfigObject
@@ -23,7 +24,25 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['number_of_iter'] = 1
         config['general']['number_of_runs'] = 1
         config['general']['random_seed'] = None
-        config['general']['optics_pathlist'] = []
+        config['general']['pathlist_objects'] = []
+        config['general']['pathlist_default'] = get_pathlist_default()
+        
+        config['general']['output_path'] = None
+        config['general']['output_prefix'] = 'xicsrt'
+        config['general']['output_suffix'] = None
+        config['general']['image_extension'] = '.tif'
+        
+        config['general']['keep_meta'] = True
+        config['general']['keep_images'] = True
+        config['general']['keep_history'] = True
+
+        config['general']['save_meta'] = False
+        config['general']['save_images'] = False
+        config['general']['save_history'] = False
+        
+        config['general']['print_results'] = True
+        
+        # config['general'][] = 
 
         config['sources'] = OrderedDict()
     
@@ -42,3 +61,14 @@ def config_to_numpy(config):
     # This should actually go the opposite way.
     config = xicsrt_input.config_to_numpy(config)
     return config
+
+def get_pathlist_default():
+    """
+    Return a list of the default sources and optics directories.
+    These locations will be based on the location of this module.
+    """
+    path_module = os.path.dirname(os.path.abspath(__file__))
+    pathlist_default = []
+    pathlist_default.append(os.path.join(path_module, 'sources'))
+    pathlist_default.append(os.path.join(path_module, 'optics'))
+    return pathlist_default

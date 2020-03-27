@@ -58,14 +58,19 @@ def raytrace_multiprocessing(config):
         pool.close()
         pool.join()
 
-    profiler.start('multiprocessing: gathering')
+    profiler.start('mp: gathering')
     # Gather all the results together.
     for mp_result in mp_result_list:
         output = mp_result.get()
         output_list.append(output)
-    profiler.stop('multiprocessing: gathering')
+    profiler.stop('mp: gathering')
 
     output = combine_raytrace(output_list)
 
+    if config['general']['save_images']:
+        save_images(output)
+    if config['general']['print_results']:
+        print_raytrace(output)
+        
     profiler.stop('raytrace_multiprocessing')
     return output

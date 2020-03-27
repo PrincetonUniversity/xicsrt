@@ -8,7 +8,9 @@ Authors
 """
 
 import numpy as np
+from PIL import Image
 import logging
+import os
 
 from copy import deepcopy
 from collections import OrderedDict
@@ -19,7 +21,7 @@ from xicsrt import xicsrt_config
 from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 from xicsrt.xicsrt_objects import RayArray
 
-def raytrace(config):
+def raytrace(config, internal=False):
     """
     Perform a series of ray tracing iterations.
 
@@ -43,8 +45,15 @@ def raytrace(config):
         output_list.append(sorted)
         
     output = combine_raytrace(output_list)
-    
+
+    if internal is False:
+        if config['general']['save_images']:
+            save_images(output)
+        if config['general']['print_results']:
+            print_raytrace(output)
+
     profiler.stop('raytrace')
+    #profiler.report()
     return output
 
 def raytrace_multi(config):
@@ -64,11 +73,16 @@ def raytrace_multi(config):
     for ii in range(num_runs):
         logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         
-        iteration = raytrace(config)
+        iteration = raytrace(config, internal=True)
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
-    
+
+    if config['general']['save_images']:
+        save_images(output)
+    if config['general']['print_results']:
+        print_raytrace(output)
+        
     profiler.stop('raytrace_multi')
     return output
     
@@ -84,9 +98,15 @@ def raytrace_single(config):
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     config = xicsrt_config.config_to_numpy(config)
-    
-    sources = XicsrtDispatcher(config['sources'], config['general']['pathlist_objects'])
-    optics  = XicsrtDispatcher(config['optics'],  config['general']['pathlist_objects'])
+
+    # Combine the user and default object pathlists.
+    pathlist = []
+    pathlist.extend(config['general']['pathlist_objects'])
+    pathlist.extend(config['general']['pathlist_default'])
+
+    # Setup the dispatchers.
+    sources = XicsrtDispatcher(config['sources'], pathlist)
+    optics  = XicsrtDispatcher(config['optics'],  pathlist)
 
     sources.instantiate_objects()
     sources.initialize()
@@ -116,6 +136,7 @@ def raytrace_single(config):
         history[key] = optics.history[key]   
     
     output = OrderedDict()
+    output['config'] = config
     output['meta'] = meta
     output['image'] = image
     output['history'] = history
@@ -130,6 +151,7 @@ def sort_raytrace(input, max_lost=None):
     profiler.start('sort_raytrace')
     
     output = OrderedDict()
+    output['config'] = input['config']
     output['total'] = OrderedDict()
     output['total']['meta'] = OrderedDict()
     output['total']['image'] = OrderedDict()
@@ -176,6 +198,7 @@ def combine_raytrace(input_list):
     profiler.start('combine_raytrace')
         
     output = OrderedDict()
+    output['config'] = input_list[0]['config']
     output['total'] = OrderedDict()
     output['total']['meta'] = OrderedDict()
     output['total']['image'] = OrderedDict()
@@ -240,11 +263,11 @@ def combine_raytrace(input_list):
     profiler.stop('combine_raytrace')
     return output
        
-def print_raytrace(input):
+def print_raytrace(results):
 
-    key_opt_list = list(input['total']['meta'].keys())
-    num_source = input['total']['meta'][key_opt_list[0]]['num_out']
-    num_detector = input['total']['meta'][key_opt_list[-1]]['num_out']
+    key_opt_list = list(results['total']['meta'].keys())
+    num_source = results['total']['meta'][key_opt_list[0]]['num_out']
+    num_detector = results['total']['meta'][key_opt_list[-1]]['num_out']
     
     print('')
     print('Rays Generated: {:6.3e}'.format(num_source))
@@ -254,3 +277,26 @@ def print_raytrace(input):
         np.sqrt(num_detector / num_source),
         num_detector / num_source * 100))
     print('')
+
+def save_images(results):
+
+    rotate = False
+
+    prefix = results['config']['general']['output_prefix']
+    suffix = results['config']['general']['output_suffix']
+    ext = results['config']['general']['image_extension']
+    
+    for key_opt in results['config']['optics']:
+        if key_opt in results['total']['image']:
+            filename = '_'.join(filter(None, (prefix, key_opt, suffix)))+ext
+            filepath = os.path.join(results['config']['general']['output_path'], filename)
+            
+            image_temp = results['total']['image'][key_opt]
+            if rotate:
+                image_temp = np.rot90(image_temp)
+            
+            generated_image = Image.fromarray(image_temp)
+            generated_image.save(filepath)
+            
+            logging.info('Saved image: {}'.format(filepath))
+        
