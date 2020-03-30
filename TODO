@@ -1,0 +1,10 @@
+
+General:
+
+1. xics_rt_optics:  The way that the meshgrid currently interacts with the optic position and collect_rays is currently not as intended. The current code seems to work correctly, and is fine as a quick way to temporarily make some plots, but is not a good permanent solution.
+
+Merge 2020-02-25:
+
+1. All of the sightline stuff has been pulled out of xics_rt_plasmas. This needs to be reintegrated as a bundle filter.
+
+2. xics_rt_plasms.RealPlasma has been removed.  This needs to be replaced by the base vmec class.
