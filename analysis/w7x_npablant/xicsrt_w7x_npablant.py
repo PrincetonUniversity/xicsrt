@@ -17,6 +17,8 @@ This script creates a default configuration for a single XICS run of the ITER XR
 import numpy as np
 from collections import OrderedDict
 
+from xicsrt import xicsrt_input
+
 def get_config():
     config = OrderedDict()
     config['general'] = OrderedDict()
@@ -28,7 +30,7 @@ def get_config():
     config['general']['number_of_iter']                = 1
     config['general']['number_of_runs']                = 1
     
-    config['general']['output_path']                    = '/u/npablant/code/mirproject/xicsrt/results/temp'
+    config['general']['output_path']                   = '/u/npablant/code/mirproject/xicsrt/results/temp'
     config['general']['save_images']                   = False
     config['general']['random_seed']                   = 0
 
@@ -143,5 +145,17 @@ def initialize(config):
     config['sources']['plasma']['xaxis'] /= np.linalg.norm(config['sources']['plasma']['xaxis'])
 
     config['sources']['plasma']['target'] = config['optics']['crystal']['origin'].copy()
+
+    return config
+
+
+def make_config_file():
+    """
+    Generate a configuration dictionary and save it to a config.json file.
+    """
+    config = xicsrt_w7x_npablant.get_config()
+    config = xicsrt_w7x_npablant.initialize(config)
+    filepath = os.path.join(config['general']['output_path'], 'config.json')
+    xicsrt_input.save_config(filepath, config)
 
     return config

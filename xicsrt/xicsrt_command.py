@@ -30,15 +30,27 @@ python xicsrt.py config.json
 
 """) 
 
-    parser.add_argument('config_file'
-                        ,type=str
-                        ,nargs=1
-                        ,default='config.json'
-                        ,help='The path to the configuration file for this run.')
+    parser.add_argument(
+        'config_file'
+        ,type=str
+        ,nargs='?'
+        ,default='config.json'
+        ,help='The path to the configuration file for this run.')
+
+    parser.add_argument(
+        '--suffix'
+        ,type=str
+        ,default=None
+        ,help="A suffix to add to the output files.")
 
     args = parser.parse_args()
     config = xicsrt_input.load_config(args.config_file)
-    result = xicsrt_raytrace.xicsrt_raytrace.raytrace_multi(config)
 
+    if suffix:
+        config['general']['output_suffix'] = args.suffix
+        
+    result = xicsrt_raytrace.raytrace_multi(config)
+
+    
 if __name__ == "__main__":
     run()
