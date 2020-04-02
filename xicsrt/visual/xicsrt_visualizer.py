@@ -102,7 +102,7 @@ def visualize_layout(config):
     ## Plot everything
     if scenario == "REAL" or scenario == "PLASMA":
         #resize and recenter axes on graphite
-        view_center = 1
+        view_center = 3
         
         #plasma sightline[3D Coordinates]
         plasma_sight = config['filter_input']['origin'] + 7 * config['filter_input']['direction']

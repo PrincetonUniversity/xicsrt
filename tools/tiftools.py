@@ -185,7 +185,7 @@ def gaussian_fit(tif, transpose = False):
 
 
 #tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
-colorize_png(tif_list)
+#colorize_png(tif_list)
 #histogram_analysis(tif_list)
-tif_overlay(tif_list)
-gaussian_fit('xicsrt_detector.tif')
+#tif_overlay(tif_list)
+gaussian_fit('xicsrt_crystal_total_3.tif')

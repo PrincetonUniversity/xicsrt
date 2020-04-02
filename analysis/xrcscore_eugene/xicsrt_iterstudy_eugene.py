@@ -39,14 +39,12 @@ def get_config():
     config['general_input']['output_path']        = outpath
     config['general_input']['output_suffix']      = '.tif'
     config['general_input']['scenario']           = 'REAL'
-    config['general_input']['system']             = 'w7x_ar16'
-    config['general_input']['shot']               = 180707017
     
     """Ray emission settings
     'number_of_rays' typically should not exceed 1e7 unless running on a cluster
     If more rays are necessary, increase 'number_of_runs'.
     """
-    config['general_input']['number_of_rays']     = int(1e7)
+    config['general_input']['number_of_rays']     = int(1.5e7)
     config['general_input']['number_of_runs']     = 1
     
     """Raytrace run settings
@@ -201,11 +199,11 @@ def get_config():
     'pixel_size'     is the size of the pixels used by the image generator
     'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     """
-    config['crystal_input']['crystal_spacing']    = 1.42 #1.7059
+    config['crystal_input']['crystal_spacing']    = 1.42 #1.7059 
     config['crystal_input']['reflectivity']       = 1.0
     config['crystal_input']['rocking_fwhm']       = 90.30e-6
     config['crystal_input']['pixel_size']         = 0.0001
-    #config['crystal_input']['therm_expand']       = 5.9e-6
+    #config['crystal_input']['thermal_expand']     = 5.9e-6
     
     """Geometry Settings
     crystal 'width' and 'height' (meters) only matter when 'use_trimesh' is False
@@ -217,7 +215,7 @@ def get_config():
     
     config['crystal_input']['width']              = 0.040
     config['crystal_input']['height']             = 0.050
-    config['crystal_input']['radius']             = 2.000 # 2.400
+    config['crystal_input']['radius']             = 2.200 #2.400 
     
     """
     Rocking curve FWHM:  90.30 urad
@@ -440,14 +438,14 @@ if runtype == 'multi':
     output, meta = run_multi(config_multi)
 
 if runtype == 'save':
-    config_multi = get_config_multi(5)
+    config_multi = get_config_multi(6)
     config_multi = initialize_multi(config_multi)
     save_config(filepath, config_multi)
         
 if runtype == 'init_resave':
     config_multi = load_config(filepath)
     config_multi = initialize_multi(config_multi)    
-    save_config(filepath, config)
+    save_config(filepath, config_multi)
 
 if runtype == 'raw_load':
     config_multi = load_config(filepath)
