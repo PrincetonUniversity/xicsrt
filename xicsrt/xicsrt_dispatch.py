@@ -3,32 +3,107 @@
 Authors:
   | Novimir Antoniuk Pablant <npablant@pppl.gov>
 """
+import numpy as np
+import logging
 
 from collections import OrderedDict
 import importlib
 import glob
 import os
 
+from copy import deepcopy
 import importlib.util
-        
+
+from xicsrt.util import profiler
+
 class XicsrtDispatcher():
 
-    def __init__(self):
+    def __init__(self, config=None, pathlist=None):
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.config = config
+        self.pathlist = pathlist
+        
         self.objects = OrderedDict()
+        self.meta = OrderedDict()
+        self.image = OrderedDict()
+        self.history = OrderedDict()
+        
+    def check_config(self, *args, **kwargs):
+        for key, obj in self.objects.items():
+            obj.check_config(*args, **kwargs)
 
-    def instantiateObjects(self, config_dict, path_list):
-        obj_info = self.findXicsrtObjects(path_list)
-        print(obj_info)
-        for key in config_dict:
-            obj = self._instantiateObjectSingle(obj_info, config_dict[key])
-            self.objects[key] = obj
+    def initialize(self, *args, **kwargs):
+        for key, obj in self.objects.items():
+            obj.initialize(*args, **kwargs)
     
-    def findXicsrtObjects(self, path_list):
+    def generate_rays(self, history=None):
+        """
+        Generates rays from all sources.
+        """
+        if history is None:
+            history is False
+            
+        if len(self.objects) == 0:
+            raise Exception('No ray sources defined.')
+        elif not len(self.objects) == 1:
+            raise NotImplementedError('Multiple ray sources are not currently supported.')
+                
+        for key, obj in self.objects.items():
+            rays = obj.generate_rays()
+
+            self.meta[key]['num_out'] = np.sum(rays['mask'])
+            
+            if history:
+                self.history[key] = deepcopy(rays)
+                
+        return rays
+            
+    def raytrace(self, rays, images=None, history=None):
+        if history is None:
+            history is False
+            
+        if images is None:
+            images is False
+            
+        profiler.start('Dispatcher: raytrace')
+
+        for key, obj in self.objects.items():
+            
+            profiler.start('Dispatcher: light')
+            rays = obj.light(rays)
+            profiler.stop('Dispatcher: light')
+
+            self.meta[key]['num_out'] = np.sum(rays['mask'])
+            
+            if history:
+                self.history[key] = deepcopy(rays)
+
+            if images:
+                profiler.start('Dispatcher: collect')
+                self.image[key] = obj.make_image(rays)
+                profiler.stop('Dispatcher: collect')
+                
+        profiler.stop('Dispatcher: raytrace')
+        
+        return rays
+            
+    def instantiate_objects(self):
+        obj_info = self.find_xicsrt_objects(self.pathlist)
+        
+        # self.log.debug(obj_info)
+
+        for key in self.config:
+            obj = self._instantiate_object_single(obj_info, self.config[key])
+            self.objects[key] = obj
+            self.meta[key] = {}
+    
+    def find_xicsrt_objects(self, pathlist):
 
         filepath_list = []
         name_list = []
 
-        for pp in path_list:
+        for pp in pathlist:
             filepath_list.extend(glob.glob(os.path.join(pp, '_Xicsrt*.py')))
 
         for ff in filepath_list:
@@ -46,17 +121,20 @@ class XicsrtDispatcher():
 
         return output
 
-    def _instantiateObjectSingle(self, obj_info, config):
+    def _instantiate_object_single(self, obj_info, config):
+        """
+        Instantiate an object from a list of filenames and a class name.
+        """
         
-        if config['name'] in obj_info:
-            info = obj_info[config['name']]
+        if config['class_name'] in obj_info:
+            info = obj_info[config['class_name']]
         else:
             raise Exception('Could not find {} in available objects.'.format(config['name']))
         
-            
         spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        obj = mod.XicsrtPlasmaGeneric(config)
-
+        cls = getattr(mod, info['name'])
+        obj = cls(config, initialize=False)
+        
         return obj

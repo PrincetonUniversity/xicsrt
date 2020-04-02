@@ -48,7 +48,7 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         A made up temperature profile with moderate flatness.
         Peak value at 1.0
         """
-
+        
         rho = np.sqrt(flx[:,0])
         
         if True:
@@ -76,7 +76,8 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         """
         Calculate velocity vectors accounting for fluxspace compression effects.
         """
-
+        profiler.start('get_velocity')
+        
         num_points = flx.shape[0]
         output = np.zeros((num_points, 3))
         
@@ -116,7 +117,8 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
             vp_factor = vector.magnitude(gradrho)/modb/norm_vp_factor
             
             output[ii,:] = perpendicular*value[ii]/vp_factor
-            
+
+        profiler.stop('get_velocity')
         return output
 
     def bundle_generate(self, bundle_input):
@@ -128,20 +130,9 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
 
         self.initialize_vmec()
         
-        profiler.start("Bundle Input Generation")
-        
+        profiler.start("Bundle Input Generation")        
         m = bundle_input['mask']
         
-        # create a long list containing random points within the cube's dimensions
-        offset = np.zeros((self.param['bundle_count'], 3))
-        offset[:,0] = np.random.uniform(-1 * self.param['width']/2, self.param['width']/2, self.param['bundle_count'])
-        offset[:,1] = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        offset[:,2] = np.random.uniform(-1 * self.param['depth']/2, self.param['depth']/2, self.param['bundle_count'])
-
-        # unlike the other plasmas, the toroidal plasma has fixed orientation to
-        # prevent confusion
-        bundle_input['origin'][:] = self.point_to_external(offset)
-
         # Attempt to generate the specified number of bundles, but throw out
         # bundles that our outside of the last closed flux surface.
         #
@@ -165,7 +156,7 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         bundle_input['temperature'][m] = self.get_temperature(flx[m]) * self.param['temperature_scale']
         bundle_input['emissivity'][m] = self.get_emissivity(flx[m]) * self.param['emissivity_scale']
         bundle_input['velocity'][m] = self.get_velocity(flx[m]) * self.param['velocity_scale']
-
+                
         profiler.stop("Bundle Input Generation")
-
+        
         return bundle_input

@@ -19,7 +19,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         config['crystal_spacing'] = 0.0
         config['reflectivity']    = 1.0
 
-        config['do_bragg_checks']    = True
+        config['do_bragg_check']    = True
         config['rocking_type']       = 'gaussian'
         config['rocking_fwhm']       = None
         config['rocking_sigma_file'] = None
@@ -97,7 +97,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
         
         #check which rays satisfy bragg, update mask to remove those that don't
-        if self.param['do_bragg_checks'] is True:
+        if self.param['do_bragg_check'] is True:
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
         return rays, normals
     

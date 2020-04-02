@@ -10,6 +10,8 @@ A set of base objects for xicsrt.
 """
 
 import numpy as np
+import logging
+
 import copy
 from collections import OrderedDict
 
@@ -104,17 +106,26 @@ class ConfigObject():
     A base class for any objects with a configuration.
     """
 
-    def __init__(self, config=None, strict=None):
-        self.name = self.__class__.__name__
+    def __init__(self, config=None, strict=None, initialize=None):
+        if initialize is None: initialize = True
         
+        self.name = self.__class__.__name__
+        self.log = logging.getLogger(self.name)
+    
         self.config = self.get_default_config()
         self.update_config(config, strict)
-        self.check_config()
-        self.initialize()
+
+        if initialize:
+            self.check_config()
+            self.initialize()
 
     def get_default_config(self):
         config = OrderedDict()
+        config['class_name'] = self.__class__.__name__
         return config
+
+    def get_config(self):
+        return self.config
         
     def check_config(self):
         pass
@@ -122,10 +133,10 @@ class ConfigObject():
     def initialize(self):
         self.param =  copy.deepcopy(self.config)
     
-    def update_config(self, config, strict=None):
-        self._update_config_dict(self.config, config, strict)
+    def update_config(self, config, strict=None, update=None):
+        self._update_config_dict(self.config, config, strict, update)
 
-    def _update_config_dict(self, config, user_config, strict=None):
+    def _update_config_dict(self, config, user_config, strict=None, update=None):
         """
         Overwrite any values in the given options dict with the values in the
         user dict.  This will be done recursively to allow nested dictionaries.
@@ -138,6 +149,8 @@ class ConfigObject():
         """
         if strict is None:
             strict = True
+        if update is None:
+            update = False
             
         if user_config is None:
             return
@@ -145,10 +158,12 @@ class ConfigObject():
         for key in user_config:
             if not key in config:
                 if strict:
-                   raise Exception("User option not recognized: {}".format(key))
+                    raise Exception("User option not recognized: {}".format(key))
+                if update:
+                    config[key] = user_config[key]    
             else:
                 if isinstance(config[key], dict):
-                    self._update_config_dict(config[key], user_config[key], strict=strict)
+                    self._update_config_dict(config[key], user_config[key], strict=strict, update=update)
                 else:
                     config[key] = user_config[key]
 
@@ -161,9 +176,14 @@ class GeometryObject(ConfigObject):
     def initialize(self):
         super().initialize()
 
+        self.param['origin'] = np.array(self.param['origin'])
+        self.param['zaxis'] = np.array(self.param['zaxis'])
+        if self.param['xaxis'] is not None:
+            self.param['xaxis'] = np.array(self.param['xaxis'])
+        
         # Location with respect to the external coordinate system.
-        self.origin = self.config['origin']
-        self.set_orientation(self.config['zaxis'], self.config['xaxis'])
+        self.origin = self.param['origin']
+        self.set_orientation(self.param['zaxis'], self.param['xaxis'])
 
     def __getattr__(self, key):
         """
@@ -180,8 +200,8 @@ class GeometryObject(ConfigObject):
 
     def get_default_config(self):
         config = super().get_default_config()
-        config['origin'] = [0.0, 0.0, 0.0]
-        config['zaxis'] = [0.0, 0.0, 1.0]
+        config['origin'] = np.array([0.0, 0.0, 0.0])
+        config['zaxis'] = np.array([0.0, 0.0, 1.0])
         config['xaxis'] = None
 
         return config
@@ -203,7 +223,7 @@ class GeometryObject(ConfigObject):
 
         xaxis = np.cross(np.array([0.0, 0.0, 1.0]), zaxis)
         if not np.all(xaxis == 0.0):
-            xicsrt.math.normalize(xaxis)
+            xicsrt.tool.normalize(xaxis)
         else:
             xaxis = np.array([1.0, 0.0, 0.0])
 
@@ -263,7 +283,7 @@ class GeometryObject(ConfigObject):
         """
 
         zaxis = aim_point - self.origin
-        xicsrt.math.normalize(zaxis)
+        xicsrt.tool.normalize(zaxis)
 
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)

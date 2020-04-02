@@ -67,6 +67,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         
         profiler.start("Bundle Input Generation")
         m = bundle_input['mask']
+
         # Attempt to generate the specified number of bundles, but throw out
         # bundles that our outside of the last closed flux surface.
         #

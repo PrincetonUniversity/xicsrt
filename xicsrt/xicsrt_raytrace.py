@@ -1,168 +1,310 @@
 # -*- coding: utf-8 -*-
 """
-@author: James
-@editor: Eugene
+Authors
+-------
+  - Novimir pablant <npablant@pppl.gov>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+  - James Kring <jdk0026@tigermail.auburn.edu>
 """
 
 import numpy as np
+from PIL import Image
+import logging
+import os
+
 from copy import deepcopy
+from collections import OrderedDict
 
 from xicsrt.util import profiler
 
+from xicsrt import xicsrt_config
+from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 from xicsrt.xicsrt_objects import RayArray
 
-def raytrace_single(source, detector, *optics,  number_of_runs=None, collect_optics=None):
+def raytrace(config, internal=False):
+    """
+    Perform a series of ray tracing iterations.
+
+    If history is enabled, sort the rays into those that are detected and 
+    those that are lost (found and lost). The found ray history will be 
+    returned in full. The lost ray history will be truncated to allow 
+    visualizaiton while still limited memory usage.
+    """
+    profiler.start('raytrace')
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    
+    num_iter = config['general']['number_of_iter']
+    
+    output_list = []
+    for ii in range(num_iter):
+        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
+        
+        single = raytrace_single(config)
+        sorted = sort_raytrace(single)
+        output_list.append(sorted)
+        
+    output = combine_raytrace(output_list)
+
+    if internal is False:
+        if config['general']['save_images']:
+            save_images(output)
+        if config['general']['print_results']:
+            print_raytrace(output)
+
+    if config['general']['save_run_images']:
+        save_images(output)
+
+    profiler.stop('raytrace')
+    #profiler.report()
+    return output
+
+def raytrace_multi(config):
+    """
+    Perform a series of ray tracing runs.
+
+    Each raytracing run will perform the requested number of iterations.
+    Each run will produce a single output image.
+    """
+    profiler.start('raytrace_multi')
+    
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+
+    
+    num_runs = config['general']['number_of_runs']
+    output_list = []
+    for ii in range(num_runs):
+        logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        config_run = deepcopy(config)
+        config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
+        
+        iteration = raytrace(config_run, internal=True)
+        output_list.append(iteration)
+        
+    output = combine_raytrace(output_list)
+    output['config'] = config
+
+    if config['general']['save_images']:
+        save_images(output)
+    if config['general']['print_results']:
+        print_raytrace(output)
+        
+    profiler.stop('raytrace_multi')
+    return output
+    
+def raytrace_single(config):
     """ 
-    Rays are generated from source and then passed through the optics in
-    the order listed. Finally, they are collected by the detector. 
+    Rays are generated from sources and then passed through 
+    the optics in the order listed in the configuration file.
+
     Rays consists of origin, direction, wavelength, and weight.
     """
-
-    if collect_optics is None: collect_optics = False
+    profiler.start('raytrace_single')
     
-    rays_count = dict()
-    rays_count['total_generated']  = 0
-    rays_count['total_graphite']   = 0
-    rays_count['total_crystal']    = 0
-    rays_count['total_detector']   = 0
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    config = xicsrt_config.config_to_numpy(config)
 
-    profiler.start('Raytrace Run')
+    # Combine the user and default object pathlists.
+    pathlist = []
+    pathlist.extend(config['general']['pathlist_objects'])
+    pathlist.extend(config['general']['pathlist_default'])
 
-    # Rays history resets after every run and only returns on the last one
-    rays_history = []
+    # Setup the dispatchers.
+    sources = XicsrtDispatcher(config['sources'], pathlist)
+    optics  = XicsrtDispatcher(config['optics'],  pathlist)
+
+    sources.instantiate_objects()
+    sources.initialize()
+    rays = sources.generate_rays(history=False)
     
-    profiler.start('Ray Generation')
-    rays = source.generate_rays()
-    profiler.stop('Ray Generation')
-    rays_history.append(deepcopy(rays))
+    optics.instantiate_objects()
+    optics.initialize()
+    rays = optics.raytrace(rays, history=False, images=True)
 
-    print(' Rays Generated:    {:6.4e}'.format(rays['direction'].shape[0]))
-    rays_count['total_generated'] += rays['direction'].shape[0]
+    # Combine sources and optics.
+    meta = OrderedDict()
+    image = OrderedDict()
+    history = OrderedDict()
+    
+    for key in sources.meta:
+        meta[key] = sources.meta[key]
+    for key in sources.image:
+        image[key] = sources.image[key]
+    for key in sources.history:
+        history[key] = sources.history[key]
 
-    for optic in optics:
-        profiler.start('Ray Tracing')
-        rays = optic.light(rays)
-        profiler.stop('Ray Tracing')
-        rays_history.append(deepcopy(rays))
+    for key in optics.meta:
+        meta[key] = optics.meta[key]
+    for key in optics.image:
+        image[key] = optics.image[key]
+    for key in optics.history:
+        history[key] = optics.history[key]   
+    
+    output = OrderedDict()
+    output['config'] = config
+    output['meta'] = meta
+    output['image'] = image
+    output['history'] = history
 
-        profiler.start('Collection: Optics')
-        if collect_optics:
-            optic.collect_rays(rays)
-        profiler.stop('Collection: Optics')
+    profiler.stop('raytrace_single')
+    return output
 
-        if optic.name == 'XicsrtOpticCrystalSpherical':
-            rays_count['total_crystal']  += optic.photon_count
-        elif optic.name == 'XicsrtOpticMosaicGraphite':
-            rays_count['total_graphite'] += optic.photon_count
+def sort_raytrace(input, max_lost=None):
+    if max_lost is None:
+        max_lost = 1000
+    
+    profiler.start('sort_raytrace')
+    
+    output = OrderedDict()
+    output['config'] = input['config']
+    output['total'] = OrderedDict()
+    output['total']['meta'] = OrderedDict()
+    output['total']['image'] = OrderedDict()
+    output['found'] = OrderedDict()
+    output['found']['meta'] = OrderedDict()
+    output['found']['history'] = OrderedDict()
+    output['lost'] = OrderedDict()
+    output['lost']['meta'] = OrderedDict()
+    output['lost']['history'] = OrderedDict()
 
-    profiler.start('Ray Tracing')
-    rays = detector.light(rays)
-    profiler.stop('Ray Tracing')
-    rays_history.append(deepcopy(rays))
+    output['total']['meta'] = input['meta']
+    output['total']['image'] = input['image']
 
-    profiler.start('Collection: Detector')
-    detector.collect_rays(rays)
-    profiler.stop('Collection: Detector')
+    if len(input['history']) > 0:
+        key_opt_list = list(input['history'].keys())
+        key_opt_last = key_opt_list[-1]
 
-    rays_count['total_detector'] += detector.photon_count
-    profiler.stop('Raytrace Run')
-
-
-    print('')
-    print('Total Rays Generated: {:6.4e}'.format(rays_count['total_generated']))
-    print('Total Rays on HOPG:   {:6.4e}'.format(rays_count['total_graphite']))
-    print('Total Rays on Crystal:{:6.4e}'.format(rays_count['total_crystal']))
-    print('Total Rays Detected:  {:6.4e}'.format(rays_count['total_detector']))
-    print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-        rays_count['total_detector'] / rays_count['total_generated'],
-        np.sqrt(rays_count['total_detector']) / rays_count['total_generated'],
-        rays_count['total_detector'] / rays_count['total_generated'] * 100))
-    print('')
-
-    return rays_history, rays_count
-
-
-def raytrace(source, detector, *optics, number_of_runs=None, collect_optics=None):
-    """
-    Run a series of ray tracing runs.  Save all rays that make it to the detector
-    and a subset of rays that are lost.
-    """
-
-    if number_of_runs is None: number_of_runs = 1
-
-    count = dict()
-    count['total_generated']  = 0
-    count['total_graphite']   = 0
-    count['total_crystal']    = 0
-    count['total_detector']   = 0
-
-    history = {}
-    history['found'] = []
-    history['lost'] = []
-
-    for ii in range(number_of_runs):
-        print('')
-        print('Starting iteration: {} of {}'.format(ii + 1, number_of_runs))
-
-        history_temp, count_temp = raytrace_single(source, detector, *optics, collect_optics=collect_optics)
-
-        for key in count_temp:
-            count[key] += count_temp[key]
-
-        w_found = np.flatnonzero(history_temp[-1]['mask'])
-        w_lost  = np.flatnonzero(np.invert(history_temp[-1]['mask']))
+        w_found = np.flatnonzero(input['history'][key_opt_last]['mask'])
+        w_lost  = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
 
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
-        max_lost = int(10000/number_of_runs)
         max_lost = min(max_lost, len(w_lost))
         index_lost = np.arange(len(w_lost))
         np.random.shuffle(index_lost)
         w_lost = w_lost[index_lost[:max_lost]]
 
-        found = []
-        lost  = []
-        for ii_opt in range(len(history_temp)):
-            found.append({})
-            lost.append({})
+        for key_opt in key_opt_list:
+            output['found']['history'][key_opt] = OrderedDict()
+            output['lost']['history'][key_opt] = OrderedDict()
 
-            for key in history_temp[ii_opt]:
-                found[ii_opt][key] = history_temp[ii_opt][key][w_found]
-                lost[ii_opt][key] = history_temp[ii_opt][key][w_lost]
+            for key_ray in input['history'][key_opt]:
+                output['found']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_found]
+                output['lost']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_lost]
 
-        history['found'].append(found)
-        history['lost'].append(lost)
+    profiler.stop('sort_raytrace')
+        
+    return output
+    
+def combine_raytrace(input_list):
+    """
+    Produce a combined output from a list of raytrace_single outputs into a combined 
+    """
+    profiler.start('combine_raytrace')
+        
+    output = OrderedDict()
+    output['config'] = input_list[0]['config']
+    output['total'] = OrderedDict()
+    output['total']['meta'] = OrderedDict()
+    output['total']['image'] = OrderedDict()
+    output['found'] = OrderedDict()
+    output['found']['meta'] = OrderedDict()
+    output['found']['history'] = OrderedDict()
+    output['lost'] = OrderedDict()
+    output['lost']['meta'] = OrderedDict()
+    output['lost']['history'] = OrderedDict()
 
-    # Now combine all the histories.
-    ray_temp = RayArray()
-    ray_temp.zeros(0)
+    num_iter = len(input_list)
+    key_opt_list = list(input_list[0]['total']['meta'].keys())
+    key_opt_last = key_opt_list[-1]
+    
+    # Combine the meta data.
+    for key_opt in key_opt_list:
+        output['total']['meta'][key_opt] = OrderedDict()
+        key_meta_list = list(input_list[0]['total']['meta'][key_opt].keys())
+        for key_meta in key_meta_list:
+            output['total']['meta'][key_opt][key_meta] = 0
+            for ii_run in range(num_iter):
+                output['total']['meta'][key_opt][key_meta] += input_list[ii_run]['total']['meta'][key_opt][key_meta]
 
-    history_final = {}
-    history_final['found'] = []
-    history_final['lost'] = []
-    for ii_opt in range(len(history['found'][0])):
-        history_final['found'].append(ray_temp.copy())
-        history_final['lost'].append(ray_temp.copy())
+    # Combine the images.
+    for key_opt in key_opt_list:
+        if key_opt in input_list[0]['total']['image']:
+            output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
+            for ii_run in range(num_iter):
+                output['total']['image'][key_opt] += input_list[ii_run]['total']['image'][key_opt]
 
-    for ii_run in range(len(history['found'])):
-        for ii_opt in range(len(history['found'][0])):
-            history_final['found'][ii_opt].extend(history['found'][ii_run][ii_opt])
-            history_final['lost'][ii_opt].extend(history['lost'][ii_run][ii_opt])
+    # Combine all the histories
+    if len(input_list[ii_run]['found']['history']) > 0:
+        final_num_found = 0
+        final_num_lost = 0
+        for ii_run in range(num_iter):
+            final_num_found += len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
+            final_num_lost += len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
 
-    if count['total_generated'] == 0:
-        raise ValueError('No rays generated. Check inputs.')
+        rays_found_temp = RayArray()
+        rays_found_temp.zeros(final_num_found)
+
+        rays_lost_temp = RayArray()
+        rays_lost_temp.zeros(final_num_lost)
+
+        for key_opt in key_opt_list:
+            output['found']['history'][key_opt] = rays_found_temp.copy()
+            output['lost']['history'][key_opt] = rays_lost_temp.copy()
+
+        index_found = 0
+        index_lost = 0
+        for ii_run in range(num_iter):
+            num_found = len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
+            num_lost = len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
+
+            for key_opt in key_opt_list:
+                for key_ray in output['found']['history'][key_opt]:
+                    output['found']['history'][key_opt][key_ray][index_found:index_found+num_found] = (
+                        input_list[ii_run]['found']['history'][key_opt][key_ray][:])
+                    output['lost']['history'][key_opt][key_ray][index_lost:index_lost+num_lost] = (
+                        input_list[ii_run]['lost']['history'][key_opt][key_ray][:])
+ 
+    profiler.stop('combine_raytrace')
+    return output
+       
+def print_raytrace(results):
+
+    key_opt_list = list(results['total']['meta'].keys())
+    num_source = results['total']['meta'][key_opt_list[0]]['num_out']
+    num_detector = results['total']['meta'][key_opt_list[-1]]['num_out']
     
     print('')
-    print('Final Rays Generated: {:6.4e}'.format(count['total_generated']))
-    print('Final Rays on HOPG:   {:6.4e}'.format(count['total_graphite']))
-    print('Final Rays on Crystal:{:6.4e}'.format(count['total_crystal']))
-    print('Final Rays Detected:  {:6.4e}'.format(count['total_detector']))
-    print('Efficiency: {:6.2e} ± {:3.1e} ({:7.5f}%)'.format(
-        count['total_detector'] / count['total_generated'],
-        np.sqrt(count['total_detector']) / count['total_generated'],
-        count['total_detector'] / count['total_generated'] * 100))
+    print('Rays Generated: {:6.3e}'.format(num_source))
+    print('Rays Detected:  {:6.3e}'.format(num_detector))
+    print('Efficiency:     {:6.3e} ± {:3.1e} ({:7.5f}%)'.format(
+        num_detector / num_source,
+        np.sqrt(num_detector / num_source),
+        num_detector / num_source * 100))
     print('')
 
-    return history_final, count
+def save_images(results):
 
+    rotate = False
 
+    prefix = results['config']['general']['output_prefix']
+    suffix = results['config']['general']['output_suffix']
+    run_suffix = results['config']['general']['output_run_suffix']
+    ext = results['config']['general']['image_extension']
+    
+    for key_opt in results['config']['optics']:
+        if key_opt in results['total']['image']:
+            filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext
+            filepath = os.path.join(results['config']['general']['output_path'], filename)
+            
+            image_temp = results['total']['image'][key_opt]
+            if rotate:
+                image_temp = np.rot90(image_temp)
+            
+            generated_image = Image.fromarray(image_temp)
+            generated_image.save(filepath)
+            
+            logging.info('Saved image: {}'.format(filepath))
+        

@@ -112,13 +112,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         """
         
         #create ray dictionary
-        rays                = dict()
-        rays['origin']      = np.zeros([0,3], dtype = np.float64)
-        rays['direction']   = np.ones( [0,3], dtype = np.float64)
-        rays['wavelength']  = np.ones( [0], dtype=np.float64)
-        rays['weight']      = np.ones( [0], dtype=np.float64)
-        rays['mask']        = np.ones( [0], dtype=np.bool)
-
+        rays_list = []
         count_rays_in_bundle = []
 
         m = bundle_input['mask']
@@ -191,22 +185,32 @@ class XicsrtPlasmaGeneric(TraceObject):
             source       = XicsrtSourceFocused(source_config)
             bundled_rays = source.generate_rays()
 
+            rays_list.append(bundled_rays)
             count_rays_in_bundle.append(len(bundled_rays['mask']))
 
-            # append bundled rays together to form a single ray dictionary.
-            #
-            # It would (probably) be faster to first put these into a normal
-            # pythorn dictionary, then do the collection at the end. This wolud
-            # take more memory though.
-            profiler.start('Ray Bundle Collection')
-            rays['origin']     = np.append(rays['origin'], bundled_rays['origin'], axis=0)
-            rays['direction']  = np.append(rays['direction'], bundled_rays['direction'], axis=0)
-            rays['wavelength'] = np.append(rays['wavelength'], bundled_rays['wavelength'])
-            rays['weight']     = np.append(rays['weight'], bundled_rays['weight'])
-            rays['mask']       = np.append(rays['mask'], bundled_rays['mask'])
-            profiler.start('Ray Bundle Collection')
-
             profiler.stop("Ray Bundle Generation")
+
+            
+        profiler.start('Ray Bundle Collection')
+        # append bundled rays together to form a single ray dictionary.    
+        # create the final ray dictionary
+        total_rays = np.sum(count_rays_in_bundle)
+        rays                = dict()
+        rays['origin']      = np.zeros((total_rays,3), dtype=np.float64)
+        rays['direction']   = np.zeros((total_rays,3), dtype=np.float64)
+        rays['wavelength']  = np.zeros((total_rays), dtype=np.float64)
+        rays['weight']      = np.zeros((total_rays), dtype=np.float64)
+        rays['mask']        = np.ones((total_rays), dtype=np.bool)
+
+        index = 0
+        for ii, num_rays in enumerate(count_rays_in_bundle):
+            rays['origin'][index:index+num_rays] = rays_list[ii]['origin']
+            rays['direction'][index:index+num_rays] = rays_list[ii]['direction']
+            rays['wavelength'][index:index+num_rays] = rays_list[ii]['wavelength']
+            rays['weight'][index:index+num_rays] = rays_list[ii]['weight']
+            rays['mask'][index:index+num_rays] = rays_list[ii]['mask']
+            index += num_rays
+        profiler.stop('Ray Bundle Collection')
             
         if len(rays['mask']) == 0:
             raise ValueError('No rays generated. Check plasma input parameters')

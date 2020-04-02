@@ -32,7 +32,7 @@ class XicsrtSourceGeneric(TraceObject):
         config['linewidth']      = 0.0
         config['intensity']      = 0.0
         config['temperature']    = 0.0
-        config['velocity']       = 0.0
+        config['velocity']       = np.array([0.0, 0.0, 0.0])
         config['use_poisson']    = False
         config['do_monochrome']  = False
 
@@ -50,7 +50,8 @@ class XicsrtSourceGeneric(TraceObject):
         
     def generate_rays(self):
         rays = dict()
-
+        profiler.start('generate_rays')
+        
         profiler.start('generate_origin')
         rays['origin'] = self.generate_origin()
         profiler.stop('generate_origin')
@@ -71,6 +72,7 @@ class XicsrtSourceGeneric(TraceObject):
         rays['mask'] = self.generate_mask()
         profiler.stop('generate_mask')
         
+        profiler.stop('generate_rays')
         return rays
      
     def generate_origin(self):
@@ -112,8 +114,10 @@ class XicsrtSourceGeneric(TraceObject):
         direction  = np.empty(origin.shape)
         rad_spread = np.radians(self.param['spread'])
         dir_local  = f(rad_spread, self.param['intensity'])
-        
-        o_1  = np.cross(normal, [0,0,1])
+
+        # Generate some basis vectors that are perpendicular
+        # to the normal. The orientation does not matter here.
+        o_1  = np.cross(normal, np.array([0,0,1])) + np.cross(normal, np.array([0,1,0]))
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
@@ -204,14 +208,13 @@ class XicsrtSourceGeneric(TraceObject):
         return rand_wave
     
     def generate_weight(self):
-        #weight is not yet implemented
-        intensity = self.param['intensity']
-        w = np.ones((intensity,1), dtype=np.float64)
+        # Weight is not currently used within XICSRT but might be useful
+        # in the future.
+        w = np.ones((self.param['intensity']), dtype=np.float64)
         return w
     
     def generate_mask(self):
-        intensity = self.param['intensity']
-        m = np.ones((intensity), dtype=np.bool)
+        m = np.ones((self.param['intensity']), dtype=np.bool)
         return m
 
 

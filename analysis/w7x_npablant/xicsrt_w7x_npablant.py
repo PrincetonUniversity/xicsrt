@@ -17,51 +17,26 @@ This script creates a default configuration for a single XICS run of the ITER XR
 import numpy as np
 from collections import OrderedDict
 
-from xicsrt.util import profiler
+from xicsrt import xicsrt_input
 
 def get_config():
-
     config = OrderedDict()
-    config['general_input']   = OrderedDict()
-    config['source_input']    = OrderedDict()
-    config['crystal_input']   = OrderedDict()
-    config['detector_input']  = OrderedDict()
+    config['general'] = OrderedDict()
+    config['sources'] = OrderedDict()
+    config['optics']  = OrderedDict()
 
-    # -----------------------------------------------------------------------------
+    # ----------------------------
     # General raytracer properties
-
-    # set ideal_geometry to False to enable offsets, tilts, and thermal expand
-    # set backwards_raytrace to True to swap the detector and source
-    # set do_visualizations to toggle the visualizations on or off
-    # set do_savefiles to toggle whether the program saves .tif files
-    # set do_image_analysis to toggle whether the visualizer performs .tif analysis
-    # set do_bragg_checks to False to make the optics into perfect X-Ray mirrors
-    # set do_miss_checks to False to prevent optics from masking rays that miss
-    # change the random seed to alter the random numbers generated
-    # possible scenarios include 'MODEL', 'PLASMA', 'BEAM', 'CRYSTAL', 'GRAPHITE', 'SOURCE'
-    # possible rocking curve types include 'STEP', 'GAUSS', and 'FILE'
-
-    config['general_input']['number_of_rays']     = int(1e6)
-    config['general_input']['number_of_runs']     = 1
-
-    config['general_input']['ouput_path']         = '/u/npablant/code/mirproject/xicsrt/results/'
-    config['general_input']['ideal_geometry']     = True
-    config['general_input']['backwards_raytrace'] = False
-    config['general_input']['do_visualizations']  = False
-    config['general_input']['do_savefiles']       = False
-    config['general_input']['do_image_analysis']  = False
-    config['general_input']['random_seed']        = 123456
-    config['general_input']['scenario']           = 'beam'
-    config['general_input']['system']             = 'w7x_ar16'
-    config['general_input']['shot']               = 180707017
-    config['general_input']['dryrun']             = False
-
-    # Temperature that the optical elements will be cooled to (kelvin)
-    config['general_input']['xics_temp'] = 273.0
+    config['general']['number_of_iter']                = 1
+    config['general']['number_of_runs']                = 1
+    
+    config['general']['output_path']                   = '/u/npablant/code/mirproject/xicsrt/results/temp'
+    config['general']['save_images']                   = False
+    config['general']['random_seed']                   = 0
 
 
-    # -----------------------------------------------------------------------------
-    ## Load plasma properties
+    # -----------------------
+    ## Plasma properties
 
     # bundle_count
     #   Increase to improve both plasma modeling and raytracing accuracy.
@@ -69,34 +44,37 @@ def get_config():
     #   Increase to improve raytracing accuracy
     #   Decrease to improve plasma modeling
     #
-    #   This currently only has an effect of bundle_type is 'voxel'.
+    #   This only has an effect of bundle_type is 'voxel'.
 
-    config['source_input']['origin']              = np.array([-5.5, 0, 0])
-    config['source_input']['zaxis']               = np.array([0, 0, 1])
-    config['source_input']['xaxis']               = np.array([0, 1, 0])
-    config['source_input']['target']              = np.array([0, 0, 0])
-    config['source_input']['width']               = 2.0
-    config['source_input']['height']              = 2.0
-    config['source_input']['depth']               = 2.0
+    config['sources']['plasma'] = OrderedDict()
+    config['sources']['plasma']['class_name']          = 'XicsrtPlasmaW7xSimple'
+    config['sources']['plasma']['origin']              = [-5.15, 1.95, 0.15]
+    config['sources']['plasma']['zaxis']               = [0, 0, 1]
+    config['sources']['plasma']['xaxis']               = [0, 1, 0]
+    config['sources']['plasma']['target']              = [0, 0, 0]
+    config['sources']['plasma']['width']               = 0.5
+    config['sources']['plasma']['height']              = 1.7
+    config['sources']['plasma']['depth']               = 1.5
 
-    config['source_input']['major_radius']        = 6.2
-    config['source_input']['minor_radius']        = 2.0
-
-    config['source_input']['use_poisson']         = True
-    config['source_input']['time_resolution']     = 0.01
-    config['source_input']['bundle_count']        = 20
-    config['source_input']['bundle_volume']       = 0.01**3
-    config['source_input']['bundle_type']         = 'point'
-    config['source_input']['max_rays']            = 1e7
+    config['sources']['plasma']['use_poisson']         = True
+    config['sources']['plasma']['time_resolution']     = 1e-4
+    config['sources']['plasma']['bundle_count']        = 1e4
+    config['sources']['plasma']['bundle_volume']       = 0.01**3
+    config['sources']['plasma']['bundle_type']         = 'point'
+    config['sources']['plasma']['max_rays']            = 1e7
     
-    config['source_input']['spread']              = 1.0       # Angular spread (degrees)
-    config['source_input']['mass_number']         = 39.948    # Argon mass (AMU)
-    config['source_input']['wavelength']          = 3.9492    # Line location (angstroms)
-    config['source_input']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
-    config['source_input']['emissivity']          = 1e12      # Emissivity photons/s/m-3
-    config['source_input']['temperature']         = 1000      # Ion temperature (eV)
-    config['source_input']['velocity']            = np.array([0.0,0.0,0.0])      # Velocity in m/s
-    config['source_input']['wout_file'] = '/u/npablant/data/w7x/vmec/webservice/w7x_ref_172/wout.nc'
+    config['sources']['plasma']['emissivity_scale']    = 1e14
+    config['sources']['plasma']['temperature_scale']   = 1.5e3
+    config['sources']['plasma']['velocity_scale']      = 10e3
+
+    config['sources']['plasma']['spread']              = 1.0       # Angular spread (degrees)
+    config['sources']['plasma']['mass_number']         = 39.948    # Argon mass (AMU)
+    config['sources']['plasma']['wavelength']          = 3.9492    # Line location (angstroms)
+    config['sources']['plasma']['linewidth']           = 1.129e+14 # Natural linewith (1/s)
+    config['sources']['plasma']['emissivity']          = 1e12      # Emissivity photons/s/m-3
+    config['sources']['plasma']['temperature']         = 1000      # Ion temperature (eV)
+    config['sources']['plasma']['velocity']            = np.array([0.0,0.0,0.0]) # Velocity in m/s
+    config['sources']['plasma']['wout_file']           = '/u/npablant/data/w7x/vmec/webservice/w7x_ref_172/wout.nc'
 
 
     # -----------------------------------------------------------------------------
@@ -109,59 +87,75 @@ def get_config():
     # Graphite Rocking Curve FWHM in radians
     # Taken from XOP: 8765 urad
 
-    config['crystal_input']['origin'] = [-8.6068906812402943e+00,  3.2920701414857128e+00,  7.3539419063116812e-02]
-    config['crystal_input']['zaxis']  = [ 5.3519444199135369e-01, -8.4134020987066793e-01,  7.5588097716134145e-02]
-    config['crystal_input']['xaxis']  = [-8.4083033364093662e-01, -5.3917440198461375e-01, -4.7909438253911078e-02]
+    config['optics']['crystal'] = OrderedDict()
+    config['optics']['crystal']['class_name']          = 'XicsrtOpticCrystalSpherical'
+    config['optics']['crystal']['origin'] = [-8.6068906812402943e+00,  3.2920701414857128e+00,  7.3539419063116812e-02]
+    config['optics']['crystal']['zaxis']  = [ 5.3519444199135369e-01, -8.4134020987066793e-01,  7.5588097716134145e-02]
+    config['optics']['crystal']['xaxis']  = [-8.4083033364093662e-01, -5.3917440198461375e-01, -4.7909438253911078e-02]
 
-    config['crystal_input']['width']              = 0.040
-    config['crystal_input']['height']             = 0.100
-    config['crystal_input']['radius']             = 1.4503999999999999e+00
+    config['optics']['crystal']['width']               = 0.040
+    config['optics']['crystal']['height']              = 0.100
+    config['optics']['crystal']['radius']              = 1.4503999999999999e+00
 
 
     # Rocking curve FWHM in radians.
     # This is taken from x0h for quarts 1,1,-2,0
     # Darwin Curve, sigma: 48.070 urad
     # Darwin Curve, pi:    14.043 urad
-    config['crystal_input']['crystal_spacing']            = 2.4567600000000001e+00
-    config['crystal_input']['reflectivity']       = 1
-    config['crystal_input']['rocking_type']       = 'gaussian'
-    config['crystal_input']['rocking_fwhm']       = 48.070e-6
-    config['crystal_input']['pixel_size']         = None
+    config['optics']['crystal']['crystal_spacing']     = 2.4567600000000001e+00
+    config['optics']['crystal']['reflectivity']        = 1
+    config['optics']['crystal']['rocking_type']        = 'gaussian'
+    config['optics']['crystal']['rocking_fwhm']        = 48.070e-6
+    config['optics']['crystal']['pixel_size']          = 0.040/100
 
-    config['crystal_input']['therm_expand']       = 5.9e-6
-    config['crystal_input']['mix_factor']         = 1.0
+    config['optics']['crystal']['do_bragg_check']     = True
+    config['optics']['crystal']['do_miss_check']      = True
 
-    config['crystal_input']['do_bragg_checks']    = True
-    config['crystal_input']['do_miss_checks']     = True
-    
-    config['crystal_input']['use_meshgrid']       = False
-    config['crystal_input']['mesh_points']        = False
-    config['crystal_input']['mesh_faces']         = False
 
     # -----------------------------------------------------------------------------
     ## Load detector properties
 
-    config['detector_input']['origin'] = [-8.6738784071336230e+00,  2.1399015950319900e+00,  1.0399766774640780e-01]
-    config['detector_input']['zaxis']  = [ 5.9585883616345793e-02,  9.9785215153757567e-01, -2.7214079912620245e-02]
-    config['detector_input']['xaxis']  = [-9.9464373245879134e-01,  5.7043480061171735e-02, -8.6196791488749647e-02]
+    config['optics']['detector'] = OrderedDict()
+    config['optics']['detector']['class_name']         = 'XicsrtOpticDetector'
+    
+    config['optics']['detector']['origin'] = [-8.6738784071336230e+00,  2.1399015950319900e+00,  1.0399766774640780e-01]
+    config['optics']['detector']['zaxis']  = [ 5.9585883616345793e-02,  9.9785215153757567e-01, -2.7214079912620245e-02]
+    config['optics']['detector']['xaxis']  = [-9.9464373245879134e-01,  5.7043480061171735e-02, -8.6196791488749647e-02]
 
-    config['detector_input']['pixel_size']        = 0.000172
-    config['detector_input']['horizontal_pixels'] = 195
-    config['detector_input']['vertical_pixels']   = 1475
-    config['detector_input']['width']             = (config['detector_input']['horizontal_pixels']
-                                                    * config['detector_input']['pixel_size'])
-    config['detector_input']['height']            = (config['detector_input']['vertical_pixels']
-                                                    * config['detector_input']['pixel_size'])
+    config['optics']['detector']['pixel_size']         = 0.000172
+    config['optics']['detector']['pixel_width']        = 195
+    config['optics']['detector']['pixel_height']       = 1475
+    config['optics']['detector']['width']              = (config['optics']['detector']['pixel_width']
+                                                          * config['optics']['detector']['pixel_size'])
+    config['optics']['detector']['height']             = (config['optics']['detector']['pixel_height']
+                                                          * config['optics']['detector']['pixel_size'])
 
-    config['detector_input']['do_miss_checks']    = True
-
-    config['detector_input']['use_meshgrid'] = False
-    config['detector_input']['mesh_points'] = None
-    config['detector_input']['mesh_faces'] = None
-
+    config['optics']['detector']['do_miss_check']     = True
 
     return config
 
 
+def initialize(config):
+
+    # Setup our plasma box to be radial.
+    config['sources']['plasma']['zaxis'] = config['sources']['plasma']['origin'].copy()
+    config['sources']['plasma']['zaxis'] /= np.linalg.norm(config['sources']['plasma']['zaxis'])
+
+    config['sources']['plasma']['xaxis'] = np.cross(config['sources']['plasma']['zaxis'], np.array([0,0,1]))
+    config['sources']['plasma']['xaxis'] /= np.linalg.norm(config['sources']['plasma']['xaxis'])
+
+    config['sources']['plasma']['target'] = config['optics']['crystal']['origin'].copy()
+
+    return config
 
 
+def make_config_file():
+    """
+    Generate a configuration dictionary and save it to a config.json file.
+    """
+    config = xicsrt_w7x_npablant.get_config()
+    config = xicsrt_w7x_npablant.initialize(config)
+    filepath = os.path.join(config['general']['output_path'], 'config.json')
+    xicsrt_input.save_config(filepath, config)
+
+    return config
