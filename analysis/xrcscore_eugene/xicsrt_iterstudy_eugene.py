@@ -184,8 +184,8 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['crystal_input']['do_bragg_checks']    = True
-    config['crystal_input']['do_miss_checks']     = True
+    config['crystal_input']['do_bragg_check']     = True
+    config['crystal_input']['do_miss_check']      = True
     config['crystal_input']['rocking_type']       = 'FILE'
     config['crystal_input']['use_meshgrid']       = False
     config['crystal_input']['rocking_mix']        = 1.0
@@ -245,8 +245,8 @@ def get_config():
     sigma and pi are polarized rocking curves. 'rocking_mix' interpolates between them.
     A 'rocking_mix' of 1.0 is 100% sigma curve, while 0.0 is 100% pi curve.
     """
-    config['graphite_input']['do_bragg_checks']   = True
-    config['graphite_input']['do_miss_checks']    = True
+    config['graphite_input']['do_bragg_check']    = True
+    config['graphite_input']['do_miss_check']     = True
     config['graphite_input']['rocking_type']      = "GAUSS"
     config['graphite_input']['use_meshgrid']      = True
     config['graphite_input']['rocking_mix']       = 1.0
@@ -290,7 +290,7 @@ def get_config():
     setting 'do_miss_checks'  to False prevents the detector from masking missed rays
     'pixel_size' is in (meters)
     """
-    config['detector_input']['do_miss_checks']    = True
+    config['detector_input']['do_miss_check']     = True
     
     config['detector_input']['origin']            = np.array([0.0, 0.0, 0.0])
     config['detector_input']['zaxis']             = np.array([0.0, 0.0, 0.0])
@@ -438,7 +438,7 @@ if runtype == 'multi':
     output, meta = run_multi(config_multi)
 
 if runtype == 'save':
-    config_multi = get_config_multi(6)
+    config_multi = get_config_multi(5)
     config_multi = initialize_multi(config_multi)
     save_config(filepath, config_multi)
         

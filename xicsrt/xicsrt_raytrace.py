@@ -70,10 +70,10 @@ def raytrace_multi(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
-
-    
     num_runs = config['general']['number_of_runs']
+    np.random.seed(config['general']['random_seed'])
     output_list = []
+    
     for ii in range(num_runs):
         logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         config_run = deepcopy(config)
@@ -112,11 +112,17 @@ def raytrace_single(config):
     pathlist.extend(config['general']['pathlist_default'])
 
     # Setup the dispatchers.
+    filters = XicsrtDispatcher(config['filters'], pathlist)
     sources = XicsrtDispatcher(config['sources'], pathlist)
     optics  = XicsrtDispatcher(config['optics'],  pathlist)
-
+    
+    filters.instantiate_objects()
+    filters.initialize()
+    
     sources.instantiate_objects()
+    sources.apply_filters(filters)
     sources.initialize()
+    
     rays = sources.generate_rays(history=False)
     
     optics.instantiate_objects()

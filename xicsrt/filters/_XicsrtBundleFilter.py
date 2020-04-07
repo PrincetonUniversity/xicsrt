@@ -13,6 +13,9 @@ class XicsrtBundleFilter(ConfigObject):
     """
     A base class for bundle filters.
     """    
+    def initialize(self):
+        super().initialize()
+    
     def get_default_config(self):
         config = super().get_default_config()
         return config

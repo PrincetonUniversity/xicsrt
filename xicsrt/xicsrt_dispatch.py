@@ -87,6 +87,17 @@ class XicsrtDispatcher():
         profiler.stop('Dispatcher: raytrace')
         
         return rays
+    
+    def apply_filters(self, filters):
+        #used by source dispatcher objects to apply filters to sources
+        #'filters' is a filter dispatcher object that contains filter objects
+        #'self' should be a source dispatcher object
+        
+        #read the filter list for each source and dispatch the matching filters
+        for key in self.objects:      
+            for filter in filters.objects:
+                if str(filters.objects[filter].name) in self.objects[key].config['filter_list']:
+                    self.objects[key].filter_objects.append(filters.objects[filter])
             
     def instantiate_objects(self):
         obj_info = self.find_xicsrt_objects(self.pathlist)

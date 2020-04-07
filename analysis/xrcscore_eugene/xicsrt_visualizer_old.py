@@ -39,52 +39,53 @@ def visualize_layout(config):
     corners         = np.zeros([5,5,3], dtype = np.float64)
     
     ## Define variables
-    graphite_mesh   = config['optics']['graphite']['use_meshgrid']
-    crystal_mesh    = config['optics']['crystal']['use_meshgrid']
+    scenario        = config['general_input']['scenario']
+    graphite_mesh   = config['graphite_input']['use_meshgrid']
+    crystal_mesh    = config['crystal_input']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     #origin[Optical Element Number, 3D Coordinates]
-    #origin[0,:]   = config['sources']['focused']['origin']
-    origin[1,:]   = config['optics']['graphite']['origin']
-    origin[2,:]   = config['optics']['crystal']['origin']
-    origin[3,:]   = config['optics']['detector']['origin']
-    origin[4,:]   = config['sources']['plasma']['origin']
+    origin[0,:]   = config['source_input']['origin']
+    origin[1,:]   = config['graphite_input']['origin']
+    origin[2,:]   = config['crystal_input']['origin']
+    origin[3,:]   = config['detector_input']['origin']
+    origin[4,:]   = config['plasma_input']['origin']
     #zaxis[Optical Element Number, 3D Coordinates]
-    #normal[0,:]     = config['sources']['focused']['zaxis']
-    normal[1,:]     = config['optics']['graphite']['zaxis']
-    normal[2,:]     = config['optics']['crystal']['zaxis']
-    normal[3,:]     = config['optics']['detector']['zaxis']
-    normal[4,:]     = config['sources']['plasma']['zaxis']
+    normal[0,:]     = config['source_input']['zaxis']
+    normal[1,:]     = config['graphite_input']['zaxis']
+    normal[2,:]     = config['crystal_input']['zaxis']
+    normal[3,:]     = config['detector_input']['zaxis']
+    normal[4,:]     = config['plasma_input']['zaxis']
     #orient_x[Optical Element Number, 3D Coordinates]
-    #orient_x[0,:]   = config['sources']['focused']['xaxis']
-    orient_x[1,:]   = config['optics']['graphite']['xaxis']
-    orient_x[2,:]   = config['optics']['crystal']['xaxis']
-    orient_x[3,:]   = config['optics']['detector']['xaxis']
-    orient_x[4,:]   = config['sources']['plasma']['xaxis']
+    orient_x[0,:]   = config['source_input']['xaxis']
+    orient_x[1,:]   = config['graphite_input']['xaxis']
+    orient_x[2,:]   = config['crystal_input']['xaxis']
+    orient_x[3,:]   = config['detector_input']['xaxis']
+    orient_x[4,:]   = config['plasma_input']['xaxis']
     #orient_y[Optical Element Number, 3D Coordinates]
-    #orient_y[0,:]   = np.cross(normal[0,:], orient_x[0,:]) 
+    orient_y[0,:]   = np.cross(normal[0,:], orient_x[0,:]) 
     orient_y[1,:]   = np.cross(normal[1,:], orient_x[1,:]) 
     orient_y[2,:]   = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:]   = np.cross(normal[3,:], orient_x[3,:])
     orient_y[4,:]   = np.cross(normal[4,:], orient_x[4,:])
     
-    #orient_y[0,:]  /= np.linalg.norm(orient_y[0,:])
+    orient_y[0,:]  /= np.linalg.norm(orient_y[0,:])
     orient_y[1,:]  /= np.linalg.norm(orient_y[1,:])
     orient_y[2,:]  /= np.linalg.norm(orient_y[2,:])
     orient_y[3,:]  /= np.linalg.norm(orient_y[3,:])
     orient_y[4,:]  /= np.linalg.norm(orient_y[4,:])
     #width[Optical Element Number]
-    #width[0]        = config['sources']['focused']['width']
-    width[1]        = config['optics']['graphite']['width'] 
-    width[2]        = config['optics']['crystal']['width']
-    width[3]        = config['optics']['detector']['width']
-    width[4]        = config['sources']['plasma']['width']
+    width[0]        = config['source_input']['width']
+    width[1]        = config['graphite_input']['width'] 
+    width[2]        = config['crystal_input']['width']
+    width[3]        = config['detector_input']['width']
+    width[4]        = config['plasma_input']['width']
     #height[Optical Element Number]
-    #height[0]       = config['sources']['focused']['height']
-    height[1]       = config['optics']['graphite']['height']
-    height[2]       = config['optics']['crystal']['height']
-    height[3]       = config['optics']['detector']['height']
-    height[4]       = config['sources']['plasma']['height']
+    height[0]       = config['source_input']['height']
+    height[1]       = config['graphite_input']['height']
+    height[2]       = config['crystal_input']['height']
+    height[3]       = config['detector_input']['height']
+    height[4]       = config['plasma_input']['height']
     #corners[Optical Element Number, Corner Number, 3D Coordinates]
     corners[:,0,:]  = (origin[:,:] - (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))   
     corners[:,1,:]  = (origin[:,:] + (width[:] * orient_x[:,:] / 2) + (height[:] * orient_y[:,:] / 2))   
@@ -99,26 +100,138 @@ def visualize_layout(config):
                   'corners':corners}
 
     ## Plot everything
-    #resize and recenter axes on graphite
-    view_center = 3
+    if scenario == "REAL" or scenario == "PLASMA":
+        #resize and recenter axes on graphite
+        view_center = 3
+        
+        #plasma sightline[3D Coordinates]
+        plasma_sight = config['filter_input']['origin'] + 7 * config['filter_input']['direction']
+        
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = plasma_sight
+            beamline[1,:] = origin[1,:]
+            beamline[2,:] = origin[2,:]
+            beamline[3,:] = origin[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = origin[3,:]
+            beamline[1,:] = origin[2,:]
+            beamline[2,:] = origin[1,:]
+            beamline[3,:] = plasma_sight
+                    
+        #draw plasma, graphite, crystal, detector
+        draw_flux(config, ax)
+        draw_graphite(config, config_vis, graphite_mesh, ax)
+        draw_crystal(config, config_vis, crystal_mesh, True, ax)
+        draw_detector(config, config_vis, ax)
     
-    #plasma sightline[3D Coordinates]
-    sightline = config['filters']['sightline']
-    plasma_sight = sightline['origin'] + 7 * sightline['direction']
+    elif scenario == "THROUGHPUT":
+        #resize and recenter axes on plasma
+        view_center = 4
+        
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = origin[4,:]
+            beamline[1,:] = origin[1,:]
+            beamline[2,:] = origin[2,:]
+            beamline[3,:] = origin[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = origin[3,:]
+            beamline[1,:] = origin[2,:]
+            beamline[2,:] = origin[1,:]
+            beamline[3,:] = origin[4,:]
+                    
+        #draw plasma, graphite, crystal, detector
+        draw_torus(config, config_vis, ax)
+        draw_graphite(config, config_vis, graphite_mesh, ax)
+        draw_crystal(config, config_vis, crystal_mesh, True, ax)
+        draw_detector(config, config_vis, ax)
+        
+    elif scenario == "BEAM" or scenario == "MODEL":
+        #resize and recenter axes on source
+        view_center = 1
+       
+        #draw beamline
+        beamline = np.zeros([4,3], dtype = np.float64)
+        if config['general_input']['backwards_raytrace'] is False:
+            beamline[0,:] = origin[0,:]
+            beamline[1,:] = origin[1,:]
+            beamline[2,:] = origin[2,:]
+            beamline[3,:] = origin[3,:]
+            
+        if config['general_input']['backwards_raytrace'] is True:
+            beamline[0,:] = origin[3,:]
+            beamline[1,:] = origin[2,:]
+            beamline[2,:] = origin[1,:]
+            beamline[3,:] = origin[0,:]
+                    
+        #draw source, graphite, crystal, detector
+        draw_source(config, config_vis, ax)
+        draw_graphite(config, config_vis, graphite_mesh, ax)
+        draw_crystal(config, config_vis, crystal_mesh, True, ax)
+        draw_detector(config, config_vis, ax)
+        
+    elif scenario == "MANFRED":
+        #resize and recenter axes on crystal
+        view_center = 2
+        
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = origin[0,:]
+        beamline[1,:] = origin[2,:]
+        beamline[2,:] = origin[3,:]
+        
+        #draw plasma, graphite, crystal, detector
+        draw_source(config, config_vis, ax)
+        draw_crystal(config, config_vis, crystal_mesh, False, ax)
+        draw_detector(config, config_vis, ax)
+        
+    elif scenario == "CRYSTAL":
+        #resize and recenter axes on crystal
+        view_center = 2
+        
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = origin[0,:]
+        beamline[1,:] = origin[2,:]
+        beamline[2,:] = origin[3,:]
+        
+        #draw plasma, graphite, crystal, detector
+        draw_source(config, config_vis, ax)
+        draw_crystal(config, config_vis, crystal_mesh, True, ax)
+        draw_detector(config, config_vis, ax)
     
-    #draw beamline
-    beamline = np.zeros([4,3], dtype = np.float64)
-    beamline[0,:] = origin[3,:]
-    beamline[1,:] = origin[2,:]
-    beamline[2,:] = origin[1,:]
-    beamline[3,:] = plasma_sight
-                
-    #draw plasma, graphite, crystal, detector
-    draw_flux(config, ax)
-    draw_graphite(config, config_vis, graphite_mesh, ax)
-    draw_crystal(config, config_vis, crystal_mesh, True, ax)
-    draw_detector(config, config_vis, ax)
-      
+    elif scenario == "GRAPHITE":
+        #resize and recenter axes on graphite
+        view_center = 1     
+        
+        #draw beamline
+        beamline = np.zeros([3,3], dtype = np.float64)
+        beamline[0,:] = origin[0,:]
+        beamline[1,:] = origin[1,:]
+        beamline[2,:] = origin[3,:]
+
+        #draw source, graphite, detector
+        draw_source(config, config_vis, ax)
+        draw_graphite(config, config_vis, graphite_mesh, ax)
+        draw_detector(config, config_vis, ax)
+        
+    elif scenario == "SOURCE":
+        #resize and recenter axes on source
+        view_center = 0     
+        
+        #draw beamline
+        beamline = np.zeros([2,3], dtype = np.float64)
+        beamline[0,:] = origin[0,:]
+        beamline[1,:] = origin[3,:]
+        
+        #draw source, detector
+        draw_source(config, config_vis, ax)
+        draw_detector(config, config_vis, ax)   
     
     scale = 10
     ax.plot3D(beamline[:,0], beamline[:,1], beamline[:,2], "black", zorder = 5)
@@ -129,7 +242,7 @@ def visualize_layout(config):
     return plt, ax
 
 def draw_flux(config, ax):
-    stelltools.initialize_from_wout(config['sources']['plasma']['wout_file'])
+    stelltools.initialize_from_wout(config['plasma_input']['wout_file'])
     
     #flux toroid resolution (number of points)
     num_r = 1
@@ -166,9 +279,9 @@ def draw_flux(config, ax):
     
     #plot the plasma bounding box
     plasma_corners = np.zeros([8,3], dtype = np.float64)
-    dx = config['sources']['plasma']['width']  / 2
-    dy = config['sources']['plasma']['height'] / 2
-    dz = config['sources']['plasma']['depth']  / 2
+    dx = config['plasma_input']['width']  / 2
+    dy = config['plasma_input']['height'] / 2
+    dz = config['plasma_input']['depth']  / 2
     
     plasma_corners[0,:] = [ dx, dy, dz]
     plasma_corners[1,:] = [-dx, dy, dz]
@@ -178,15 +291,15 @@ def draw_flux(config, ax):
     plasma_corners[5,:] = [-dx, dy,-dz]
     plasma_corners[6,:] = [ dx,-dy,-dz]
     plasma_corners[7,:] = [-dx,-dy,-dz]
-    plasma_corners     += config['sources']['plasma']['origin']
+    plasma_corners     += config['plasma_input']['origin']
     
     ax.scatter(plasma_corners[:,0], plasma_corners[:,1], plasma_corners[:,2], color = "yellow")
     
     return ax
 
 def draw_torus(config, ax):
-    major_radius = config['sources']['plasma']['major_radius']
-    minor_radius = config['sources']['plasma']['minor_radius']
+    major_radius = config['plasma_input']['major_radius']
+    minor_radius = config['plasma_input']['minor_radius']
     angle = np.linspace(0, np.pi * 2, 36)
     theta, phi = np.meshgrid(angle, angle)
     
@@ -219,8 +332,8 @@ def draw_graphite(config, config_vis, graphite_mesh, ax):
     normal      = config_vis['normal']
     corners     = config_vis['corners']
 
-    mesh_points = config['optics']['graphite']['mesh_points']
-    mesh_faces  = config['optics']['graphite']['mesh_faces']
+    mesh_points = config['graphite_input']['mesh_points']
+    mesh_faces  = config['graphite_input']['mesh_faces']
     
     if graphite_mesh is True:
         x_array = mesh_points[:,0]
@@ -240,8 +353,9 @@ def draw_graphite(config, config_vis, graphite_mesh, ax):
 
 def draw_crystal(config, config_vis, crystal_mesh, crystal_guides, ax):
     #unpack variables
-    mesh_points     = config['optics']['crystal']['mesh_points']
-    mesh_faces      = config['optics']['crystal']['mesh_faces']
+    scenario        = config['general_input']['scenario']
+    mesh_points     = config['crystal_input']['mesh_points']
+    mesh_faces      = config['crystal_input']['mesh_faces']
     
     origin          = config_vis['origin']
     normal          = config_vis['normal']
@@ -257,39 +371,44 @@ def draw_crystal(config, config_vis, crystal_mesh, crystal_guides, ax):
     saggit_line     = np.zeros([2,3], dtype = np.float64)
     
     #crystal optical properties [Float64]
-    crystal_bragg   = bragg_angle(config['sources']['plasma']['wavelength'],
-                                  config['optics']['crystal']['crystal_spacing'])
-    meridi_focus    = (config['optics']['crystal']['radius']
+    crystal_bragg   = bragg_angle(config['source_input']['wavelength'],
+                                  config['crystal_input']['crystal_spacing'])
+    meridi_focus    = (config['crystal_input']['radius']
                         * np.sin(crystal_bragg))
     sagitt_focus    = - meridi_focus / np.cos(2 * crystal_bragg)
     
     ## The crystal's radius of curvature and Rowland circle
     #crystal_center[3D Coodrinates]
-    crystal_center  =(config['optics']['crystal']['radius'] 
-                    * config['optics']['crystal']['zaxis']
-                    + config['optics']['crystal']['origin'])
+    crystal_center  =(config['crystal_input']['radius'] 
+                    * config['crystal_input']['zaxis']
+                    + config['crystal_input']['origin'])
     
-    rowland_center  =(config['optics']['crystal']['radius'] / 2
-                    * config['optics']['crystal']['zaxis']
-                    + config['optics']['crystal']['origin'])
+    rowland_center  =(config['crystal_input']['radius'] / 2
+                    * config['crystal_input']['zaxis']
+                    + config['crystal_input']['origin'])
     
     #crystal_circle[Point Number, 3D Coordinates], 36 evenly-spaced points
-    crystal_circle  = config['optics']['crystal']['radius'] * (
+    crystal_circle  = config['crystal_input']['radius'] * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     crystal_circle += crystal_center
     
-    tangent_circle    = config['optics']['crystal']['radius'] * np.cos(crystal_bragg) * (
+    tangent_circle    = config['crystal_input']['radius'] * np.cos(crystal_bragg) * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     tangent_circle   += crystal_center
     
-    rowland_circle  = config['optics']['crystal']['radius'] * 0.5 * (
+    rowland_circle  = config['crystal_input']['radius'] * 0.5 * (
             (orient_y[2,:] * np.cos(circle_points)) + (normal[2,:] * np.sin(circle_points)))
     rowland_circle += rowland_center
     
     ## The crystal's saggital and meridional foci
     inbound_vector   = np.zeros([3], dtype = np.float64)
-    inbound_vector = origin[1,:] - origin[2,:]
-    inbound_vector/= np.linalg.norm(inbound_vector)
+    if scenario == "REAL" or scenario == "PLASMA" or scenario == "BEAM":
+        inbound_vector = origin[1,:] - origin[2,:]
+        inbound_vector/= np.linalg.norm(inbound_vector)
+        
+    if scenario == "THROUGHPUT" or scenario == "CRYSTAL":
+        inbound_vector = origin[0,:] - origin[2,:]
+        inbound_vector/= np.linalg.norm(inbound_vector)
         
     #meridi_line[Point Number, 3D Coordinates], 2 points (one above, one below)
     meridi_line[0,:] = origin[2,:] + meridi_focus * inbound_vector + 0.1 * orient_x[2,:]

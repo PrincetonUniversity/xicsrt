@@ -16,7 +16,7 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
     A bundle filter based on proximity to sightline vectors.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, initialize=None):
         super().__init__(config)    
         
     def get_default_config(self):

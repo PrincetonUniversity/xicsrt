@@ -30,7 +30,7 @@ class XicsrtPlasmaGeneric(TraceObject):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filter_list = []
+        self.filter_objects = []
 
     def get_default_config(self):
         config = super().get_default_config()
@@ -58,7 +58,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         config['bundle_volume']   = 1e-3
         config['bundle_type']     = 'voxel'
         
-        config['filters']         = []
+        config['filter_list']     = []
         return config
  
     def initialize(self):
@@ -69,8 +69,8 @@ class XicsrtPlasmaGeneric(TraceObject):
         self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
         self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread'] * np.pi / 360)**2
         
-    def setup_bundles(self):
         
+    def setup_bundles(self):
         if self.param['bundle_type'] == 'point':
             self.param['voxel_size'] = 0.0
         elif self.param['bundle_type'] == 'voxel':
@@ -97,7 +97,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         return bundle_input
 
     def bundle_filter(self, bundle_input):
-        for filter in self.filter_list:
+        for filter in self.filter_objects:
             bundle_input = filter.filter(bundle_input)
         return bundle_input
     

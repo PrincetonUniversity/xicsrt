@@ -19,7 +19,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         config['crystal_spacing'] = 0.0
         config['reflectivity']    = 1.0
 
-        config['do_bragg_check']    = True
+        config['do_bragg_check']     = True
         config['rocking_type']       = 'gaussian'
         config['rocking_fwhm']       = None
         config['rocking_sigma_file'] = None
