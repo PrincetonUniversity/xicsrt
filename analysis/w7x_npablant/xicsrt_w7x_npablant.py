@@ -27,12 +27,15 @@ def get_config():
 
     # ----------------------------
     # General raytracer properties
-    config['general']['number_of_iter']                = 1
-    config['general']['number_of_runs']                = 1
+    config['general']['number_of_iter']                = 10
+    config['general']['number_of_runs']                = 50
     
     config['general']['output_path']                   = '/u/npablant/code/mirproject/xicsrt/results/temp'
+    config['general']['output_suffix']                 = '00'
+    
     config['general']['save_images']                   = False
-    config['general']['random_seed']                   = 0
+    config['general']['save_run_images']               = True
+    config['general']['random_seed']                   = None
 
 
     # -----------------------

@@ -25,6 +25,11 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
     study undertaken by N. Pablant in 2020-02.
     """
 
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['enable_velocity'] = True
+        return config
+    
     def get_emissivity(self, flx):
         """
         A made up emissivity profile with moderate hollowness.
@@ -80,43 +85,44 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         
         num_points = flx.shape[0]
         output = np.zeros((num_points, 3))
-        
-        rho = np.sqrt(flx[:,0])
-        
-        coeff = np.array(
-            [5.3768, 0.0000, 32.6873, 0.0000
-             ,-179.0737, 0.0000, 65.3916, 0.0000
-             ,557.5741, 0.0000, -338.5262, 0.0000
-             ,-1697.5982, 0.0000, 3447.8770, 0.0000
-             ,-2958.4238, 0.0000, 1372.4606, 0.0000
-             ,-341.9065, 0.0000, 34.1610, 0.0000
-             ,0.0000])
-        
-        value = np.polyval(coeff, rho)
 
-        for ii in range(num_points):
-            # Get the direction normal to the flux surface.
-            # This will point away from the magnetic axis.
-            gradrho = stelltools.gradrho_car_from_flx(flx[ii,:])
-            radial = vector.normalize(gradrho)
+        if self.param['enable_velocity']:
+            rho = np.sqrt(flx[:,0])
 
-            # Define the parallel direction as parallel to B.
-            b_car = stelltools.b_car_from_flx(flx[ii,:])
-            parallel = vector.normalize(b_car)
+            coeff = np.array(
+                [5.3768, 0.0000, 32.6873, 0.0000
+                 ,-179.0737, 0.0000, 65.3916, 0.0000
+                 ,557.5741, 0.0000, -338.5262, 0.0000
+                 ,-1697.5982, 0.0000, 3447.8770, 0.0000
+                 ,-2958.4238, 0.0000, 1372.4606, 0.0000
+                 ,-341.9065, 0.0000, 34.1610, 0.0000
+                 ,0.0000])
 
-            # Now we can define the perpendicular direction.
-            perpendicular = vector.normalize(np.cross(radial, parallel))
+            value = np.polyval(coeff, rho)
 
-            # Calculate the value of <|grad(rho)|>/<|B|>, which is used to scale
-            # the vp factor.
-            fsa_gradrho = stelltools.fsa_gradrho_from_s(flx[ii, 0])
-            fsa_bmod = stelltools.fsa_modb_from_s(flx[ii, 0])
-            norm_vp_factor = fsa_gradrho/fsa_bmod
+            for ii in range(num_points):
+                # Get the direction normal to the flux surface.
+                # This will point away from the magnetic axis.
+                gradrho = stelltools.gradrho_car_from_flx(flx[ii,:])
+                radial = vector.normalize(gradrho)
 
-            modb = np.linalg.norm(b_car)
-            vp_factor = vector.magnitude(gradrho)/modb/norm_vp_factor
-            
-            output[ii,:] = perpendicular*value[ii]/vp_factor
+                # Define the parallel direction as parallel to B.
+                b_car = stelltools.b_car_from_flx(flx[ii,:])
+                parallel = vector.normalize(b_car)
+
+                # Now we can define the perpendicular direction.
+                perpendicular = vector.normalize(np.cross(radial, parallel))
+
+                # Calculate the value of <|grad(rho)|>/<|B|>, which is used to scale
+                # the vp factor.
+                fsa_gradrho = stelltools.fsa_gradrho_from_s(flx[ii, 0])
+                fsa_bmod = stelltools.fsa_modb_from_s(flx[ii, 0])
+                norm_vp_factor = fsa_gradrho/fsa_bmod
+
+                modb = np.linalg.norm(b_car)
+                vp_factor = vector.magnitude(gradrho)/modb/norm_vp_factor
+
+                output[ii,:] = perpendicular*value[ii]/vp_factor
 
         profiler.stop('get_velocity')
         return output
