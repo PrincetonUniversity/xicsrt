@@ -31,6 +31,10 @@ def raytrace(config, internal=False):
     visualizaiton while still limited memory usage.
     """
     profiler.start('raytrace')
+
+    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
+    np.random.seed(config['general']['random_seed'])
+
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     
@@ -73,11 +77,18 @@ def raytrace_multi(config):
 
     
     num_runs = config['general']['number_of_runs']
+    random_seed = config['general']['random_seed']
+    
     output_list = []
     for ii in range(num_runs):
         logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         config_run = deepcopy(config)
         config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
+
+        # Make sure each run uses a unique random seed.
+        if random_seed is not None:
+            random_seed += ii
+        config_run['general']['random_seed'] = random_seed
         
         iteration = raytrace(config_run, internal=True)
         output_list.append(iteration)
