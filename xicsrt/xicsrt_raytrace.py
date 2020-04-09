@@ -123,11 +123,11 @@ def raytrace_single(config):
     sources.apply_filters(filters)
     sources.initialize()
     
-    rays = sources.generate_rays(history=False)
+    rays = sources.generate_rays(history=True)
     
     optics.instantiate_objects()
     optics.initialize()
-    rays = optics.raytrace(rays, history=False, images=True)
+    rays = optics.raytrace(rays, history=True, images=True)
 
     # Combine sources and optics.
     meta = OrderedDict()
@@ -140,20 +140,21 @@ def raytrace_single(config):
         image[key] = sources.image[key]
     for key in sources.history:
         history[key] = sources.history[key]
-
+        
     for key in optics.meta:
         meta[key] = optics.meta[key]
     for key in optics.image:
         image[key] = optics.image[key]
     for key in optics.history:
-        history[key] = optics.history[key]   
-    
+        history[key] = optics.history[key]
+    print(sources.history)
+    print(optics.history)
     output = OrderedDict()
     output['config'] = config
     output['meta'] = meta
     output['image'] = image
     output['history'] = history
-
+    
     profiler.stop('raytrace_single')
     return output
 
@@ -222,7 +223,7 @@ def combine_raytrace(input_list):
     output['lost']['meta'] = OrderedDict()
     output['lost']['history'] = OrderedDict()
 
-    num_iter = len(input_list)
+    num_iter     = len(input_list)
     key_opt_list = list(input_list[0]['total']['meta'].keys())
     key_opt_last = key_opt_list[-1]
     

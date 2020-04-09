@@ -14,17 +14,19 @@ This script creates a default configuration for a single XICS run of the ITER XR
 """
 
 import numpy as np
+import logging
 from collections import OrderedDict
 
 def get_config():
     config = OrderedDict()
     config['general']   = OrderedDict()
-    config['sources']   = OrderedDict()
     config['filters']   = OrderedDict()
+    config['sources']   = OrderedDict()
     config['optics']    = OrderedDict()
     
-    config['sources']['plasma']    = OrderedDict()
     config['filters']['sightline'] = OrderedDict()
+    #config['sources']['focused']   = OrderedDict()
+    config['sources']['plasma']    = OrderedDict()
     config['optics']['graphite']   = OrderedDict()
     config['optics']['crystal']    = OrderedDict()
     config['optics']['detector']   = OrderedDict()
@@ -37,13 +39,7 @@ def get_config():
     outpath= '/Users/Eugene/PPPL_python_project1/xics_rt_code/results/'
     config['general']['input_path']         = inpath
     config['general']['output_path']        = outpath
-    config['general']['output_suffix']      = '.tif'
-    
-    """Ray emission settings
-    'number_of_rays' typically should not exceed 1e7 unless running on a cluster
-    If more rays are necessary, increase 'number_of_runs'.
-    """
-    config['general']['number_of_rays']     = int(1.5e7)
+    config['general']['number_of_iter']     = 1
     config['general']['number_of_runs']     = 1
     
     """Raytrace run settings
@@ -58,7 +54,28 @@ def get_config():
     config['general']['save_images']        = True
     config['general']['print_results']      = True
     config['general']['random_seed']        = 12345
-    config['general']['xics_temp']          = 273.0
+    
+    config['general']['keep_meta']          = True
+    config['general']['keep_images']        = True
+    config['general']['keep_history']       = True
+    
+    config['general']['save_meta']          = True
+    config['general']['save_images']        = True
+    config['general']['save_history']       = True
+    config['general']['save_run_images']    = True
+    
+    # -------------------------------------------------------------------------
+    ## Load filter properties
+    """Sightline Settings
+    The plasma sightline is a vector that extends from the graphite 
+    pre-reflector to the plasma. This improves rendering efficiency since the 
+    plasma only needs to render bundles near the sightline.
+    The sightline has a thickness (meters)
+    """
+    config['filters']['sightline']['class_name'] = 'XicsrtBundleFilterSightline'
+    config['filters']['sightline']['origin']     = np.array([0.0, 0.0, 0.0])
+    config['filters']['sightline']['direction']  = np.array([0.0, 1.0, 0.0])
+    config['filters']['sightline']['radius']     = 0.100
     
     # -------------------------------------------------------------------------
     ## Load plasma properties
@@ -69,6 +86,7 @@ def get_config():
     'emissivity' instead, as flat step-function distributions
     All temperatures are in (eV) and emissivities are in (photons m^-3 s^-1)
     """
+    
     config['sources']['plasma']['class_name']       = 'XicsrtPlasmaVmecDatafile'
     config['sources']['plasma']['filter_list']      = ['XicsrtBundleFilterSightline']
     config['sources']['plasma']['use_poisson']      = True
@@ -97,6 +115,7 @@ def get_config():
     config['sources']['plasma']['height']           = 4.0
     config['sources']['plasma']['depth']            = 7.5
     
+
     """Bundle Settings
     The plasma works by emitting cubic ray bundles, which have their own settings
     NOTE: plasma volume, bundle volume, bundle count, and bundle_factor are 
@@ -113,7 +132,8 @@ def get_config():
     'wavelength'            is the x-ray emission line location (angstroms)
     'linewidth'             is the x-ray natural linewidth      (1/s)
     """
-    config['sources']['plasma']['max_rays']         = config['general']['number_of_rays']
+    
+    config['sources']['plasma']['max_rays']         = int(1.5e7)
     config['sources']['plasma']['bundle_type']      = 'VOXEL'
     config['sources']['plasma']['bundle_count']     = int(1e5)
     config['sources']['plasma']['bundle_volume']    = 0.01 ** 3
@@ -124,17 +144,29 @@ def get_config():
     config['sources']['plasma']['linewidth']        = 1.129e+14
     
     # -------------------------------------------------------------------------
-    ## Load filter properties
-    """Sightline Settings
-    The plasma sightline is a vector that extends from the graphite 
-    pre-reflector to the plasma. This improves rendering efficiency since the 
-    plasma only needs to render bundles near the sightline.
-    The sightline has a thickness (meters)
+    ## Load focused extended source properties 
     """
-    config['filters']['sightline']['class_name'] = 'XicsrtBundleFilterSightline'
-    config['filters']['sightline']['origin']     = np.array([0.0, 0.0, 0.0])
-    config['filters']['sightline']['direction']  = np.array([0.0, 1.0, 0.0])
-    config['filters']['sightline']['radius']     = 0.100
+    config['sources']['focused']['class_name']      = 'XicsrtSourceFocused'
+    config['sources']['focused']['filter_list']     = ['XicsrtBundleFilterSightline']
+    config['sources']['focused']['use_poisson']     = True
+    config['sources']['focused']['do_monochrome']   = False
+    config['sources']['focused']['temperature']     = 1000
+    config['sources']['focused']['intensity']       = 1e7
+    config['sources']['focused']['velocity']        = np.array([0.0,0.0,0.0])
+
+    config['sources']['focused']['origin']          = np.array([0.0, 6.2, 0.5])
+    config['sources']['focused']['zaxis']           = np.array([0.0, 0.0, 1.0])
+    config['sources']['focused']['xaxis']           = np.array([1.0, 0.0, 0.0])
+    config['sources']['focused']['target']          = np.array([1.0, 0.0, 0.0])
+    config['sources']['focused']['width']           = 4.0
+    config['sources']['focused']['height']          = 4.0
+    config['sources']['focused']['depth']           = 7.5
+    
+    config['sources']['focused']['spread']           = 1.0
+    config['sources']['focused']['mass_number']      = 131.293
+    config['sources']['focused']['wavelength']       = 2.19 #2.7203 
+    config['sources']['focused']['linewidth']        = 1.129e+14
+    """
     
     # -------------------------------------------------------------------------
     ## Load spherical crystal properties
@@ -429,6 +461,7 @@ def setup_real_scenario(config, g_corners, c_corners, d_centers, chord, sight):
     config['optics']['crystal']['mesh_faces']  = None
     
     ## Repack variables
+    #config['sources']['focused']['target']        = g_origin
     config['sources']['plasma']['target']         = g_origin
     config['filters']['sightline']['origin']      = g_origin
     config['filters']['sightline']['direction']   = sightline
@@ -461,6 +494,8 @@ visuals = True
 runtype = 'single'
 filepath= 'xicsrt_input.json'
 
+logging.basicConfig(level=logging.DEBUG)
+
 try:
     xicsrt_input.load_config(filepath)
 except FileNotFoundError:
@@ -468,7 +503,7 @@ except FileNotFoundError:
 
 if runtype == 'single':
     config = get_config()
-    output = xicsrt_raytrace.raytrace_multi(config)
+    output = xicsrt_raytrace.raytrace(config)
 
 if runtype == 'multi':
     config = get_config_multi(5)
