@@ -55,9 +55,9 @@ def get_config():
     config['general']['print_results']      = True
     config['general']['random_seed']        = 12345
     
-    config['general']['keep_meta']          = True
-    config['general']['keep_images']        = True
-    config['general']['keep_history']       = True
+    config['general']['keep_meta']          = False
+    config['general']['keep_images']        = False
+    config['general']['keep_history']       = False
     
     config['general']['save_meta']          = True
     config['general']['save_images']        = True

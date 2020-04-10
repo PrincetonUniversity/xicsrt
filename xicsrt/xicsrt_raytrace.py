@@ -105,6 +105,11 @@ def raytrace_single(config):
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
     config = xicsrt_config.config_to_numpy(config)
+    
+    # Load in config general properties.
+    keep_meta    = config['general']['keep_meta']
+    keep_images  = config['general']['keep_images']
+    keep_history = config['general']['keep_history']
 
     # Combine the user and default object pathlists.
     pathlist = []
@@ -123,32 +128,35 @@ def raytrace_single(config):
     sources.apply_filters(filters)
     sources.initialize()
     
-    rays = sources.generate_rays(history=True)
+    rays = sources.generate_rays(history = keep_history)
     
     optics.instantiate_objects()
     optics.initialize()
-    rays = optics.raytrace(rays, history=True, images=True)
+    rays = optics.raytrace(rays, history = keep_history, images = keep_images)
 
-    # Combine sources and optics.
-    meta = OrderedDict()
-    image = OrderedDict()
+    # Combine sources and optics outputs.
+    meta    = OrderedDict()
+    image   = OrderedDict()
     history = OrderedDict()
     
+    #if keep_meta:
     for key in sources.meta:
         meta[key] = sources.meta[key]
-    for key in sources.image:
-        image[key] = sources.image[key]
-    for key in sources.history:
-        history[key] = sources.history[key]
-        
     for key in optics.meta:
         meta[key] = optics.meta[key]
-    for key in optics.image:
-        image[key] = optics.image[key]
-    for key in optics.history:
-        history[key] = optics.history[key]
-    print(sources.history)
-    print(optics.history)
+    
+    if keep_images:
+        for key in sources.image:
+            image[key] = sources.image[key]
+        for key in optics.image:
+            image[key] = optics.image[key]    
+    
+    if keep_history:     
+        for key in sources.history:
+            history[key] = sources.history[key]
+        for key in optics.history:
+            history[key] = optics.history[key]
+
     output = OrderedDict()
     output['config'] = config
     output['meta'] = meta
@@ -243,7 +251,7 @@ def combine_raytrace(input_list):
             for ii_run in range(num_iter):
                 output['total']['image'][key_opt] += input_list[ii_run]['total']['image'][key_opt]
 
-    # Combine all the histories
+    # Combine all the histories.
     if len(input_list[ii_run]['found']['history']) > 0:
         final_num_found = 0
         final_num_lost = 0
