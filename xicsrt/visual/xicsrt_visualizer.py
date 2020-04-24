@@ -39,49 +39,49 @@ def visualize_layout(config):
     corners         = np.zeros([5,5,3], dtype = np.float64)
     
     ## Define variables
-    graphite_mesh   = config['optics']['graphite']['use_meshgrid']
+    #graphite_mesh   = config['optics']['graphite']['use_meshgrid']
     crystal_mesh    = config['optics']['crystal']['use_meshgrid']
     #for slicing puposes, each optical element now has a number
     #source = 0, graphite = 1, crystal = 2, detector = 3, plasma = 4
     #origin[Optical Element Number, 3D Coordinates]
     #origin[0,:]   = config['sources']['focused']['origin']
-    origin[1,:]   = config['optics']['graphite']['origin']
+    #origin[1,:]   = config['optics']['graphite']['origin']
     origin[2,:]   = config['optics']['crystal']['origin']
     origin[3,:]   = config['optics']['detector']['origin']
     origin[4,:]   = config['sources']['plasma']['origin']
     #zaxis[Optical Element Number, 3D Coordinates]
     #normal[0,:]     = config['sources']['focused']['zaxis']
-    normal[1,:]     = config['optics']['graphite']['zaxis']
+    #normal[1,:]     = config['optics']['graphite']['zaxis']
     normal[2,:]     = config['optics']['crystal']['zaxis']
     normal[3,:]     = config['optics']['detector']['zaxis']
     normal[4,:]     = config['sources']['plasma']['zaxis']
     #orient_x[Optical Element Number, 3D Coordinates]
     #orient_x[0,:]   = config['sources']['focused']['xaxis']
-    orient_x[1,:]   = config['optics']['graphite']['xaxis']
+    #orient_x[1,:]   = config['optics']['graphite']['xaxis']
     orient_x[2,:]   = config['optics']['crystal']['xaxis']
     orient_x[3,:]   = config['optics']['detector']['xaxis']
     orient_x[4,:]   = config['sources']['plasma']['xaxis']
     #orient_y[Optical Element Number, 3D Coordinates]
     #orient_y[0,:]   = np.cross(normal[0,:], orient_x[0,:]) 
-    orient_y[1,:]   = np.cross(normal[1,:], orient_x[1,:]) 
+    #orient_y[1,:]   = np.cross(normal[1,:], orient_x[1,:]) 
     orient_y[2,:]   = np.cross(normal[2,:], orient_x[2,:]) 
     orient_y[3,:]   = np.cross(normal[3,:], orient_x[3,:])
     orient_y[4,:]   = np.cross(normal[4,:], orient_x[4,:])
     
     #orient_y[0,:]  /= np.linalg.norm(orient_y[0,:])
-    orient_y[1,:]  /= np.linalg.norm(orient_y[1,:])
+    #orient_y[1,:]  /= np.linalg.norm(orient_y[1,:])
     orient_y[2,:]  /= np.linalg.norm(orient_y[2,:])
     orient_y[3,:]  /= np.linalg.norm(orient_y[3,:])
     orient_y[4,:]  /= np.linalg.norm(orient_y[4,:])
     #width[Optical Element Number]
     #width[0]        = config['sources']['focused']['width']
-    width[1]        = config['optics']['graphite']['width'] 
+    #width[1]        = config['optics']['graphite']['width'] 
     width[2]        = config['optics']['crystal']['width']
     width[3]        = config['optics']['detector']['width']
     width[4]        = config['sources']['plasma']['width']
     #height[Optical Element Number]
     #height[0]       = config['sources']['focused']['height']
-    height[1]       = config['optics']['graphite']['height']
+    #height[1]       = config['optics']['graphite']['height']
     height[2]       = config['optics']['crystal']['height']
     height[3]       = config['optics']['detector']['height']
     height[4]       = config['sources']['plasma']['height']
@@ -110,12 +110,12 @@ def visualize_layout(config):
     beamline = np.zeros([4,3], dtype = np.float64)
     beamline[0,:] = origin[3,:]
     beamline[1,:] = origin[2,:]
-    beamline[2,:] = origin[1,:]
+    beamline[2,:] = origin[2,:]
     beamline[3,:] = plasma_sight
                 
     #draw plasma, graphite, crystal, detector
     draw_flux(config, ax)
-    draw_graphite(config, config_vis, graphite_mesh, ax)
+    #draw_graphite(config, config_vis, graphite_mesh, ax)
     draw_crystal(config, config_vis, crystal_mesh, True, ax)
     draw_detector(config, config_vis, ax)
       
@@ -337,41 +337,41 @@ def draw_detector(config, config_vis, ax):
     
     return ax
 
-def visualize_vectors(config, output, ii):
+def visualize_vectors(config, output):
     ## Do all of the steps as before, but also add the output rays
-    origin = output['lost'][ii]['origin']
-    direct = output['lost'][ii]['direction']
-    m      = output['lost'][ii]['mask']
+    origin = output['lost']['history']['plasma']['origin']
+    direct = output['lost']['history']['plasma']['direction']
+    m      = output['lost']['history']['plasma']['mask']
     
     #to avoid plotting too many rays, randomly cull rays until there are 1000
     if len(m[m]) > 1000:
         cutter = np.random.randint(0, len(m[m]), len(m))
         m[m] &= (cutter[m] < 1000)
     
-    plt, ax = visualize_layout(config)
-    plt.title("X-Ray Raytracing Results")
+    fig, ax = visualize_layout(config)
+    fig.title("X-Ray Raytracing Results")
     
     ax.quiver(origin[m,0], origin[m,1], origin[m,2],
               direct[m,0], direct[m,1], direct[m,2],
-              length = 1.0, arrow_length_ratio = 0.01, 
+              length = 10.0, arrow_length_ratio = 0.01, 
               color = "green", alpha = 0.1, normalize = True)
     
-    return plt, ax
+    return fig
 
 def visualize_bundles(config, output):
     ## Do all of the steps as before, but also add the plasma bundles
-    origin = output['lost'][0]['origin']
-    m      = output['lost'][0]['mask']
+    origin = output['lost']['history']['plasma']['origin']
+    m      = output['lost']['history']['plasma']['mask']
     
     #to avoid plotting too many bundles, randomly cull rays until there are 1000
     if len(m[m]) > 1000:
         cutter = np.random.randint(0, len(m[m]), len(m))
         m[m] &= (cutter[m] < 1000)
     
-    plt, ax = visualize_layout(config)
-    plt.title("X-Ray Bundle Generation Results")
+    fig, ax = visualize_layout(config)
+    fig.title("X-Ray Bundle Generation Results")
 
-    ax.scatter(origin[m,0], origin[m,1], origin[m,2],
+    fig.scatter(origin[m,0], origin[m,1], origin[m,2],
               color = "green", alpha = 0.1)
     
-    return plt, ax
+    return fig

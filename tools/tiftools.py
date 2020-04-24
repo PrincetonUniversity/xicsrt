@@ -36,7 +36,7 @@ def colorize_png(tif_list):
         image.axes.get_yaxis().set_visible(False)
         
         png_name = results_path + tif_list[file][:-4] + '.png'
-        plt.savefig(png_name, bbox_inches = 'tight')
+        plt.savefig(png_name, bbox_inches = 'tight', dpi = 1000)
         print(png_name + ' saved!')
         
     
@@ -68,7 +68,7 @@ def histogram_analysis(tif_list):
         
         #Save Images
         hist_name = results_path + tif_list[file][:-4] + '_histogram.png'
-        fig.savefig(hist_name, bbox_inches = 'tight')
+        fig.savefig(hist_name, bbox_inches = 'tight', dpi = 1000)
         print(hist_name + ' saved!')
         
     
@@ -135,7 +135,7 @@ def tif_subtract(tif_1, tif_2):
     image.axes.get_yaxis().set_visible(False)
     
     png_name = results_path + 'tif_difference' + '.png'
-    plt.savefig(png_name, bbox_inches = 'tight')
+    plt.savefig(png_name, bbox_inches = 'tight', dpi = 1000)
     print(png_name + ' saved!')
 
 
@@ -180,12 +180,12 @@ def gaussian_fit(tif, transpose = False):
 
     #save image
     gauss_name = results_path + tif[:-4] + '_gaussian.png'
-    fig.savefig(gauss_name, bbox_inches = 'tight')
+    fig.savefig(gauss_name, bbox_inches = 'tight', dpi = 1000)
     print(gauss_name + ' saved!')
 
 
 #tif_subtract('xicsrt_graphite_mesh.tif', 'xicsrt_graphite_flat.tif')
-#colorize_png(tif_list)
+colorize_png(tif_list)
 #histogram_analysis(tif_list)
 #tif_overlay(tif_list)
-gaussian_fit('xicsrt_crystal_total_3.tif')
+gaussian_fit('xicsrt_crystal.tif')
