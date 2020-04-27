@@ -55,9 +55,9 @@ def raytrace(config, internal=False):
             save_images(output)
         if config['general']['print_results']:
             print_raytrace(output)
-
-    if config['general']['save_run_images']:
-        save_images(output)
+    else:
+        if config['general']['save_run_images']:
+            save_images(output)
 
     profiler.stop('raytrace')
     #profiler.report()
