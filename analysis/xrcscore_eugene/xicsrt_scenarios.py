@@ -164,7 +164,7 @@ def setup_manfred_scenario(config):
     A Multi-toroidal mirror designed for x-rays with energies 9.750-10.560 keV
     intended for Ge[400] crystal with inter-atomic distance 2d = 2.82868 A
     """
-    from xicsrt.xics_rt_meshes import generate_sinusoidal_spiral
+    from xicsrt.meshes.xicsrt_meshes import generate_sinusoidal_spiral
     
     manfred_input = {}
     manfred_input['horz_resolution'] = 11
@@ -193,29 +193,31 @@ def setup_manfred_scenario(config):
     d_x_vector = np.array([0.0, 0.0, 1.0])
     
     s_normal   = c_origin / np.linalg.norm(c_origin)
-    c_normal   = np.mean(mesh_normals, axis = 0)
+    c_normal   = -np.mean(mesh_normals, axis = 0)
     d_normal   = np.cross(detector_points[-1,:] - detector_points[0,:], d_x_vector)
     s_target   = c_origin
     
     #repack variables
     config['crystal_input']['mesh_points']    = mesh_points
     config['crystal_input']['mesh_faces']     = mesh_faces
+    config['graphite_input']['mesh_points']   = mesh_points
+    config['graphite_input']['mesh_faces']    = mesh_faces    
+    
     config['source_input']['origin']          = s_origin
     config['source_input']['zaxis']           = s_normal
     config['source_input']['xaxis']           = s_x_vector
     config['source_input']['target']          = s_target
-    config['source_input']['wavelength']      = 10.25 / 12.398425
+    config['source_input']['wavelength']      = 12.398425 / 10.25
     config['crystal_input']['origin']         = c_origin
     config['crystal_input']['zaxis']          = c_normal
     config['crystal_input']['xaxis']          = c_x_vector
     config['crystal_input']['height']         = c_width
-    config['crystal_input']['width']          = manfred_input['base_height']
+    config['crystal_input']['width']          = manfred_input['base_height']/1.9
     config['crystal_input']['crystal_spacing']= manfred_input['crystal_spacing']
     config['detector_input']['origin']        = d_origin
     config['detector_input']['zaxis']         = d_normal
     config['detector_input']['xaxis']         = d_x_vector
     config['detector_input']['height']        = d_width
-    config['detector_input']['vertical_pixels'] = int(round(d_width / config['detector_input']['pixel_size']))
     
     return config
 
@@ -227,9 +229,10 @@ def setup_real_scenario(config):
     """
     ## Unpack variables and convert to meters
     chord  = config['scenario_input']['chord']
-    g_corners  = config['scenario_input']['graphite_corners'][chord] / 1000
-    c_corners  = config['scenario_input']['crystal_corners']         / 1000
-    d_corners  = config['scenario_input']['detector_corners']        / 1000
+    sight  = config['scenario_input']['sight']
+    g_corners  = config['scenario_input']['graphite_corners'][chord,sight] / 1000
+    c_corners  = config['scenario_input']['crystal_corners'][chord]        / 1000
+    d_centers  = config['scenario_input']['detector_centers'][chord]       / 1000
 
     #calculate geometric properties of all meshes
     g_basis      = np.zeros([3,3], dtype = np.float64)
@@ -238,39 +241,46 @@ def setup_real_scenario(config):
     
     g_origin     = np.mean(g_corners, axis = 0)
     c_origin     = np.mean(c_corners, axis = 0)
-    d_origin     = np.mean(d_corners, axis = 0)
+    #d_origin     = np.mean(d_corners, axis = 0)
+    d_origin     = d_centers
     
-    g_width      = np.linalg.norm(g_corners[0] - g_corners[3])
-    c_width      = np.linalg.norm(c_corners[0] - c_corners[3])
-    d_width      = np.linalg.norm(d_corners[0] - d_corners[3])
+    g_width      = np.linalg.norm(g_corners[0] - g_corners[1])
+    c_width      = np.linalg.norm(c_corners[0] - c_corners[1])
+    #d_width      = np.linalg.norm(d_corners[0] - d_corners[1])
     
-    g_height     = np.linalg.norm(g_corners[0] - g_corners[1])
-    c_height     = np.linalg.norm(c_corners[0] - c_corners[1])
-    d_height     = np.linalg.norm(d_corners[0] - d_corners[1])
+    g_height     = np.linalg.norm(g_corners[0] - g_corners[3])
+    c_height     = np.linalg.norm(c_corners[0] - c_corners[3])
+    #d_height     = np.linalg.norm(d_corners[0] - d_corners[3])
     
-    g_basis[0,:] = g_corners[0] - g_corners[3]
-    c_basis[0,:] = c_corners[0] - c_corners[3]
-    d_basis[0,:] = d_corners[0] - d_corners[3]
+    g_basis[0,:] = g_corners[0] - g_corners[1]
+    c_basis[0,:] = c_corners[0] - c_corners[1]
+    #d_basis[0,:] = d_corners[0] - d_corners[1]
     
     g_basis[0,:]/= g_width
     c_basis[0,:]/= c_width
-    d_basis[0,:]/= d_width
+    #d_basis[0,:]/= d_width
     
-    g_basis[1,:] = g_corners[0] - g_corners[1]
-    c_basis[1,:] = c_corners[0] - c_corners[1]
-    d_basis[1,:] = d_corners[0] - d_corners[1]
+    g_basis[1,:] = g_corners[0] - g_corners[3]
+    c_basis[1,:] = c_corners[0] - c_corners[3]
+    #d_basis[1,:] = d_corners[0] - d_corners[3]
     
     g_basis[1,:]/= g_height
     c_basis[1,:]/= c_height
-    d_basis[1,:]/= d_height
+    #d_basis[1,:]/= d_height
     
     g_basis[2,:] = np.cross(g_basis[0,:], g_basis[1,:])
     c_basis[2,:] = np.cross(c_basis[0,:], c_basis[1,:])
-    d_basis[2,:] = np.cross(d_basis[0,:], d_basis[1,:])
+    #d_basis[2,:] = np.cross(d_basis[0,:], d_basis[1,:])
+    d_basis[2,:] = c_origin - d_origin
+    d_basis[1,:] = np.array([-1.0, 0.0, 0.0])
+    d_basis[0,:] = np.cross(d_basis[2,:], d_basis[1,:])
+
     
     g_basis[2,:]/= np.linalg.norm(g_basis[2,:])
     c_basis[2,:]/= np.linalg.norm(c_basis[2,:])
     d_basis[2,:]/= np.linalg.norm(d_basis[2,:])
+    
+    d_basis[0,:]/= np.linalg.norm(d_basis[0,:])
     
     #calculate the graphite pre-reflector's sightline of the plasma
     #start with the crystal-graphite vector, normalize, and reflect it
@@ -302,8 +312,6 @@ def setup_real_scenario(config):
     config['detector_input']['origin']        = d_origin
     config['detector_input']['zaxis']         = d_basis[2,:]
     config['detector_input']['xaxis']         = d_basis[0,:]
-    config['detector_input']['width']         = d_width
-    config['detector_input']['height']        = d_height
     
     return config
     
@@ -641,6 +649,9 @@ def setup_graphite_test(config):
     config['detector_input']['zaxis']       = d_basis[2,:]
     config['detector_input']['xaxis']       = d_basis[0,:]
     config['source_input']['target']        = s_target
+    
+    config['crystal_input']['width']  = config['graphite_input']['width']
+    config['crystal_input']['height'] = config['graphite_input']['height']
     
     return config
 

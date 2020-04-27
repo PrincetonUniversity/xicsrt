@@ -23,7 +23,7 @@ from xicsrt.visual.xicsrt_visualizer            import visualize_layout
 from xicsrt.visual.xicsrt_visualizer            import visualize_vectors, visualize_bundles
 from xicsrt.filters._XicsrtBundleFilterSightline import XicsrtBundleFilterSightline
 
-from xicsrt.xicsrt_raytrace   import raytrace
+from xicsrt.xicsrt_raytrace_script   import raytrace
 
 
 def run(config, config_number = None):

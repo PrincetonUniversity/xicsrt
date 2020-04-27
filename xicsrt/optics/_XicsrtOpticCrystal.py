@@ -19,7 +19,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         config['crystal_spacing'] = 0.0
         config['reflectivity']    = 1.0
 
-        config['do_bragg_check']    = True
+        config['do_bragg_check']     = True
         config['rocking_type']       = 'gaussian'
         config['rocking_fwhm']       = None
         config['rocking_sigma_file'] = None
@@ -33,21 +33,22 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         self.param['rocking_type'] = str.lower(self.param['rocking_type'])
         
     def rocking_curve_filter(self, incident_angle, bragg_angle):
+        #create a random number for each ray
+        test = np.random.uniform(0.0, 1.0, len(incident_angle))
+        
+        #compare that random number with the reflectivity distribution
         if "step" in self.param['rocking_type']:
             # Step Function
-            mask = (abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'])
+            p = np.where(abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'] / 2,
+                         self.param['reflectivity'], 0)
             
         elif "gauss" in self.param['rocking_type']:
             # Convert from FWHM to sigma.
-            sigma = self.param['rocking_fwhm'] / np.sqrt(2 * np.log(2)) / 2
+            sigma = self.param['rocking_fwhm'] / (2 * np.sqrt(2 * np.log(2)))
             
-            # evaluate rocking curve reflectivity value for each ray
-            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
-            
-            # give each ray a random number and compare that number to the reflectivity 
-            # curves to decide whether the ray reflects or not.         
-            test = np.random.uniform(0.0, 1.0, len(incident_angle))
-            mask = p.flatten() > test
+            # Gaussian Distribution
+            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))  
+            p*= self.param['reflectivity']
             
         elif "file" in self.param['rocking_type']:
             # read datafiles and extract points
@@ -70,14 +71,14 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
                                     pi_data[:,0], pi_data[:,1], 
                                     left = 0.0, right = 0.0)
             
-            # give each ray a random number and compare that number to the reflectivity 
-            # curves to decide whether the ray reflects or not. Use mix factor.
-            test = np.random.uniform(0.0, 1.0, len(incident_angle))
-            prob = self.param['rocking_mix'] * sigma_curve + (1 - self.param['rocking_mix']) * pi_curve
-            mask = prob >= test
+            p = self.param['rocking_mix'] * sigma_curve + (1 - self.param['rocking_mix']) * pi_curve
             
         else:
             raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
+        
+        #filter out the rays that do not survive the random rocking curve
+        mask = (p >= test)
+        
         return mask
     
     def angle_check(self, rays, normals):

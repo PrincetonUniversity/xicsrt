@@ -89,7 +89,7 @@ def generate_sinusoidal_spiral(manfred_input):
     height    = np.zeros([m,n], dtype = np.float64)
     height[:] = np.linspace(-h_0/2, h_0/2, n)
     theta     = np.repeat(theta[:,np.newaxis], n, axis = 1)
-    rho       = np.repeat(rho[:,np.newaxis], n, axis = 1)
+    rho       = np.repeat(  rho[:,np.newaxis], n, axis = 1)
     beta      = np.arcsin(height / rho)
     
     #calculate mesh points
@@ -117,7 +117,7 @@ def generate_sinusoidal_spiral(manfred_input):
     p2 = mesh_points[mesh_faces[:,1],:]
     p3 = mesh_points[mesh_faces[:,2],:]
     mesh_normals  = np.cross((p1 - p2),(p3 - p2), axis = 1)
-    mesh_normals /= np.linalg.norm(mesh_normals , axis = 0)
+    mesh_normals /= np.linalg.norm(mesh_normals , axis = 1)[:,np.newaxis]
     
     ## Pack Up the Variables
     manfred_output = {}

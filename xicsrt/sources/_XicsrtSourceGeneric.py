@@ -17,6 +17,9 @@ from xicsrt.tool import voigt
 from xicsrt.xicsrt_objects import TraceObject
 
 class XicsrtSourceGeneric(TraceObject):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filter_objects = []
             
     def get_default_config(self):
         config = super().get_default_config()
@@ -34,6 +37,9 @@ class XicsrtSourceGeneric(TraceObject):
         config['temperature']    = 0.0
         config['velocity']       = np.array([0.0, 0.0, 0.0])
         config['use_poisson']    = False
+        config['do_monochrome']  = False
+        
+        config['filter_list']    = []
 
         return config
 
@@ -71,14 +77,18 @@ class XicsrtSourceGeneric(TraceObject):
         rays['mask'] = self.generate_mask()
         profiler.stop('generate_mask')
         
+        profiler.start('filter_rays')
+        rays = self.ray_filter(rays)
+        profiler.stop('filter_rays')        
+        
         profiler.stop('generate_rays')
         return rays
      
     def generate_origin(self):
         # generic origin for isotropic rays
-        w_offset = np.random.uniform(-1 * self.param['width']/2,  self.param['width']/2,  self.param['intensity'])
+        w_offset = np.random.uniform(-1 * self.param['width']/2 ,  self.param['width']/2, self.param['intensity'])
         h_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['intensity'])
-        d_offset = np.random.uniform(-1 * self.param['depth']/2,  self.param['depth']/2,  self.param['intensity'])
+        d_offset = np.random.uniform(-1 * self.param['depth']/2 ,  self.param['depth']/2, self.param['intensity'])
         
         origin = (self.origin
                   + np.einsum('i,j', w_offset, self.xaxis)
@@ -130,15 +140,19 @@ class XicsrtSourceGeneric(TraceObject):
         return direction
 
     def generate_wavelength(self, direction):
-        #random_wavelength = self.random_wavelength_normal
-        #random_wavelength = self.random_wavelength_cauchy
-        random_wavelength = self.random_wavelength_voigt
-        wavelength = random_wavelength(self.param['intensity'])
+        if self.param['do_monochrome']:
+            wavelength  = np.ones(self.param['intensity'], dtype = np.float64)
+            wavelength *= self.param['wavelength']
+        else:
+            #random_wavelength = self.random_wavelength_normal
+            #random_wavelength = self.random_wavelength_cauchy
+            random_wavelength = self.random_wavelength_voigt
+            wavelength = random_wavelength(self.param['intensity'])
+            
+            #doppler shift
+            c = const.physical_constants['speed of light in vacuum'][0]
+            wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
         
-        # Doppler shift
-        c = const.physical_constants['speed of light in vacuum'][0]
-        wavelength *= (1 - np.einsum('j,ij->i', self.param['velocity'], direction) / c)
-
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -211,5 +225,8 @@ class XicsrtSourceGeneric(TraceObject):
     def generate_mask(self):
         m = np.ones((self.param['intensity']), dtype=np.bool)
         return m
-
-
+    
+    def ray_filter(self, rays):
+        for filter in self.filter_objects:
+            rays = filter.filter(rays)
+        return rays

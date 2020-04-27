@@ -71,6 +71,7 @@ def get_pathlist_default():
     """
     path_module = os.path.dirname(os.path.abspath(__file__))
     pathlist_default = []
+    pathlist_default.append(os.path.join(path_module, 'filters'))
     pathlist_default.append(os.path.join(path_module, 'sources'))
     pathlist_default.append(os.path.join(path_module, 'optics'))
     return pathlist_default

@@ -30,7 +30,7 @@ class XicsrtPlasmaGeneric(TraceObject):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filter_list = []
+        self.filter_objects = []
 
     def get_default_config(self):
         config = super().get_default_config()
@@ -49,6 +49,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         config['temperature']    = 0.0
         config['velocity']       = 0.0
         config['use_poisson']    = False
+        config['do_monochrome']  = False
         
         config['emissivity']      = 0.0
         config['max_rays']        = int(1e7)
@@ -57,7 +58,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         config['bundle_volume']   = 1e-3
         config['bundle_type']     = 'voxel'
         
-        config['filters']         = []
+        config['filter_list']     = []
         return config
  
     def initialize(self):
@@ -68,8 +69,8 @@ class XicsrtPlasmaGeneric(TraceObject):
         self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
         self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread'] * np.pi / 360)**2
         
-    def setup_bundles(self):
         
+    def setup_bundles(self):
         if self.param['bundle_type'] == 'point':
             self.param['voxel_size'] = 0.0
         elif self.param['bundle_type'] == 'voxel':
@@ -96,7 +97,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         return bundle_input
 
     def bundle_filter(self, bundle_input):
-        for filter in self.filter_list:
+        for filter in self.filter_objects:
             bundle_input = filter.filter(bundle_input)
         return bundle_input
     
@@ -167,18 +168,19 @@ class XicsrtPlasmaGeneric(TraceObject):
             source_config['intensity'] = intensity
             
             # constants
-            source_config['width']       = self.param['voxel_size']
-            source_config['height']      = self.param['voxel_size']
-            source_config['depth']       = self.param['voxel_size']
-            source_config['zaxis']       = self.param['zaxis']
-            source_config['xaxis']       = self.param['xaxis']
-            source_config['target']      = self.param['target']
-            source_config['mass_number'] = self.param['mass_number']
-            source_config['wavelength']  = self.param['wavelength']
-            source_config['linewidth']   = self.param['linewidth']
-            source_config['spread']      = self.param['spread']
-            source_config['use_poisson'] = self.param['use_poisson']
-            
+            source_config['width']         = self.param['voxel_size']
+            source_config['height']        = self.param['voxel_size']
+            source_config['depth']         = self.param['voxel_size']
+            source_config['zaxis']         = self.param['zaxis']
+            source_config['xaxis']         = self.param['xaxis']
+            source_config['target']        = self.param['target']
+            source_config['mass_number']   = self.param['mass_number']
+            source_config['wavelength']    = self.param['wavelength']
+            source_config['linewidth']     = self.param['linewidth']
+            source_config['spread']        = self.param['spread']
+            source_config['use_poisson']   = self.param['use_poisson']
+            source_config['do_monochrome'] = self.param['do_monochrome']
+                
             #create ray bundle sources and generate bundled rays
             source       = XicsrtSourceFocused(source_config)
             bundled_rays = source.generate_rays()

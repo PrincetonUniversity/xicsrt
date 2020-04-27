@@ -32,7 +32,7 @@ class XicsrtOpticGeneric(TraceObject):
         config['depth']          = 0.0
         config['pixel_size']     = None
         config['pixel_width']    = None
-        config['pixel_height']   = None
+        config['pixel_height']   = None  
         
         # mesh information
         config['use_meshgrid']   = False
@@ -51,26 +51,27 @@ class XicsrtOpticGeneric(TraceObject):
         #
         # This is a temporary solution for plotting mesh intersections.
         # This check should eventually be removed. See todo file.
+        
         if self.config['use_meshgrid'] is True:
             mesh_loc = self.point_to_local(self.config['mesh_points'])
-
+            
             # If any mesh points fall outside of the optic width, test fails.
             test = True
-            test |= np.all(abs(mesh_loc[:,0]) > self.config['width'] / 2)
-            test |= np.all(abs(mesh_loc[:,1]) < self.config['height'] / 2)
-            
+            test &= np.all(abs(mesh_loc[:,0]) <= (self.config['width']  / 2))
+            test &= np.all(abs(mesh_loc[:,1]) <= (self.config['height'] / 2))
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
-
+        
+        # autofill pixel grid sizes
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
-            
         if self.param['pixel_width'] is None:
             self.param['pixel_width'] = int(np.ceil(self.param['width']  / self.param['pixel_size']))
         if self.param['pixel_height'] is None:
             self.param['pixel_height'] = int(np.ceil(self.param['height']  / self.param['pixel_size']))
 
-        self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+        self.image        = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+        self.photon_count = 0
         
     def normalize(self, vector):
         magnitude = self.norm(vector)
@@ -224,6 +225,7 @@ class XicsrtOpticGeneric(TraceObject):
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
 
+
     
     def make_image(self, rays):
         """
@@ -262,7 +264,7 @@ class XicsrtOpticGeneric(TraceObject):
             # indexes into the image. Keep in mind that channel coordinate
             # system is defined from the center of the pixel.
             channel = np.round(channel).astype(int)
-                       
+            
             # Check for any hits that are outside of the image.
             # These are possible due to floating point calculations.
             m = np.ones(num_lines, dtype=bool)

@@ -82,7 +82,7 @@ def initialize(config):
 
 def initialize_multi(config_multi):
     for ii in range(len(config_multi)):
-        config_multi[ii] = initialize(config_multi[ii])
+        config_multi[str(ii)] = initialize(config_multi[str(ii)])
 
     return config_multi
 
