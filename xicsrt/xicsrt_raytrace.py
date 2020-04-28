@@ -127,21 +127,21 @@ def raytrace_single(config):
     pathlist.extend(config['general']['pathlist_default'])
 
     # Setup the dispatchers.
-    filters = XicsrtDispatcher(config['filters'], pathlist)
+    if 'filters' in config:
+        filters = XicsrtDispatcher(config['filters'], pathlist)
+        filters.instantiate_objects()
+        filters.initialize()
+
     sources = XicsrtDispatcher(config['sources'], pathlist)
-    optics  = XicsrtDispatcher(config['optics'],  pathlist)
-    
-    filters.instantiate_objects()
-    filters.initialize()
-    
     sources.instantiate_objects()
     sources.apply_filters(filters)
     sources.initialize()
     
-    rays = sources.generate_rays(history = keep_history)
-    
+    optics  = XicsrtDispatcher(config['optics'],  pathlist)
     optics.instantiate_objects()
     optics.initialize()
+    
+    rays = sources.generate_rays(history = keep_history)
     rays = optics.raytrace(rays, history = keep_history, images = keep_images)
 
     # Combine sources and optics outputs.

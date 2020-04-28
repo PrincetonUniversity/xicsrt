@@ -44,11 +44,10 @@ class XicsrtGeneralConfig(ConfigObject):
         
         config['general']['print_results'] = True
         
-        # config['general'][] = 
 
         config['sources'] = OrderedDict()
-    
         config['optics'] = OrderedDict()
+        config['filters'] = OrderedDict()
     
         return config
         
