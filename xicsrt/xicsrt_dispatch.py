@@ -149,3 +149,6 @@ class XicsrtDispatcher():
         obj = cls(config, initialize=False)
         
         return obj
+
+    def get_object(self, name):
+        return self.objects[name]

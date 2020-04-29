@@ -4,8 +4,8 @@ import numpy as np
 
 import matplotlib
 
-from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
-from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
+from xicsrt import xicsrt_config
+from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
@@ -16,23 +16,73 @@ def truncate_mask(mask, max_num):
 
     return mask
 
-
 def figure():
     fig = ipv.figure(width=900, height=900)
     return fig
 
-def add_rays(output, inputs):
+def add_rays(results, config):
+    _add_ray_history(results['found']['history'], config, lost=False)
+    _add_ray_history(results['lost']['history'], config, lost=True)
 
-    flag_plot_final = True
-    flag_plot_unreflected = True
+def _add_ray_history(history, config, lost=None):
+
+    if lost is False:
+        color = [1.0, 0.0, 0.0, 0.1]
+    elif lost is True:
+        color = [0.0, 0.0, 1.0, 0.1]
+    else:
+        color = [0.0, 0.0, 0.0, 0.1]
+        
+    num_elem = len(history)
+    key_list = list(history.keys())
+    
+    for ii in range(num_elem-1):
+
+        # All rays leaving this optic element.
+        mask = history[key_list[ii]]['mask']
+        num_mask = np.sum(mask)
+
+        if num_mask == 0:
+            continue
+        
+        x0 = history[key_list[ii]]['origin'][mask, 0]
+        y0 = history[key_list[ii]]['origin'][mask, 1]
+        z0 = history[key_list[ii]]['origin'][mask, 2]
+        x1 = history[key_list[ii+1]]['origin'][mask, 0]
+        y1 = history[key_list[ii+1]]['origin'][mask, 1]
+        z1 = history[key_list[ii+1]]['origin'][mask, 2]
+
+        x = np.concatenate((x0, x1))
+        y = np.concatenate((y0, y1))
+        z = np.concatenate((z0, z1))
+
+        lines = np.zeros((num_mask, 2), dtype=int)
+        lines[:, 0] = np.arange(0, num_mask)
+        lines[:, 1] = np.arange(num_mask, num_mask * 2)
+        
+        obj = ipv.plot_trisurf(x, y, z, lines=lines, color=color)
+        obj.line_material.transparent = True
+        obj.line_material.linewidth = 10.0
+    
+
+def generate_colors(history, config):
+    """
+    This is some old code to generate colors for the ray plotting
+    in _add_ray_history.
+
+    For the moment I am just saving the old code here, but this
+    will not work with the new history dictionary. (Only minor 
+    adjustments are neccessary to make it work, but the 
+    implementation was not very general.)
+    """
+    raise NotImplementedError()
+
 
     color_masks = []
     color_list = []
 
     # This is a good pink color for un-reflected rays.
     # color_unref = [1.0, 0.5, 0.5, 0.2]
-
-    num_optics = len(output)
 
     if False:
         color_masks.append(output[0]['mask'].copy())
@@ -75,185 +125,6 @@ def add_rays(output, inputs):
             print('{:7.4f} {:7.4f} {:7.4f} {}'.format(wave_0, wave_min, wave_max, np.sum(mask_temp)))
             color_masks.append(mask_temp)
             color_list.append(cm.to_rgba(ii / num_wave, alpha=0.5))
-
-    if True:
-        if flag_plot_final:
-            mask = output[num_optics-1]['mask'].copy()
-        else:
-            mask = output[1]['mask'].copy()
-        num_mask = np.sum(mask)
-
-        print('{:25s} {}'.format(
-            'Graphite reflected:'
-            , num_mask))
-
-        for ii, cmask in enumerate(color_masks):
-            mask_temp = mask & cmask
-            num_lines = np.sum(mask_temp)
-            if num_lines > 0:
-                truncate_mask(mask_temp, 1000)
-                num_lines = np.sum(mask_temp)
-
-                print('{:30s} {}'.format(
-                    '    Plotted:'
-                    , num_lines))
-
-                x0 = output[0]['origin'][mask_temp, 0]
-                y0 = output[0]['origin'][mask_temp, 1]
-                z0 = output[0]['origin'][mask_temp, 2]
-                x1 = output[1]['origin'][mask_temp, 0]
-                y1 = output[1]['origin'][mask_temp, 1]
-                z1 = output[1]['origin'][mask_temp, 2]
-
-                x = np.concatenate((x0, x1))
-                y = np.concatenate((y0, y1))
-                z = np.concatenate((z0, z1))
-
-                lines = np.zeros((num_lines, 2), dtype=int)
-                lines[:, 0] = np.arange(0, num_lines)
-                lines[:, 1] = np.arange(num_lines, num_lines * 2)
-
-                obj = ipv.plot_trisurf(x, y, z, lines=lines, color=color_list[ii])
-                obj.line_material.transparent = True
-                obj.line_material.linewidth = 10.0
-
-    if True and flag_plot_unreflected:
-        mask = np.invert(output[1]['mask'].copy())
-        num_mask = np.sum(mask)
-
-        truncate_mask(mask, 1000)
-        num_lines = np.sum(mask)
-
-        print('{:25s} {}'.format(
-            'Graphite un-reflected:'
-            , num_mask))
-
-        if num_lines > 0:
-            x0 = output[0]['origin'][mask, 0]
-            y0 = output[0]['origin'][mask, 1]
-            z0 = output[0]['origin'][mask, 2]
-            x1 = output[1]['origin'][mask, 0]
-            y1 = output[1]['origin'][mask, 1]
-            z1 = output[1]['origin'][mask, 2]
-
-            x = np.concatenate((x0, x1))
-            y = np.concatenate((y0, y1))
-            z = np.concatenate((z0, z1))
-
-            lines = np.zeros((num_lines, 2), dtype=int)
-            lines[:, 0] = np.arange(0, num_lines)
-            lines[:, 1] = np.arange(num_lines, num_lines * 2)
-
-            obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 1.0, 0.1])
-            obj.line_material.transparent = True
-            obj.line_material.linewidth = 10.0
-
-    if True:
-        if flag_plot_final:
-            mask = output[num_optics-1]['mask'].copy()
-        else:
-            mask = output[2]['mask'].copy()
-        num_mask = np.sum(mask)
-
-        print('{:25s} {}'.format(
-            'Crystal reflected:'
-            , num_mask))
-
-        for ii, cmask in enumerate(color_masks):
-            mask_temp = mask & cmask
-            num_lines = np.sum(mask_temp)
-            if num_lines > 0:
-
-                truncate_mask(mask_temp, 1000)
-                num_lines = np.sum(mask_temp)
-
-                x0 = output[1]['origin'][mask_temp, 0]
-                y0 = output[1]['origin'][mask_temp, 1]
-                z0 = output[1]['origin'][mask_temp, 2]
-                x1 = output[2]['origin'][mask_temp, 0]
-                y1 = output[2]['origin'][mask_temp, 1]
-                z1 = output[2]['origin'][mask_temp, 2]
-
-                x = np.concatenate((x0, x1))
-                y = np.concatenate((y0, y1))
-                z = np.concatenate((z0, z1))
-
-                lines = np.zeros((num_lines, 2), dtype=int)
-                lines[:, 0] = np.arange(0, num_lines)
-                lines[:, 1] = np.arange(num_lines, num_lines * 2)
-
-                obj = ipv.plot_trisurf(x, y, z, lines=lines, color=color_list[ii])
-                obj.line_material.transparent = True
-                obj.line_material.linewidth = 10.0
-
-    if True and flag_plot_unreflected:
-        mask = output[1]['mask'] & (~output[2]['mask'])
-        num_mask = np.sum(mask)
-
-        truncate_mask(mask, 1000)
-        num_lines = np.sum(mask)
-
-        print('{:25s} {}'.format(
-            'Crystal un-reflected:'
-            , num_mask))
-
-        if num_lines > 0:
-            x0 = output[1]['origin'][mask, 0]
-            y0 = output[1]['origin'][mask, 1]
-            z0 = output[1]['origin'][mask, 2]
-            x1 = output[2]['origin'][mask, 0]
-            y1 = output[2]['origin'][mask, 1]
-            z1 = output[2]['origin'][mask, 2]
-
-            x = np.concatenate((x0, x1))
-            y = np.concatenate((y0, y1))
-            z = np.concatenate((z0, z1))
-
-            lines = np.zeros((num_lines, 2), dtype=int)
-            lines[:, 0] = np.arange(0, num_lines)
-            lines[:, 1] = np.arange(num_lines, num_lines * 2)
-
-            obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 1.0, 0.1])
-            obj.line_material.transparent = True
-            obj.line_material.linewidth = 10.0
-
-    if False:
-        if flag_plot_final:
-            mask = output[num_optics-1]['mask'].copy()
-        else:
-            mask = output[3]['mask'].copy()
-        num_mask = np.sum(mask)
-
-        print('{:25s} {}'.format(
-            'Detected:'
-            , num_mask))
-
-        for ii, cmask in enumerate(color_masks):
-            mask_temp = mask & cmask
-            num_lines = np.sum(mask_temp)
-            if num_lines > 0:
-
-                truncate_mask(mask_temp, 1000)
-                num_lines = np.sum(mask_temp)
-
-                x0 = output[2]['origin'][mask_temp, 0]
-                y0 = output[2]['origin'][mask_temp, 1]
-                z0 = output[2]['origin'][mask_temp, 2]
-                x1 = output[3]['origin'][mask_temp, 0]
-                y1 = output[3]['origin'][mask_temp, 1]
-                z1 = output[3]['origin'][mask_temp, 2]
-
-                x = np.concatenate((x0, x1))
-                y = np.concatenate((y0, y1))
-                z = np.concatenate((z0, z1))
-
-                lines = np.zeros((num_lines, 2), dtype=int)
-                lines[:, 0] = np.arange(0, num_lines)
-                lines[:, 1] = np.arange(num_lines, num_lines * 2)
-
-                obj = ipv.plot_trisurf(x, y, z, lines=lines, color=color_list[ii])
-                obj.line_material.transparent = True
-                obj.line_material.linewidth = 10.0
 
 def add_surf(obj):
     w = obj.param['width'] / 2.0
@@ -307,225 +178,110 @@ def add_surf(obj):
 
     ipv_obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[1.0, 1.0, 0.0, 0.2])
     ipv_obj.material.transparent = True
+    
+def add_optics(config):
 
+    for key_opt in config['optics']:
+        config_opt = config['optics'][key_opt]
 
-def add_optics(inputs):
+        if True:
+            w = config_opt['width'] / 2.0
+            h = config_opt['height'] / 2.0
+            cx = config_opt['xaxis']
+            cy = np.cross(config_opt['xaxis'], config_opt['zaxis'])
 
-    if True:
-        crystal_center = inputs['crystal_input']['origin'] + inputs['crystal_input']['zaxis'] * inputs['crystal_input']['radius']
-        x = np.array([crystal_center[0]])
-        y = np.array([crystal_center[1]])
-        z = np.array([crystal_center[2]])
-        ipv.scatter(x, y, z, size=2, marker="sphere")
+            point0 = w * cx + h * cy + config_opt['origin']
+            point1 = h * cy + config_opt['origin']
+            point2 = -1 * w * cx + h * cy + config_opt['origin']
 
-        # Plot the crystal circle.
-        num = 1000
-        crystal_radius = inputs['crystal_input']['radius']
-        x = np.sin(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['radius'] + crystal_center[0]
-        y = np.cos(np.linspace(0.0, np.pi * 2, num)) * inputs['crystal_input']['radius'] + crystal_center[1]
-        z = np.zeros(num) + crystal_center[2]
-        lines = np.zeros((num, 2), dtype=int)
-        lines[:, 0] = np.arange(num)
-        lines[:, 1] = np.roll(lines[:, 0], 1)
-        obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
+            point3 = w * cx + config_opt['origin']
+            point4 = config_opt['origin']
+            point5 = -1 * w * cx + config_opt['origin']
 
-        rowland_center = inputs['crystal_input']['origin'] + inputs['crystal_input']['zaxis'] * inputs['crystal_input']['radius'] / 2
-        rowland_radius = crystal_radius / 2
-        x = np.sin(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[0]
-        y = np.cos(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[1]
-        z = np.zeros(num) + crystal_center[2]
-        lines = np.zeros((num, 2), dtype=int)
-        lines[:, 0] = np.arange(num)
-        lines[:, 1] = np.roll(lines[:, 0], 1)
-        obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
+            point6 = w * cx - h * cy + config_opt['origin']
+            point7 = -1 * h * cy + config_opt['origin']
+            point8 = -1 * w * cx - h * cy + config_opt['origin']
 
-    if True:
-        w = inputs['crystal_input']['width'] / 2.0
-        h = inputs['crystal_input']['height'] / 2.0
-        cx = inputs['crystal_input']['xaxis']
-        cy = np.cross(inputs['crystal_input']['xaxis'], inputs['crystal_input']['zaxis'])
+            points = np.array([
+                point0
+                , point1
+                , point2
+                , point3
+                , point4
+                , point5
+                , point6
+                , point7
+                , point8
+            ])
 
-        point0 = w * cx + h * cy + inputs['crystal_input']['origin']
-        point1 = h * cy + inputs['crystal_input']['origin']
-        point2 = -1 * w * cx + h * cy + inputs['crystal_input']['origin']
+            x = points[:, 0]
+            y = points[:, 1]
+            z = points[:, 2]
 
-        point3 = w * cx + inputs['crystal_input']['origin']
-        point4 = inputs['crystal_input']['origin']
-        point5 = -1 * w * cx + inputs['crystal_input']['origin']
+            # I am sure there is a way to automate this using a meshgrid,
+            # but at the moment this is faster.
+            triangles = (
+                (4, 0, 2)
+                , (4, 2, 8)
+                , (4, 6, 8)
+                , (4, 6, 0)
+            )
 
-        point6 = w * cx - h * cy + inputs['crystal_input']['origin']
-        point7 = -1 * h * cy + inputs['crystal_input']['origin']
-        point8 = -1 * w * cx - h * cy + inputs['crystal_input']['origin']
+            obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
+            obj.material.transparent = True
 
-        points = np.array([
-            point0
-            , point1
-            , point2
-            , point3
-            , point4
-            , point5
-            , point6
-            , point7
-            , point8
-        ])
+        if 'crystal' in str.lower(key_opt):
+            # This code is incomplete.
+            # Everything is plotted a constant z plain, instead of being tilted
+            # with the crystal.
+            #
+            # What should be done here instead is to plot these circle in local
+            # crystal coordinates, and then transform them into machine coordinates.
+            
+            crystal_center = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius']
+            x = np.array([crystal_center[0]])
+            y = np.array([crystal_center[1]])
+            z = np.array([crystal_center[2]])
+            ipv.scatter(x, y, z, size=2, marker="sphere")
 
-        x = points[:, 0]
-        y = points[:, 1]
-        z = points[:, 2]
+            # Plot the crystal circle.
+            num = 1000
+            crystal_radius = config_opt['radius']
+            x = np.sin(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center[0]
+            y = np.cos(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center[1]
+            z = np.zeros(num) + crystal_center[2]
+            lines = np.zeros((num, 2), dtype=int)
+            lines[:, 0] = np.arange(num)
+            lines[:, 1] = np.roll(lines[:, 0], 1)
+            obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
 
-        # I am sure there is a way to automate this using a meshgrid,
-        # but at the moment this is faster.
-        triangles = (
-            (4, 0, 2)
-            , (4, 2, 8)
-            , (4, 6, 8)
-            , (4, 6, 0)
-        )
+            rowland_center = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius'] / 2
+            rowland_radius = crystal_radius / 2
+            x = np.sin(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[0]
+            y = np.cos(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[1]
+            z = np.zeros(num) + crystal_center[2]
+            lines = np.zeros((num, 2), dtype=int)
+            lines[:, 0] = np.arange(num)
+            lines[:, 1] = np.roll(lines[:, 0], 1)
+            obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
+            
+def add_sources(config):
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    
+    # Combine the user and default object pathlists.
+    pathlist = []
+    pathlist.extend(config['general']['pathlist_objects'])
+    pathlist.extend(config['general']['pathlist_default'])
+    
+    sources = XicsrtDispatcher(config['sources'], pathlist)
+    sources.instantiate_objects()
+    sources.initialize()
 
-        obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
-        obj.material.transparent = True
-
-    if False:
-        w = inputs['graphite_input']['width'] / 2.0
-        h = inputs['graphite_input']['height'] / 2.0
-        cx = inputs['graphite_input']['xaxis']
-        cy = np.cross(inputs['graphite_input']['xaxis'], inputs['graphite_input']['zaxis'])
-
-        point0 = w * cx + h * cy + inputs['graphite_input']['origin']
-        point1 = h * cy + inputs['graphite_input']['origin']
-        point2 = -1 * w * cx + h * cy + inputs['graphite_input']['origin']
-
-        point3 = w * cx + inputs['graphite_input']['origin']
-        point4 = inputs['graphite_input']['origin']
-        point5 = -1 * w * cx + inputs['graphite_input']['origin']
-
-        point6 = w * cx - h * cy + inputs['graphite_input']['origin']
-        point7 = -1 * h * cy + inputs['graphite_input']['origin']
-        point8 = -1 * w * cx - h * cy + inputs['graphite_input']['origin']
-
-        points = np.array([
-            point0
-            , point1
-            , point2
-            , point3
-            , point4
-            , point5
-            , point6
-            , point7
-            , point8
-        ])
-
-        x = points[:, 0]
-        y = points[:, 1]
-        z = points[:, 2]
-
-        # I am sure there is a way to automate this using a meshgrid,
-        # but at the moment this is faster.
-        triangles = (
-            (4, 0, 2)
-            , (4, 2, 8)
-            , (4, 6, 8)
-            , (4, 6, 0)
-        )
-
-        obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
-        obj.material.transparent = True
-
-    if True:
-        w = inputs['detector_input']['width'] / 2.0
-        h = inputs['detector_input']['height'] / 2.0
-        cx = inputs['detector_input']['xaxis']
-        cy = np.cross(inputs['detector_input']['xaxis'], inputs['detector_input']['zaxis'])
-
-        point0 = w * cx + h * cy + inputs['detector_input']['origin']
-        point1 = h * cy + inputs['detector_input']['origin']
-        point2 = -1 * w * cx + h * cy + inputs['detector_input']['origin']
-
-        point3 = w * cx + inputs['detector_input']['origin']
-        point4 = inputs['detector_input']['origin']
-        point5 = -1 * w * cx + inputs['detector_input']['origin']
-
-        point6 = w * cx - h * cy + inputs['detector_input']['origin']
-        point7 = -1 * h * cy + inputs['detector_input']['origin']
-        point8 = -1 * w * cx - h * cy + inputs['detector_input']['origin']
-
-        points = np.array([
-            point0
-            , point1
-            , point2
-            , point3
-            , point4
-            , point5
-            , point6
-            , point7
-            , point8
-        ])
-
-        x = points[:, 0]
-        y = points[:, 1]
-        z = points[:, 2]
-
-        # I am sure there is a way to automate this using a meshgrid,
-        # but at the moment this is faster.
-        triangles = (
-            (4, 0, 2)
-            , (4, 2, 8)
-            , (4, 6, 8)
-            , (4, 6, 0)
-        )
-
-        obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
-        obj.material.transparent = True
-
-    if False:
-        w = inputs['source_input']['width'] / 2.0
-        h = inputs['source_input']['height'] / 2.0
-        cx = inputs['source_input']['xaxis']
-        cy = np.cross(inputs['source_input']['xaxis'], inputs['source_input']['zaxis'])
-
-        point0 = w * cx + h * cy + inputs['source_input']['origin']
-        point1 = h * cy + inputs['source_input']['origin']
-        point2 = -1 * w * cx + h * cy + inputs['source_input']['origin']
-
-        point3 = w * cx + inputs['source_input']['origin']
-        point4 = inputs['source_input']['origin']
-        point5 = -1 * w * cx + inputs['source_input']['origin']
-
-        point6 = w * cx - h * cy + inputs['source_input']['origin']
-        point7 = -1 * h * cy + inputs['source_input']['origin']
-        point8 = -1 * w * cx - h * cy + inputs['source_input']['origin']
-
-        points = np.array([
-            point0
-            , point1
-            , point2
-            , point3
-            , point4
-            , point5
-            , point6
-            , point7
-            , point8
-        ])
-
-        x = points[:, 0]
-        y = points[:, 1]
-        z = points[:, 2]
-
-        # I am sure there is a way to automate this using a meshgrid,
-        # but at the moment this is faster.
-        triangles = (
-            (4, 0, 2)
-            , (4, 2, 8)
-            , (4, 6, 8)
-            , (4, 6, 0)
-        )
-
-        obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[1.0, 1.0, 0.0, 0.5])
-        obj.material.transparent = True
-
-def add_optics_volume(config):
-    source = XicsrtPlasmaGeneric(config['source_input'], strict=False)
-    add_surf(source)
+    for key in config['sources']:
+        obj = sources.get_object(key)
+        
+    add_surf(obj)
 
 def show():
     view = [0,0,0]
