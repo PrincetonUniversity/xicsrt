@@ -1,17 +1,14 @@
 
-A raytracing tool for X-Ray Imaging Crystal Spectrometers.
+A simple raytracing tool for X-Rays.
+
+This raytracing tool has been primarily developed for tracing of
+X-Ray Imaging Crystal Spectrometers on the fusion experiments
+ITER and W7-X. It it however a general purpose tool, and can be
+extended for use for any x-ray or optical raytracing applications.
 
 ToDo
 ----
-  - Rather that throw away rays, update a mask.
-    This will allow easier optics inspection and should not have any
-    significant performance impact.
-    -- Novi (2019-04-03)
 
-  - Create a superclass for all the optics.  Right now there is a
-    lot of duplicated code. This will also allow the optimization
-    of the FocusedExtendedSource to be applied to all sources.
-    -- Novi (2019-04-03)
   
 Authors
 -------
