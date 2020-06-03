@@ -12,6 +12,7 @@ Deal with reading and writing input files for XICSRT.
 """
 
 import numpy as np
+import logging
 from copy import deepcopy
 
 import json
@@ -30,6 +31,7 @@ def save_config(filepath, config):
     config_to_list(config_out)
     with open(filepath, 'w') as ff:
         json.dump(config_out, ff, indent=1)
+    logging.info('Config saved to {}'.format(filepath))
 
 def config_to_numpy(obj):
     _dict_to_numpy(obj)

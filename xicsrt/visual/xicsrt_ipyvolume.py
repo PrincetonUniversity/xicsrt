@@ -7,6 +7,19 @@ import matplotlib
 from xicsrt import xicsrt_config
 from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 
+"""
+These are a set of routines for visualization in ipyvolume.
+
+So far I have been using these within a Jupyter notebook.
+Here is some example code:
+
+xicsrt_ipyvolume.figure()
+xicsrt_ipyvolume.add_rays(results, config)
+xicsrt_ipyvolume.add_optics(config)
+xicsrt_ipyvolume.add_sources(config)
+xicsrt_ipyvolume.show()
+"""
+
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
     if num_mask > max_num:
