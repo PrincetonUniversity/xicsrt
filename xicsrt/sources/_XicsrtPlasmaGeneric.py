@@ -80,7 +80,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         bundle_input = {}
         bundle_input['origin']       = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
         bundle_input['temperature']  = np.ones([self.param['bundle_count']], dtype = np.float64)
-        bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.int)
+        bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.float64)
         bundle_input['velocity']     = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
         bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool)
         
@@ -166,7 +166,7 @@ class XicsrtPlasmaGeneric(TraceObject):
             intensity *= self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume'])
             
             source_config['intensity'] = intensity
-            
+
             # constants
             source_config['width']         = self.param['voxel_size']
             source_config['height']        = self.param['voxel_size']
