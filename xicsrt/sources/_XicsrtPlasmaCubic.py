@@ -19,16 +19,6 @@ class XicsrtPlasmaCubic(XicsrtPlasmaGeneric):
     """
                 
     def bundle_generate(self, bundle_input):
-        #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.param['width']/2,  self.param['width']/2,  self.param['bundle_count'])
-        y_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        z_offset = np.random.uniform(-1 * self.param['depth']/2,  self.param['depth']/2,  self.param['bundle_count'])
-                
-        bundle_input['origin'][:] = (
-            self.origin
-            + np.einsum('i,j', x_offset, self.xaxis)
-            + np.einsum('i,j', y_offset, self.yaxis)
-            + np.einsum('i,j', z_offset, self.zaxis))
         
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
