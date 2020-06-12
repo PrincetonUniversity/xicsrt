@@ -32,11 +32,11 @@ def raytrace(config, internal=False):
     """
     profiler.start('raytrace')
 
-    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
-    np.random.seed(config['general']['random_seed'])
-
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+
+    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
+    np.random.seed(config['general']['random_seed'])
     
     num_iter = config['general']['number_of_iter']
     
@@ -74,6 +74,8 @@ def raytrace_multi(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+
+    # Make local copies of some options.
     num_runs = config['general']['number_of_runs']
     random_seed = config['general']['random_seed']
     
