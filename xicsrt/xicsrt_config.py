@@ -17,6 +17,7 @@ from xicsrt import xicsrt_input
 from xicsrt.xicsrt_objects import ConfigObject
 
 class XicsrtGeneralConfig(ConfigObject):
+
     def get_default_config(self):
         config = super().get_default_config()
 
@@ -37,6 +38,7 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['keep_images'] = True
         config['general']['keep_history'] = True
 
+        config['general']['save_config'] = False
         config['general']['save_meta'] = False
         config['general']['save_images'] = False
         config['general']['save_history'] = False

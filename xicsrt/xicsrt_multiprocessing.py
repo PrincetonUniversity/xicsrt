@@ -67,12 +67,17 @@ def raytrace_multiprocessing(config):
     profiler.stop('mp: gathering')
 
     output = combine_raytrace(output_list)
-    output['config'] = config
+
+    # Reset the configuration options that were unique to the individual runs.
+    output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
+    output['config']['general']['random_seed'] = config['general']['output_run_suffix']
 
     if config['general']['save_images']:
         save_images(output)
     if config['general']['print_results']:
         print_raytrace(output)
+    if config['general']['save_config']:
+        xicsrt_input.save_config(output['config'])
         
     profiler.stop('raytrace_multiprocessing')
     return output

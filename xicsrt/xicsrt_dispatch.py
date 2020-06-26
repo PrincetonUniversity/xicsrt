@@ -28,15 +28,75 @@ class XicsrtDispatcher():
         self.meta = OrderedDict()
         self.image = OrderedDict()
         self.history = OrderedDict()
-        
+
+    def instantiate_objects(self):
+        obj_info = self.find_xicsrt_objects(self.pathlist)
+
+        # self.log.debug(obj_info)
+
+        for key in self.config:
+            obj = self._instantiate_object_single(obj_info, self.config[key])
+            self.objects[key] = obj
+            self.meta[key] = {}
+
+    def find_xicsrt_objects(self, pathlist):
+
+        filepath_list = []
+        name_list = []
+
+        for pp in pathlist:
+            filepath_list.extend(glob.glob(os.path.join(pp, '_Xicsrt*.py')))
+
+        for ff in filepath_list:
+            filename = os.path.basename(ff)
+            objectname = os.path.splitext(filename)[0]
+            objectname = objectname[1:]
+            name_list.append(objectname)
+
+        output = OrderedDict()
+        for ii, ff in enumerate(name_list):
+            output[ff] = {
+                'filepath': filepath_list[ii]
+                , 'name': name_list[ii]
+            }
+
+        return output
+
+    def _instantiate_object_single(self, obj_info, config):
+        """
+        Instantiate an object from a list of filenames and a class name.
+        """
+
+        if config['class_name'] in obj_info:
+            info = obj_info[config['class_name']]
+        else:
+            raise Exception('Could not find {} in available objects.'.format(config['name']))
+
+        spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        cls = getattr(mod, info['name'])
+        obj = cls(config, initialize=False)
+
+        return obj
+
+    def get_object(self, name):
+        return self.objects[name]
+
     def check_config(self, *args, **kwargs):
         for key, obj in self.objects.items():
             obj.check_config(*args, **kwargs)
 
+    def get_config(self, *args, **kwargs):
+        config = OrderedDict()
+        for key, obj in self.objects.items():
+            config[key] = obj.get_config(*args, **kwargs)
+        return config
+
     def initialize(self, *args, **kwargs):
         for key, obj in self.objects.items():
             obj.initialize(*args, **kwargs)
-    
+
     def generate_rays(self, history=None):
         """
         Generates rays from all sources.
@@ -98,57 +158,4 @@ class XicsrtDispatcher():
             for filter in filters.objects:
                 if str(filters.objects[filter].name) in self.objects[key].config['filter_list']:
                     self.objects[key].filter_objects.append(filters.objects[filter])
-            
-    def instantiate_objects(self):
-        obj_info = self.find_xicsrt_objects(self.pathlist)
-        
-        # self.log.debug(obj_info)
 
-        for key in self.config:
-            obj = self._instantiate_object_single(obj_info, self.config[key])
-            self.objects[key] = obj
-            self.meta[key] = {}
-    
-    def find_xicsrt_objects(self, pathlist):
-
-        filepath_list = []
-        name_list = []
-
-        for pp in pathlist:
-            filepath_list.extend(glob.glob(os.path.join(pp, '_Xicsrt*.py')))
-
-        for ff in filepath_list:
-            filename = os.path.basename(ff)
-            objectname = os.path.splitext(filename)[0]
-            objectname = objectname[1:]
-            name_list.append(objectname)
-
-        output = OrderedDict()
-        for ii, ff in enumerate(name_list):
-            output[ff] = {
-                'filepath':filepath_list[ii]
-                ,'name':name_list[ii]
-                }
-
-        return output
-
-    def _instantiate_object_single(self, obj_info, config):
-        """
-        Instantiate an object from a list of filenames and a class name.
-        """
-        
-        if config['class_name'] in obj_info:
-            info = obj_info[config['class_name']]
-        else:
-            raise Exception('Could not find {} in available objects.'.format(config['name']))
-        
-        spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        cls = getattr(mod, info['name'])
-        obj = cls(config, initialize=False)
-        
-        return obj
-
-    def get_object(self, name):
-        return self.objects[name]

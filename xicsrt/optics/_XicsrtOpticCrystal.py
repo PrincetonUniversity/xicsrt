@@ -95,10 +95,13 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         bragg_angle[m] = np.arcsin( W[m] / (2 * self.param['crystal_spacing']))
         dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * normals[m]))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
-        
+
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.param['do_bragg_check'] is True:
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
+
+
+
         return rays, normals
     
     def reflect_vectors(self, X, rays, normals):

@@ -14,6 +14,7 @@ Deal with reading and writing input files for XICSRT.
 import numpy as np
 import logging
 from copy import deepcopy
+import os
 
 import json
 
@@ -25,7 +26,9 @@ def load_config(filepath):
     config_to_numpy(config)
     return config
 
-def save_config(filepath, config):
+def save_config(config, filepath=None):
+    if filepath is None:
+        filepath = os.path.join(config['general']['output_path'], 'config.json')
     config_out = deepcopy(config)
     config_out = _dict_to_list(config_out)
     config_to_list(config_out)

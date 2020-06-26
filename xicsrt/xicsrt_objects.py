@@ -144,8 +144,12 @@ class ConfigObject():
         keywords:
           strict (True)
             If True then an error will be raised if an option is found in
-            the user dict that is not found in the default dict. If False
-            any unmatched options will simplly be ignored.
+            the user dict that is not found in the default dict.
+
+          update (False)
+            If True any unmatched options that are found will be retained.
+            When False they will simply be ignored. This option has no effect
+            unless strict = False.
         """
         if strict is None:
             strict = True

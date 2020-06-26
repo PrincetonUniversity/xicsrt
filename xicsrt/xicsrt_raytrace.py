@@ -18,6 +18,7 @@ from collections import OrderedDict
 from xicsrt.util import profiler
 
 from xicsrt import xicsrt_config
+from xicsrt import xicsrt_input
 from xicsrt.xicsrt_dispatch import XicsrtDispatcher
 from xicsrt.xicsrt_objects import RayArray
 
@@ -55,6 +56,8 @@ def raytrace(config, internal=False):
             save_images(output)
         if config['general']['print_results']:
             print_raytrace(output)
+        if config['general']['save_config']:
+            xicsrt_input.save_config(output['config'])
     else:
         if config['general']['save_run_images']:
             save_images(output)
@@ -95,12 +98,17 @@ def raytrace_multi(config):
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
-    output['config'] = config
+
+    # Reset the configuration options that were unique to the individual runs.
+    output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
+    output['config']['general']['random_seed'] = config['general']['output_run_suffix']
 
     if config['general']['save_images']:
         save_images(output)
     if config['general']['print_results']:
         print_raytrace(output)
+    if config['general']['save_config']:
+        xicsrt_input.save_config(output['config'])
         
     profiler.stop('raytrace_multi')
     return output
@@ -118,7 +126,8 @@ def raytrace_single(config):
     config = xicsrt_config.get_config(config)
     config = xicsrt_config.config_to_numpy(config)
     
-    # Load in config general properties.
+    # Copy some config entries to local variables.
+    # This is only to make tho code below more readable.
     keep_meta    = config['general']['keep_meta']
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
@@ -133,18 +142,21 @@ def raytrace_single(config):
         filters = XicsrtDispatcher(config['filters'], pathlist)
         filters.instantiate_objects()
         filters.initialize()
+        config['filters'] = filters.get_config()
 
     sources = XicsrtDispatcher(config['sources'], pathlist)
     sources.instantiate_objects()
     sources.apply_filters(filters)
     sources.initialize()
+    config['sources'] = sources.get_config()
     
     optics  = XicsrtDispatcher(config['optics'],  pathlist)
     optics.instantiate_objects()
     optics.initialize()
+    config['optics'] = optics.get_config()
     
-    rays = sources.generate_rays(history = keep_history)
-    rays = optics.raytrace(rays, history = keep_history, images = keep_images)
+    rays = sources.generate_rays(history=keep_history)
+    rays = optics.raytrace(rays, history=keep_history, images=keep_images)
 
     # Combine sources and optics outputs.
     meta    = OrderedDict()
