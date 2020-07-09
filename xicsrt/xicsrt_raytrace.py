@@ -35,6 +35,7 @@ def raytrace(config, internal=False):
 
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+    check_config(config)
 
     logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
     np.random.seed(config['general']['random_seed'])
@@ -78,6 +79,7 @@ def raytrace_multi(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+    check_config(config)
 
     # Make local copies of some options.
     num_runs = config['general']['number_of_runs']
@@ -190,6 +192,17 @@ def raytrace_single(config):
     
     profiler.stop('raytrace_single')
     return output
+
+def check_config(config):
+    do_save = False
+    for key in config['general']:
+        if 'save' in key:
+            if config['general'][key]:
+                do_save = True
+    if do_save:
+        if not os.path.exists(config['general']['output_path']):
+            if not config['general']['make_directories']:
+                raise Exception('Output directory does not exist. Create directory or set make_directories to True.')
 
 def sort_raytrace(input, max_lost=None):
     if max_lost is None:
@@ -336,7 +349,10 @@ def save_images(results):
     suffix = results['config']['general']['output_suffix']
     run_suffix = results['config']['general']['output_run_suffix']
     ext = results['config']['general']['image_extension']
-    
+
+    if results['config']['general']['make_directories']:
+        os.makedirs(results['config']['general']['output_path'], exist_ok=True)
+
     for key_opt in results['config']['optics']:
         if key_opt in results['total']['image']:
             filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext

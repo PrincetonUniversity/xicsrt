@@ -27,6 +27,10 @@ def load_config(filepath):
     return config
 
 def save_config(config, filepath=None):
+
+    if config['general'].get('make_directories', False):
+        os.makedirs(config['general']['output_path'], exist_ok=True)
+
     if filepath is None:
         filepath = os.path.join(config['general']['output_path'], 'config.json')
     config_out = deepcopy(config)

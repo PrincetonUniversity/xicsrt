@@ -31,6 +31,7 @@ def raytrace_multiprocessing(config):
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+    check_config(config)
     
     num_runs = config['general']['number_of_runs']
     random_seed = config['general']['random_seed']
