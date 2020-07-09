@@ -33,15 +33,17 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['output_suffix'] = None
         config['general']['output_run_suffix'] = None
         config['general']['image_extension'] = '.tif'
-        
+
         config['general']['keep_meta'] = True
         config['general']['keep_images'] = True
         config['general']['keep_history'] = True
 
+        config['general']['history_max_lost'] = 10000
+
         config['general']['save_config'] = False
         config['general']['save_meta'] = False
-        config['general']['save_images'] = False
         config['general']['save_history'] = False
+        config['general']['save_images'] = False
         config['general']['save_run_images'] = False
         
         config['general']['print_results'] = True

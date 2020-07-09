@@ -40,19 +40,20 @@ def raytrace(config, internal=False):
     np.random.seed(config['general']['random_seed'])
     
     num_iter = config['general']['number_of_iter']
-    
+    max_lost_iter = int(config['general']['history_max_lost']/num_iter)
+
     output_list = []
     for ii in range(num_iter):
         logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
         
         single = raytrace_single(config)
-        sorted = sort_raytrace(single)
+        sorted = sort_raytrace(single, max_lost=max_lost_iter)
         output_list.append(sorted)
         
     output = combine_raytrace(output_list)
 
     if internal is False:
-        if config['general']['save_images']:
+        if config['general']['save_images'] or config['general']['save_run_images']:
             save_images(output)
         if config['general']['print_results']:
             print_raytrace(output)
@@ -305,6 +306,9 @@ def combine_raytrace(input_list):
                         input_list[ii_run]['found']['history'][key_opt][key_ray][:])
                     output['lost']['history'][key_opt][key_ray][index_lost:index_lost+num_lost] = (
                         input_list[ii_run]['lost']['history'][key_opt][key_ray][:])
+
+            index_found += num_found
+            index_lost += num_lost
  
     profiler.stop('combine_raytrace')
     return output

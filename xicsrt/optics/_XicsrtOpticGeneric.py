@@ -108,6 +108,8 @@ class XicsrtOpticGeneric(TraceObject):
         X_local = np.zeros(O.shape, dtype=np.float64)
         
         # X is the 3D point where the ray intersects the optic
+        # There is no reason to make a new X array here
+        # instead of modifying O except to make debugging easier.
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
 
         X_local[m] = self.point_to_local(X[m])
@@ -206,6 +208,7 @@ class XicsrtOpticGeneric(TraceObject):
         #mask all the rays that missed all faces
         if self.param['do_miss_check'] is True:
             m[m] &= (hits[m] != 0)
+
         return X, rays, hits
     
     def light(self, rays):
