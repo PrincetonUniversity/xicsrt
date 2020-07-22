@@ -194,11 +194,13 @@ def raytrace_single(config):
     return output
 
 def check_config(config):
+    # Check if anything needs to be saved.
     do_save = False
     for key in config['general']:
         if 'save' in key:
             if config['general'][key]:
                 do_save = True
+
     if do_save:
         if not os.path.exists(config['general']['output_path']):
             if not config['general']['make_directories']:
