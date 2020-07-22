@@ -18,6 +18,14 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
         config = super().get_default_config()
         config['radius'] = 1.0
         config['use_meshgrid'] = True
+        """
+        config['grid_resolution'] refers to the density of the surface grid
+        It should be an int 1-8, 1 being the lowest resolution
+        The int 1-8 is simply for the selection structure in 'generate_crystal_mesh'
+        This is a temporary fix for convenience while working in jupyter
+        and it should eventually be changed
+        """
+        config['grid_resolution'] = None
         return config
 
     def initialize(self):
@@ -33,12 +41,50 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
         This method creates the meshgrid for the crystal
         """
         # Create series of x,y points
-        x = np.linspace(-0.02, 0.02, 8)
-        y = np.linspace(-0.05, 0.05, 20)
+        """
+        For some reason linspace function doesn't work when I enter self.param[]
+        directly into it, this is my solution
+        """
+        x_lim = self.param['width']
+        y_lim = self.param['height']
+
+        #Ensure that crystal has same ratio of mesh points per cm along height & width
+        pts_ratio = self.param['height']/self.param['width']
+
+        if self.param['grid_resolution'] == 1:
+            x_pts = self.param['width']*50
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 2:
+            x_pts = self.param['width'] * 100
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 3:
+            x_pts = self.param['width'] * 200
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 4:
+            x_pts = self.param['width'] * 300
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 5:
+            x_pts = self.param['width'] * 400
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 6:
+            x_pts = self.param['width'] * 500
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 7:
+            x_pts = self.param['width'] * 600
+            y_pts = x_pts * pts_ratio
+        elif self.param['grid_resolution'] == 8:
+            x_pts = self.param['width'] * 700
+            y_pts = x_pts * pts_ratio
+        else:
+            x_pts = 4
+            y_pts = 10
+
+        x = np.linspace(-x_lim/2, x_lim/2, int(x_pts))
+        y = np.linspace(-y_lim/2, y_lim/2, int(y_pts))
 
         # Create x,y meshgrid arrays, calculate z coords
         xx, yy = np.meshgrid(x, y)
-        zz = np.sqrt(xx ** 2 + yy ** 2 + 1.4503999948501587 ** 2) - 1.4503999948501587
+        zz = np.sqrt(xx ** 2 + yy ** 2 + self.param['radius']** 2) - self.param['radius']
 
         # Combine x & y arrays, add z dimension
         points = np.stack((xx.flatten(), yy.flatten()), axis=0).T
