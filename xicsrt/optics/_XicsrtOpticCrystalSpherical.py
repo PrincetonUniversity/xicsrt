@@ -73,14 +73,6 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.normalize(self.param['center'] - X[m])
         return normals
-    
-    def mesh_generate_optic_normals(self, X, rays, hits):
-        m = rays['mask']
-        normals = np.zeros(X.shape, dtype=np.float64)
-        for ii in range(len(self.param['mesh_faces'])):
-            tri   = self.mesh_triangulate(ii)
-            test  = np.equal(ii, (hits - 1))
-            test &= m
-            normals[test] = tri['normal']
+
             
-        return normals
+
