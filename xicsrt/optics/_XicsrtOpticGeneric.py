@@ -51,7 +51,7 @@ class XicsrtOpticGeneric(TraceObject):
         #
         # This is a temporary solution for plotting mesh intersections.
         # This check should eventually be removed. See todo file.
-        
+        """
         if self.config['use_meshgrid'] is True:
             mesh_loc = self.point_to_local(self.config['mesh_points'])
             
@@ -61,7 +61,7 @@ class XicsrtOpticGeneric(TraceObject):
             test &= np.all(abs(mesh_loc[:,1]) <= (self.config['height'] / 2))
             if not test:
                 raise Exception('Optic dimentions too small to contain meshgrid.')
-        
+        """
         # autofill pixel grid sizes
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
@@ -228,8 +228,15 @@ class XicsrtOpticGeneric(TraceObject):
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         return rays
 
-
-    
+    def mesh_generate_optic_normals(self, X, rays, hits):
+            m = rays['mask']
+            normals = np.zeros(X.shape, dtype=np.float64)
+            for ii in range(len(self.param['mesh_faces'])):
+                tri = self.mesh_triangulate(ii)
+                test = np.equal(ii, (hits - 1))
+                test &= m
+                normals[test] = tri['normal']
+            return normals
     def make_image(self, rays):
         """
         Collect the rays that his this optic into a pixel array that can be used
