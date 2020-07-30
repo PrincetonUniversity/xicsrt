@@ -87,11 +87,19 @@ class XicsrtDispatcher():
         for key, obj in self.objects.items():
             obj.check_config(*args, **kwargs)
 
+    def check_param(self, *args, **kwargs):
+        for key, obj in self.objects.items():
+            obj.check_param(*args, **kwargs)
+
     def get_config(self, *args, **kwargs):
         config = OrderedDict()
         for key, obj in self.objects.items():
             config[key] = obj.get_config(*args, **kwargs)
         return config
+
+    def setup(self, *args, **kwargs):
+        for key, obj in self.objects.items():
+            obj.setup(*args, **kwargs)
 
     def initialize(self, *args, **kwargs):
         for key, obj in self.objects.items():

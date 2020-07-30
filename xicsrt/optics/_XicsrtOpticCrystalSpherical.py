@@ -67,12 +67,10 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         # Distance traveled by the ray before hitting the optic
         distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
         return distance
-    
+
     def generate_optic_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.normalize(self.param['center'] - X[m])
         return normals
-
-            
 

@@ -9,42 +9,40 @@ Authors
 """
 import numpy as np
 from scipy.spatial import Delaunay
-import matplotlib.tri as mtri
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
 
     def get_default_config(self):
+        """
+        config['grid_resolution']:
+          Refers to the density of the surface grid it should be
+          an int 1-8, 1 being the lowest resolution. The int 1-8 is
+          simply for the selection structure in 'generate_crystal_mesh'
+          This is a temporary fix for convenience while working in jupyter
+          and it should eventually be changed
+        """
         config = super().get_default_config()
         config['radius'] = 1.0
         config['use_meshgrid'] = True
-        """
-        config['grid_resolution'] refers to the density of the surface grid
-        It should be an int 1-8, 1 being the lowest resolution
-        The int 1-8 is simply for the selection structure in 'generate_crystal_mesh'
-        This is a temporary fix for convenience while working in jupyter
-        and it should eventually be changed
-        """
         config['grid_resolution'] = None
+
         return config
 
-    def initialize(self):
-        super().initialize()
-        #self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
+    def setup(self):
+        super().setup()
         mesh_faces, mesh_points = self.generate_crystal_mesh()
-        self.param['mesh_faces'] = mesh_faces
         mesh_points_ext = self.point_to_external(mesh_points)
+
+        self.param['mesh_faces'] = mesh_faces
         self.param['mesh_points'] = mesh_points_ext
 
     def generate_crystal_mesh(self):
         """
         This method creates the meshgrid for the crystal
         """
+
         # Create series of x,y points
-        """
-        For some reason linspace function doesn't work when I enter self.param[]
-        directly into it, this is my solution
-        """
         x_lim = self.param['width']
         y_lim = self.param['height']
 
@@ -84,7 +82,7 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
 
         # Create x,y meshgrid arrays, calculate z coords
         xx, yy = np.meshgrid(x, y)
-        zz = np.sqrt(xx ** 2 + yy ** 2 + self.param['radius']** 2) - self.param['radius']
+        zz = self.param['radius'] - np.sqrt(self.param['radius']** 2 - xx ** 2 - yy ** 2)
 
         # Combine x & y arrays, add z dimension
         points = np.stack((xx.flatten(), yy.flatten()), axis=0).T

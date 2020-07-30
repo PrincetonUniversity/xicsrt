@@ -144,17 +144,20 @@ def raytrace_single(config):
     if 'filters' in config:
         filters = XicsrtDispatcher(config['filters'], pathlist)
         filters.instantiate_objects()
+        filters.setup()
         filters.initialize()
         config['filters'] = filters.get_config()
 
     sources = XicsrtDispatcher(config['sources'], pathlist)
     sources.instantiate_objects()
     sources.apply_filters(filters)
+    sources.setup()
     sources.initialize()
     config['sources'] = sources.get_config()
     
     optics  = XicsrtDispatcher(config['optics'],  pathlist)
     optics.instantiate_objects()
+    optics.setup()
     optics.initialize()
     config['optics'] = optics.get_config()
     

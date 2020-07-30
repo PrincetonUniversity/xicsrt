@@ -17,6 +17,9 @@ from collections import OrderedDict
 
 import xicsrt.tool
 
+# Temporary
+from xicsrt import xicsrt_input
+
 class RayArray(dict):
     """
     The base class for an Ray array.
@@ -115,7 +118,11 @@ class ConfigObject():
         self.config = self.get_default_config()
         self.update_config(config, strict)
 
+        self.param = copy.deepcopy(self.config)
+        self.param = xicsrt_input.config_to_numpy(self.param)
+
         if initialize:
+            self.setup()
             self.check_config()
             self.initialize()
 
@@ -129,9 +136,24 @@ class ConfigObject():
         
     def check_config(self):
         pass
-    
+
+    def setup(self):
+        """
+        Perform any setup actions that are needed prior to initialization.
+        """
+        pass
+
+    def check_param(self):
+        """
+        Check the internal parameters prior to initialization.
+        """
+        pass
+
     def initialize(self):
-        self.param =  copy.deepcopy(self.config)
+        """
+        Initialize the object.
+        """
+        pass
     
     def update_config(self, config, strict=None, update=None):
         self._update_config_dict(self.config, config, strict, update)
@@ -176,18 +198,6 @@ class GeometryObject(ConfigObject):
     """
     The base class for any geometrical objects used in XICSRT.
     """
-        
-    def initialize(self):
-        super().initialize()
-
-        self.param['origin'] = np.array(self.param['origin'])
-        self.param['zaxis'] = np.array(self.param['zaxis'])
-        if self.param['xaxis'] is not None:
-            self.param['xaxis'] = np.array(self.param['xaxis'])
-        
-        # Location with respect to the external coordinate system.
-        self.origin = self.param['origin']
-        self.set_orientation(self.param['zaxis'], self.param['xaxis'])
 
     def __getattr__(self, key):
         """
@@ -209,7 +219,19 @@ class GeometryObject(ConfigObject):
         config['xaxis'] = None
 
         return config
-        
+
+    def setup(self):
+        super().setup()
+
+        self.param['origin'] = np.array(self.param['origin'])
+        self.param['zaxis'] = np.array(self.param['zaxis'])
+        if self.param['xaxis'] is not None:
+            self.param['xaxis'] = np.array(self.param['xaxis'])
+
+        # Location with respect to the external coordinate system.
+        self.origin = self.param['origin']
+        self.set_orientation(self.param['zaxis'], self.param['xaxis'])
+
     def set_orientation(self, zaxis, xaxis=None):
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)

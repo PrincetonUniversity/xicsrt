@@ -196,6 +196,7 @@ def add_optics(config):
 
     for key_opt in config['optics']:
         config_opt = config['optics'][key_opt]
+        config_opt = xicsrt_config.config_to_numpy(config_opt)
 
         if True:
             w = config_opt['width'] / 2.0
@@ -289,6 +290,7 @@ def add_sources(config):
     
     sources = XicsrtDispatcher(config['sources'], pathlist)
     sources.instantiate_objects()
+    sources.setup()
     sources.initialize()
 
     for key in config['sources']:
