@@ -342,7 +342,7 @@ def print_raytrace(results):
     print('Rays Detected:  {:6.3e}'.format(num_detector))
     print('Efficiency:     {:6.3e} ± {:3.1e} ({:7.5f}%)'.format(
         num_detector / num_source,
-        np.sqrt(num_detector / num_source),
+        np.sqrt(num_detector) / num_source,
         num_detector / num_source * 100))
     print('')
 

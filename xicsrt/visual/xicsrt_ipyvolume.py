@@ -53,6 +53,15 @@ def _add_ray_history(history, config, lost=None):
 
         # All rays leaving this optic element.
         mask = history[key_list[ii]]['mask']
+
+        # This is a temporary solution to filter lost rays for
+        # which no intersection at the next optic was calculated.
+        #
+        # This is not a good solution overall since it is possible
+        # to imagine a case where we would want to retain rays at
+        # the origin.
+        mask &= history[key_list[ii+1]]['origin'][:, 0] != 0.0
+
         num_mask = np.sum(mask)
 
         if num_mask == 0:
@@ -245,35 +254,67 @@ def add_optics(config):
             obj.material.transparent = True
 
         if 'crystal' in str.lower(key_opt):
-            # This code is incomplete.
-            # Everything is plotted a constant z plain, instead of being tilted
-            # with the crystal.
+
+            # Initialize the configuration.
+            # This merges the user config that we created
+            # with the default config
+            config = xicsrt_config.get_config(config)
+
+            # The easiest way to do coordinate transformations is
+            # to use the raytrace objects, since they already have
+            # everything built in.  Of course we could do this
+            # by just using some simple matrix multiplications,
+            # but this way we can use existing code.
             #
-            # What should be done here instead is to plot these circle in local
-            # crystal coordinates, and then transform them into machine coordinates.
-            
-            crystal_center = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius']
-            x = np.array([crystal_center[0]])
-            y = np.array([crystal_center[1]])
-            z = np.array([crystal_center[2]])
-            ipv.scatter(x, y, z, size=2, marker="sphere")
+            # We could just instantiate the objects directly as needed,
+            # but since a dispatcher is already available in xicsrt that
+            # does this for us, we might as well use it.  This is copied
+            # from xicsrt_raytrace.raytrace_single.
+            name = 'crystal'
+            section = 'optics'
+            optics = XicsrtDispatcher(config[section], config['general']['pathlist_default'])
+            optics.instantiate_objects()
+            optics.setup()
+            optics.initialize()
+
+            # Get the crystal object from the dispatcher.
+            optic_obj = optics.get_object(name)
+
+            crystal_center_ext = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius']
+            crystal_center_loc = optic_obj.point_to_local(crystal_center_ext)
+
+            x = np.array([crystal_center_ext[0]])
+            y = np.array([crystal_center_ext[1]])
+            z = np.array([crystal_center_ext[2]])
+            ipv.scatter(x, y, z, color='black', marker="sphere")
 
             # Plot the crystal circle.
             num = 1000
             crystal_radius = config_opt['radius']
-            x = np.sin(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center[0]
-            y = np.cos(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center[1]
-            z = np.zeros(num) + crystal_center[2]
+            coord_loc = np.zeros((num, 3))
+            coord_loc[:, 0] = np.sin(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center_loc[0]
+            coord_loc[:, 1] = crystal_center_loc[1]
+            coord_loc[:, 2] = np.cos(np.linspace(0.0, np.pi * 2, num)) * config_opt['radius'] + crystal_center_loc[2]
+            coord_ext = optic_obj.point_to_external(coord_loc)
+            x = coord_ext[:,0]
+            y = coord_ext[:,1]
+            z = coord_ext[:,2]
             lines = np.zeros((num, 2), dtype=int)
             lines[:, 0] = np.arange(num)
             lines[:, 1] = np.roll(lines[:, 0], 1)
             obj = ipv.plot_trisurf(x, y, z, lines=lines, color=[0.0, 0.0, 0.0, 0.5])
 
-            rowland_center = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius'] / 2
+            rowland_center_ext = config_opt['origin'] + config_opt['zaxis'] * config_opt['radius'] / 2
+            rowland_center_loc = optic_obj.point_to_local(rowland_center_ext)
             rowland_radius = crystal_radius / 2
-            x = np.sin(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[0]
-            y = np.cos(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center[1]
-            z = np.zeros(num) + crystal_center[2]
+            coord_loc = np.zeros((num, 3))
+            coord_loc[:, 0] = np.sin(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center_loc[0]
+            coord_loc[:, 1] = rowland_center_loc[1]
+            coord_loc[:, 2] = np.cos(np.linspace(0.0, np.pi * 2, num)) * rowland_radius + rowland_center_loc[2]
+            coord_ext = optic_obj.point_to_external(coord_loc)
+            x = coord_ext[:,0]
+            y = coord_ext[:,1]
+            z = coord_ext[:,2]
             lines = np.zeros((num, 2), dtype=int)
             lines[:, 0] = np.arange(num)
             lines[:, 1] = np.roll(lines[:, 0], 1)

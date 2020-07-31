@@ -41,15 +41,15 @@ class XicsrtPlasmaVmecDatafile(XicsrtPlasmaVmec):
         output[:]  = np.interp(rho, data[:,0], data[:,1], left=0.0, right=0.0)
         
         return output
-    """
-    def get_velocity(self, rho):
-        output = np.zeros((len(rho),3))
 
-        # Read and interpolate profile from data file
-        data  = np.loadtxt(self.param['velocity_file'], dtype = np.float64)           
-        output[:, 0]  = np.interp(rho, data[:,0], data[:,1], left=0.0, right=0.0)           
-        output[:, 1]  = np.interp(rho, data[:,0], data[:,2], left=0.0, right=0.0)           
-        output[:, 2]  = np.interp(rho, data[:,0], data[:,3], left=0.0, right=0.0)
+    # def get_velocity(self, rho):
+    #     output = np.zeros((len(rho),3))
+    #
+    #     # Read and interpolate profile from data file
+    #     data  = np.loadtxt(self.param['velocity_file'], dtype = np.float64)
+    #     output[:, 0]  = np.interp(rho, data[:,0], data[:,1], left=0.0, right=0.0)
+    #     output[:, 1]  = np.interp(rho, data[:,0], data[:,2], left=0.0, right=0.0)
+    #     output[:, 2]  = np.interp(rho, data[:,0], data[:,3], left=0.0, right=0.0)
+    #
+    #     return output
 
-        return output
-    """

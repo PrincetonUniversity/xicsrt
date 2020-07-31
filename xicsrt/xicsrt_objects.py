@@ -210,7 +210,7 @@ class GeometryObject(ConfigObject):
         elif key == 'zaxis':
             return self.orientation[2, :]
         else:
-            raise AttributeError()
+            raise AttributeError(key)
 
     def get_default_config(self):
         config = super().get_default_config()

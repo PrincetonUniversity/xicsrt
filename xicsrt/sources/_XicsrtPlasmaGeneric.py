@@ -67,7 +67,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         self.param['bundle_type']  = str.lower(self.param['bundle_type'])
         self.param['bundle_count'] = int(self.param['bundle_count'])
         self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
-        self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread'] * np.pi / 360)**2
+        self.param['solid_angle']  = 4 * np.pi * np.sin(np.radians(self.config['spread'])/2)**2
         
         
     def setup_bundles(self):
@@ -116,8 +116,7 @@ class XicsrtPlasmaGeneric(TraceObject):
         count_rays_in_bundle = []
 
         m = bundle_input['mask']
-        print(' Bundles Generated: {:6.4e}'.format(len(m[m])))
-        
+
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.
         predicted_rays = int(np.sum(
@@ -157,7 +156,7 @@ class XicsrtPlasmaGeneric(TraceObject):
             # the plasma can be launched from virtual volume of a different
             # size.
             #
-            # In order to allow this while maintaning overall photon statistics
+            # In order to allow this while maintaining overall photon statistics
             # from the plasma, we normalize the intensity so that each bundle
             # represents a volume of plasma_volume/bundle_count.
             #
@@ -215,13 +214,15 @@ class XicsrtPlasmaGeneric(TraceObject):
         if len(rays['mask']) == 0:
             raise ValueError('No rays generated. Check plasma input parameters')
 
-        logging.info('Rays per bundle, mean:   {:0.0f}'.format(
+        logging.debug('Bundles Generated:       {:0.4e}'.format(
+            len(m[m])))
+        logging.debug('Rays per bundle, mean:   {:0.0f}'.format(
             np.mean(count_rays_in_bundle)))
-        logging.info('Rays per bundle, median: {:0.0f}'.format(
+        logging.debug('Rays per bundle, median: {:0.0f}'.format(
             np.median(count_rays_in_bundle)))
-        logging.info('Rays per bundle, max:    {:0d}'.format(
+        logging.debug('Rays per bundle, max:    {:0d}'.format(
             np.max(count_rays_in_bundle)))
-        logging.info('Rays per bundle, min:    {:0d}'.format(
+        logging.debug('Rays per bundle, min:    {:0d}'.format(
             np.min(count_rays_in_bundle)))
 
         return rays
