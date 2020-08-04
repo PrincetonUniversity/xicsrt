@@ -20,7 +20,7 @@ from collections import OrderedDict
 
 basepath = '/u/npablant/code/mirproject/xicsrt/'
 
-def get_config():
+def get_config(system=None, sight=None):
     config = OrderedDict()
     config['general']   = OrderedDict()
     config['filters']   = OrderedDict()
@@ -136,31 +136,6 @@ def get_config():
     # Wavelength: Xe44+: 2.7203, Xe51+: 2.19
     config['sources']['plasma']['wavelength']       = 2.7203
     config['sources']['plasma']['linewidth']        = 1.129e+14
-    
-    # -------------------------------------------------------------------------
-    ## Load focused extended source properties 
-    """
-    config['sources']['focused']['class_name']      = 'XicsrtSourceFocused'
-    config['sources']['focused']['filter_list']     = ['XicsrtBundleFilterSightline']
-    config['sources']['focused']['use_poisson']     = True
-    config['sources']['focused']['do_monochrome']   = False
-    config['sources']['focused']['temperature']     = 1000
-    config['sources']['focused']['intensity']       = 1e7
-    config['sources']['focused']['velocity']        = np.array([0.0,0.0,0.0])
-
-    config['sources']['focused']['origin']          = np.array([0.0, 6.2, 0.5])
-    config['sources']['focused']['zaxis']           = np.array([0.0, 0.0, 1.0])
-    config['sources']['focused']['xaxis']           = np.array([1.0, 0.0, 0.0])
-    config['sources']['focused']['target']          = np.array([1.0, 0.0, 0.0])
-    config['sources']['focused']['width']           = 4.0
-    config['sources']['focused']['height']          = 4.0
-    config['sources']['focused']['depth']           = 7.5
-    
-    config['sources']['focused']['spread']           = 1.0
-    config['sources']['focused']['mass_number']      = 131.293
-    config['sources']['focused']['wavelength']       = 2.19 #2.7203 
-    config['sources']['focused']['linewidth']        = 1.129e+14
-    """
     
     # -------------------------------------------------------------------------
     ## Load spherical crystal properties
@@ -287,8 +262,6 @@ def get_config():
     graphite_corners = np.empty([4,3,4,3], dtype = np.float64)
     crystal_corners  = np.empty([4,4,3], dtype = np.float64)
     detector_centers = np.empty([4,3], dtype = np.float64)
-    chord            = 0
-    sight            = 0
     
     graphite_corners[0,0,0,:] = np.array([048.5, 9324.9, -619.5])
     graphite_corners[0,0,1,:] = np.array([018.7, 9312.7, -619.4])
@@ -361,8 +334,14 @@ def get_config():
     detector_centers[2,:]     = np.array([-93.2, 17732.9,  977.6])
     detector_centers[3,:]     = np.array([-94.0, 17928.6,  869.1])
     
-    config = setup_real_scenario(config, graphite_corners, crystal_corners,
-                                 detector_centers, chord, sight)
+    config = setup_real_scenario(
+        config
+        ,graphite_corners
+        ,crystal_corners
+        ,detector_centers
+        ,system=system
+        ,sight=sight
+        ,inpath=inpath)
     
     return config
     
@@ -374,16 +353,50 @@ def get_config_multi(configurations):
         
     return config_multi
 
-def setup_real_scenario(config, g_corners, c_corners, d_centers, chord, sight):
+def setup_real_scenario(
+        config
+        ,g_corners
+        ,c_corners
+        ,d_centers
+        ,system=None
+        ,sight=None
+        ,inpath=None):
     """
     Rather than generating the entire scenario from scratch, this scenario
     generator takes the information provided by the ITER XICS team and fills in
     all the blanks to produce a complete description of the spectrometer layout
     """
+
+    if system is None: system = 0
+    if sight is None: sight = 0
+
+    if system == 0 or system == 1:
+        line = 'Xe44+'
+    elif system == 2 or system == 3:
+        line = 'Xe51+'
+    else:
+        raise Exception(f'System {system} unknown.')
+
+    # Setup the parameters for the correct line.
+    if line == 'Xe44+':
+        config['sources']['plasma']['emissivity_file'] = inpath + 'plasma_emissivity_xe44.txt'
+        config['sources']['plasma']['wavelength'] = 2.7203
+        config['sources']['plasma']['linewidth'] = 1.129e+14
+        config['optics']['crystal']['crystal_spacing'] = 1.7059
+        config['optics']['crystal']['radius'] = 2.400
+    elif line == 'Xe51+':
+        config['sources']['plasma']['emissivity_file'] = inpath + 'plasma_emissivity_xe51.txt'
+        config['sources']['plasma']['wavelength'] = 2.19
+        config['sources']['plasma']['linewidth'] = 1.129e+14
+        config['optics']['crystal']['crystal_spacing'] = 1.42
+        config['optics']['crystal']['radius'] = 2.200
+    else:
+        raise Exception(f'Emission line {line} not supported.')
+
     ## Unpack variables and convert to meters
-    g_corners  = g_corners[chord,sight] / 1000
-    c_corners  = c_corners[chord]       / 1000
-    d_centers  = d_centers[chord]       / 1000
+    g_corners  = g_corners[system, sight] / 1000
+    c_corners  = c_corners[system] / 1000
+    d_centers  = d_centers[system] / 1000
 
     #calculate geometric properties of all meshes
     g_basis      = np.zeros([3,3], dtype = np.float64)

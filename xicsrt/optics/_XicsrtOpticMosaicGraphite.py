@@ -72,7 +72,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         return output
     
     
-    def generate_optic_normals(self, X, rays):
+    def generate_normals(self, X, rays):
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm       
@@ -103,7 +103,8 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         normals[m] = np.einsum('ij,ijk->ik', dir_local[m], R[m])
         return normals
     
-    def mesh_generate_optic_normals(self, X, rays, hits):
+    def mesh_generate_normals_old(self, X, rays, hits):
+
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
@@ -135,5 +136,5 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             R[:,2,:] = norm_surf
             
             normals[test] = np.einsum('ij,ijk->ik', dir_local[test], R[test])
-            
+
         return normals

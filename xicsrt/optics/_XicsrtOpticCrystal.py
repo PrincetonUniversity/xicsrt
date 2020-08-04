@@ -33,10 +33,8 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         self.param['rocking_type'] = str.lower(self.param['rocking_type'])
         
     def rocking_curve_filter(self, incident_angle, bragg_angle):
-        #create a random number for each ray
-        test = np.random.uniform(0.0, 1.0, len(incident_angle))
-        
-        #compare that random number with the reflectivity distribution
+
+        # Generate or load a probability curve.
         if "step" in self.param['rocking_type']:
             # Step Function
             p = np.where(abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'] / 2,
@@ -49,7 +47,7 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
             # Gaussian Distribution
             p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))  
             p*= self.param['reflectivity']
-            
+
         elif "file" in self.param['rocking_type']:
             # read datafiles and extract points
             sigma_data  = np.loadtxt(self.param['rocking_sigma_file'], dtype = np.float64)
@@ -58,7 +56,11 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
             # convert data from arcsec to rad
             sigma_data[:,0] *= np.pi / (180 * 3600)
             pi_data[:,0]    *= np.pi / (180 * 3600)
-            
+
+            # Convert from microrad to rad
+            #sigma_data[:, 0] *= 1e-6
+            #pi_data[:, 0] *= 1e-6
+
             # evaluate rocking curve reflectivity value for each incident ray
             sigma_curve = np.zeros(len(incident_angle), dtype = np.float64)
             pi_curve    = np.zeros(len(incident_angle), dtype = np.float64)
@@ -75,8 +77,27 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
             
         else:
             raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
-        
-        #filter out the rays that do not survive the random rocking curve
+
+        # DEBUGGING:
+        #   Plot the rocking curve.
+        #
+        # from mirutil.plot import mirplot
+        # diff = (incident_angle - bragg_angle)
+        # idx = np.argsort(diff)
+        # plotlist = mirplot.PlotList()
+        # plotlist.append({
+        #     'x': diff[idx] * 1e6
+        #     , 'y': p[idx]
+        #     , 'xbound': [-5000, 5000]
+        # })
+        # plotlist.plotToScreen()
+
+        # Rreate a random number for each ray between 0 and 1.
+        test = np.random.uniform(0.0, 1.0, len(incident_angle))
+
+        # compare that random number with the reflectivity distribution
+        # and filter out the rays that do not survive the random
+        # rocking curve filter.
         mask = (p >= test)
         
         return mask
@@ -99,8 +120,6 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         #check which rays satisfy bragg, update mask to remove those that don't
         if self.param['do_bragg_check'] is True:
             m[m] &= self.rocking_curve_filter(bragg_angle[m], incident_angle[m])
-
-
 
         return rays, normals
     
