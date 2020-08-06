@@ -102,10 +102,12 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
         
         return mask
     
-    def angle_check(self, rays, normals):
+    def angle_check(self, rays, normals, mask=None):
+        if mask is None:
+            mask = rays['mask']
         D = rays['direction']
         W = rays['wavelength']
-        m = rays['mask']
+        m = mask
         
         bragg_angle = np.zeros(m.shape, dtype=np.float64)
         dot = np.zeros(m.shape, dtype=np.float64)
@@ -123,13 +125,15 @@ class XicsrtOpticCrystal(XicsrtOpticGeneric):
 
         return rays, normals
     
-    def reflect_vectors(self, X, rays, normals):
+    def reflect_vectors(self, X, rays, normals, mask=None):
+        if mask is None:
+            mask = rays['mask']
         O = rays['origin']
         D = rays['direction']
-        m = rays['mask']
+        m = mask
         
         # Check which vectors meet the Bragg condition (with rocking curve)
-        rays, normals = self.angle_check(rays, normals)
+        rays, normals = self.angle_check(rays, normals, m)
         
         # Perform reflection around normal vector, creating new rays with new
         # origin O = X and new direction D

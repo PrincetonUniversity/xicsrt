@@ -15,27 +15,10 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
     def get_default_config(self):
         config = super().get_default_config()
         config['mosaic_spread'] = 0.0
+        config['mosaic_depth'] = 15
         return config
 
-    def intersect(self, rays):
-        """
-        Calulate the distance to the intersection of the rays with an 
-        infinite plane.
-        """
-        
-        #test to see if a ray intersects the mirror plane
-        O = rays['origin']
-        D = rays['direction']
-        m = rays['mask']
-        
-        distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m]  = np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
-        distance[m] /= np.dot(D[m], self.param['zaxis'])
 
-        # Update the mask to count only intersections with the plain.
-        m[m] &= (distance[m] > 0)
-        
-        return distance
     """#Uniformly distributed crystallite normals
     def f(self, theta, number):
         output = np.empty((number, 3))
@@ -48,9 +31,57 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         output[:,2]   = z
         return output
     """
-    
-    #Gaussian distributed crystallite normals
+
+    def light(self, rays):
+        """
+        Reimplement the light method to allow testing of multiple
+        mosaic crystal angles. This is meant to simulate the penetration
+        of x-rays into the HOPG until the eventually encounter a
+        crystalite that satisfies the Bragg condition. This method
+        of calculation replicates both the HOPG 'focusing' qualities
+        as well as the expected througput.
+
+        To Do:
+            Efficiency could be greatly improved by including pre-filter.
+            The prefilter would use a step-function rocking curve to
+            exclude rays that are outside the possible range of reflection
+            with the current mosaic spread.
+        """
+        m = rays['mask']
+
+        mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool)
+
+        if self.param['use_meshgrid'] is False:
+            distance = self.intersect(rays)
+            X, rays  = self.intersect_check(rays, distance)
+            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
+            for ii in range(self.param['mosaic_depth']):
+                temp_mask = (~ mosaic_mask) & m
+                self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
+                normals  = self.generate_normals(X, rays, temp_mask)
+                rays     = self.reflect_vectors(X, rays, normals, temp_mask)
+                mosaic_mask[temp_mask] = True
+            m[:] &= mosaic_mask
+            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+        else:
+            self.mesh_initialize()
+            X, rays, hits = self.mesh_intersect_check_old(rays)
+            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
+            for ii in range(15):
+                temp_mask = (~ mosaic_mask) & m
+                self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
+                normals = self.mesh_generate_normals_old(X, rays, hits, temp_mask)
+                rays = self.reflect_vectors(X, rays, normals, temp_mask)
+                mosaic_mask[temp_mask] = True
+            m[:] &= mosaic_mask
+            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+
+        return rays
+
     def f(self, FWHM, number):
+        """
+        Gaussian distributed crystallite normals
+        """
         output = np.empty((number, 3))
         
         #convert the angular FWHM into a linear-displacement-from-vertical FWHM
@@ -72,16 +103,19 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         return output
     
     
-    def generate_normals(self, X, rays):
+    def generate_normals(self, X, rays, mask=None):
+        if mask is None:
+            mask = rays['mask']
+
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm       
         O = rays['origin']
-        m = rays['mask']
+        m = mask
         
         normals = np.zeros(O.shape)
         rad_spread = np.radians(self.param['mosaic_spread'])
-        dir_local = self.f(rad_spread, len(m))
+        dir_local = self.f(rad_spread, np.sum(m))
 
         # Create two vectors perpendicular to the surface normal,
         # it doesn't matter how they are oriented otherwise.
@@ -100,16 +134,18 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         R[:,1,:] = o_2
         R[:,2,:] = norm_surf
 
-        normals[m] = np.einsum('ij,ijk->ik', dir_local[m], R[m])
+        normals[m] = np.einsum('ij,ijk->ik', dir_local, R[m])
         return normals
     
-    def mesh_generate_normals_old(self, X, rays, hits):
+    def mesh_generate_normals_old(self, X, rays, hits, mask=None):
+        if mask is None:
+            mask = rays['mask']
 
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
         O = rays['origin']
-        m = rays['mask']
+        m = mask
         
         normals = np.zeros(O.shape)
         rad_spread = np.radians(self.param['mosaic_spread'])

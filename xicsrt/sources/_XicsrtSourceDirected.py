@@ -3,8 +3,7 @@
 Authors
 -------
   - Novimir Pablant <npablant@pppl.gov>
-  - James Kring <jdk0026@tigermail.auburn.edu>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+
 """
 
 import numpy as np
@@ -13,12 +12,26 @@ from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
 
 class XicsrtSourceDirected(XicsrtSourceGeneric):
     """
-    An extended rectangular ray source with rays emitted in a directed code.
+    An extended rectangular ray source with rays emitted in a
+    a preferred direction.
 
-    To model a point source set width, height and depth to zero.
-    To model a planar source set depth to zero.
+    This is essentially identical to the generic source except
+    that an explicit direction can be provided.
     """
-    
-    # The directed source is just a generic source. However we want to
-    # create a new object to facilitate user selection.
-    pass
+
+    def get_default_config(self):
+        config = super().get_default_config()
+        config['direction'] = None
+        return config
+
+    def initialize(self):
+        super().initialize()
+        # Setup a default direction along the zaxis.
+        if self.param['direction'] is None:
+            self.param['direction'] = self.param['zaxis']
+
+    def make_normal(self):
+        array = np.empty((self.param['intensity'], 3))
+        array[:] = self.param['direction']
+        normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
+        return normal

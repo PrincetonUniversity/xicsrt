@@ -26,7 +26,7 @@ class XicsrtOpticGeneric(TraceObject):
         config = super().get_default_config()
         
         # boolean settings
-        config['do_miss_check'] = False
+        config['do_miss_check'] = True
         
         # spatial information
         config['width']          = 0.0
@@ -157,7 +157,8 @@ class XicsrtOpticGeneric(TraceObject):
         m = rays['mask']
         
         distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m] = np.dot((self.param['origin'] - O[m]), self.param['zaxis']) / np.dot(D[m], self.param['zaxis'])
+        distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
+                       / np.dot(D[m], self.param['zaxis']))
 
         # Update the mask to only include positive distances.
         m &= (distance >= 0)

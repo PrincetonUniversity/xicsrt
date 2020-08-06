@@ -25,7 +25,7 @@ class XicsrtSourceFocused(XicsrtSourceGeneric):
     
     def generate_direction(self, origin):
         normal = self.make_normal_focused(origin)
-        D = super().random_direction(origin, normal)
+        D = super().random_direction(normal)
         return D
     
     def make_normal_focused(self, origin):

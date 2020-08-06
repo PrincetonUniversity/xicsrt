@@ -98,7 +98,7 @@ class XicsrtSourceGeneric(TraceObject):
 
     def generate_direction(self, origin):
         normal = self.make_normal()
-        D = self.random_direction(origin, normal)
+        D = self.random_direction(normal)
         return D
 
     def make_normal(self):
@@ -107,8 +107,8 @@ class XicsrtSourceGeneric(TraceObject):
         normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
         return normal
         
-    def random_direction(self, origin, normal):
-        # Pulled from Novi's FocusedExtendedSource
+    def random_direction(self, normal):
+
         def f(theta, number):
             output = np.empty((number, 3))
             
@@ -119,8 +119,7 @@ class XicsrtSourceGeneric(TraceObject):
             output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
             output[:,2]   = z
             return output
-        
-        direction  = np.empty(origin.shape)
+
         rad_spread = np.radians(self.param['spread'])
         dir_local  = f(rad_spread, self.param['intensity'])
 
