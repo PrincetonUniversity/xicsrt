@@ -11,9 +11,9 @@ import numpy as np
 from scipy.stats import cauchy        
 import scipy.constants as const
 
+from xicsrt import xicsrt_math
 from xicsrt.util import profiler
 from xicsrt.tool import voigt
-
 from xicsrt.xicsrt_objects import TraceObject
 
 class XicsrtSourceGeneric(TraceObject):
@@ -106,22 +106,11 @@ class XicsrtSourceGeneric(TraceObject):
         array[:] = self.param['zaxis']
         normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
         return normal
-        
+
     def random_direction(self, normal):
 
-        def f(theta, number):
-            output = np.empty((number, 3))
-            
-            z   = np.random.uniform(np.cos(theta),1, number)
-            phi = np.random.uniform(0, np.pi * 2, number)
-            
-            output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
-            output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
-            output[:,2]   = z
-            return output
-
         rad_spread = np.radians(self.param['spread'])
-        dir_local  = f(rad_spread, self.param['intensity'])
+        dir_local  = xicsrt_math.vector_dist_uniform(rad_spread, self.param['intensity'])
 
         # Generate some basis vectors that are perpendicular
         # to the normal. The orientation does not matter here.
@@ -129,7 +118,7 @@ class XicsrtSourceGeneric(TraceObject):
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
-        
+
         R        = np.empty((self.param['intensity'], 3, 3))
         R[:,0,:] = o_1
         R[:,1,:] = o_2

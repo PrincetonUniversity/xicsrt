@@ -8,6 +8,7 @@ Authors
 """
 import numpy as np
 
+from xicsrt import xicsrt_math
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
@@ -17,20 +18,6 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         config['mosaic_spread'] = 0.0
         config['mosaic_depth'] = 15
         return config
-
-
-    """#Uniformly distributed crystallite normals
-    def f(self, theta, number):
-        output = np.empty((number, 3))
-        
-        z   = np.random.uniform(np.cos(theta/2),1, number)
-        phi = np.random.uniform(0, 2 * np.pi, number)
-        
-        output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
-        output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
-        output[:,2]   = z
-        return output
-    """
 
     def light(self, rays):
         """
@@ -78,99 +65,41 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
 
         return rays
 
-    def f(self, FWHM, number):
+    def mosaic_normals(self, normals, rays, mask=None):
         """
-        Gaussian distributed crystallite normals
+        Add mosaic spread to the normals.
         """
-        output = np.empty((number, 3))
-        
-        #convert the angular FWHM into a linear-displacement-from-vertical FWHM
-        disp = 1 - np.cos(FWHM / 2)
-        
-        #convert from linear-displacement FWHM to standard deviation
-        sigma = disp / (2 * np.sqrt(2 * np.log(2)))
-        
-        #create the half-normal distribution of off-vertical vectors
-        z = 1
-        if sigma > 0:
-            z -= np.abs(np.random.normal(0, sigma, number))
-        phi = np.random.uniform(0, 2 * np.pi, number)
-        
-        output[:,0]   = np.sqrt(1-z**2) * np.cos(phi)
-        output[:,1]   = np.sqrt(1-z**2) * np.sin(phi)
-        output[:,2]   = z
-        
-        return output
-    
-    
-    def generate_normals(self, X, rays, mask=None):
-        if mask is None:
-            mask = rays['mask']
-
-        # Pulled from Novi's FocusedExtendedSource
-        # Generates a list of crystallite norms normally distributed around the
-        # average graphite mirror norm       
-        O = rays['origin']
-        m = mask
-        
-        normals = np.zeros(O.shape)
-        rad_spread = np.radians(self.param['mosaic_spread'])
-        dir_local = self.f(rad_spread, np.sum(m))
-
-        # Create two vectors perpendicular to the surface normal,
-        # it doesn't matter how they are oriented otherwise.
-        norm_surf = np.ones(O.shape) * self.param['zaxis']
-        o_1     = np.zeros(O.shape)
-        o_1[m]  = np.cross(norm_surf[m], [0,0,1])
-        o_1[m] /= np.linalg.norm(o_1[m], axis=1)[:, np.newaxis]
-        o_2     = np.zeros(O.shape)
-        o_2[m]  = np.cross(norm_surf[m], o_1[m])
-        o_2[m] /= np.linalg.norm(o_2[m], axis=1)[:, np.newaxis]
-        
-        R = np.empty((len(m), 3, 3))
-        # We could mask this with m, but I don't know if that will
-        # improve speed or actually make it worse.
-        R[:,0,:] = o_1
-        R[:,1,:] = o_2
-        R[:,2,:] = norm_surf
-
-        normals[m] = np.einsum('ij,ijk->ik', dir_local, R[m])
-        return normals
-    
-    def mesh_generate_normals_old(self, X, rays, hits, mask=None):
         if mask is None:
             mask = rays['mask']
 
         # Pulled from Novi's FocusedExtendedSource
         # Generates a list of crystallite norms normally distributed around the
         # average graphite mirror norm
-        O = rays['origin']
         m = mask
-        
-        normals = np.zeros(O.shape)
+
         rad_spread = np.radians(self.param['mosaic_spread'])
-        dir_local = self.f(rad_spread, len(m))
+        dir_local = xicsrt_math.vector_dist_gaussian(rad_spread, np.sum(m))
 
-        for ii in range(len(self.param['mesh_faces'])):
-            tri   = self.mesh_triangulate(ii)
-            test  = np.equal(ii, (hits - 1))
-            test &= m
-            
-            norm_surf  = np.ones(O.shape) * tri['normal']
-            o_1        = np.zeros(O.shape)
-            o_1[test]  = np.cross(norm_surf[test], [0,0,1])
-            o_1[test] /= np.linalg.norm(o_1[test], axis=1)[:, np.newaxis]
-            o_2        = np.zeros(O.shape)
-            o_2[test]  = np.cross(norm_surf[test], o_1[test])
-            o_2[test] /= np.linalg.norm(o_2[test], axis=1)[:, np.newaxis]
-            
-            R = np.empty((len(m), 3, 3))
-            # We could mask this with test, but I don't know if that will
-            # improve speed or actually make it worse.
-            R[:,0,:] = o_1
-            R[:,1,:] = o_2
-            R[:,2,:] = norm_surf
-            
-            normals[test] = np.einsum('ij,ijk->ik', dir_local[test], R[test])
+        R = np.empty((np.sum(m), 3, 3,), dtype=np.float64)
 
+        # Create two vectors perpendicular to the surface normal,
+        # it doesn't matter how they are oriented otherwise.
+        R[:, 0, :]  = np.cross(normals[m], [0,0,1])
+        R[:, 0, :] /= np.linalg.norm(R[:, 0, :], axis=1)[:, np.newaxis]
+        R[:, 1, :]  = np.cross(normals[m], R[:, 0, :])
+        R[:, 1, :] /= np.linalg.norm(R[:, 1, :], axis=1)[:, np.newaxis]
+        R[:, 2, :] = normals[m]
+
+        normals[m] = np.einsum('ij,ijk->ik', dir_local, R)
         return normals
+
+    def generate_normals(self, X, rays, mask=None):
+        normals = super().generate_normals(X, rays)
+        normals = self.mosaic_normals(normals, rays, mask)
+        return normals
+    
+    def mesh_generate_normals_old(self, X, rays, hits, mask=None):
+        normals = super().mesh_generate_normals_old(X, rays, hits)
+        normals = self.mosaic_normals(normals, rays, mask)
+        return normals
+

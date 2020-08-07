@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 from xicsrt.util import profiler
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
-from xicsrt.xicsrt_math    import cart2cyl, cart2toro
+from xicsrt.xicsrt_math    import cyl_from_car, tor_from_car
 
 class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     """
@@ -43,7 +43,7 @@ class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
         
         #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
         #torus is oriented along the Z axis
-        rad, pol, tor = cart2toro(x_offset, y_offset, z_offset, self.param['major_radius'])
+        rad, pol, tor = tor_from_car(x_offset, y_offset, z_offset, self.param['major_radius'])
         
         step_test = (rad <= self.param['minor_radius'])
 

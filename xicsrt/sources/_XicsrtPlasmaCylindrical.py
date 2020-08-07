@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 from xicsrt.util import profiler
-from xicsrt_rt_math import cart2cyl
+from xicsrt.xicsrt_math import cyl_from_car
 
 class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
     """
@@ -39,7 +39,7 @@ class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
             + np.einsum('i,j', z_offset, self.zaxis))       
 
         #convert from cartesian coordinates to cylindrical coordinates [radius, azimuth, height]
-        radius, azimuth, height = cart2cyl(z_offset, x_offset, y_offset)
+        radius, azimuth, height = cyl_from_car(z_offset, x_offset, y_offset)
         
         # Let plasma temperature and emissivity fall off as a function of
         # radius.

@@ -11,9 +11,9 @@ Authors
 from PIL import Image
 import numpy as np
 
-from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
+from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
-class XicsrtOpticDetector(XicsrtOpticGeneric):
+class XicsrtOpticDetector(XicsrtOpticMesh):
     """
     A class for detectors.
 

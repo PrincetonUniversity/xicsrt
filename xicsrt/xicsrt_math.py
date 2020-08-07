@@ -1,27 +1,48 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from scipy.special import wofz
-import matplotlib.pyplot as plt
-from PIL import Image
 
-def voigt(x, y):
+def vector_dist_uniform(theta, number):
     """
-    The Voigt function is also the real part of  w(z) = exp(-z^2) erfc(iz), 
-    the complex probability function, which is also known as the Faddeeva 
-    function. Scipy has implemented this function under the name wofz()
+    Create a uniform distribution of vectors with an angular spread
+    of theta. Here theta is the half of the total cone angle
+    (axis to edge).
     """
-    z = x + 1j*y
-    I = wofz(z).real
-    return I
+    output = np.empty((number, 3))
 
-def voigt_physical(x, intensity, location, sigma, gamma):
+    z = np.random.uniform(np.cos(theta / 2), 1, number)
+    phi = np.random.uniform(0, 2 * np.pi, number)
+
+    output[:, 0] = np.sqrt(1 - z ** 2) * np.cos(phi)
+    output[:, 1] = np.sqrt(1 - z ** 2) * np.sin(phi)
+    output[:, 2] = z
+
+    return output
+
+def vector_dist_gaussian(FWHM, number):
     """
-    The voigt function in physical parameters.
+    Create a gaussian distribution of vectors with an angular spread
+    of FWHM. Here FWHM is the half of the cone angle (axis to edge).
     """
-    u = (x - location) / np.sqrt(2) / sigma
-    a = gamma / np.sqrt(2) / sigma
-    y = voigt(a, u) / np.sqrt(2 * np.pi) / sigma * intensity
-    return y
+    output = np.empty((number, 3))
+
+    # convert the angular FWHM into a linear-displacement-from-vertical FWHM
+    disp = 1 - np.cos(FWHM / 2)
+
+    # convert from linear-displacement FWHM to standard deviation
+    sigma = disp / (2 * np.sqrt(2 * np.log(2)))
+
+    # create the half-normal distribution of off-vertical vectors
+    z = 1
+    if sigma > 0:
+        z -= np.abs(np.random.normal(0, sigma, number))
+    phi = np.random.uniform(0, 2 * np.pi, number)
+
+    output[:, 0] = np.sqrt(1 - z ** 2) * np.cos(phi)
+    output[:, 1] = np.sqrt(1 - z ** 2) * np.sin(phi)
+    output[:, 2] = z
+
+    return output
 
 def bragg_angle(wavelength, crystal_spacing):
     """
@@ -61,7 +82,7 @@ def vector_rotate(a, b, theta):
             np.linalg.norm(proj_perp) * w * np.sin(theta))
     return c
 
-def cart2cyl(x, y, z):
+def cyl_from_car(x, y, z):
     #convert cartesian coordinates -> cylindirical coordinates
     radius  = np.sqrt(np.power(x,2) + np.power(y,2))
     azimuth = np.arctan2(y, x)
@@ -69,7 +90,7 @@ def cart2cyl(x, y, z):
     
     return radius, azimuth, height
 
-def cart2toro(x, y, z, a):
+def tor_from_car(x, y, z, a):
     """
     X Y Z       = Cartesian Coordinates
     rho         = Cylindrical Radius
@@ -82,91 +103,3 @@ def cart2toro(x, y, z, a):
     pol  = np.arctan2(z, w)
     rad  = np.sqrt(np.power(z,2) + np.power(w,2))
     return rad, pol, tor
-
-def plot_rows(file_name, row, bin):
-    
-    image_array = np.array(Image.open(file_name))
-    
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)
-        
-    plt.plot(row_array, 'k')
-    plt.xlabel('Horizontal Pixels')
-    plt.ylabel('Pixel Counts')
-    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bin) + ')')
-    #plt.show()
-    return
-
-def plot_rows_data(file_name, row, bint, color):
-    
-    image_array = np.array(Image.open(file_name))
-    
-    mint = int(row - bint // 2)
-    maxt = int(row + bint // 2)
-    
-    row_array = (np.array(image_array[mint].T[0],dtype= np.int32) +
-                 np.array(image_array[mint].T[1],dtype= np.int32))
-
-    for i in range(mint + 1, maxt +1, 1):
-        sample_row0 = np.array(image_array[i].T[0], dtype=np.int32)
-        sample_row1 = np.array(image_array[i].T[1], dtype=np.int32)
-        row_array = row_array + sample_row0 + sample_row1
-        
-    #plt.figure()
-    #row_new = row_array.T[1]  +  row_array.T[0] 
-    #plt.plot(row_new)
-    plt.plot(row_array, 'b')
-
-    plt.xlabel('Horizontal Pixels')
-    plt.ylabel('Pixel Counts')
-    plt.title('Line Intensity (row ' + str(row) + ', bin ' +str(bint) + ')')
-    #plt.show()
-    return
-
-def get_rows(file_name, row, bin):
-    image_array = np.array(Image.open(file_name))
-
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)        
-    
-    return row_array
-
-def get_rows_data(file_name, row, bin):
-    image_array = np.array(Image.open(file_name))
-    image_array = image_array.T
-    print(len(image_array[260]))
-    min = int(row - bin // 2)
-    max = int(row + bin // 2)
-    
-    row_array = np.array(image_array[min],dtype=np.int32)
-    
-    for i in range(min + 1, max +1, 1):
-        row_array += np.array(image_array[i], dtype=np.int32)        
-    
-    return row_array
-
-def image_height(file_name):
-    # returns percentage of vertical illumination
-    image_array = np.array(Image.open(file_name))
-    test = np.where(image_array > 0)
-    length = len(image_array)
-    percent = (length - 2 * test[0][0]) / length
-    return round(percent, 3) * 100
-
-def tif_to_gray_scale(file_name, scale):    
-    image = Image.open(file_name).convert("L")
-    arr = np.asarray(image) * scale
-    plt.figure()
-    plt.imshow(arr, cmap='gray_r')
-    plt.show()
-    return

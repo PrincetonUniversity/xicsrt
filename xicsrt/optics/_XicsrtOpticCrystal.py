@@ -8,9 +8,9 @@ Authors
 """
 import numpy as np
 
-from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
+from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
-class XicsrtOpticCrystal(XicsrtOpticGeneric):
+class XicsrtOpticCrystal(XicsrtOpticMesh):
 
     def get_default_config(self):
         config = super().get_default_config()
