@@ -14,7 +14,7 @@ from collections import OrderedDict
 import os
 
 from xicsrt import xicsrt_input
-from xicsrt.xicsrt_objects import ConfigObject
+from xicsrt.objects._ConfigObject import ConfigObject
 
 class XicsrtGeneralConfig(ConfigObject):
 

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 
 from xicsrt import xicsrt_config
-from xicsrt.xicsrt_dispatch import XicsrtDispatcher
+from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
 
 """
 These are a set of routines for visualization in ipyvolume.

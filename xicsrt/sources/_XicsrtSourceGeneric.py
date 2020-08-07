@@ -14,9 +14,9 @@ import scipy.constants as const
 from xicsrt import xicsrt_math
 from xicsrt.util import profiler
 from xicsrt.tool import voigt
-from xicsrt.xicsrt_objects import TraceObject
+from xicsrt.objects._GeometryObject import GeometryObject
 
-class XicsrtSourceGeneric(TraceObject):
+class XicsrtSourceGeneric(GeometryObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filter_objects = []

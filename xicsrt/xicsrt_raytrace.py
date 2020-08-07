@@ -19,8 +19,8 @@ from xicsrt.util import profiler
 
 from xicsrt import xicsrt_config
 from xicsrt import xicsrt_input
-from xicsrt.xicsrt_dispatch import XicsrtDispatcher
-from xicsrt.xicsrt_objects import RayArray
+from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
+from xicsrt.objects._RayArray import RayArray
 
 def raytrace(config, internal=False):
     """

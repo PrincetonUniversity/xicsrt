@@ -10,9 +10,9 @@ from PIL import Image
 import numpy as np
 
 from xicsrt.util import profiler
-from xicsrt.xicsrt_objects import TraceObject
+from xicsrt.objects._GeometryObject import GeometryObject
 
-class XicsrtOpticGeneric(TraceObject):
+class XicsrtOpticGeneric(GeometryObject):
     """
     A generic optical element. 
     Optical elements have a position and rotation in 3D space and a finite 
@@ -71,6 +71,15 @@ class XicsrtOpticGeneric(TraceObject):
         """
         This is the main method that is called to perform ray-tracing
         for this optic.
+
+        It may be convenient for some optics object to do raytracing
+        in local coordinates rather than in global coordinates.
+        that can achived by reimplementing this method as follows:
+
+          self.ray_to_local(rays)
+          super().light(rays)
+          self.ray_to_external(rays)
+          return rays
         """
         m = rays['mask']
 

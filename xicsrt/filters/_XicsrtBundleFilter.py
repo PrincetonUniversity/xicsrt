@@ -7,7 +7,7 @@ Authors
 
 import numpy as np
 
-from xicsrt.xicsrt_objects import ConfigObject
+from xicsrt.objects._ConfigObject import ConfigObject
 
 class XicsrtBundleFilter(ConfigObject):
     """
@@ -21,4 +21,8 @@ class XicsrtBundleFilter(ConfigObject):
         return config
     
     def filter(self, bundle_input):
+        """
+        This is the main filtering method that must be reimplemented
+        for specific filter objects.
+        """
         return bundle_input

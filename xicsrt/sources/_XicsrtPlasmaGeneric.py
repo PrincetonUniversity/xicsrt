@@ -17,10 +17,10 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.xicsrt_objects import TraceObject
+from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
-class XicsrtPlasmaGeneric(TraceObject):
+class XicsrtPlasmaGeneric(GeometryObject):
     """
     A generic plasma object.
 
