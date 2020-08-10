@@ -386,7 +386,7 @@ def setup_real_scenario(
         config['optics']['crystal']['radius'] = 2.400
     elif line == 'Xe51+':
         config['sources']['plasma']['emissivity_file'] = inpath + 'plasma_emissivity_xe51.txt'
-        config['sources']['plasma']['wavelength'] = 2.19
+        config['sources']['plasma']['wavelength'] = 2.1899
         config['sources']['plasma']['linewidth'] = 1.129e+14
         config['optics']['crystal']['crystal_spacing'] = 1.42
         config['optics']['crystal']['radius'] = 2.200
