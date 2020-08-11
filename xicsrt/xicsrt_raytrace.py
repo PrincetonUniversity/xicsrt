@@ -135,27 +135,24 @@ def raytrace_single(config):
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
-    # Combine the user and default object pathlists.
-    pathlist = []
-    pathlist.extend(config['general']['pathlist_objects'])
-    pathlist.extend(config['general']['pathlist_default'])
-
     # Setup the dispatchers.
     if 'filters' in config:
-        filters = XicsrtDispatcher(config['filters'], pathlist)
+        filters = XicsrtDispatcher(config, 'filters')
         filters.instantiate_objects()
         filters.setup()
         filters.initialize()
         config['filters'] = filters.get_config()
+    else:
+        filters = None
 
-    sources = XicsrtDispatcher(config['sources'], pathlist)
+    sources = XicsrtDispatcher(config, 'sources')
     sources.instantiate_objects()
     sources.apply_filters(filters)
     sources.setup()
     sources.initialize()
     config['sources'] = sources.get_config()
     
-    optics  = XicsrtDispatcher(config['optics'],  pathlist)
+    optics  = XicsrtDispatcher(config, 'optics')
     optics.instantiate_objects()
     optics.setup()
     optics.initialize()

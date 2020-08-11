@@ -2,6 +2,14 @@
 import numpy as np
 from scipy.special import wofz
 
+def vector_angle(a, b):
+    """
+    Find the angle between two vectors. Not vectorized.
+    """
+    angle = np.arccos(np.dot(a/np.linalg.norm(a), b/np.linalg.norm(b)))
+    return angle
+
+
 def vector_dist_uniform(theta, number):
     """
     Create a uniform distribution of vectors with an angular spread

@@ -18,10 +18,16 @@ from xicsrt.util import profiler
 
 class XicsrtDispatcher():
 
-    def __init__(self, config=None, pathlist=None):
+    def __init__(self, config=None, section=None):
         self.log = logging.getLogger(self.__class__.__name__)
-        
+
+        # Todo: This needs to be renamed to something more sensible.
         self.config = config
+        self.section = section
+
+        pathlist = []
+        pathlist.extend(config['general']['pathlist_objects'])
+        pathlist.extend(config['general']['pathlist_default'])
         self.pathlist = pathlist
         
         self.objects = OrderedDict()
@@ -29,13 +35,19 @@ class XicsrtDispatcher():
         self.image = OrderedDict()
         self.history = OrderedDict()
 
-    def instantiate_objects(self):
-        obj_info = self.find_xicsrt_objects(self.pathlist)
+    def instantiate_objects(self, names=None):
+        if names is None:
+            names = self.config[self.section].keys()
+        elif isinstance(names, str):
+            names = [names]
 
+        obj_info = self.find_xicsrt_objects(self.pathlist)
         # self.log.debug(obj_info)
 
-        for key in self.config:
-            obj = self._instantiate_object_single(obj_info, self.config[key])
+        for key in names:
+            obj = self._instantiate_object_single(
+                obj_info
+                ,self.config[self.section][key])
             self.objects[key] = obj
             self.meta[key] = {}
 

@@ -253,7 +253,7 @@ def add_optics(config):
             obj = ipv.plot_trisurf(x, y, z, triangles=triangles, color=[0.5, 0.5, 0.5, 0.5])
             obj.material.transparent = True
 
-        if 'crystal' in str.lower(key_opt):
+        if 'crystal' in str.lower(key_opt) and 'radius' in config_opt:
 
             # Initialize the configuration.
             # This merges the user config that we created
@@ -272,7 +272,7 @@ def add_optics(config):
             # from xicsrt_raytrace.raytrace_single.
             name = 'crystal'
             section = 'optics'
-            optics = XicsrtDispatcher(config[section], config['general']['pathlist_default'])
+            optics = XicsrtDispatcher(config, section)
             optics.instantiate_objects()
             optics.setup()
             optics.initialize()
@@ -329,7 +329,7 @@ def add_sources(config):
     pathlist.extend(config['general']['pathlist_objects'])
     pathlist.extend(config['general']['pathlist_default'])
     
-    sources = XicsrtDispatcher(config['sources'], pathlist)
+    sources = XicsrtDispatcher(config, 'sources')
     sources.instantiate_objects()
     sources.setup()
     sources.initialize()
