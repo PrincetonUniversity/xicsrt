@@ -31,16 +31,28 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
 
     def setup(self):
         super().setup()
-        mesh_faces, mesh_points = self.generate_crystal_mesh()
-        mesh_points_ext = self.point_to_external(mesh_points)
 
+        # Generate the fine mesh.
+        mesh_points, mesh_faces = self.generate_crystal_mesh()
+        mesh_points_ext = self.point_to_external(mesh_points)
         self.param['mesh_faces'] = mesh_faces
         self.param['mesh_points'] = mesh_points_ext
+        self.log.debug(f'Fine mesh points: {mesh_points.shape[0]}')
 
-    def generate_crystal_mesh(self):
+        # Generate the coarse mesh.
+        mesh_points, mesh_faces = self.generate_crystal_mesh(res=0)
+        mesh_points_ext = self.point_to_external(mesh_points)
+        self.param['mesh_coarse_faces'] = mesh_faces
+        self.param['mesh_coarse_points'] = mesh_points_ext
+        self.log.debug(f'Coarse mesh points: {mesh_points.shape[0]}')
+
+    def generate_crystal_mesh(self, res=None):
         """
         This method creates the meshgrid for the crystal
         """
+
+        if res is None:
+            res = self.param['grid_resolution']
 
         # Create series of x,y points
         x_lim = self.param['width']
@@ -49,29 +61,32 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
         #Ensure that crystal has same ratio of mesh points per cm along height & width
         pts_ratio = self.param['height']/self.param['width']
 
-        if self.param['grid_resolution'] == 1:
+        if res == 1:
             x_pts = self.param['width']*50
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 2:
+        elif res == 2:
             x_pts = self.param['width'] * 100
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 3:
+        elif res == 3:
             x_pts = self.param['width'] * 200
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 4:
+        elif res == 4:
             x_pts = self.param['width'] * 300
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 5:
+        elif res == 5:
             x_pts = self.param['width'] * 400
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 6:
+        elif res == 6:
             x_pts = self.param['width'] * 500
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 7:
+        elif res == 7:
             x_pts = self.param['width'] * 600
             y_pts = x_pts * pts_ratio
-        elif self.param['grid_resolution'] == 8:
+        elif res == 8:
             x_pts = self.param['width'] * 700
+            y_pts = x_pts * pts_ratio
+        elif res == 20:
+            x_pts = self.param['width'] * 2000
             y_pts = x_pts * pts_ratio
         else:
             x_pts = 4
@@ -89,4 +104,4 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
         mesh_points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
         tri = Delaunay(points)
         mesh_faces = tri.simplices
-        return mesh_faces, mesh_points
+        return mesh_points, mesh_faces
