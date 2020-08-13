@@ -21,7 +21,7 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
     def get_default_config(self):
         config = super().get_default_config()
         config['wout_file']         = None
-        config['emissivity_scale']  = 10.
+        config['emissivity_scale']  = 1.0
         config['temperature_scale'] = 1.0
         config['velocity_scale']    = 1.0
         return config

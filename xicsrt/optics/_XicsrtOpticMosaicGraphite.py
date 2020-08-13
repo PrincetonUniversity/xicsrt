@@ -51,13 +51,12 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             m[:] &= mosaic_mask
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         else:
-            self.mesh_initialize()
-            X, rays, hits = self.mesh_intersect_check_old(rays)
+            X, rays, hits = self.mesh_intersect_5(rays)
             self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
             for ii in range(15):
                 temp_mask = (~ mosaic_mask) & m
                 self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
-                normals = self.mesh_generate_normals_old(X, rays, hits, temp_mask)
+                normals = self.mesh_normals(X, rays, hits, temp_mask)
                 rays = self.reflect_vectors(X, rays, normals, temp_mask)
                 mosaic_mask[temp_mask] = True
             m[:] &= mosaic_mask
@@ -98,8 +97,8 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         normals = self.mosaic_normals(normals, rays, mask)
         return normals
     
-    def mesh_generate_normals_old(self, X, rays, hits, mask=None):
-        normals = super().mesh_generate_normals_old(X, rays, hits)
+    def mesh_normals(self, X, rays, hits, mask=None):
+        normals = super().mesh_normals(hits, self.param['mesh']['normals'])
         normals = self.mosaic_normals(normals, rays, mask)
         return normals
 

@@ -125,7 +125,6 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
                 self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
             elif self.param['mesh_method'] == 7:
-
                 X_c, rays, hits_c = self.mesh_intersect_1(
                     rays
                     ,self.param['mesh_coarse_points']
@@ -154,6 +153,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
     def _mesh_precalc(self, points, faces):
         profiler.start('_mesh_precalc')
 
+        output = {}
+        output['faces'] = faces
+        output['points'] = points
+
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.
         p0 = points[faces[..., 0], :]
@@ -163,21 +166,23 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         centers = np.mean(np.array([p0, p1, p2]), 0)
         normals = np.cross((p0 - p1), (p2 - p1))
         normals /= np.linalg.norm(normals, axis=1)[:, None]
-
-        tree = cKDTree(points)
-
-        output = {}
-        output['faces'] = faces
-        output['points'] = points
         output['centers'] = centers
         output['normals'] = normals
-        output['tree'] = tree
 
+        points_tree = cKDTree(points)
+        output['points_tree'] = points_tree
+
+        # Build up a lookup table for the faces around each point.
+        # This is currently slow for large arrays.
         points_idx = np.arange(len(points))
         p_faces_idx, p_faces_mask = \
             self.find_point_faces(points_idx, faces)
         output['p_faces_idx'] = p_faces_idx
         output['p_faces_mask'] = p_faces_mask
+
+        #centers_tree = cKDTree(points)
+        #output['centers_tree'] = centers_tree
+
 
         profiler.stop('_mesh_precalc')
         return output
