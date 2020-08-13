@@ -123,6 +123,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
                 normals = self.mesh_normals(hits, self.param['mesh']['normals'])
                 rays = self.reflect_vectors(X, rays, normals)
                 self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
+
             elif self.param['mesh_method'] == 7:
 
                 X_c, rays, hits_c = self.mesh_intersect_1(
@@ -144,7 +145,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
                 normals = self.mesh_normals(
                     hits
                     ,self.param['mesh']['normals']
-                    ,rays['mask'])
+                    )
                 rays = self.reflect_vectors(X, rays, normals)
                 self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
@@ -195,12 +196,13 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         for key in dummy:
             self.param['mesh'][key] = dummy[key]
 
-        dummy = self._mesh_precalc(
-            self.param['mesh_coarse_points']
-            ,self.param['mesh_coarse_faces'])
-        self.param['mesh_coarse'] = {}
-        for key in dummy:
-            self.param['mesh_coarse'][key] = dummy[key]
+        if self.param['mesh_coarse_points'] is not None:
+            dummy = self._mesh_precalc(
+                self.param['mesh_coarse_points']
+                ,self.param['mesh_coarse_faces'])
+            self.param['mesh_coarse'] = {}
+            for key in dummy:
+                self.param['mesh_coarse'][key] = dummy[key]
 
         profiler.stop('mesh_initialize')
 
@@ -394,12 +396,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         return X, rays, hits
 
-    def mesh_normals(self, hits, mesh_normals, mask=None):
-        if mask is None:
-            mask = np.ones(hits.shape[0], dtype=bool)
-
-        normals = np.zeros((hits.shape[0], 3), dtype=np.float64)
-        normals[mask] = mesh_normals[hits[mask], :]
+    def mesh_normals(self, hits, mesh_normals):
+        normals = mesh_normals[hits, :]
         return normals
 
     def mesh_get_index(self, hits, faces):
@@ -425,7 +423,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         p_faces_idx = np.zeros((8, len(m)), dtype=np.int)
         p_faces_mask = np.zeros((8, len(m)), dtype=np.bool)
         for ii_p in p_idx:
-            ii_f = np.nonzero(faces == p_idx[ii_p])[0]
+            ii_f = np.nonzero(np.equal(faces, p_idx[ii_p]))[0]
             faces_num = len(ii_f)
             p_faces_idx[:faces_num, ii_p] = ii_f
             p_faces_mask[:faces_num, ii_p] = True
