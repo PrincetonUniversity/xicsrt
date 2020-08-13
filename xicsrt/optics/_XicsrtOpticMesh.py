@@ -289,7 +289,6 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         m = rays['mask']
 
         X = np.zeros(D.shape, dtype=np.float64)
-        hits = np.zeros(m.shape, dtype=np.int)
 
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.

@@ -154,8 +154,8 @@ class XicsrtOpticGeneric(GeometryObject):
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.param['zaxis']
         return normals
-    
-    def reflect_vectors(self, X, rays, normals=None):
+
+    def reflect_vectors(self, X, rays, normals=None, mask=None):
         """
         Generic optic has no reflection, rays just pass through.
         """

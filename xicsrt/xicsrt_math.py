@@ -18,11 +18,11 @@ def vector_dist_uniform(theta, number):
     """
     output = np.empty((number, 3))
 
-    z = np.random.uniform(np.cos(theta / 2), 1, number)
-    phi = np.random.uniform(0, 2 * np.pi, number)
+    z = np.random.uniform(np.cos(theta), 1, number)
+    phi = np.random.uniform(0, 2*np.pi, number)
 
-    output[:, 0] = np.sqrt(1 - z ** 2) * np.cos(phi)
-    output[:, 1] = np.sqrt(1 - z ** 2) * np.sin(phi)
+    output[:, 0] = np.sqrt(1 - z**2) * np.cos(phi)
+    output[:, 1] = np.sqrt(1 - z**2) * np.sin(phi)
     output[:, 2] = z
 
     return output
@@ -30,20 +30,18 @@ def vector_dist_uniform(theta, number):
 def vector_dist_gaussian(FWHM, number):
     """
     Create a gaussian distribution of vectors with an angular spread
-    of FWHM. Here FWHM is the half of the cone angle (axis to edge).
+    of FWHM. Here FWHM is half of the cone angle (axis to edge).
     """
     output = np.empty((number, 3))
 
-    # convert the angular FWHM into a linear-displacement-from-vertical FWHM
-    disp = 1 - np.cos(FWHM / 2)
+    # Convert the angluar FWHM to sigma.
+    sigma = FWHM / (2 * np.sqrt(2 * np.log(2)))
+    # convert the angular sigma into a linear-displacement-from-vertical
+    sigma_z = 1 - np.cos(sigma)
+    # create the half-normal distribution of vertical displacement.
+    dist = abs(np.random.normal(0, sigma_z, 10))
+    z = 1.0 - dist
 
-    # convert from linear-displacement FWHM to standard deviation
-    sigma = disp / (2 * np.sqrt(2 * np.log(2)))
-
-    # create the half-normal distribution of off-vertical vectors
-    z = 1
-    if sigma > 0:
-        z -= np.abs(np.random.normal(0, sigma, number))
     phi = np.random.uniform(0, 2 * np.pi, number)
 
     output[:, 0] = np.sqrt(1 - z ** 2) * np.cos(phi)

@@ -202,8 +202,8 @@ def get_config(system=None, sight=None):
     config['optics']['graphite']['rocking_type']      = "GAUSS"
     config['optics']['graphite']['use_meshgrid']      = True
     config['optics']['graphite']['rocking_mix']       = 1.0
-    config['optics']['graphite']['rocking_sigma_file']= inpath + 'rocking_curve_graphite_sigma.txt'
-    config['optics']['graphite']['rocking_pi_file']   = inpath + 'rocking_curve_graphite_pi.txt'
+    #config['optics']['graphite']['rocking_sigma_file']= inpath + ?
+    #config['optics']['graphite']['rocking_pi_file']   = inpath + ?
     
     # Graphite settings
     # 'crystal_spacing'is the inter-atomic spacing (angstrom)
@@ -215,7 +215,7 @@ def get_config(system=None, sight=None):
     config['optics']['graphite']['crystal_spacing']   = 3.35
     config['optics']['graphite']['reflectivity']      = 1.0
     config['optics']['graphite']['mosaic_spread']     = 0.5
-    config['optics']['graphite']['rocking_fwhm']      = 2620e-6
+    config['optics']['graphite']['rocking_fwhm']      = 100e-6
     config['optics']['graphite']['pixel_size']        = 0.001
     #config['optics']['graphite']['therm_expand']      = 20e-6
     
