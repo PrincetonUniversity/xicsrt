@@ -10,6 +10,7 @@ Authors
 import numpy as np
 from scipy.spatial import Delaunay
 
+from xicsrt.util import profiler
 from xicsrt import xicsrt_math
 from xicsrt.xicsrt_math import *
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
@@ -21,8 +22,13 @@ class XicsrtOpticToroid(XicsrtOpticCrystal):
         config['use_meshgrid'] = True
         config['mesh_size'] = 0.0005
         config['mesh_coarse_size'] = 0.005
+        config['range_alpha'] = [-0.01, 0.01]
+        config['range_beta']  = [-0.04, 0.04]
         config['major_radius'] = 1.0
         config['minor_radius'] = 0.1
+
+        # Temporary for development.
+        config['use_finite_diff'] = False
 
         return config
 
@@ -31,24 +37,26 @@ class XicsrtOpticToroid(XicsrtOpticCrystal):
         self.log.debug('Yo mama was here.')
 
         # Generate the fine mesh.
-        mesh_points, mesh_faces = self.generate_crystal_mesh(self.param['mesh_size'])
+        mesh_points, mesh_normals, mesh_faces = self.generate_crystal_mesh(self.param['mesh_size'])
         # mesh_points_ext = self.point_to_external(mesh_points)
         self.param['mesh_faces'] = mesh_faces
         self.param['mesh_points'] = mesh_points
+        self.param['mesh_normals'] = mesh_normals
         self.log.debug(f'Fine mesh points: {mesh_points.shape[0]}')
 
         # Generate the coarse mesh.
-        mesh_points, mesh_faces = self.generate_crystal_mesh(self.param['mesh_coarse_size'])
+        mesh_points, mesh_normals, mesh_faces = self.generate_crystal_mesh(self.param['mesh_coarse_size'])
         # mesh_points_ext = self.point_to_external(mesh_points)
         self.param['mesh_coarse_faces'] = mesh_faces
         self.param['mesh_coarse_points'] = mesh_points
+        self.param['mesh_coarse_normals'] = mesh_normals
         self.log.debug(f'Coarse mesh points: {mesh_points.shape[0]}')
 
         # Calculate height at width.
         self.param['width'] = np.max(
-            self.param['mesh_faces'][:,0])-np.min(self.param['mesh_faces'][:,0])
+            self.param['mesh_points'][:,0])-np.min(self.param['mesh_points'][:,0])
         self.param['height'] = np.max(
-            self.param['mesh_faces'][:,1])-np.min(self.param['mesh_faces'][:,1])
+            self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
 
 
     def toroid_calculate(self, a, b, input):
@@ -60,13 +68,29 @@ class XicsrtOpticToroid(XicsrtOpticCrystal):
 
         C_norm = vector_rotate(C_zaxis, C_yaxis, a)
         C = C_center - maj_r * C_norm
-        P = C + C_norm * min_r
+        Q = C + C_norm * min_r
 
         axis = np.cross(C_norm, C_yaxis)
-        PC_norm = xicsrt_math.vector_rotate(-1 * C_norm, axis, b)
-        xyz = P + PC_norm * min_r
-        return xyz
+        C_norm = xicsrt_math.vector_rotate(C_norm, axis, b)
+        xyz = Q - C_norm * min_r
+        norm = C_norm
 
+        return xyz, norm
+
+    def toroid_calculate_fd(self, a, b, input, delta=None):
+        profiler.start('finite difference')
+        if delta is None: delta = 1e-8
+
+        xyz, norm = self.toroid_calculate(a, b, input)
+        xyz1, norm1 = self.toroid_calculate(a + delta, b, input)
+        xyz2, norm2 = self.toroid_calculate(a, b + delta, input)
+
+        vec1 = xyz1 - xyz
+        vec2 = xyz2 - xyz
+        norm_fd = np.cross(vec1, vec2)
+        norm_fd /= np.linalg.norm(norm_fd)
+        profiler.stop('finite difference')
+        return xyz, norm_fd
 
     def generate_crystal_mesh(self, mesh_size):
         """
@@ -97,14 +121,17 @@ class XicsrtOpticToroid(XicsrtOpticCrystal):
         # --------------------------------
         # Setup the basic grid parameters.
 
-        a_range = [-0.01, 0.01]
-        b_range = [-0.1, 0.1]
+        a_range = self.param['range_alpha']
+        b_range = self.param['range_beta']
         a_span = a_range[1] - a_range[0]
-        b_span = a_range[1] - a_range[0]
-        num_a = np.ceil(a_span/mesh_size).astype(int)
-        num_b = np.ceil(b_span/mesh_size).astype(int)
-        # Temporary until I figure out a better solution.
-        num_a *= 4
+        b_span = b_range[1] - b_range[0]
+
+        # For now assume the mesh_size is the angular density
+        # in the a direction.
+        num_a = a_span/mesh_size
+        num_b = num_a / (major_radius * a_span) * (minor_radius * b_span)
+        num_a = np.ceil(num_a).astype(int)
+        num_b = np.ceil(num_b).astype(int)
 
         self.log.debug(f'mesh_size: {mesh_size} rad, total: {num_a*num_b}')
         self.log.debug(f'num_a, num_b: {num_a}, {num_b}')
@@ -117,23 +144,37 @@ class XicsrtOpticToroid(XicsrtOpticCrystal):
         yy = np.empty((num_a, num_b))
         zz = np.empty((num_a, num_b))
 
+        normal_xx = np.empty((num_a, num_b))
+        normal_yy = np.empty((num_a, num_b))
+        normal_zz = np.empty((num_a, num_b))
+
         for ii_a in range(num_a):
             for ii_b in range(num_b):
                 b = bb[ii_a, ii_b]
                 a = aa[ii_a, ii_b]
-                xyz = self.toroid_calculate(a,b, input)
+                # Temporary for development.
+                if self.param['use_finite_diff']:
+                    xyz, norm = self.toroid_calculate_fd(a, b, input)
+                else:
+                    xyz, norm = self.toroid_calculate(a, b, input)
                 xx[ii_a, ii_b] = xyz[0]
                 yy[ii_a, ii_b] = xyz[1]
                 zz[ii_a, ii_b] = xyz[2]
+                normal_xx[ii_a, ii_b] = norm[0]
+                normal_yy[ii_a, ii_b] = norm[1]
+                normal_zz[ii_a, ii_b] = norm[2]
 
         # Combine x & y arrays, add z dimension
-        points_2d = np.stack((xx.flatten(), yy.flatten()), axis=0).T
+        # points_2d = np.stack((xx.flatten(), yy.flatten()), axis=0).T
+        # tri = Delaunay(points_2d)
         angles_2d = np.stack((aa.flatten(), bb.flatten()), axis=0).T
         tri = Delaunay(angles_2d)
-        # tri = Delaunay(points_2d)
+
 
         points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
+        normals = np.stack((normal_xx.flatten(), normal_yy.flatten(), normal_zz.flatten())).T
+
         faces = tri.simplices
 
-        return points, faces
+        return points, normals, faces
 
