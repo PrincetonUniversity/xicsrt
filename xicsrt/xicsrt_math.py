@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from scipy.special import wofz
 
 def vector_angle(a, b):
     """
@@ -9,6 +8,46 @@ def vector_angle(a, b):
     angle = np.arccos(np.dot(a/np.linalg.norm(a), b/np.linalg.norm(b)))
     return angle
 
+def vector_rotate(a, b, theta):
+    """
+    Rotate vector a around vector b by an angle theta (radians)
+
+    Programming Notes:
+      u: parallel projection of a on b_hat.
+      v: perpendicular projection of a on b_hat.
+      w: a vector perpendicular to both a and b.
+    """
+    b_hat = b / np.linalg.norm(b)
+    u = b_hat * np.dot(a, b_hat)
+    v = a - u
+    w = np.cross(b_hat, v)
+    c = u + v * np.cos(theta) + w * np.sin(theta)
+    return c
+
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis/np.sqrt(np.dot(axis, axis))
+    a = np.cos(theta/2.0)
+    b, c, d = -axis*np.sin(theta/2.0)
+    aa, bb, cc, dd = a*a, b*b, c*c, d*d
+    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
+    matrix = np.array(
+        [[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)]
+        ,[2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)]
+        ,[2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
+    return matrix
+
+def bragg_angle(wavelength, crystal_spacing):
+    """
+    The Bragg angle calculation is used so often that it deserves its own funct
+    """
+    bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
+    return bragg_angle
 
 def vector_dist_uniform(theta, number):
     """
@@ -49,44 +88,6 @@ def vector_dist_gaussian(FWHM, number):
     output[:, 2] = z
 
     return output
-
-def bragg_angle(wavelength, crystal_spacing):
-    """
-    The Bragg angle calculation is used so often that it deserves its own funct
-    """
-    bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
-    return bragg_angle
-
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    """
-    axis = np.asarray(axis)
-    axis = axis/np.sqrt(np.dot(axis, axis))
-    a = np.cos(theta/2.0)
-    b, c, d = -axis*np.sin(theta/2.0)
-    aa, bb, cc, dd = a*a, b*b, c*c, d*d
-    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
-    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
-    
-def vector_rotate(a, b, theta):
-    ## Rotate vector a around vector b by an angle theta (radians)
-    #project a onto b, return parallel and perpendicular component vectors
-    proj_para = b * np.dot(a, b) / np.dot(b, b)
-    proj_perp = a - proj_para
-    
-    #define and normalize the unit vector w, perpendicular to a and b
-    w  = np.cross(b, proj_perp)
-    if (np.linalg.norm(w) != 0): 
-        w /= np.linalg.norm(w)
-    
-    #return the final rotated vector c
-    c = proj_para + (proj_perp * np.cos(theta)) + (
-            np.linalg.norm(proj_perp) * w * np.sin(theta))
-    return c
 
 def cyl_from_car(x, y, z):
     #convert cartesian coordinates -> cylindirical coordinates

@@ -10,7 +10,9 @@ import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
+
 from scipy.spatial import cKDTree
+from scipy.interpolate import CloughTocher2DInterpolator as Interpolator
 
 class XicsrtOpticMesh(XicsrtOpticGeneric):
     """
@@ -88,16 +90,19 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         config = super().get_default_config()
 
         # mesh information
-        config['use_meshgrid']   = False
+        config['use_meshgrid'] = False
 
-        config['mesh_points']    = None
-        config['mesh_faces']     = None
+        config['mesh_points'] = None
+        config['mesh_faces'] = None
+        config['mesh_normals'] = None
 
-        config['mesh_coarse_points']    = None
-        config['mesh_coarse_faces']     = None
+        config['mesh_coarse_points'] = None
+        config['mesh_coarse_faces'] = None
+        config['mesh_coarse_normals'] = None
 
         # Temporary for development.
-        config['mesh_method'] = 7
+        config['mesh_method'] = 5
+        config['mesh_interpolate'] = True
 
         return config
 
@@ -118,44 +123,75 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             rays = super().light(rays)
         else:
             if self.param['mesh_method'] == 5:
-                X, rays, hits = self.mesh_intersect_5(rays)
+                X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])
                 self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-                normals = self.mesh_normals(hits, self.param['mesh']['normals'])
+                if self.param['mesh_interpolate']:
+                    X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
+                else:
+                    normals = self.mesh_normals(hits, self.param['mesh'])
                 rays = self.reflect_vectors(X, rays, normals)
                 self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
             elif self.param['mesh_method'] == 7:
-                X_c, rays, hits_c = self.mesh_intersect_1(
-                    rays
-                    ,self.param['mesh_coarse_points']
-                    ,self.param['mesh_coarse_faces']
-                    )
-                faces_idx, faces_mask = self.find_near_faces(
-                    X_c
-                    ,self.param['mesh']
-                    )
+                X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh'])
+                faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'])
                 X, rays, hits = self.mesh_intersect_2(
                     rays
                     ,self.param['mesh']
                     ,faces_idx
                     ,faces_mask)
                 self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-
-                normals = self.mesh_normals(
-                    hits
-                    ,self.param['mesh']['normals']
-                    )
+                if self.param['mesh_interpolate']:
+                    X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
+                else:
+                    normals = self.mesh_normals(hits, self.param['mesh'])
                 rays = self.reflect_vectors(X, rays, normals)
                 self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
         return rays
 
-    def _mesh_precalc(self, points, faces):
+    def mesh_interpolate(self, X, mesh, mask):
+        profiler.start('mesh_interpolate')
+        normals = np.empty(X.shape)
+        X[:, 2] = mesh['interp']['z'](X[:, 0], X[:, 1])
+
+        normals = np.empty(X.shape)
+        normals[:, 0] = mesh['interp']['normal_x'](X[:, 0], X[:, 1])
+        normals[:, 1] = mesh['interp']['normal_y'](X[:, 0], X[:, 1])
+        normals[:, 2] = mesh['interp']['normal_z'](X[:, 0], X[:, 1])
+
+        profiler.start('normalize')
+        normals = np.einsum(
+            'i,ij->ij'
+            ,np.linalg.norm(normals, axis=1)
+            ,normals
+            ,optimize=True)
+        profiler.stop('normalize')
+
+        profiler.stop('mesh_interpolate')
+        return X, normals
+
+    def _mesh_precalc(self, points, normals, faces):
         profiler.start('_mesh_precalc')
 
         output = {}
         output['faces'] = faces
         output['points'] = points
+        output['normals'] = normals
+
+        # Create a set of interpolators.
+        # For now create these in 2D using the x and y locations.
+        # This will not make sense for all geometries. In principal
+        # the interpolation could be done in 3D, but this needs more
+        # investigation and will ultimately be less accurate.
+        profiler.start('Create Interpolators')
+        interp = {}
+        output['interp'] = interp
+        interp['z'] = Interpolator(points[:, 0:2], points[:, 2].flatten())
+        interp['normal_x'] = Interpolator(points[:, 0:2], normals[:, 0].flatten())
+        interp['normal_y'] = Interpolator(points[:, 0:2], normals[:, 1].flatten())
+        interp['normal_z'] = Interpolator(points[:, 0:2], normals[:, 2].flatten())
+        profiler.stop('Create Interpolators')
 
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.
@@ -163,12 +199,14 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         p1 = points[faces[..., 1], :]
         p2 = points[faces[..., 2], :]
 
-        centers = np.mean(np.array([p0, p1, p2]), 0)
-        normals = np.cross((p0 - p1), (p2 - p1))
-        normals /= np.linalg.norm(normals, axis=1)[:, None]
-        output['centers'] = centers
-        output['normals'] = normals
+        # Calculate the normals at each face.
+        faces_center = np.mean(np.array([p0, p1, p2]), 0)
+        faces_normal = np.cross((p0 - p1), (p2 - p1))
+        faces_normal /= np.linalg.norm(faces_normal, axis=1)[:, None]
+        output['faces_center'] = faces_center
+        output['faces_normal'] = faces_normal
 
+        # Generate a tree for the points.
         points_tree = cKDTree(points)
         output['points_tree'] = points_tree
 
@@ -180,9 +218,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         output['p_faces_idx'] = p_faces_idx
         output['p_faces_mask'] = p_faces_mask
 
-        #centers_tree = cKDTree(points)
-        #output['centers_tree'] = centers_tree
-
+        # centers_tree = cKDTree(points)
+        # output['centers_tree'] = centers_tree
 
         profiler.stop('_mesh_precalc')
         return output
@@ -196,7 +233,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         dummy = self._mesh_precalc(
             self.param['mesh_points']
-            ,self.param['mesh_faces'])
+            , self.param['mesh_normals']
+            , self.param['mesh_faces'])
         self.param['mesh'] = {}
         for key in dummy:
             self.param['mesh'][key] = dummy[key]
@@ -204,7 +242,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         if self.param['mesh_coarse_points'] is not None:
             dummy = self._mesh_precalc(
                 self.param['mesh_coarse_points']
-                ,self.param['mesh_coarse_faces'])
+                , self.param['mesh_coarse_normals']
+                , self.param['mesh_coarse_faces'])
             self.param['mesh_coarse'] = {}
             for key in dummy:
                 self.param['mesh_coarse'][key] = dummy[key]
@@ -271,7 +310,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
             # Update overall hit array and hit mask.
             m_temp_2[m_temp] = m_temp[m_temp]
-            #hits[m_temp] = faces[m_temp, :]
+            # hits[m_temp] = faces[m_temp, :]
             hits[m_temp] = ii
             X[m_temp] = O[m_temp] + t[m_temp, None] * D[m_temp, :]
 
@@ -282,7 +321,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         return X, rays, hits
 
-    def mesh_intersect_1(self, rays, points, faces):
+    def mesh_intersect_1(self, rays, mesh):
         profiler.start('mesh_intersect_1')
         O = rays['origin']
         D = rays['direction']
@@ -292,9 +331,9 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.
-        p0 = points[faces[..., 0], :]
-        p1 = points[faces[..., 1], :]
-        p2 = points[faces[..., 2], :]
+        p0 = mesh['points'][mesh['faces'][..., 0], :]
+        p1 = mesh['points'][mesh['faces'][..., 1], :]
+        p2 = mesh['points'][mesh['faces'][..., 2], :]
 
         epsilon = 1e-15
 
@@ -303,7 +342,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         m_temp = np.empty(num_rays, dtype=bool)
         m_temp_2 = np.zeros(num_rays, dtype=bool)
 
-        for ii in range(faces.shape[0]):
+        for ii in range(mesh['faces'].shape[0]):
             m_temp[:] = m
             edge1 = p1[ii, :] - p0[ii, :]
             edge2 = p2[ii, :] - p0[ii, :]
@@ -341,10 +380,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     def mesh_intersect_2(
             self
-            ,rays
-            ,mesh
-            ,faces_idx
-            ,faces_mask):
+            , rays
+            , mesh
+            , faces_idx
+            , faces_mask):
 
         profiler.start('mesh_intersect_2')
 
@@ -363,7 +402,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         p0 = mesh['points'][faces[..., 0], :]
         p1 = mesh['points'][faces[..., 1], :]
         p2 = mesh['points'][faces[..., 2], :]
-        n = mesh['normals'][faces_idx]
+        n = mesh['faces_normal'][faces_idx]
 
         # distance = np.dot((p0 - O), n) / np.dot(D, n)
         t0 = p0[:, :, :] - O[None, :, :]
@@ -400,8 +439,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         return X, rays, hits
 
-    def mesh_normals(self, hits, mesh_normals):
-        normals = mesh_normals[hits, :]
+    def mesh_normals(self, hits, mesh):
+        normals = mesh['faces_normal'][hits, :]
         return normals
 
     def mesh_get_index(self, hits, faces):
@@ -436,9 +475,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     def find_near_faces(self, X, mesh):
         profiler.start('find_near_faces')
-        idx = mesh['tree'].query(X)[1]
+        idx = mesh['points_tree'].query(X)[1]
         faces_idx = mesh['p_faces_idx'][:, idx]
         faces_mask = mesh['p_faces_mask'][:, idx]
         profiler.stop('find_near_faces')
         return faces_idx, faces_mask
-
