@@ -10,7 +10,6 @@ Description
 Initializes and runs the ray-tracer for a given set of configurations.
 """
 
-import logging
 import os
 import numpy as np
 
@@ -23,7 +22,7 @@ from xicsrt.visual.xicsrt_visualizer            import visualize_layout
 from xicsrt.visual.xicsrt_visualizer            import visualize_vectors, visualize_bundles
 from xicsrt.filters._XicsrtBundleFilterSightline import XicsrtBundleFilterSightline
 
-from xicsrt.xicsrt_raytrace_script   import raytrace
+from archive.xicsrt_raytrace_script import raytrace
 
 
 def run(config, config_number = None):

@@ -8,7 +8,7 @@ Authors
 """
 import numpy as np
 
-from xicsrt import xicsrt_math
+from xicsrt.tools import xicsrt_math
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):

@@ -19,7 +19,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import Delaunay
 from PIL import Image
 
-from xicsrt.xicsrt_math import bragg_angle
+from xicsrt.tools.xicsrt_math import bragg_angle
 import stelltools
 
 def visualize_layout(config):

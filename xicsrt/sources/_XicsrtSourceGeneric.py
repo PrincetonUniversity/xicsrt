@@ -11,9 +11,9 @@ import numpy as np
 from scipy.stats import cauchy        
 import scipy.constants as const
 
-from xicsrt import xicsrt_math
+from xicsrt.tools import xicsrt_math
 from xicsrt.util import profiler
-from xicsrt.tool import voigt
+from xicsrt.tools import voigt
 from xicsrt.objects._GeometryObject import GeometryObject
 
 class XicsrtSourceGeneric(GeometryObject):

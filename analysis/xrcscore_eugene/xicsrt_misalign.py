@@ -19,7 +19,7 @@ sys.path.append('/Users/Eugene/PPPL_python_project1/xics_rt_code')
 
 import json
 import numpy as np
-from xicsrt.xicsrt_math import vector_rotate
+from xicsrt.tools.xicsrt_math import vector_rotate
 
 ## Manual input
 g_offset = np.array([0,0,0], dtype = np.float64)

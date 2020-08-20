@@ -4,7 +4,7 @@ Created on Fri Apr 28 12:30:38 2017
 
 @author: James
 """
-from xicsrt.xicsrt_math import bragg_angle, rotation_matrix, vector_rotate
+from xicsrt.tools.xicsrt_math import bragg_angle, rotation_matrix, vector_rotate
 import numpy as np
 
 def create_source_basis(distance):

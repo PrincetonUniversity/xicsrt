@@ -7,40 +7,16 @@ Authors
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
   - Matthew Slominski <mattisaacslominski@yahoo.com>
 """
-#import numpy as np
+import numpy as np
 from scipy.spatial import Delaunay
 
 from xicsrt.util import profiler
-from xicsrt import xicsrt_math
-from xicsrt.xicsrt_math import *
+from xicsrt.tools import xicsrt_math
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 import jax
 import jax.numpy as jnp
-
-
-def vector_angle(a, b):
-    """
-    Find the angle between two vectors. Not vectorized.
-    """
-    angle = jnp.arccos(jnp.dot(a/jnp.linalg.norm(a), b/jnp.linalg.norm(b)))
-    return angle
-
-def vector_rotate(a, b, theta):
-    """
-    Rotate vector a around vector b by an angle theta (radians)
-
-    Programming Notes:
-      u: parallel projection of a on b_hat.
-      v: perpendicular projection of a on b_hat.
-      w: a vector perpendicular to both a and b.
-    """
-    b_hat = b / jnp.linalg.norm(b)
-    u = b_hat * jnp.dot(a, b_hat)
-    v = a - u
-    w = jnp.cross(b_hat, v)
-    c = u + v * jnp.cos(theta) + w * jnp.sin(theta)
-    return c
+from xicsrt.tools import xicsrt_math_jax
 
 class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
 
@@ -101,7 +77,7 @@ class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
         C0S = S - C0
         C0S_dist = jnp.linalg.norm(C0S)
         C0S_hat = C0S / C0S_dist
-        bragg0 = jnp.abs(jnp.pi / 2 - vector_angle(C0S_hat, C0_norm))
+        bragg0 = jnp.abs(jnp.pi / 2 - xicsrt_math_jax.vector_angle(C0S_hat, C0_norm))
 
         C0D0 = D0 - C0
         C0D0_dist = jnp.linalg.norm(C0D0)
@@ -112,11 +88,11 @@ class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
         CS = S - C
         CS_dist = jnp.linalg.norm(CS)
         CS_hat = CS / jnp.linalg.norm(CS)
-        bragg = jnp.abs(jnp.pi / 2 - vector_angle(CS_hat, C_norm))
+        bragg = jnp.abs(jnp.pi / 2 - xicsrt_math_jax.vector_angle(CS_hat, C_norm))
 
         CE_dist = C0E_dist - a
         CD_dist = CE_dist / jnp.cos(bragg)
-        CD_hat = vector_rotate(C_norm, C0_yaxis, -1 * (jnp.pi / 2 - bragg))
+        CD_hat = xicsrt_math_jax.vector_rotate(C_norm, C0_yaxis, -1 * (jnp.pi / 2 - bragg))
         D = C + CD_dist * CD_hat
 
         SD = D - S
@@ -124,7 +100,7 @@ class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
 
         CP_hat = -1 * jnp.cross(SD, C0_yaxis)
         CP_hat /= jnp.linalg.norm(CP_hat)
-        aDSC = vector_angle(SD_hat, -1 * CS_hat)
+        aDSC = xicsrt_math_jax.vector_angle(SD_hat, -1 * CS_hat)
         CP_dist = CS_dist * jnp.sin(aDSC)
         P = C + CP_hat * CP_dist
 
@@ -133,10 +109,10 @@ class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
         #CQ_dist = CP_dist / jnp.cos(aQCP)
         #Q = C + CQ_hat * CQ_dist
 
-        XP_hat = vector_rotate(CP_hat, SD_hat, b)
+        XP_hat = xicsrt_math_jax.vector_rotate(CP_hat, SD_hat, b)
         X = P - XP_hat * CP_dist
 
-        XQ_hat = vector_rotate(CQ_hat, SD_hat, b)
+        XQ_hat = xicsrt_math_jax.vector_rotate(CQ_hat, SD_hat, b)
 
         if return_XQ_hat:
             return X, XQ_hat
@@ -178,10 +154,10 @@ class XicsrtOpticVariableRadiiCone(XicsrtOpticCrystal):
         C0_yaxis = np.cross(C0_xaxis, C0_zaxis)
 
         # Calculate the source location.
-        S = C0 + C0S_dist * vector_rotate(C0_zaxis, C0_yaxis, (np.pi / 2 - bragg))
+        S = C0 + C0S_dist * xicsrt_math.vector_rotate(C0_zaxis, C0_yaxis, (np.pi / 2 - bragg))
 
         # Calculate the detector location.
-        D0 = C0 + C0D_dist * vector_rotate(C0_zaxis, C0_yaxis, -1 * (np.pi / 2 - bragg))
+        D0 = C0 + C0D_dist * xicsrt_math.vector_rotate(C0_zaxis, C0_yaxis, -1 * (np.pi / 2 - bragg))
         D0_zaxis = np.array([-1.0, 0.0, 0.0])
         D0_yaxis = np.array([0.0, 1.0, 0.0])
         D0_xaxis = np.cross(D0_zaxis, D0_yaxis)

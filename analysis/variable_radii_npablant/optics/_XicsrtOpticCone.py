@@ -11,8 +11,8 @@ Authors
 from scipy.spatial import Delaunay
 
 from xicsrt.util import profiler
-from xicsrt import xicsrt_math
-from xicsrt.xicsrt_math import *
+from xicsrt.tools import xicsrt_math
+from xicsrt.tools.xicsrt_math import *
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 import jax

@@ -258,7 +258,7 @@ def setup_fwhm_scenario(config):
     the crystal is removed and the detector is placed at the
     crystal-detector distance.
     """
-    from xicsrt.xicsrt_math import bragg_angle
+    from xicsrt.tools.xicsrt_math import bragg_angle
     
     distance_s_g = 1
     distance_g_d = 1
