@@ -1,10 +1,13 @@
 
 General:
 
-1. xics_rt_optics:  The way that the meshgrid currently interacts with the optic position and collect_rays is currently not as intended. The current code seems to work correctly, and is fine as a quick way to temporarily make some plots, but is not a good permanent solution.
+1. xicsrt.objects._XicsrtOpticMesh:
+    Mesh refinement and pre-selection currently uses two mesh intersect
+    methods that accept different array dimensions. Right now mesh_intersect_1
+    uses an optimized algorithm, but mesh_intersect_2 uses an older non-optimized
+    version.  At least mesh_intersect_2 needs to be updated to the better
+    algorithm; it would be even better if the two could be combined somehow.
 
-Merge 2020-02-25:
+2. xicsrt.objects._XicsrtOpticMesh:
+    The docstring is out of date, and needs to be rewritten.
 
-1. All of the sightline stuff has been pulled out of xics_rt_plasmas. This needs to be reintegrated as a bundle filter.
-
-2. xics_rt_plasms.RealPlasma has been removed.  This needs to be replaced by the base vmec class.

@@ -36,23 +36,6 @@ class XicsrtOpticGeneric(GeometryObject):
 
         return config
 
-    def check_param(self):
-        super().check_param()
-
-        # Check the optic size compare to the meshgrid size.
-
-        # This is temporary until handling of oversized meshes
-        # are implemented.
-        if self.param['use_meshgrid'] is True:
-            mesh_loc = self.point_to_local(self.param['mesh_points'])
-
-            # If any mesh points fall outside of the optic width, test fails.
-            test = True
-            test &= np.all(abs(mesh_loc[:, 0]) <= (self.param['width'] / 2))
-            test &= np.all(abs(mesh_loc[:, 1]) <= (self.param['height'] / 2))
-            if not test:
-                raise Exception('Optic dimentions too small to contain meshgrid.')
-
     def initialize(self):
         super().initialize()
 
