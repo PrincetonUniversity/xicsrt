@@ -64,7 +64,7 @@ class GeometryObject(ConfigObject):
 
         xaxis = np.cross(np.array([0.0, 0.0, 1.0]), zaxis)
         if not np.all(xaxis == 0.0):
-            xicsrt.tool.normalize(xaxis)
+            xaxis /= np.linalg.norm(xaxis)
         else:
             xaxis = np.array([1.0, 0.0, 0.0])
 

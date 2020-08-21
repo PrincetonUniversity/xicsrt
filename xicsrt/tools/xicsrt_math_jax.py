@@ -23,3 +23,7 @@ def vector_rotate(a, b, theta):
     w = jnp.cross(b_hat, v)
     c = u + v * jnp.cos(theta) + w * jnp.sin(theta)
     return c
+
+def sinusoidal_spiral(phi, b, r0, theta0):
+    r = r0 * (jnp.sin(theta0 + (b-1)*phi)/jnp.sin(theta0))**(1/(b-1))
+    return r
