@@ -273,7 +273,7 @@ def add_optics(config):
             name = 'crystal'
             section = 'optics'
             optics = XicsrtDispatcher(config, section)
-            optics.instantiate_objects()
+            optics.instantiate()
             optics.setup()
             optics.initialize()
 
@@ -330,7 +330,7 @@ def add_sources(config):
     pathlist.extend(config['general']['pathlist_default'])
     
     sources = XicsrtDispatcher(config, 'sources')
-    sources.instantiate_objects()
+    sources.instantiate()
     sources.setup()
     sources.initialize()
 

@@ -103,6 +103,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         # Temporary for development.
         config['mesh_method'] = 5
         config['mesh_interpolate'] = True
+        config['mesh_refine'] = True
 
         return config
 
@@ -125,28 +126,29 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             if self.param['mesh_method'] == 5:
                 X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])
                 self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-                if self.param['mesh_interpolate']:
-                    X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
-                else:
-                    normals = self.mesh_normals(hits, self.param['mesh'])
-                rays = self.reflect_vectors(X, rays, normals)
-                self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
             elif self.param['mesh_method'] == 7:
-                X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh'])
+                X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
+                num_rays_coarse = np.sum(rays['mask'])
                 faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'])
                 X, rays, hits = self.mesh_intersect_2(
                     rays
                     ,self.param['mesh']
                     ,faces_idx
                     ,faces_mask)
-                self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-                if self.param['mesh_interpolate']:
-                    X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
-                else:
-                    normals = self.mesh_normals(hits, self.param['mesh'])
-                rays = self.reflect_vectors(X, rays, normals)
-                self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
+                num_rays_fine = np.sum(rays['mask'])
+
+                num_rays_lost = num_rays_coarse - num_rays_fine
+                if not num_rays_lost == 0:
+                    self.log.warning(f'Rays lost in mesh refinement: {num_rays_lost:0.0f} of {num_rays_coarse:6.2e}')
+
+            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
+            if self.param['mesh_interpolate']:
+                X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
+            else:
+                normals = self.mesh_normals(hits, self.param['mesh'])
+            rays = self.reflect_vectors(X, rays, normals)
+            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
         return rays
 
@@ -335,10 +337,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         # distance = np.dot((p0 - O), n) / np.dot(D, n)
         t0 = p0[:, :, :] - O[None, :, :]
-        t1 = np.einsum('ijk, ijk -> ij', t0, n)
-        t2 = np.einsum('jk, ijk -> ij', D, n)
+        t1 = np.einsum('ijk, ijk -> ij', t0, n, optimize=True)
+        t2 = np.einsum('jk, ijk -> ij', D, n, optimize=True)
         dist = t1 / t2
-        t3 = np.einsum('jk,ij -> ijk', D, dist)
+        t3 = np.einsum('jk,ij -> ijk', D, dist, optimize=True)
         intersect = t3 + O
 
         # Pre-calculate some vectors and do the calculation in a

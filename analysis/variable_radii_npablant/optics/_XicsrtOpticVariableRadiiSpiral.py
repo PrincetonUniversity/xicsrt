@@ -49,7 +49,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         inp['b'] = self.param['b']
         inp['theta0'] = self.param['theta0']
 
-        out = self.spiral(0.0, 0.0, inp, return_dict=True)
+        out = self.spiral(0.0, 0.0, inp, dict=True)
         config = {}
         config['origin'] = out['X']
         config['zaxis'] = (out['Q'] - out['X'])/np.linalg.norm(out['Q'] - out['X'])
@@ -83,38 +83,42 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         self.log.debug(f'Coarse mesh points: {mesh_points.shape[0]}')
 
         # Calculate height at width.
-        self.param['width'] = np.max(self.param['mesh_points'][:,0])-np.min(self.param['mesh_points'][:,0])
-        self.param['height'] = np.max(self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
+        self.param['width'] = np.max(
+            self.param['mesh_points'][:,0])-np.min(self.param['mesh_points'][:,0])
+        self.param['height'] = np.max(
+            self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
         self.log.debug(f"WxH: {self.param['width']:0.3f}x{self.param['height']:0.3f}")
 
-    def spiral(self, phi, beta, inp, return_dict=False):
+    def spiral(self, phi, beta, inp, dict=False):
         b = inp['b']
         r0 = inp['r0']
         theta0 = inp['theta0']
+        S = inp.get('S', jnp.array([0.0, 0.0, 0.0]))
 
         r = xmj.sinusoidal_spiral(phi, b, r0, theta0)
         a = theta0 + b * phi
         t = theta0 + (b - 1) * phi
-        C_norm = jnp.array([jnp.cos(a + jnp.pi / 2), jnp.sin(a + jnp.pi / 2), 0.0])
+        C_norm = jnp.array([-1*jnp.sin(a), jnp.cos(a), 0.0])
 
         C = jnp.array([r * jnp.cos(phi), r * jnp.sin(phi), 0.0])
         rho = r / (b * jnp.sin(t))
         O = C + rho * C_norm
 
-        S = jnp.array([0.0, 0.0, 0.0])
         CS = S - C
         CS_dist = jnp.linalg.norm(CS)
         CS_hat = CS / CS_dist
+
+        # When the source is at the origin, bragg will equal theta.
+        bragg = jnp.pi/2 - jnp.arccos(jnp.dot(CS_hat, C_norm))
         axis = jnp.array([0.0, 0.0, 1.0])
-        CD_hat = xmj.vector_rotate(CS_hat, axis, -2 * (jnp.pi / 2 - t))
-        CD_dist = rho * jnp.sin(t)
+        CD_hat = xmj.vector_rotate(CS_hat, axis, -2 * (jnp.pi / 2 - bragg))
+        CD_dist = rho * jnp.sin(bragg)
         D = C + CD_dist * CD_hat
 
         SD = D - S
         SD_hat = SD / jnp.linalg.norm(SD)
 
-        CP_hat = -1 * jnp.cross(SD, axis)
-        CP_hat /= jnp.linalg.norm(CP_hat)
+        CP_hat = -1 * jnp.cross(SD_hat, axis)
         aDSC = xmj.vector_angle(SD_hat, -1 * CS_hat)
         CP_dist = CS_dist * jnp.sin(aDSC)
         P = C + CP_hat * CP_dist
@@ -127,7 +131,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         XP_hat = xmj.vector_rotate(CP_hat, SD_hat, beta)
         X = P - XP_hat * CP_dist
 
-        if return_dict:
+        if dict:
             out = {}
             out['C'] = C
             out['O'] = O
@@ -141,7 +145,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
             return X
 
     def spiral_centered_dict(self, a, b, inp):
-        out = self.spiral(a, b, inp, return_dict=True)
+        out = self.spiral(a, b, inp, dict=True)
         for key in out:
             out[key] = self.geometry.point_to_local(out[key])
         return out
@@ -177,8 +181,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         a_span = a_range[1] - a_range[0]
         b_span = b_range[1] - b_range[0]
 
-        # For now assume the mesh_size is the angular density
-        # in the a direction.
+        # For now assume the mesh_size is in radians.
         num_a = a_span/mesh_size_a
         num_b = b_span/mesh_size_b
         num_a = np.ceil(num_a).astype(int)

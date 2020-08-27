@@ -26,8 +26,8 @@ class XicsrtDispatcher():
         self.section = section
 
         pathlist = []
-        pathlist.extend(config['general']['pathlist_objects'])
-        pathlist.extend(config['general']['pathlist_default'])
+        pathlist.extend(config['general'].get('pathlist_objects', []))
+        pathlist.extend(config['general'].get('pathlist_default', []))
         self.pathlist = pathlist
         
         self.objects = OrderedDict()
@@ -35,7 +35,7 @@ class XicsrtDispatcher():
         self.image = OrderedDict()
         self.history = OrderedDict()
 
-    def instantiate_objects(self, names=None):
+    def instantiate(self, names=None):
         if names is None:
             names = self.config[self.section].keys()
         elif isinstance(names, str):
@@ -45,7 +45,7 @@ class XicsrtDispatcher():
         # self.log.debug(obj_info)
 
         for key in names:
-            obj = self._instantiate_object_single(
+            obj = self._instantiate_single(
                 obj_info
                 ,self.config[self.section][key])
             self.objects[key] = obj
@@ -74,7 +74,7 @@ class XicsrtDispatcher():
 
         return output
 
-    def _instantiate_object_single(self, obj_info, config):
+    def _instantiate_single(self, obj_info, config):
         """
         Instantiate an object from a list of filenames and a class name.
         """
@@ -82,7 +82,7 @@ class XicsrtDispatcher():
         if config['class_name'] in obj_info:
             info = obj_info[config['class_name']]
         else:
-            raise Exception('Could not find {} in available objects.'.format(config['name']))
+            raise Exception('Could not find {} in available objects.'.format(config['class_name']))
 
         spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
         mod = importlib.util.module_from_spec(spec)
@@ -93,6 +93,8 @@ class XicsrtDispatcher():
         return obj
 
     def get_object(self, name):
+        if not name in self.objects:
+            self.instantiate(name)
         return self.objects[name]
 
     def check_config(self, *args, **kwargs):

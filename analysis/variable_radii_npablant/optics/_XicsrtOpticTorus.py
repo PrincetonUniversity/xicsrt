@@ -3,6 +3,9 @@
 Authors
 -------
   - Novimir Pablant <npablant@pppl.gov>
+  - James Kring <jdk0026@tigermail.auburn.edu>
+  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+  - Matthew Slominski <mattisaacslominski@yahoo.com>
 """
 import numpy as np
 from scipy.spatial import Delaunay
@@ -11,11 +14,7 @@ from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
-import jax
-import jax.numpy as jnp
-
-
-class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
+class XicsrtOpticTorus(XicsrtOpticCrystal):
 
     def get_default_config(self):
         config = super().get_default_config()
@@ -25,24 +24,23 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         config['mesh_coarse_size_a'] = 0.01
         config['mesh_coarse_size_b'] = 0.02
         config['range_a'] = [-0.01, 0.01]
-        config['range_b'] = [-0.04, 0.04]
+        config['range_b']  = [-0.04, 0.04]
 
         # Parameters needed to define geometry.
         config['major_radius'] = 1.0
-        config['minor_radius'] = None
+        config['minor_radius'] = 0.1
         config['crystal_spacing'] = 2.82868/2
-        config['lambda0'] = 1.2716
-        config['source_distance'] = 0.3
+        config['lambda0']   = 1.2716
+        config['source_distance']  = 0.3
 
         # Calculation options.
-        config['normal_method'] = 'jax'
+        config['normal_method'] = 'analytic'
 
         return config
 
     def setup(self):
         super().setup()
-
-        self.log.debug('Yo mama is here.')
+        self.log.debug('Yo mama was here.')
 
         # Generate the fine mesh.
         mesh_points, mesh_normals, mesh_faces = self.generate_crystal_mesh(
@@ -69,172 +67,85 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
             self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
         self.log.debug(f"WxH: {self.param['width']:0.3f}x{self.param['height']:0.3f}")
 
-    def vr_toroid(self, a, b, param, dict=False):
-        """
-        Calculate the parameters of the variable-radii toroid.
-
-        This calculation is the same as vr_toroid_1, but uses a method of
-        calculation that is easier to read and understand. It may be slightly
-        slower.
-        """
-        C0       = param['crystal_location']
-        C0_zaxis = param['crystal_zaxis']
-        C0_xaxis = param['crystal_xaxis']
-        S        = param['source_location']
-        maj_r    = param['major_radius']
+    def torus(self, a, b, param, dict=False, extra=False):
+        C0 = param['crystal_location']
+        C0_zaxis  = param['crystal_zaxis']
+        C0_xaxis  = param['crystal_xaxis']
+        maj_r     = param['major_radius']
+        min_r     = param['minor_radius']
 
         C0_yaxis = np.cross(C0_xaxis, C0_zaxis)
         O = C0 + maj_r * C0_zaxis
 
         C_norm = xm.vector_rotate(C0_zaxis, C0_yaxis, a)
         C = O - maj_r * C_norm
+        Q = C + C_norm * min_r
 
-        SC = C - S
-        SC_dist = np.linalg.norm(SC)
-        SC_hat = SC / SC_dist
+        axis = np.cross(C_norm, C0_yaxis)
+        X_norm = xm.vector_rotate(C_norm, axis, b)
+        X = Q - X_norm * min_r
 
-        bragg = np.abs(np.pi / 2 - xm.vector_angle(SC_hat, C_norm))
+        if extra:
+            S = param['source_location']
+            SC = C - S
+            SC_dist = np.linalg.norm(SC)
+            SC_hat = SC / SC_dist
+            bragg = np.abs(np.pi / 2 - xm.vector_angle(SC_hat, C_norm))
 
-        D_dist = maj_r * np.cos(bragg)
-        D = O + D_dist * xm.vector_rotate(-1*C_norm, C0_yaxis, bragg)
+            # Calculate the location where the rays intersect
+            # the tangency circle. These will be out of focus.
+            D2_dist = maj_r * np.cos(bragg)
+            D2 = O + D2_dist * xm.vector_rotate(-1 * C_norm, C0_yaxis, bragg)
+            CD2 = D2 - C
+            CD2_dist = np.linalg.norm(CD2)
+            CD2_hat = CD2 / CD2_dist
 
-        SD = D - S
-        SD_hat = SD / np.linalg.norm(SD)
-
-        PC_hat = np.cross(SD, C0_yaxis)
-        PC_hat /= np.linalg.norm(PC_hat)
-
-        aDSC = xm.vector_angle(SD_hat, SC_hat)
-        PC_dist = SC_dist * np.sin(aDSC)
-        P = C + (-1) * PC_hat * PC_dist
-
-        PX_hat = xm.vector_rotate(PC_hat, SD_hat, b)
-        X = P + PX_hat * PC_dist
-
-        QC_hat = -1 * C_norm
-        QCP_angle = xm.vector_angle(QC_hat, PC_hat)
-        QC_dist = PC_dist / np.cos(QCP_angle)
-        Q = C - QC_hat * QC_dist
+            # Calculate the location of approximate best focus.
+            SQ = Q - S
+            SQ_hat = SQ / np.linalg.norm(SQ)
+            aQSC = np.arccos(np.dot(SQ_hat, SC_hat))
+            CP2_dist = SC_dist * np.sin(aQSC)
+            aDCQ = 2 * bragg - aQSC
+            CD_dist = CP2_dist / np.sin(aDCQ)
+            D = C + CD2_hat * CD_dist
 
         if dict:
             out = {}
-            out['C0'] = C0
-            out['C'] = C
             out['O'] = O
-            out['S'] = S
-            out['D'] = D
-            out['P'] = P
-            out['Q'] = Q
+            out['C'] = C
             out['X'] = X
+            out['Q'] = Q
+            if extra:
+                out['S'] = S
+                out['D'] = D
+                out['D2'] = D2
             return out
         else:
             return X
 
-    def vr_toroid_1(self, alpha, beta, param, dict=False):
-        """
-        Calculate the parameters of the variable-radii toroid.
+    def torus_analytic(self, a, b, param):
+        out = self.torus(a, b, param, dict=True)
+        X = out['X']
+        XQ = (out['Q'] - out['X'])
+        XQ_hat = XQ/np.linalg.norm(XQ)
+        return X, XQ_hat
 
-        This calculation is the same as vr_toroid, but uses a different
-        formulation. This formulation should be a little faster. In addition
-        this version uses the JAX version of numpy so that JAX functions can
-        be used.
-        """
-        C0       = param['crystal_location']
-        C0_zaxis = param['crystal_zaxis']
-        C0_xaxis = param['crystal_xaxis']
-        S        = param['source_location']
-        maj_r    = param['major_radius']
+    def torus_fd(self, a, b, param, delta=None):
+        profiler.start('finite difference')
+        if delta is None: delta = 1e-8
 
-        # The origin vectors could be pre-calculated.
-        O_yaxis = jnp.cross(-1 * C0_zaxis, C0_xaxis)
-        Ov1 = -1 * C0_zaxis
-        Ov2 = C0_xaxis
-        O = C0 - maj_r * Ov1
-
-        Cv1 = Ov1 * jnp.cos(alpha) + Ov2 * jnp.sin(alpha)
-        Cr2 = jnp.cross(O_yaxis, Cv1)
-        C = O + maj_r * Cv1
-
-        CS = C - S
-        CS_dist = jnp.linalg.norm(CS)
-        CS_hat = CS / CS_dist
-
-        bragg = jnp.arccos(jnp.dot(CS_hat, -1 * Cr2))
-        # sin_bragg = jnp.linalg.norm(jnp.cross(CS_hat, -1*Cr2))
-        # cos_bragg = jnp.dot(CS_hat, -1*Cr2)
-
-        CD_dist = maj_r * jnp.sin(bragg)
-        CD_hat = CS_hat + 2 * Cr2 * jnp.cos(bragg)
-        D = C - CD_dist * CD_hat
-
-        SD = S - D
-        SD_dist = jnp.linalg.norm(SD)
-        SD_hat = SD / SD_dist
-
-        sin_aDSC = jnp.linalg.norm(jnp.cross(CS_hat, SD_hat))
-        CP_dist = CS_dist * sin_aDSC
-        CP_hat = jnp.cross(O_yaxis, SD_hat)
-        P = C - CP_dist * CP_hat
-
-        Pv1 = CP_hat
-        Pv2 = O_yaxis
-        XP_hat = Pv1 * jnp.cos(beta) + Pv2 * jnp.sin(beta)
-        X = P + CP_dist * XP_hat
-
-        if dict:
-            Qv1 = XP_hat
-            Qv2 = SD_hat
-            aQCP = jnp.arccos(np.dot(Cv1, Pv1))
-            CQ_dist = CP_dist / jnp.cos(aQCP)
-            XQ_hat = Qv1 * jnp.cos(aQCP) + Qv2 * jnp.sin(aQCP)
-            Q = X - XQ_hat * CQ_dist
-
-            out = {}
-            out['C0'] = C0
-            out['C'] = C
-            out['O'] = O
-            out['S'] = S
-            out['D'] = D
-            out['P'] = P
-            out['Q'] = Q
-            out['X'] = X
-            return out
-        else:
-            return X
-
-    def vr_toroid_jax(self, alpha, beta, param):
-        xyz = self.vr_toroid_1(alpha, beta, param)
-        profiler.start('vr_toroid_jax, normal')
-        dfda, dfdb = jax.jacfwd(self.vr_toroid_1, (0, 1))(alpha, beta, param)
-        norm_ad = np.cross(dfda, dfdb)
-        norm_ad /= np.linalg.norm(norm_ad)
-        profiler.stop('vr_toroid_jax, normal')
-        return xyz, norm_ad
-
-    def vr_toroid_fd(self, a, b, param, delta=None):
-        profiler.start('vr_toroid_fd, finite difference')
-        if delta is None: delta = 1e-4
-
-        xyz = self.vr_toroid(a, b, param)
-        xyz1 = self.vr_toroid(a + delta, b, param)
-        xyz2 = self.vr_toroid(a, b + delta, param)
+        xyz = self.torus(a, b, param)
+        xyz1 = self.torus(a + delta, b, param)
+        xyz2 = self.torus(a, b + delta, param)
 
         vec1 = xyz1 - xyz
         vec2 = xyz2 - xyz
         norm_fd = np.cross(vec1, vec2)
         norm_fd /= np.linalg.norm(norm_fd)
-        profiler.stop('vr_toroid_fd, finite difference')
+        profiler.stop('finite difference')
         return xyz, norm_fd
 
-    def vr_toroid_ideal_np(self, a, b, param, delta=None):
-        profiler.start('vr_toroid_ideal_np')
-        out = self.vr_toroid(a, b, param, dict=True)
-        xyz = out['X']
-        norm = (out['Q'] - out['X']) / np.linalg.norm(out['Q'] - out['X'])
-        profiler.stop('vr_toroid_ideal_np')
-        return xyz, norm
-
-    def get_vrt_param(self):
+    def get_t_param(self):
         major_radius = self.param['major_radius']
         minor_radius = self.param['minor_radius']
 
@@ -278,7 +189,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         major_radius = self.param['major_radius']
         minor_radius = self.param['minor_radius']
 
-        vrt_param = self.get_vrt_param()
+        t_param = self.get_t_param()
 
         # --------------------------------
         # Setup the basic grid parameters.
@@ -308,27 +219,17 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         normal_yy = np.empty((num_a, num_b))
         normal_zz = np.empty((num_a, num_b))
 
-        # ------------------------------------------------
-        # Now calculate the xyz values at each grid point.
-        #
-        # This is my first attempt at the geometry; I have made no attempt
-        # at all to do this efficently, and I am probably caculating a lot
-        # of things that are not needed.
         for ii_a in range(num_a):
             for ii_b in range(num_b):
-
-                a = aa[ii_a, ii_b]
                 b = bb[ii_a, ii_b]
-
+                a = aa[ii_a, ii_b]
                 # Temporary for development.
-                if self.param['normal_method'] == 'jax':
-                    xyz, norm = self.vr_toroid_jax(a, b, vrt_param)
+                if self.param['normal_method'] == 'analytic':
+                    xyz, norm = self.torus_analytic(a, b, t_param)
                 elif self.param['normal_method'] == 'fd':
-                    xyz, norm = self.vr_toroid_fd(a, b, vrt_param)
-                elif self.param['normal_method'] == 'ideal_np':
-                    xyz, norm = self.vr_toroid_ideal_np(a, b, vrt_param)
+                    xyz, norm = self.torus_fd(a, b, t_param)
                 else:
-                    raise Exception(f"normal_method {self.param['normal_method']} unknown.")
+                    raise Exception(f"normal_method: {self.param['normal_method']} not supported")
 
                 xx[ii_a, ii_b] = xyz[0]
                 yy[ii_a, ii_b] = xyz[1]
@@ -346,6 +247,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
 
         points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
         normals = np.stack((normal_xx.flatten(), normal_yy.flatten(), normal_zz.flatten())).T
+
         faces = tri.simplices
 
         profiler.stop('generate_crystal_mesh')
