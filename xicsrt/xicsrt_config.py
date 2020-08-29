@@ -53,6 +53,7 @@ class XicsrtGeneralConfig(ConfigObject):
         config['sources'] = OrderedDict()
         config['optics'] = OrderedDict()
         config['filters'] = OrderedDict()
+        config['scenario'] = OrderedDict()
     
         return config
         
@@ -61,6 +62,13 @@ def get_config(config_user=None):
     obj_config.update_config(config_user, strict=False, update=True)
     config = obj_config.get_config()
     return config
+
+def update_config(config, config_user):
+    obj_config =  XicsrtGeneralConfig()
+    obj_config.update_config(config, strict=False, update=True)
+    obj_config.update_config(config_user, strict=False, update=True)
+    config_out = obj_config.get_config()
+    return config_out
 
 def config_to_numpy(config):
     # Temporarily just call the routine from xicsrt_input.
