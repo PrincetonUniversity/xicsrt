@@ -7,10 +7,15 @@ Authors
 import numpy as np
 from scipy.spatial import Delaunay
 
+
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_math as xm
+from xicsrt.tools import sinusoidal_spiral
 from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
+
+from jax.config import config
+config.update("jax_enable_x64", True)
 
 import jax
 import jax.numpy as jnp
@@ -32,10 +37,36 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         config['b'] = 0.356
         config['theta0'] = np.radians(25)
 
+        config['sC'] = None
+        config['thetaC'] = None
+        config['phiC'] = 0.0
+
+        # These are not used, but are added for compatibility
+        # with the VR-Toroid and the Standard-Torus.
+        config['major_radius'] = None
+        config['minor_radius'] = None
+
         # Temporary for development.
         config['normal_method'] = 'jax'
 
         return config
+
+    def get_spiral_inp(self):
+        inp = {}
+        inp['r0'] = None
+        inp['b'] = None
+        inp['theta0'] = None
+        inp['sC'] = None
+        inp['thetaC'] = None
+        inp['phiC'] = None
+
+        for key in inp:
+            inp[key] = self.param[key]
+
+        S = sinusoidal_spiral.get_source_origin(inp)
+        inp['S'] = S
+
+        return inp
 
     def setup_geometry(self):
         """
@@ -44,17 +75,14 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         crystal normal as the z-axis. This is what is usually
         used when generating raytracing scenarios.
         """
-        inp = {}
-        inp['r0'] = self.param['r0']
-        inp['b'] = self.param['b']
-        inp['theta0'] = self.param['theta0']
+        inp = self.get_spiral_inp()
 
-        out = self.spiral(0.0, 0.0, inp, dict=True)
+        out = self.spiral(inp['phiC'], 0.0, inp, extra=True)
         config = {}
         config['origin'] = out['X']
         config['zaxis'] = (out['Q'] - out['X'])/np.linalg.norm(out['Q'] - out['X'])
         config['yaxis'] = np.array([0.0, 0.0, 1.0])
-        config['xaxis'] = np.cross(config['yaxis'], config['zaxis'])
+        config['xaxis'] = np.cross(config['zaxis'], config['yaxis'])
         self.geometry = GeometryObject(config, strict=False)
 
     def setup(self):
@@ -89,63 +117,12 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
             self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
         self.log.debug(f"WxH: {self.param['width']:0.3f}x{self.param['height']:0.3f}")
 
-    def spiral(self, phi, beta, inp, dict=False):
-        b = inp['b']
-        r0 = inp['r0']
-        theta0 = inp['theta0']
-        S = inp.get('S', jnp.array([0.0, 0.0, 0.0]))
+    def spiral(self, *args, **kwargs):
+        out = sinusoidal_spiral.spiral(*args, **kwargs)
+        return out
 
-        r = xmj.sinusoidal_spiral(phi, b, r0, theta0)
-        a = theta0 + b * phi
-        t = theta0 + (b - 1) * phi
-        C_norm = jnp.array([-1*jnp.sin(a), jnp.cos(a), 0.0])
-
-        C = jnp.array([r * jnp.cos(phi), r * jnp.sin(phi), 0.0])
-        rho = r / (b * jnp.sin(t))
-        O = C + rho * C_norm
-
-        CS = S - C
-        CS_dist = jnp.linalg.norm(CS)
-        CS_hat = CS / CS_dist
-
-        # When the source is at the origin, bragg will equal theta.
-        bragg = jnp.pi/2 - jnp.arccos(jnp.dot(CS_hat, C_norm))
-        axis = jnp.array([0.0, 0.0, 1.0])
-        CD_hat = xmj.vector_rotate(CS_hat, axis, -2 * (jnp.pi / 2 - bragg))
-        CD_dist = rho * jnp.sin(bragg)
-        D = C + CD_dist * CD_hat
-
-        SD = D - S
-        SD_hat = SD / jnp.linalg.norm(SD)
-
-        CP_hat = -1 * jnp.cross(SD_hat, axis)
-        aDSC = xmj.vector_angle(SD_hat, -1 * CS_hat)
-        CP_dist = CS_dist * jnp.sin(aDSC)
-        P = C + CP_hat * CP_dist
-
-        CQ_hat = C_norm
-        aQCP = xmj.vector_angle(CQ_hat, CP_hat)
-        CQ_dist = CP_dist / jnp.cos(aQCP)
-        Q = C + CQ_hat * CQ_dist
-
-        XP_hat = xmj.vector_rotate(CP_hat, SD_hat, beta)
-        X = P - XP_hat * CP_dist
-
-        if dict:
-            out = {}
-            out['C'] = C
-            out['O'] = O
-            out['S'] = S
-            out['D'] = D
-            out['P'] = P
-            out['Q'] = Q
-            out['X'] = X
-            return out
-        else:
-            return X
-
-    def spiral_centered_dict(self, a, b, inp):
-        out = self.spiral(a, b, inp, dict=True)
+    def spiral_centered_extra(self, a, b, inp):
+        out = self.spiral(a, b, inp, extra=True)
         for key in out:
             out[key] = self.geometry.point_to_local(out[key])
         return out
@@ -167,11 +144,9 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         """
         This method creates the meshgrid for the crystal
         """
+        profiler.start('generate_mesh')
 
-        inp = {}
-        inp['r0'] = self.param['r0']
-        inp['b'] = self.param['b']
-        inp['theta0'] = self.param['theta0']
+        inp = self.get_spiral_inp()
 
         # --------------------------------
         # Setup the basic grid parameters.
@@ -213,7 +188,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
                 if self.param['normal_method'] == 'jax':
                     xyz, norm = self.spiral_centered_jax(a, b, inp)
                 elif self.param['normal_method'] == 'ideal_np':
-                    out = self.spiral_centered_dict(a, b, inp)
+                    out = self.spiral_centered_extra(a, b, inp)
                     xyz = out['X']
                     norm = (out['Q'] - out['X'])/np.linalg.norm(out['Q'] - out['X'])
                 else:
@@ -236,5 +211,6 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         normals = np.stack((normal_xx.flatten(), normal_yy.flatten(), normal_zz.flatten())).T
         faces = tri.simplices
 
+        profiler.stop('generate_mesh')
         return points, normals, faces
 

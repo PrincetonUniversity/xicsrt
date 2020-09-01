@@ -19,11 +19,18 @@ from xicsrt.tools import xicsrt_math_jax as xmj
 from xicsrt.tools import xicsrt_math as xm
 
 
+def sinsp(phi, b, r0, theta0):
+    """Equation for a Sinusoidal Spiral."""
+    r = r0 * (jnp.sin(theta0 + (b-1)*phi)/jnp.sin(theta0))**(1/(b-1))
+    return r
+
+
 def spiral(phi, beta, inp, extra=False):
+    """3D geometry for a Sinusoidal Spiral crystal."""
     b = inp['b']
     r0 = inp['r0']
     theta0 = inp['theta0']
-    S = inp.get('S', jnp.array([0.0, 0.0, 0.0]))
+    S = inp['S']
 
     r = xmj.sinusoidal_spiral(phi, b, r0, theta0)
     a = theta0 + b * phi
@@ -76,18 +83,18 @@ def spiral(phi, beta, inp, extra=False):
 
 
 def get_source_origin(inp):
-    """
-    Calculate the source origin from the input values.
-    """
-    if not inp['phiC'] == 0.0:
-        raise NotImplementedError('The phiC parameter is not yet implemented.')
+    inp_tmp = inp.copy()
+    inp_tmp['S'] = np.array([0.0, 0.0, 0.0])
+    out = spiral(inp['phiC'], 0.0, inp_tmp, extra=True)
 
-    aS = inp['theta0'] - inp['thetaC']
+    CO = out['O'] - out['C']
+    CO_dist = np.linalg.norm(CO)
+    CO_hat = CO/CO_dist
 
-    crystal_origin = np.array([inp['r0'], 0.0, 0.0])
-    CS = np.array([-1.0, 0.0, 0.0])
+    aS = (np.pi/2 - inp['thetaC'])
     zaxis = np.array([0.0, 0.0, 1.0])
-    S = crystal_origin + inp['sC'] * xm.vector_rotate(CS, zaxis, aS)
+
+    S = out['C'] + inp['sC'] * xm.vector_rotate(CO_hat, zaxis, aS)
 
     return S
 

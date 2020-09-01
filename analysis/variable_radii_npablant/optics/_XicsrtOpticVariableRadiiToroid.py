@@ -11,6 +11,9 @@ from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
 import jax
 import jax.numpy as jnp
 
