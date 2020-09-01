@@ -65,6 +65,7 @@ class ConfigObject():
         pass
 
     def update_config(self, config, strict=None, update=None):
+        config = copy.deepcopy(config)
         self._update_config_dict(self.config, config, strict, update)
 
     def _update_config_dict(self, config, user_config, strict=None, update=None):

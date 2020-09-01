@@ -35,6 +35,7 @@ def raytrace(config, internal=False):
 
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
+    config = xicsrt_config.config_to_numpy(config)
     check_config(config)
 
     logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
@@ -43,11 +44,35 @@ def raytrace(config, internal=False):
     num_iter = config['general']['number_of_iter']
     max_lost_iter = int(config['general']['history_max_lost']/num_iter)
 
+    # Setup the dispatchers.
+    if 'filters' in config:
+        filters = XicsrtDispatcher(config, 'filters')
+        filters.instantiate()
+        filters.setup()
+        filters.initialize()
+        config['filters'] = filters.get_config()
+    else:
+        filters = None
+
+    sources = XicsrtDispatcher(config, 'sources')
+    sources.instantiate()
+    sources.apply_filters(filters)
+    sources.setup()
+    sources.initialize()
+    config['sources'] = sources.get_config()
+
+    optics = XicsrtDispatcher(config, 'optics')
+    optics.instantiate()
+    optics.setup()
+    optics.initialize()
+    config['optics'] = optics.get_config()
+
+    # Do the actual raytracing
     output_list = []
     for ii in range(num_iter):
         logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
         
-        single = raytrace_single(config)
+        single = _raytrace_single(config, sources, optics)
         sorted = sort_raytrace(single, max_lost=max_lost_iter)
         output_list.append(sorted)
         
@@ -116,7 +141,7 @@ def raytrace_multi(config):
     profiler.stop('raytrace_multi')
     return output
     
-def raytrace_single(config):
+def _raytrace_single(config, sources, optics):
     """ 
     Rays are generated from sources and then passed through 
     the optics in the order listed in the configuration file.
@@ -124,40 +149,13 @@ def raytrace_single(config):
     Rays consists of origin, direction, wavelength, and weight.
     """
     profiler.start('raytrace_single')
-    
-    # Update the default config with the user config.
-    config = xicsrt_config.get_config(config)
-    config = xicsrt_config.config_to_numpy(config)
-    
+
     # Copy some config entries to local variables.
     # This is only to make tho code below more readable.
     keep_meta    = config['general']['keep_meta']
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
-    # Setup the dispatchers.
-    if 'filters' in config:
-        filters = XicsrtDispatcher(config, 'filters')
-        filters.instantiate()
-        filters.setup()
-        filters.initialize()
-        config['filters'] = filters.get_config()
-    else:
-        filters = None
-
-    sources = XicsrtDispatcher(config, 'sources')
-    sources.instantiate()
-    sources.apply_filters(filters)
-    sources.setup()
-    sources.initialize()
-    config['sources'] = sources.get_config()
-    
-    optics  = XicsrtDispatcher(config, 'optics')
-    optics.instantiate()
-    optics.setup()
-    optics.initialize()
-    config['optics'] = optics.get_config()
-    
     rays = sources.generate_rays(history=keep_history)
     rays = optics.raytrace(rays, history=keep_history, images=keep_images)
 
