@@ -152,7 +152,7 @@ import matplotlib
 import numpy as np
 from collections import OrderedDict
 
-from mirutil.plot import mircolor
+from xicsrt.util import mircolor
 
 def quickplot(plotinput=None, filename=None, **keywords):
     """Quickly make a simple plot from a dictionary."""
