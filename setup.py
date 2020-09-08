@@ -24,7 +24,7 @@ params ={
     ,'packages':setuptools.find_packages()
     ,'classifiers':classifiers
     ,'install_requires':['numpy', 'pillow']
-    ,'python_requires':'>=3.5'
+    ,'python_requires':'>=3.6'
     }
     
 setuptools.setup(**params)
