@@ -67,7 +67,7 @@ class XicsrtOpticTorus(XicsrtOpticCrystal):
             self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
         self.log.debug(f"WxH: {self.param['width']:0.3f}x{self.param['height']:0.3f}")
 
-    def torus(self, a, b, param, dict=False, extra=False):
+    def torus(self, a, b, param, extra=False):
         C0 = param['crystal_location']
         C0_zaxis  = param['crystal_zaxis']
         C0_xaxis  = param['crystal_xaxis']
@@ -104,27 +104,28 @@ class XicsrtOpticTorus(XicsrtOpticCrystal):
             SQ = Q - S
             SQ_hat = SQ / np.linalg.norm(SQ)
             aQSC = np.arccos(np.dot(SQ_hat, SC_hat))
-            CP2_dist = SC_dist * np.sin(aQSC)
+            CQ_dist = SC_dist * np.sin(aQSC)
             aDCQ = 2 * bragg - aQSC
-            CD_dist = CP2_dist / np.sin(aDCQ)
+            CD_dist = CQ_dist / np.sin(aDCQ)
             D = C + CD2_hat * CD_dist
 
-        if dict:
+
+
             out = {}
             out['O'] = O
             out['C'] = C
             out['X'] = X
             out['Q'] = Q
-            if extra:
-                out['S'] = S
-                out['D'] = D
-                out['D2'] = D2
+            out['S'] = S
+            out['D'] = D
+            #out['D2'] = D2
             return out
+
         else:
             return X
 
     def torus_analytic(self, a, b, param):
-        out = self.torus(a, b, param, dict=True)
+        out = self.torus(a, b, param, extra=True)
         X = out['X']
         XQ = (out['Q'] - out['X'])
         XQ_hat = XQ/np.linalg.norm(XQ)

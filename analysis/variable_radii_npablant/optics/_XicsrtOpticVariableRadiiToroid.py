@@ -33,8 +33,8 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         # Parameters needed to define geometry.
         config['major_radius'] = 1.0
         config['minor_radius'] = None
-        config['crystal_spacing'] = 2.82868/2
-        config['lambda0'] = 1.2716
+        config['crystal_spacing'] = None
+        config['lambda0'] = None
         config['source_distance'] = 0.3
 
         # Calculation options.
@@ -72,7 +72,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
             self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
         self.log.debug(f"WxH: {self.param['width']:0.3f}x{self.param['height']:0.3f}")
 
-    def vr_toroid(self, a, b, param, dict=False):
+    def vr_toroid(self, a, b, param, extra=False):
         """
         Calculate the parameters of the variable-radii toroid.
 
@@ -119,7 +119,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         QC_dist = PC_dist / np.cos(QCP_angle)
         Q = C - QC_hat * QC_dist
 
-        if dict:
+        if extra:
             out = {}
             out['C0'] = C0
             out['C'] = C
@@ -133,7 +133,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         else:
             return X
 
-    def vr_toroid_1(self, alpha, beta, param, dict=False):
+    def vr_toroid_1(self, alpha, beta, param, extra=False):
         """
         Calculate the parameters of the variable-radii toroid.
 
@@ -184,7 +184,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         XP_hat = Pv1 * jnp.cos(beta) + Pv2 * jnp.sin(beta)
         X = P + CP_dist * XP_hat
 
-        if dict:
+        if extra:
             Qv1 = XP_hat
             Qv2 = SD_hat
             aQCP = jnp.arccos(np.dot(Cv1, Pv1))
@@ -231,7 +231,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
 
     def vr_toroid_ideal_np(self, a, b, param, delta=None):
         profiler.start('vr_toroid_ideal_np')
-        out = self.vr_toroid(a, b, param, dict=True)
+        out = self.vr_toroid(a, b, param, extra=True)
         xyz = out['X']
         norm = (out['Q'] - out['X']) / np.linalg.norm(out['Q'] - out['X'])
         profiler.stop('vr_toroid_ideal_np')

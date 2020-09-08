@@ -48,10 +48,13 @@ def resetProfiler():
     global profiler_results
     profiler_results = OrderedDict()
 
-def report():
+def report(flush=True):
     names = list(profiler_results.keys())
     totals = [profiler_results[xx]['time_total'] for xx in profiler_results]
     indexes = sorted(range(len(totals)), key=totals.__getitem__, reverse=True)
+
+    if flush:
+        print('', flush=True)
 
     log.info('{:25.25s} {:14.14s}  {:14.14s}  {:6.6s}'.format(
         'name'

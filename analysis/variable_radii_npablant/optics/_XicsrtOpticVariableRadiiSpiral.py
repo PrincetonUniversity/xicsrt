@@ -121,10 +121,13 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
         out = sinusoidal_spiral.spiral(*args, **kwargs)
         return out
 
-    def spiral_centered_extra(self, a, b, inp):
-        out = self.spiral(a, b, inp, extra=True)
-        for key in out:
-            out[key] = self.geometry.point_to_local(out[key])
+    def spiral_centered(self, a, b, inp, extra=None):
+        out = self.spiral(a, b, inp, extra=extra)
+        if extra:
+            for key in out:
+                out[key] = self.geometry.point_to_local(out[key])
+        else:
+            out = self.geometry.point_to_local(out)
         return out
 
     def spiral_jax(self, a, b, inp):
@@ -188,7 +191,7 @@ class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
                 if self.param['normal_method'] == 'jax':
                     xyz, norm = self.spiral_centered_jax(a, b, inp)
                 elif self.param['normal_method'] == 'ideal_np':
-                    out = self.spiral_centered_extra(a, b, inp)
+                    out = self.spiral_centered(a, b, inp, extra=True)
                     xyz = out['X']
                     norm = (out['Q'] - out['X'])/np.linalg.norm(out['Q'] - out['X'])
                 else:
