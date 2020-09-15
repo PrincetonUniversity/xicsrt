@@ -7,11 +7,10 @@ Authors
 
 import numpy as np
 import logging
+from copy import deepcopy
 
 from scipy import interpolate
 from scipy import constants as const
-
-from mirutil.print import mirformat
 
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.tools import sinusoidal_spiral
@@ -138,6 +137,11 @@ def _setup_dispersion(config, inp, func):
 
         logging.debug(f"energy: {energy / 1e3:7.4f} keV,  wave: {wavelength:0.4f} A,  x: {D_int[0] * 1e3:8.4f} mm")
 
+    energy_w = energy_list[-1] - energy_list[1]
+    detector_w = x_list[-1] - x_list[0]
+    disp = energy_w/detector_w
+    logging.debug(f"Detector width: {detector_w*1e3:0.0f} mm, Dispersion: {disp/1e3:0.2f} eV/mm")
+
     interp = {}
     interp['energy'] = interpolate.interp1d(x_list, energy_list, fill_value='extrapolate')
     interp['wavelength'] = interpolate.interp1d(x_list, wave_list, fill_value='extrapolate')
@@ -151,6 +155,13 @@ def _get_info(config, inp, func, info=None):
     if info is None:
         info = {}
 
+    if 'O' in out:
+        # Save the major radius
+        CO = out['O'] - out['C']
+        CO_dist = np.linalg.norm(CO)
+        logging.info(f'major_radius CO: {CO_dist}')
+        info['CO_dist'] = CO_dist
+
     if 'Q' in out:
         # Save the minor radius
         CQ = out['Q'] - out['C']
@@ -163,6 +174,7 @@ def _get_info(config, inp, func, info=None):
         CP_dist = np.linalg.norm(CP)
         logging.info(f'minor_radius CQ: {CQ_dist}, CP: {CP_dist}')
         info['CP_dist'] = CP_dist
+
 
     return info
 
@@ -242,30 +254,30 @@ def setup_torus(config):
 
     return output
 
+def _get_spiral_crystal_default(config):
+    out = {}
+    out['r0'] = 0.2655462577585708
+    out['b'] = 0.28154129802482347
+    out['sC'] = 0.3
+    out['phiC'] = 0.0
+    out['range_a'] = [-0.023807150903836036, 0.06528972861198715]
+    out['range_b'] = [-0.0792259496576749, 0.0792259496576749]
+    out['theta0'] = config['scenario']['thetaC']
+    out['thetaC'] = config['scenario']['thetaC']
+    return out
 
 def setup_spiral(config):
-    output = {}
 
+    output = {}
     config['optics']['crystal']['class_name'] = 'XicsrtOpticVariableRadiiSpiral'
 
-    # Setup the basic configuration
-    config['optics']['crystal']['r0'] = 0.336
-    config['optics']['crystal']['b'] = 0.35
-    config['optics']['crystal']['theta0'] = None
-    config['optics']['crystal']['sC'] = 0.3
-    config['optics']['crystal']['thetaC'] = None
-    config['optics']['crystal']['phiC'] = 0.0
-
-    # Do 'hand tuning' of r0 and b.
-    config['optics']['crystal']['r0'] = 0.2655462577585708
-    config['optics']['crystal']['b'] = 0.28154129802482347
-    # Setup the crystal size.
-    config['optics']['crystal']['range_a'] = [-0.023807150903836036, 0.06528972861198715]
-    config['optics']['crystal']['range_b'] = [-0.0792259496576749, 0.0792259496576749]
-
     _setup_scenario(config)
-    config['optics']['crystal']['theta0'] = config['scenario']['thetaC']
-    config['optics']['crystal']['thetaC'] = config['scenario']['thetaC']
+
+    # Set defaults for the crystal parameters.
+    c_default = _get_spiral_crystal_default(config)
+    for key in c_default:
+        if not key in config['optics']['crystal'] or config['optics']['crystal'][key] is None:
+            config['optics']['crystal'][key] = c_default[key]
 
     # Get a object for this crystal.
     obj_optics = XicsrtDispatcher(config, 'optics')
