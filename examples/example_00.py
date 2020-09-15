@@ -13,23 +13,23 @@ from collections import OrderedDict
 # Import xicsrt modules
 from xicsrt import xicsrt_raytrace
 
-config = OrderedDict()
+config = dict()
 
-config['general'] = OrderedDict()
+config['general'] = dict()
 config['general']['number_of_iter'] = 5
 
 config['general']['output_path'] = ''
 config['general']['save_images'] = False
 
-config['sources'] = OrderedDict()
-config['sources']['source'] = OrderedDict()
+config['sources'] = dict()
+config['sources']['source'] = dict()
 config['sources']['source']['class_name'] = 'XicsrtSourceDirected'
 config['sources']['source']['intensity'] = 1e4
 config['sources']['source']['wavelength'] = 3.9492
 config['sources']['source']['spread'] = np.radians(0.1)
 
-config['optics'] = OrderedDict()
-config['optics']['crystal'] = OrderedDict()
+config['optics'] = dict()
+config['optics']['crystal'] = dict()
 config['optics']['crystal']['class_name'] = 'XicsrtOpticCrystalSpherical'
 config['optics']['crystal']['do_miss_check'] = True
 config['optics']['crystal']['origin'] = [0.0,0.0,1.0]

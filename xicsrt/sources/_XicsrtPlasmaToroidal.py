@@ -6,51 +6,65 @@ Authors
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 import logging
-import numpy as np   
-from collections import OrderedDict
+import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
-from xicsrt.tools.xicsrt_math    import cyl_from_car, tor_from_car
+
+import xicsrt.tools.xicsrt_math as xm
+
 
 class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     """
-    A plasma object with toroidal geometery.
-
-    This class is meant only to be used as an exmple for generating 
-    more complecated classes for specific plasmas.
+    A plasma object with toroidal geometry and a circular
+    cross-section.
     """
         
     def get_default_config(self):
         config = super().get_default_config()
         config['major_radius'] = 0.0
         config['minor_radius'] = 0.0
+        config['emissivity_scale']  = 1.0
+        config['temperature_scale'] = 1.0
+        config['velocity_scale']    = 1.0
         return config
-        
-    def bundle_generate(self, bundle_input):
-        #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.param['width']/2 , self.param['width']/2,  self.param['bundle_count'])
-        y_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        z_offset = np.random.uniform(-1 * self.param['depth']/2 , self.param['depth']/2,  self.param['bundle_count'])
-        
-        #unlike the other plasmas, the toroidal plasma has fixed orientation to
-        #prevent confusion
-        bundle_input['origin'][:] = (
-            self.origin
-            + np.einsum('i,j', x_offset, np.array([1, 0, 0]))
-            + np.einsum('i,j', y_offset, np.array([0, 1, 0]))
-            + np.einsum('i,j', z_offset, np.array([0, 0, 1])))
-        
-        #convert from cartesian coordinates to toroidal coordinates [sigma, tau, phi]
-        #torus is oriented along the Z axis
-        rad, pol, tor = tor_from_car(x_offset, y_offset, z_offset, self.param['major_radius'])
-        
-        step_test = (rad <= self.param['minor_radius'])
 
-        # Let plasma temperature and emissivity fall off as a function of
-        # radius.
-        bundle_input['emissivity'][step_test]  = self.param['emissivity'] / radius
-        bundle_input['temperature'][step_test] = self.param['temperature'] / radius
-        bundle_input['velocity'][step_test]    = self.param['velocity']
-        
+    def flx_from_car(self, point_car):
+        flx = xm.tor_from_car(point_car, self.param['major_radius'])
+        return flx
+
+    def rho_from_car(self, point_car):
+        point_flx = self.flx_from_car(point_car)
+        return np.sqrt(point_flx[0])
+
+    def bundle_generate(self, bundle_input):
+
+        profiler.start("Bundle Input Generation")
+        m = bundle_input['mask']
+
+        print('sum(m)', sum(m))
+
+        # Attempt to generate the specified number of bundles, but throw out
+        # bundles that our outside of the last closed flux surface.
+        #
+        # This loop was setup for VMEC. Here we could do this as a single
+        # vectorized operation instead.
+        rho = np.zeros(len(m[m]))
+        for ii in range(len(m[m])):
+            # convert from cartesian coordinates to normalized radial coordinate.
+            profiler.start("Fluxspace from Realspace")
+            rho[ii] = self.rho_from_car(bundle_input['origin'][m][ii, :])
+            profiler.stop("Fluxspace from Realspace")
+
+        # evaluate emissivity, temperature and velocity at each bundle location.
+        bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']
+        bundle_input['emissivity'][m] = self.get_emissivity(rho) * self.param['emissivity_scale']
+        bundle_input['velocity'][m] = self.get_velocity(rho) * self.param['velocity_scale']
+
+        fintest = np.isfinite(bundle_input['temperature'])
+
+        m &= fintest
+
+        profiler.stop("Bundle Input Generation")
+
         return bundle_input

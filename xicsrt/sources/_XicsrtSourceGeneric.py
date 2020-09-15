@@ -109,7 +109,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
     def random_direction(self, normal):
 
-        rad_spread = np.radians(self.param['spread'])
+        rad_spread = self.param['spread']
         dir_local  = xicsrt_math.vector_dist_uniform(rad_spread, self.param['intensity'])
 
         # Generate some basis vectors that are perpendicular

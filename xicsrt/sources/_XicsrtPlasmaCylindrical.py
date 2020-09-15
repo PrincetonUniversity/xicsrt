@@ -16,7 +16,7 @@ from xicsrt.tools.xicsrt_math import cyl_from_car
 
 class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
     """
-    A cylindrical plasma ordiented along the Y axis.
+    A cylindrical plasma oriented along the Y axis.
 
     This class is meant only to be used as an exmple for generating 
     more complecated classes for specific plasmas.

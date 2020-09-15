@@ -76,7 +76,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         # average graphite mirror norm
         m = mask
 
-        rad_spread = np.radians(self.param['mosaic_spread'])
+        rad_spread = self.param['mosaic_spread']
         dir_local = xicsrt_math.vector_dist_gaussian(rad_spread, np.sum(m))
 
         R = np.empty((np.sum(m), 3, 3,), dtype=np.float64)

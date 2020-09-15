@@ -67,7 +67,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.param['bundle_type']  = str.lower(self.param['bundle_type'])
         self.param['bundle_count'] = int(self.param['bundle_count'])
         self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
-        self.param['solid_angle']  = 4 * np.pi * np.sin(np.radians(self.config['spread'])/2)**2
+        self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread']/2)**2
         
         
     def setup_bundles(self):
@@ -92,6 +92,15 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         bundle_input['origin'][:] = self.point_to_external(offset)
         return bundle_input
+
+    def get_emissivity(self, rho):
+        return self.param['emissivity']
+
+    def get_temperature(self, rho):
+        return self.param['temperature']
+
+    def get_velocity(self, rho):
+        return self.param['velocity']
 
     def bundle_generate(self, bundle_input):
         return bundle_input

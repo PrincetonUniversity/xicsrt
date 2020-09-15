@@ -53,15 +53,6 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         point_flx = self.flx_from_car(point_car)
         return np.sqrt(point_flx[0])
 
-    def get_emissivity(self, rho):
-        return self.param['emissivity']
-
-    def get_temperature(self, rho):
-        return self.param['temperature']
-
-    def get_velocity(self, rho):
-        return self.param['velocity']
-
     def bundle_generate(self, bundle_input):
         self.initialize_vmec()
         

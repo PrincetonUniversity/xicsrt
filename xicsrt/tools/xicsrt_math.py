@@ -82,7 +82,7 @@ def vector_dist_gaussian(FWHM, number):
     # convert the angular sigma into a linear-displacement-from-vertical
     sigma_z = 1 - np.cos(sigma)
     # create the half-normal distribution of vertical displacement.
-    dist = abs(np.random.normal(0, sigma_z, 10))
+    dist = abs(np.random.normal(0, sigma_z, number))
     z = 1.0 - dist
 
     phi = np.random.uniform(0, 2 * np.pi, number)
@@ -93,24 +93,24 @@ def vector_dist_gaussian(FWHM, number):
 
     return output
 
-def cyl_from_car(x, y, z):
+def cyl_from_car(point_car):
     #convert cartesian coordinates -> cylindirical coordinates
-    radius  = np.sqrt(np.power(x,2) + np.power(y,2))
-    azimuth = np.arctan2(y, x)
-    height  = z
-    
-    return radius, azimuth, height
+    radius  = np.sqrt(np.power(point_car[0],2) + np.power(point_car[1],2))
+    azimuth = np.arctan2(point_car[1], point_car[0])
+    height  = point_car[2]
+    point_cyl = [radius, azimuth, height]
+    return point_cyl
 
-def tor_from_car(x, y, z, a):
+def tor_from_car(point_car, a):
     """
-    X Y Z       = Cartesian Coordinates
-    rho         = Cylindrical Radius
-    a           = Tokamak Major Radius
-    rad pol tor = Toroidal Radius, Poloidal Angle, Toroidal Angle
+    point_car   = Cartesian Coordinates [x,y,z]
+    a           = Torus Major Radius
+    point_tor   = [Minor Radius, Poloidal Angle, Toroidal Angle]
     """
-    rho  = np.sqrt(np.power(x,2) + np.power(y,2))
-    tor  = np.arctan2(y, x) + np.pi
+    rho  = np.sqrt(np.power(point_car[0],2) + np.power(point_car[1],2))
+    tor  = np.arctan2(point_car[1], point_car[0]) + np.pi
     w    = rho - a
-    pol  = np.arctan2(z, w)
-    rad  = np.sqrt(np.power(z,2) + np.power(w,2))
-    return rad, pol, tor
+    pol  = np.arctan2(point_car[2], w)
+    rad  = np.sqrt(np.power(point_car[2],2) + np.power(w,2))
+    point_tor = np.asarray([rad, pol, tor])
+    return point_tor
