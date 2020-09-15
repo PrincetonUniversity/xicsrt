@@ -24,7 +24,6 @@ xicsrt_3d.show()
 import numpy as np
 import plotly.graph_objects as go
 
-from xicsrt import xicsrt_config
 from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
 
 m_figure = None

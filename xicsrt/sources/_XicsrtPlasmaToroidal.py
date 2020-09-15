@@ -24,14 +24,17 @@ class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
         config = super().get_default_config()
         config['major_radius'] = 0.0
         config['minor_radius'] = 0.0
+        config['torus_origin'] = np.array([0.0, 0.0, 0.0])
         config['emissivity_scale']  = 1.0
         config['temperature_scale'] = 1.0
         config['velocity_scale']    = 1.0
         return config
 
     def flx_from_car(self, point_car):
-        flx = xm.tor_from_car(point_car, self.param['major_radius'])
-        return flx
+        point_flx = xm.tor_from_car(point_car - self.param['torus_origin'], self.param['major_radius'])
+        point_flx[0] = point_flx[0]**2
+        point_flx[0] /= self.param['minor_radius']
+        return point_flx
 
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
@@ -41,8 +44,6 @@ class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
 
         profiler.start("Bundle Input Generation")
         m = bundle_input['mask']
-
-        print('sum(m)', sum(m))
 
         # Attempt to generate the specified number of bundles, but throw out
         # bundles that our outside of the last closed flux surface.

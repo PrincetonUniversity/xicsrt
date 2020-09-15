@@ -107,6 +107,12 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         return config
 
+    def check_param(self):
+        super().check_param()
+
+        if self.param['mesh_normals'] is None:
+            self.param['mesh_interpolate'] = False
+
     def initialize(self):
         super().initialize()
 
@@ -181,19 +187,24 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         output['points'] = points
         output['normals'] = normals
 
-        # Create a set of interpolators.
-        # For now create these in 2D using the x and y locations.
-        # This will not make sense for all geometries. In principal
-        # the interpolation could be done in 3D, but this needs more
-        # investigation and will ultimately be less accurate.
-        profiler.start('Create Interpolators')
-        interp = {}
-        output['interp'] = interp
-        interp['z'] = Interpolator(points[:, 0:2], points[:, 2].flatten())
-        interp['normal_x'] = Interpolator(points[:, 0:2], normals[:, 0].flatten())
-        interp['normal_y'] = Interpolator(points[:, 0:2], normals[:, 1].flatten())
-        interp['normal_z'] = Interpolator(points[:, 0:2], normals[:, 2].flatten())
-        profiler.stop('Create Interpolators')
+        if self.param['mesh_interpolate']:
+            # Create a set of interpolators.
+            # For now create these in 2D using the x and y locations.
+            # This will not make sense for all geometries. In principal
+            # the interpolation could be done in 3D, but this needs more
+            # investigation and will ultimately be less accurate.
+            #
+            # It is recommended that mesh optics be built using a local
+            # coordinate system that makes the x and y coordinates sensible
+            # for 2d interpolation.
+            profiler.start('Create Interpolators')
+            interp = {}
+            output['interp'] = interp
+            interp['z'] = Interpolator(points[:, 0:2], points[:, 2].flatten())
+            interp['normal_x'] = Interpolator(points[:, 0:2], normals[:, 0].flatten())
+            interp['normal_y'] = Interpolator(points[:, 0:2], normals[:, 1].flatten())
+            interp['normal_z'] = Interpolator(points[:, 0:2], normals[:, 2].flatten())
+            profiler.stop('Create Interpolators')
 
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.

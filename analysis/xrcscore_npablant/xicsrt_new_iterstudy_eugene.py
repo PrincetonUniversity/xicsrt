@@ -131,7 +131,7 @@ def get_config(system=None, sight=None):
     config['sources']['plasma']['bundle_count']     = int(1e5)
     config['sources']['plasma']['bundle_volume']    = 0.01 ** 3
     config['sources']['plasma']['time_resolution']  = 1e-8
-    config['sources']['plasma']['spread']           = 1.0
+    config['sources']['plasma']['spread']           = np.radians(1.0)
     config['sources']['plasma']['mass_number']      = 131.293
     # Wavelength: Xe44+: 2.7203, Xe51+: 2.19
     config['sources']['plasma']['wavelength']       = 2.7203
@@ -201,6 +201,8 @@ def get_config(system=None, sight=None):
     config['optics']['graphite']['do_miss_check']     = True
     config['optics']['graphite']['rocking_type']      = "GAUSS"
     config['optics']['graphite']['use_meshgrid']      = True
+    config['optics']['graphite']['mesh_interpolate']  = False
+    config['optics']['graphite']['mesh_refine']       = False
     config['optics']['graphite']['rocking_mix']       = 1.0
     #config['optics']['graphite']['rocking_sigma_file']= inpath + ?
     #config['optics']['graphite']['rocking_pi_file']   = inpath + ?
@@ -214,7 +216,7 @@ def get_config(system=None, sight=None):
     # 'therm_expand'   is the thermal expansion coefficient (1/kelvin)
     config['optics']['graphite']['crystal_spacing']   = 3.35
     config['optics']['graphite']['reflectivity']      = 1.0
-    config['optics']['graphite']['mosaic_spread']     = 0.5
+    config['optics']['graphite']['mosaic_spread']     = np.radians(0.5)
     config['optics']['graphite']['rocking_fwhm']      = 100e-6
     config['optics']['graphite']['pixel_size']        = 0.001
     #config['optics']['graphite']['therm_expand']      = 20e-6
