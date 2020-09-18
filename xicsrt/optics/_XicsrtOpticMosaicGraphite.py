@@ -19,7 +19,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         config['mosaic_depth'] = 15
         return config
 
-    def light(self, rays):
+    def trace(self, rays):
         """
         Reimplement the light method to allow testing of multiple
         mosaic crystal angles. This is meant to simulate the penetration

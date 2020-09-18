@@ -25,6 +25,7 @@ class XicsrtOpticGeneric(GeometryObject):
         
         # boolean settings
         config['do_miss_check'] = True
+        config['do_trace_local']   = False
         
         # spatial information
         config['width']          = 0.0
@@ -50,19 +51,36 @@ class XicsrtOpticGeneric(GeometryObject):
         self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         self.photon_count = 0
 
-    def light(self, rays):
+    def trace_global(self, rays):
         """
-        This is the main method that is called to perform ray-tracing
-        for this optic.
+        This is method that is called by the dispacher to perform
+        ray-tracing for this optic. Rays into and out of this method
+        are always in global coordinates.
 
         It may be convenient for some optics object to do raytracing
-        in local coordinates rather than in global coordinates.
-        that can achived by reimplementing this method as follows:
+        in local coordinates rather than in global coordinates. This
+        method facilitates this by implementing the 'trace_local'
+        configuration option.
+        """
 
-          self.ray_to_local(rays)
-          super().light(rays)
-          self.ray_to_external(rays)
-          return rays
+        if self.param['do_trace_local']:
+            self.ray_to_local(rays)
+
+        rays = self.trace(rays)
+
+        if self.param['do_trace_local']:
+            self.ray_to_external(rays)
+        return rays
+
+    def trace(self, rays):
+        """
+        The main method that performs raytracing for this optic.
+
+        Raytracing here may be done in global or local coordinates
+        depending on the how the optic is designed and the value
+        of the configuration option: 'do_trace_local'.
+
+        This method can be re-implemented by indiviual optics.
         """
         m = rays['mask']
 

@@ -119,7 +119,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         if self.param['use_meshgrid'] is True:
             self.mesh_initialize()
 
-    def light(self, rays):
+    def trace(self, rays):
         """
         This is the main method that is called to perform ray-tracing
         for this optic.  Different pathways are taken depending on
@@ -127,7 +127,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         """
 
         if self.param['use_meshgrid'] is False:
-            rays = super().light(rays)
+            rays = super().trace(rays)
         else:
             if self.param['mesh_method'] == 5:
                 X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])

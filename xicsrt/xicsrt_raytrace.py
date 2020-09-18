@@ -157,7 +157,7 @@ def _raytrace_single(config, sources, optics):
     keep_history = config['general']['keep_history']
 
     rays = sources.generate_rays(history=keep_history)
-    rays = optics.raytrace(rays, history=keep_history, images=keep_images)
+    rays = optics.trace(rays, history=keep_history, images=keep_images)
 
     # Combine sources and optics outputs.
     meta    = OrderedDict()

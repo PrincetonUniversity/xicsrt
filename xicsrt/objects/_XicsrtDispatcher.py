@@ -141,7 +141,7 @@ class XicsrtDispatcher():
                 
         return rays
             
-    def raytrace(self, rays, images=None, history=None):
+    def trace(self, rays, images=None, history=None):
         if history is None:
             history is False
             
@@ -152,9 +152,9 @@ class XicsrtDispatcher():
 
         for key, obj in self.objects.items():
             
-            profiler.start('Dispatcher: light')
-            rays = obj.light(rays)
-            profiler.stop('Dispatcher: light')
+            profiler.start('Dispatcher: trace_global')
+            rays = obj.trace_global(rays)
+            profiler.stop('Dispatcher: trace_global')
 
             self.meta[key]['num_out'] = np.sum(rays['mask'])
             

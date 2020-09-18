@@ -132,11 +132,11 @@ def analytical_model(source, crystal, graphite, detector,
     
     # launch the rays at the first optical element
     if general_input['backwards_raytrace'] is True:
-        rays = crystal.light(rays)
+        rays = crystal.trace(rays)
         crystal.collect_rays(rays)
         norm = crystal.normalize(crystal.center - targets[2,:,:])
     if general_input['backwards_raytrace'] is False:
-        rays = graphite.light(rays)
+        rays = graphite.trace(rays)
         graphite.collect_rays(rays)
         norm = np.ones([9,3], dtype = np.float64) * graphite.normal
     
@@ -160,11 +160,11 @@ def analytical_model(source, crystal, graphite, detector,
     
     # launch the rays at the second optical element
     if general_input['backwards_raytrace'] is True:
-        rays = graphite.light(rays)
+        rays = graphite.trace(rays)
         graphite.collect_rays(rays)
         norm = np.ones([9,3], dtype = np.float64) * graphite.normal
     if general_input['backwards_raytrace'] is False:
-        rays = crystal.light(rays)
+        rays = crystal.trace(rays)
         crystal.collect_rays(rays)
         norm = crystal.normalize(crystal.center - targets[2,:,:])
     
