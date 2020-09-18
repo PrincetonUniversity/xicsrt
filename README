@@ -1,15 +1,9 @@
 
-A simple raytracing tool for X-Rays.
+A photon based raytracing tool.
 
-This raytracing tool has been primarily developed for tracing of
-X-Ray Imaging Crystal Spectrometers on the fusion experiments
-ITER and W7-X. It it however a general purpose tool, and can be
-extended for use for any x-ray or optical raytracing applications.
+XICSRT is a general purpose, photon based, raytracing code intended
+for both optical and x-ray raytracing.
 
-ToDo
-----
-
-  
 Authors
 -------
   - Novimir Pablant <npablant@pppl.gov>
