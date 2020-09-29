@@ -23,10 +23,12 @@ xicsrt_3d.show()
 
 import numpy as np
 import plotly.graph_objects as go
+import matplotlib
 
 from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
 
 m_figure = None
+
 
 def _thin_mask(mask, max_num):
     """
@@ -43,6 +45,7 @@ def _thin_mask(mask, max_num):
 
     return mask
 
+
 def figure():
     global m_figure
 
@@ -56,9 +59,11 @@ def figure():
 
     return fig
 
+
 def add_rays(results, figure=None):
     _plot_ray_history(results['found']['history'], lost=False, figure=figure)
     _plot_ray_history(results['lost']['history'], lost=True, figure=figure)
+
 
 def _plot_ray_history(history, lost=None, figure=None):
     global m_figure
@@ -119,7 +124,8 @@ def _plot_ray_history(history, lost=None, figure=None):
             ,showlegend=False)
         figure.add_trace(data)
 
-def _plot_volume(obj, figure, name=None):
+
+def _add_trace_volume(obj, figure, name=None):
     global m_figure
     if figure is None: figure = m_figure
 
@@ -185,20 +191,80 @@ def _plot_volume(obj, figure, name=None):
 
     figure.add_trace(trace)
 
+def _add_trace_mesh(obj, figure=None, name=None):
+    """
+    Add a meshgrid to the 3D plot.
+    """
+    global m_figure
+    if figure is None: figure = m_figure
+
+    faces = obj.param['mesh_faces']
+    points = obj.param['mesh_points']
+
+    if True:
+        lines = []
+        for f in faces:
+            lines.append([f[0], f[1]])
+            lines.append([f[0], f[2]])
+            lines.append([f[1], f[2]])
+        lines = np.array(lines)
+        lines = np.unique(lines, axis=0)
+
+        x0 = points[lines[:, 0], 0]
+        y0 = points[lines[:, 0], 1]
+        z0 = points[lines[:, 0], 2]
+        x1 = points[lines[:, 1], 0]
+        y1 = points[lines[:, 1], 1]
+        z1 = points[lines[:, 1], 2]
+        nan = np.zeros(len(x0)) * np.nan
+
+        # Add nans between each line which Scatter3D will use to define linebreaks.
+        x = np.dstack((x0, x1, nan)).flatten()
+        y = np.dstack((y0, y1, nan)).flatten()
+        z = np.dstack((z0, z1, nan)).flatten()
+
+        trace = go.Scatter3d(
+            x=x
+            , y=y
+            , z=z
+            , mode='lines'
+            , line={'color': 'black'}
+            , connectgaps=False
+            , showlegend=False)
+        figure.add_trace(trace)
+
+    if True:
+        norm = matplotlib.colors.Normalize(np.min(points[:, 2]), np.max(points[:, 2]))
+        cm = matplotlib.cm.ScalarMappable(norm=norm, cmap='plasma')
+        color = cm.to_rgba(points[:, 2], alpha=0.75)
+
+        trace = go.Mesh3d(
+            x=points[:, 0]
+            , y=points[:, 1]
+            , z=points[:, 2]
+            , i=faces[:, 0]
+            , j=faces[:, 1]
+            , k=faces[:, 2]
+            , vertexcolor=color
+            , flatshading=True
+            , opacity=0.75)
+
+        figure.add_trace(trace)
+
 
 def add_optics(config, figure=None):
     section = 'optics'
     for name in config[section]:
-        add_volume(config, name, section, figure=figure)
+        add_object(config, name, section, figure=figure)
 
 
 def add_sources(config, figure=None):
     section = 'sources'
     for name in config[section]:
-        add_volume(config, name, section, figure=figure)
+        add_object(config, name, section, figure=figure)
 
 
-def add_volume(config, name, section, figure=None):
+def add_object(config, name, section, figure=None):
 
     # Use the dispatcher to instantiate and initialize objects.
     optics = XicsrtDispatcher(config, section)
@@ -209,7 +275,12 @@ def add_volume(config, name, section, figure=None):
     # Get the crystal object from the dispatcher.
     obj = optics.get_object(name)
 
-    _plot_volume(obj, figure, name)
+    plot_mesh = obj.param.get('use_meshgrid', False)
+
+    if plot_mesh:
+        _add_trace_mesh(obj, figure, name)
+    else:
+        _add_trace_volume(obj, figure, name)
 
 
 def show(figure=None):
