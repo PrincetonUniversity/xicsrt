@@ -23,6 +23,7 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
     def get_default_config(self):
         config = super().get_default_config()
         config['use_meshgrid'] = True
+        config['mesh_refine'] = True
         config['mesh_size_a'] = 0.005
         config['mesh_size_b'] = 0.01
         config['mesh_coarse_size_a'] = 0.01
@@ -41,6 +42,10 @@ class XicsrtOpticVariableRadiiToroid(XicsrtOpticCrystal):
         config['normal_method'] = 'jax'
 
         return config
+
+    def check_config(self):
+        if self.config['do_trace_local']:
+            raise Exception('This object is not compatible with do_trace_local.')
 
     def setup(self):
         super().setup()

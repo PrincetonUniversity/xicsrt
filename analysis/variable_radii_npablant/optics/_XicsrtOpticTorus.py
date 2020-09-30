@@ -19,6 +19,7 @@ class XicsrtOpticTorus(XicsrtOpticCrystal):
     def get_default_config(self):
         config = super().get_default_config()
         config['use_meshgrid'] = True
+        config['mesh_refine'] = True
         config['mesh_size_a'] = 0.005
         config['mesh_size_b'] = 0.01
         config['mesh_coarse_size_a'] = 0.01

@@ -24,8 +24,28 @@ from xicsrt.tools import xicsrt_math_jax as xmj
 class XicsrtOpticVariableRadiiSpiral(XicsrtOpticCrystal):
 
     def get_default_config(self):
+        """
+        r0
+          Sinusoidal spiral parameter.
+
+        b
+          Sinusoidal spiral parameter.
+
+        theta0
+          Sinusoidal spiral parameter.
+
+        sC
+          Spiral optimization point.
+
+        thetaC
+          Spiral optimization point.
+
+        phiC
+          Spiral optimization point.
+        """
         config = super().get_default_config()
         config['use_meshgrid'] = True
+        config['mesh_refine'] = True
         config['mesh_size_a'] = 0.005
         config['mesh_size_b'] = 0.01
         config['mesh_coarse_size_a'] = 0.01
