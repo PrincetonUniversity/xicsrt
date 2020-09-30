@@ -26,13 +26,14 @@ class ConfigObject():
 
         self.config = self.get_default_config()
         self.update_config(config, strict)
+        self.check_config()
 
         self.param = copy.deepcopy(self.config)
         self.param = xicsrt_input.config_to_numpy(self.param)
 
         if initialize:
             self.setup()
-            self.check_config()
+            self.check_param()
             self.initialize()
 
     def get_default_config(self):

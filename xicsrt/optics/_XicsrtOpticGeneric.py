@@ -64,12 +64,14 @@ class XicsrtOpticGeneric(GeometryObject):
         """
 
         if self.param['do_trace_local']:
-            self.ray_to_local(rays)
+            self.log.debug('Converting to local coordinates.')
+            rays = self.ray_to_local(rays, copy=False)
 
         rays = self.trace(rays)
 
         if self.param['do_trace_local']:
-            self.ray_to_external(rays)
+            self.log.debug('Converting to external coordinates.')
+            rays = self.ray_to_external(rays, copy=False)
         return rays
 
     def trace(self, rays):

@@ -24,6 +24,23 @@ def vector_rotate(a, b, theta):
     c = u + v * np.cos(theta) + w * np.sin(theta)
     return c
 
+def normalize(vector):
+    """
+    Normalize a vector or an array of vectors.
+    If an array of vectors is given it should have the shape (N,M) where
+      N: Number of vectors
+      M: Vector length
+    """
+
+    if vector.ndim > 1:
+        norm = np.linalg.norm(vector, axis=1)
+        vector /= np.expand_dims(norm, 1)
+    else:
+        norm = np.linalg.norm(vector)
+        vector /= norm
+
+    return vector
+
 def sinusoidal_spiral(phi, b, r0, theta0):
     r = r0 * (np.sin(theta0 + (b-1)*phi)/np.sin(theta0))**(1/(b-1))
     return r

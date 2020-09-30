@@ -12,6 +12,14 @@ issues.
 
 Maybe someday I'll try to tackle the matplotlib code directly and create
 a replacement for the original code.
+
+Example
+-------
+
+  norm = mircolor.Normalize(0.0, 1.0)
+  grad = mircolor.getColorGradient(norm, 'tab10')
+  color = grad.to_rgba(1.0)
+
 """
 
 import numpy as np
@@ -100,7 +108,7 @@ def getColorGradient(norm=None, cmap=None):
         gradient = LinearSegmentedColorGradient(norm, defined_gradients[cmap])
     else:
         raise Exception('Gradient {} has wrong type.  Not currently supported'.format(cmap))
-        
+
     return gradient
     
     
@@ -162,12 +170,15 @@ class LinearSegmentedColorGradient(ColorGradient):
         return output
 
     
-    def to_rgba(self, value):
+    def to_rgba(self, value, alpha=None):
                
         if np.isscalar(value):
             output = self._scalarToRgba(value)
         else:
             output = self._arrayToRgba(value)
+
+        if alpha is not None:
+            output[:, 3] = alpha
 
         return output
 

@@ -6,8 +6,10 @@ Authors
 """
 import numpy as np
 import logging
+from copy import deepcopy
 
 from xicsrt.objects._ConfigObject import ConfigObject
+from xicsrt.tools import xicsrt_math as xm
 
 class GeometryObject(ConfigObject):
     """
@@ -71,8 +73,12 @@ class GeometryObject(ConfigObject):
         return xaxis
 
     def ray_to_external(self, ray_local, copy=False):
+
         if copy:
-            ray_external = ray_local.copy()
+            # Programming Note:
+            #   If XICSRT is ever updated to always use ray objects then the
+            #   copy method should be used instead of deepcopy for speed.
+            ray_external = deepcopy(ray_local)
         else:
             ray_external = ray_local
 
@@ -82,7 +88,7 @@ class GeometryObject(ConfigObject):
 
     def ray_to_local(self, ray_external, copy=False):
         if copy:
-            ray_local = ray_external.copy()
+            ray_local = deepcopy(ray_external)
         else:
             ray_local = ray_external
 
@@ -115,7 +121,6 @@ class GeometryObject(ConfigObject):
             vector[:] = np.einsum('ji,i->j', self.orientation, vector)
         else:
             raise Exception('vector.ndim must be 1 or 2')
-
         return vector
 
     def aim_to_point(self, aim_point, xaxis=None):
@@ -124,7 +129,7 @@ class GeometryObject(ConfigObject):
         """
 
         zaxis = aim_point - self.origin
-        xicsrt.tool.normalize(zaxis)
+        xm.normalize(zaxis)
 
         if xaxis is None:
             xaxis = self.get_default_xaxis(zaxis)
@@ -135,7 +140,7 @@ class GeometryObject(ConfigObject):
 
     def to_ndarray(self, vector_in):
         if not isinstance(vector_in, np.ndarray):
-            vector_in = np.array(vector_in, dtype=float)
+            vector_in = np.array(vector_in, dtype=np.float64)
         return vector_in
 
     def to_vector_array(self, vector_in):

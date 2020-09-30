@@ -29,15 +29,18 @@ class XicsrtSourceGeneric(GeometryObject):
         config['depth']          = 0.0
         
         config['spread']         = 2*np.pi
-        
-        config['mass_number']    = 1.0
-        config['wavelength']     = 1.0
-        config['linewidth']      = 0.0
-        config['intensity']      = 0.0
-        config['temperature']    = 0.0
-        config['velocity']       = np.array([0.0, 0.0, 0.0])
-        config['use_poisson']    = False
-        config['do_monochrome']  = False
+
+        config['wavelength_dist']  = 'voigt'
+        config['mass_number']      = 1.0
+        config['wavelength']       = 1.0
+        config['linewidth']        = 0.0
+        config['intensity']        = 0.0
+        config['temperature']      = 0.0
+        config['velocity']         = np.array([0.0, 0.0, 0.0])
+        config['use_poisson']      = False
+
+        # Only used for wavelength_dist == 'uniform'
+        config['wavelength_range'] = np.array([0.0, 0.0])
         
         config['filter_list']    = []
 
@@ -128,10 +131,17 @@ class XicsrtSourceGeneric(GeometryObject):
         return direction
 
     def generate_wavelength(self, direction):
-        if self.param['do_monochrome']:
+        wtype = str.lower(self.param['wavelength_dist'])
+        if wtype == 'monochrome':
             wavelength  = np.ones(self.param['intensity'], dtype = np.float64)
             wavelength *= self.param['wavelength']
-        else:
+        elif wtype == 'uniform':
+            wavelength = np.random.uniform(
+                self.param['wavelength_range'][0]
+                ,self.param['wavelength_range'][1]
+                ,self.param['intensity']
+                )
+        elif wtype == 'voigt':
             #random_wavelength = self.random_wavelength_normal
             #random_wavelength = self.random_wavelength_cauchy
             random_wavelength = self.random_wavelength_voigt

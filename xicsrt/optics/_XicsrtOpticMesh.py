@@ -100,10 +100,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         config['mesh_coarse_faces'] = None
         config['mesh_coarse_normals'] = None
 
-        # Temporary for development.
-        config['mesh_method'] = 5
         config['mesh_interpolate'] = True
-        config['mesh_refine'] = True
+        config['mesh_refine'] = None
 
         return config
 
@@ -112,6 +110,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         if self.param['mesh_normals'] is None:
             self.param['mesh_interpolate'] = False
+
+        if self.param['mesh_refine'] is None:
+            if self.param['mesh_course_points'] is not None:
+                self.param['mesh_refine'] = True
 
     def initialize(self):
         super().initialize()
@@ -129,11 +131,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         if self.param['use_meshgrid'] is False:
             rays = super().trace(rays)
         else:
-            if self.param['mesh_method'] == 5:
+            if not self.param['mesh_refine']:
                 X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])
                 self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-
-            elif self.param['mesh_method'] == 7:
+            else:
                 X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
                 num_rays_coarse = np.sum(rays['mask'])
                 faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'])
@@ -326,6 +327,19 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             , mesh
             , faces_idx
             , faces_mask):
+        """
+        Check for ray intersection with a list of mesh faces.
+
+        Programming Notes:
+        ------------------
+        Because of the mesh indexing, the arrays here have different
+        dimensions than in mesh_intersect_1, and need a different
+        vectorization.
+
+        At the moment I am using an less efficient mesh intersection
+        method. This should be updated to use the same method as
+        mesh_intersect_1, but with the proper vectorization.
+        """
 
         profiler.start('mesh_intersect_2')
 
