@@ -4,9 +4,12 @@
 ##
 results
 archive
+dist
+doc_build
 
 ## Data files
 *.nc
+*.hdf5
 
 ## Large image files
 *.tif
@@ -23,6 +26,7 @@ archive
 ## Python
 *.pyc
 __pycache__
+*.egg-info
 
 ## System files to ignore.
 *.DS_Store
