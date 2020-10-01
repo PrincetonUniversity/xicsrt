@@ -1,16 +1,18 @@
+.. include:: ../README.rst
 
-XICSRT: Photon based raytracing in Python
-=========================================
+License
+-------
+.. include:: ../LICENSE
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Contents:
+    :maxdepth: 1
+    :caption: Contents:
 
-   apidoc/xicsrt
+    apidoc/xicsrt
+    apidoc/examples
 
-
-Indices and tables
-==================
+Indices and tables:
+-------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

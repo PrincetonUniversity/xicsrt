@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Authors:
-  | Novimir Antoniuk Pablant <npablant@pppl.gov>
+..  Authors:
+    Novimir Antoniuk Pablant <npablant@pppl.gov>
 
-Description:
-  A simple example consisting only of a point source and a spherical crystal.
+A simple example consisting only of a point source and a spherical crystal.
 """
 
 import numpy as np
-from collections import OrderedDict
 
 # Import xicsrt modules
 from xicsrt import xicsrt_raytrace
