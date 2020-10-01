@@ -1,0 +1,8 @@
+numpy
+scipy
+jaxlib
+jax
+pillow
+matplotlib
+plotly
+ipyvolume
