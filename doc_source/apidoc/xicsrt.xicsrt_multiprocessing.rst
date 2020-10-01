@@ -1,9 +1,11 @@
 xicsrt\_multiprocessing
 =======================
+`xicsrt.xicsrt_multiprocessing`
 
 .. automodule:: xicsrt.xicsrt_multiprocessing
-   :members:
-   :undoc-members:
+    :members:
+    :undoc-members:
+    :member-order: bysource
 
 
 Private Members

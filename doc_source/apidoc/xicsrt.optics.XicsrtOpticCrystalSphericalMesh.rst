@@ -8,21 +8,25 @@ New Members
     :special-members: __init__
     :undoc-members:
     :show-inheritance:
+    :member-order: bysource
 
 New Private Members
 -------------------
-.. automembers:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
     :private-members:
     :special-members:
     :undoc-members:
     :noindex:
-    :content: None
+    :nodocstring:
+    :nosignature:
 
 Inherited Members
 -----------------
-.. automembers:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
     :inherited-members:
     :private-members:
     :special-members: __init__
     :undoc-members:
     :noindex:
+    :nodocstring:
+    :nosignature:

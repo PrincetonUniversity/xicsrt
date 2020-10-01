@@ -3,28 +3,33 @@ XicsrtOpticMesh
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
     :members:
     :special-members: __init__
     :undoc-members:
     :show-inheritance:
+    :member-order: bysource
 
 New Private Members
 -------------------
-.. automembers:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
     :private-members:
     :special-members:
     :undoc-members:
     :noindex:
+    :nodocstring:
+    :nosignature:
 
 Inherited Members
 -----------------
-.. automembers:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
     :inherited-members:
     :private-members:
     :special-members: __init__
     :undoc-members:
     :noindex:
+    :nodocstring:
+    :nosignature:
 
 
-v35
+v36

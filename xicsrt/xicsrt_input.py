@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir Pablant <npablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
 
 Description
 -----------

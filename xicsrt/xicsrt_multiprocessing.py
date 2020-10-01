@@ -2,8 +2,6 @@
 """
 .. Authors
     Novimir pablant <npablant@pppl.gov>
-    Yevgeniy Yakusevich <eugenethree@gmail.com>
-    James Kring <jdk0026@tigermail.auburn.edu>
 """
 
 import numpy as np

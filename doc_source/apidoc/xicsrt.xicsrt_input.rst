@@ -1,8 +1,19 @@
-xicsrt.xicsrt\_input module
-===========================
+xicsrt\_input
+=============
+`xicsrt.xicsrt_input`
 
-.. automodule:: xicsrt.xicsrt_input
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.xicsrt_input
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+
+Private Members
+---------------
+
+.. automirmodule:: xicsrt.xicsrt_input
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

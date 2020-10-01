@@ -14,11 +14,12 @@ modules
 .. toctree::
    :maxdepth: 1
 
-   xicsrt.xicsrt_command
-   xicsrt.xicsrt_config
-   xicsrt.xicsrt_input
-   xicsrt.xicsrt_multiprocessing
    xicsrt.xicsrt_raytrace
+   xicsrt.xicsrt_multiprocessing
+   xicsrt.xicsrt_command
+   xicsrt.xicsrt_input
+   xicsrt.xicsrt_config
+
 
 packages
 --------
@@ -26,11 +27,12 @@ packages
 .. toctree::
    :maxdepth: 3
 
+   xicsrt.sources
+   xicsrt.optics
    xicsrt.filters
    xicsrt.objects
-   xicsrt.optics
-   xicsrt.sources
+   xicsrt.visual
    xicsrt.tools
    xicsrt.util
-   xicsrt.visual
+
 

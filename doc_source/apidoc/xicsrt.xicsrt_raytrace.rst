@@ -1,9 +1,11 @@
 xicsrt\_raytrace
 ================
+`xicsrt.xicsrt_raytrace`
 
 .. automirmodule:: xicsrt.xicsrt_raytrace
     :members: raytrace, raytrace_multi
     :undoc-members:
+    :member-order: bysource
 
 Utility Members
 -----------------
@@ -19,6 +21,7 @@ raytracing runs.
     :undoc-members:
     :noindex:
     :nodocstring:
+    :member-order: bysource
 
 Private Members
 -----------------

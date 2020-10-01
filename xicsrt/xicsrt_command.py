@@ -9,61 +9,68 @@ A command line interface for the XICSRT raytracer.
 import numpy as np
 import argparse
 import logging
+import io
 
 from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_input
+
+def _get_parser():
+    parser = argparse.ArgumentParser(
+        "\n    xicsrt_command.py"
+        ,description = """
+description:
+  Perform an XICSRT raytrace.
+
+  The input to this command should be an XICSRT configuration dictionary
+  in json format.
+
+
+example:
+  python xicsrt_command.py config.json
+
+"""
+        ,formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=79))
+
+    parser.add_argument(
+        'config_file'
+        , type=str
+        , nargs='?'
+        , default='config.json'
+        , help='The path to the configuration file for this run.')
+
+    parser.add_argument(
+        '--suffix'
+        , type=str
+        , default=None
+        , help="A suffix to add to the output files.")
+
+    parser.add_argument(
+        '--numruns'
+        , type=int
+        , default=None
+        , help="Number of runs.")
+
+    parser.add_argument(
+        '--numiter'
+        , type=int
+        , default=None
+        , help="Number of iterations per run.")
+
+    parser.add_argument(
+        '--seed'
+        , type=int
+        , default=None
+        , help="The random seed to use.")
+
+    return parser
 
 def run():
     """
     Parse command line arguments and run XICSRT.
     """
-
-    global parser
     global args
 
-    parser = argparse.ArgumentParser(
-"""
-Perform an XICSRT raytrace.
-
-The input to this command should be an XICSRT configuration dictionary
-in json format.
-
-Example:
-python xicsrt.py config.json
-
-""") 
-
-    parser.add_argument(
-        'config_file'
-        ,type=str
-        ,nargs='?'
-        ,default='config.json'
-        ,help='The path to the configuration file for this run.')
-
-    parser.add_argument(
-        '--suffix'
-        ,type=str
-        ,default=None
-        ,help="A suffix to add to the output files.")
-    
-    parser.add_argument(
-        '--numruns'
-        ,type=int
-        ,default=None
-        ,help="Number of runs.")
-    
-    parser.add_argument(
-        '--numiter'
-        ,type=int
-        ,default=None
-        ,help="Number of iterations per run.")
-    
-    parser.add_argument(
-        '--seed'
-        ,type=int
-        ,default=None
-        ,help="The random seed to use.")
-    
+    parser = _get_parser()
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG)
@@ -81,6 +88,14 @@ python xicsrt.py config.json
         
     result = xicsrt_raytrace.raytrace_multi(config)
 
-    
+# Generate the module docstring from the helpstring.
+parser = _get_parser()
+with io.StringIO() as ff:
+    parser.print_help(ff)
+    help_string = ff.getvalue()
+help_string = '| '+'\n| '.join(help_string.splitlines())
+__doc__ += '\n'
+__doc__ += help_string
+
 if __name__ == "__main__":
     run()

@@ -1,8 +1,19 @@
-xicsrt.xicsrt\_command module
-=============================
+xicsrt\_command
+===============
+`xicsrt.xicsrt_command`
 
-.. automodule:: xicsrt.xicsrt_command
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.xicsrt_command
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+
+Private Members
+---------------
+
+.. automirmodule:: xicsrt.xicsrt_command
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

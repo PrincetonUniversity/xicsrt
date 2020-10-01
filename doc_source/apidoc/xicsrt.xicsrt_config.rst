@@ -1,8 +1,19 @@
-xicsrt.xicsrt\_config module
-============================
+xicsrt\_config
+==============
+`xicsrt.xicsrt_config`
 
-.. automodule:: xicsrt.xicsrt_config
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.xicsrt_config
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+
+Private Members
+---------------
+
+.. automirmodule:: xicsrt.xicsrt_config
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

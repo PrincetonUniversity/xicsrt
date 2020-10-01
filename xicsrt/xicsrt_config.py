@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir pablant <npablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
-  - James Kring <jdk0026@tigermail.auburn.edu>
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+    James Kring <jdk0026@tigermail.auburn.edu>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 
 

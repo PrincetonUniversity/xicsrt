@@ -64,41 +64,24 @@ html_static_path = ['_static']
 
 # -- Options for AutoDoc -----------------------------------------------------
 
+#autodoc_default_options = {'member-order': 'bysource'}
 
+from sphinx.ext import autodoc
 
-autodoc_default_options = {
-    'member-order': 'bysource'
-    }
-
-from sphinx.ext.autodoc import *
-class ClassMemberDocumenter(ClassDocumenter):
-    """
-    A autodoc directive that ignores the class docstring and
-    signature. This is helpful for splitting up member types.
-    """
-    objtype = 'members'
-    directivetype = 'class'
-
-    def add_directive_header(self, sig):
-        sig = ''
-        super().add_directive_header(sig)
-
-    def add_content(*args, **kwargs):
-        pass
-
-class MirClassDocumenter(ClassDocumenter):
+class MirClassDocumenter(autodoc.ClassDocumenter):
     objtype = 'mirclass'
     directivetype = 'class'
 
-    option_spec = ClassDocumenter.option_spec
-    option_spec['nodocstring'] = bool_option
+    option_spec = autodoc.ClassDocumenter.option_spec
+    option_spec['nodocstring'] = autodoc.bool_option
+    option_spec['nosignature'] = autodoc.bool_option
 
-class MirModuleDocumenter(ModuleDocumenter):
+class MirModuleDocumenter(autodoc.ModuleDocumenter):
     objtype = 'mirmodule'
     directivetype = 'module'
 
-    option_spec = ModuleDocumenter.option_spec
-    option_spec['nodocstring'] = bool_option
+    option_spec = autodoc.ModuleDocumenter.option_spec
+    option_spec['nodocstring'] = autodoc.bool_option
 
 def hide_non_private(app, what, name, obj, skip, options):
     if what in ['module', 'mirmodule']:
@@ -115,9 +98,15 @@ def hide_docstring(app, what, name, obj, options, lines):
         if 'nodocstring' in options:
             lines.clear()
 
+def hide_signature(app, what, name, obj, options, sig, anno):
+    if what in ['mirclass', 'mirmodule']:
+        if 'nosignature' in options:
+            return '', None
+    return sig, anno
+
 def setup(app):
-    app.add_autodocumenter(ClassMemberDocumenter)
     app.add_autodocumenter(MirClassDocumenter)
     app.add_autodocumenter(MirModuleDocumenter)
     app.connect('autodoc-skip-member', hide_non_private)
     app.connect('autodoc-process-docstring', hide_docstring)
+    app.connect('autodoc-process-signature', hide_signature)
