@@ -1,8 +1,9 @@
 XICSRT: Photon based raytracing in Python
+=========================================
 
 XICSRT is a general purpose, photon based, raytracing code intended
 for both optical and x-ray raytracing.
 
-Documentation: https://xicsrt.readthedocs.org
+Documentation: https://xicsrt.readthedocs.org  
 Git Repository: https://bitbucket.org/amicitas/xicsrt
 
