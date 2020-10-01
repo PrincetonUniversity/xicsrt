@@ -84,6 +84,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         The main advantage is that it will work even if the grid
         is badly behaved, and does not have any issues with shallow
         angles of incidence.
+
     """
 
     def get_default_config(self):

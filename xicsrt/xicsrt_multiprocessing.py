@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir pablant <npablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
-  - James Kring <jdk0026@tigermail.auburn.edu>
+.. Authors
+    Novimir pablant <npablant@pppl.gov>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+    James Kring <jdk0026@tigermail.auburn.edu>
 """
 
 import numpy as np
@@ -22,10 +21,19 @@ from xicsrt.xicsrt_raytrace import *
 
 def raytrace_multiprocessing(config):
     """
-    Perform a series of ray tracing runs.
+    Perform a series of ray tracing runs using the a
+    :any:`multiprocessing` cpu pool.
 
-    Each raytracing run will perform the requested number of iterations.
-    Each run will produce a single output image.
+    Each run will rebuild all objects, reset the random seed and then
+    perform the requested number of iterations.
+
+    If the option 'save_run_images' is set, then images will be save
+    at the completion of each run. The saving of these run images
+    is the primary reasion to use this routine: it allows periodic
+    outputs during long computations.
+
+    Also see :func:`~xicsrt.xicsrt_raytrace.raytrace_multi`
+    for a single process version of this routine.
     """
     profiler.start('raytrace_multiprocessing')
     

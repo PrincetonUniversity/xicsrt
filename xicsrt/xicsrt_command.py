@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Authors:
-  | Novimir Antoniuk Pablant <npablant@pppl.gov>
+.. Authors:
+   Novimir Antoniuk Pablant <npablant@pppl.gov>
 
-Purpose:
-  A command line interface for the XICSRT raytracer.
+A command line interface for the XICSRT raytracer.
 """
 
 import numpy as np
@@ -15,6 +14,9 @@ from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_input
 
 def run():
+    """
+    Parse command line arguments and run XICSRT.
+    """
 
     global parser
     global args

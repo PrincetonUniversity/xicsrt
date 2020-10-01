@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir pablant <npablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
-  - James Kring <jdk0026@tigermail.auburn.edu>
+.. Authors:
+    Novimir pablant <npablant@pppl.gov>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+    James Kring <jdk0026@tigermail.auburn.edu>
+
+Entry point to XICSRT.
+Contains the main function that are called to perform raytracing.
 """
 
 import numpy as np
@@ -29,7 +31,7 @@ def raytrace(config, internal=False):
     If history is enabled, sort the rays into those that are detected and 
     those that are lost (found and lost). The found ray history will be 
     returned in full. The lost ray history will be truncated to allow 
-    visualizaiton while still limited memory usage.
+    analysis of lost ray pattern while still limiting memory usage.
     """
     profiler.start('raytrace')
 
@@ -73,7 +75,7 @@ def raytrace(config, internal=False):
         logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
         
         single = _raytrace_single(config, sources, optics)
-        sorted = sort_raytrace(single, max_lost=max_lost_iter)
+        sorted = _sort_raytrace(single, max_lost=max_lost_iter)
         output_list.append(sorted)
         
     output = combine_raytrace(output_list)
@@ -97,8 +99,16 @@ def raytrace_multi(config):
     """
     Perform a series of ray tracing runs.
 
-    Each raytracing run will perform the requested number of iterations.
-    Each run will produce a single output image.
+    Each run will rebuild all objects, reset the random seed and then
+    perform the requested number of iterations.
+
+    If the option 'save_run_images' is set, then images will be save
+    at the completion of each run. The saving of these run images
+    is the primary reasion to use this routine: it allows periodic
+    outputs during long computations.
+
+    Also see :func:`~xicsrt.xicsrt_multiprocessing.raytrace_multiprocessing`
+    for a multiprocessing version of this routine.
     """
     profiler.start('raytrace_multi')
     
@@ -143,10 +153,8 @@ def raytrace_multi(config):
     
 def _raytrace_single(config, sources, optics):
     """ 
-    Rays are generated from sources and then passed through 
-    the optics in the order listed in the configuration file.
-
-    Rays consists of origin, direction, wavelength, and weight.
+    Perform a single iteration of raytracing with the given
+    sources and optics. The returned rays are unsorted.
     """
     profiler.start('raytrace_single')
 
@@ -191,25 +199,17 @@ def _raytrace_single(config, sources, optics):
     profiler.stop('raytrace_single')
     return output
 
-def check_config(config):
-    # Check if anything needs to be saved.
-    do_save = False
-    for key in config['general']:
-        if 'save' in key:
-            if config['general'][key]:
-                do_save = True
 
-    if do_save:
-        if not os.path.exists(config['general']['output_path']):
-            if not config['general']['make_directories']:
-                raise Exception('Output directory does not exist. Create directory or set make_directories to True.')
-
-def sort_raytrace(input, max_lost=None):
+def _sort_raytrace(input, max_lost=None):
+    """
+    Sort the rays into 'lost' and 'found' rays, then truncate
+    the number of lost rays.
+    """
     if max_lost is None:
         max_lost = 1000
-    
-    profiler.start('sort_raytrace')
-    
+
+    profiler.start('_sort_raytrace')
+
     output = OrderedDict()
     output['config'] = input['config']
     output['total'] = OrderedDict()
@@ -230,7 +230,7 @@ def sort_raytrace(input, max_lost=None):
         key_opt_last = key_opt_list[-1]
 
         w_found = np.flatnonzero(input['history'][key_opt_last]['mask'])
-        w_lost  = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
+        w_lost = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
 
         # Save only a portion of the lost rays so that our lost history does
         # not become too large.
@@ -247,16 +247,16 @@ def sort_raytrace(input, max_lost=None):
                 output['found']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_found]
                 output['lost']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_lost]
 
-    profiler.stop('sort_raytrace')
-        
+    profiler.stop('_sort_raytrace')
+
     return output
-    
+
 def combine_raytrace(input_list):
     """
-    Produce a combined output from a list of raytrace_single outputs into a combined 
+    Produce a combined output from a list of raytrace outputs.
     """
     profiler.start('combine_raytrace')
-        
+
     output = OrderedDict()
     output['config'] = input_list[0]['config']
     output['total'] = OrderedDict()
@@ -269,10 +269,10 @@ def combine_raytrace(input_list):
     output['lost']['meta'] = OrderedDict()
     output['lost']['history'] = OrderedDict()
 
-    num_iter     = len(input_list)
+    num_iter = len(input_list)
     key_opt_list = list(input_list[0]['total']['meta'].keys())
     key_opt_last = key_opt_list[-1]
-    
+
     # Combine the meta data.
     for key_opt in key_opt_list:
         output['total']['meta'][key_opt] = OrderedDict()
@@ -315,18 +315,38 @@ def combine_raytrace(input_list):
 
             for key_opt in key_opt_list:
                 for key_ray in output['found']['history'][key_opt]:
-                    output['found']['history'][key_opt][key_ray][index_found:index_found+num_found] = (
+                    output['found']['history'][key_opt][key_ray][index_found:index_found + num_found] = (
                         input_list[ii_run]['found']['history'][key_opt][key_ray][:])
-                    output['lost']['history'][key_opt][key_ray][index_lost:index_lost+num_lost] = (
+                    output['lost']['history'][key_opt][key_ray][index_lost:index_lost + num_lost] = (
                         input_list[ii_run]['lost']['history'][key_opt][key_ray][:])
 
             index_found += num_found
             index_lost += num_lost
- 
+
     profiler.stop('combine_raytrace')
     return output
-       
+
+def check_config(config):
+    """
+    Check the general section of the configuration dictionary.
+    """
+
+    # Check if anything needs to be saved.
+    do_save = False
+    for key in config['general']:
+        if 'save' in key:
+            if config['general'][key]:
+                do_save = True
+
+    if do_save:
+        if not os.path.exists(config['general']['output_path']):
+            if not config['general']['make_directories']:
+                raise Exception('Output directory does not exist. Create directory or set make_directories to True.')
+
 def print_raytrace(results):
+    """
+    Print out some information and statistics from the raytracing results.
+    """
 
     key_opt_list = list(results['total']['meta'].keys())
     num_source = results['total']['meta'][key_opt_list[0]]['num_out']
@@ -342,6 +362,9 @@ def print_raytrace(results):
     print('')
 
 def save_images(results):
+    """
+    Save images from the raytracing results.
+    """
 
     rotate = False
 

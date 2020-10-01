@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir Pablant <npablant@pppl.gov>
-  - James Kring <jdk0026@tigermail.auburn.edu>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+.. Authors:
+   Novimir Pablant <npablant@pppl.gov>
+   James Kring <jdk0026@tigermail.auburn.edu>
+   Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 import numpy as np
 
@@ -27,9 +26,7 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         spherical optic.
 
         This calculation is copied from:
-        https://www.scratchapixel.com/lessons/3d-basic-rendering/
-                minimal-ray-tracer-rendering-simple-shapes/
-                ray-sphere-intersection
+        https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
         """
         #setup variables
         O = rays['origin']
