@@ -14,11 +14,12 @@ Create a new user configuration dictionary.
 The entries that we put into this config will overwrite the defaults
 that are defined within xicsrt. The config can potentially contain the
 following sections:
-| general
-| sources
-| optics
-| filters
-| scenario
+
+- general
+- sources
+- optics
+- filters
+- scenario
 
 2.
 Create a section that contains the general raytracer configuration.

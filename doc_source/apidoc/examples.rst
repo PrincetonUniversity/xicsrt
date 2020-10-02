@@ -18,8 +18,7 @@ introduce additional raytracing features.
 
 .. rubric:: :any:`examples.example_00`
 
-.. automodule:: examples.example_00
-    :noindex:
+A simple example consisting only of a point source and a spherical crystal.
 
 
 

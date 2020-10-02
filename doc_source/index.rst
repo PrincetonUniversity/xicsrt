@@ -19,6 +19,22 @@ The best way to get started with XICSRT is to go to the :any:`examples`.
 
 .. include:: ../AUTHORS
 
+
+Installation
+------------
+
+XICSRT can be simply installed using `pip`
+
+.. code:: bash
+
+    pip install xicsrt
+
+Alternatively you can install from source using `setuptools`
+
+.. code:: bash
+
+    python setup.py install
+
 License
 -------
 .. include:: ../LICENSE

@@ -16,7 +16,7 @@ XICSRT can be simply installed using `pip`
 
     pip install xicsrt
 
-Alternatively you can install from source using `setuptools`
+Alternatively it is possible to install from source using `setuptools`
 
     python setup.py install
 
