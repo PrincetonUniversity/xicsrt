@@ -1,5 +1,5 @@
-xicsrt.sources package
-======================
+xicsrt.sources
+==============
 
 .. automodule:: xicsrt.sources
    :members:
@@ -7,21 +7,21 @@ xicsrt.sources package
    :show-inheritance:
    :private-members:
 
-Submodules
-----------
+Built-in Source Objects
+-----------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
-   xicsrt.sources._XicsrtPlasmaCubic
-   xicsrt.sources._XicsrtPlasmaCylindrical
-   xicsrt.sources._XicsrtPlasmaGeneric
-   xicsrt.sources._XicsrtPlasmaToroidal
-   xicsrt.sources._XicsrtPlasmaToroidalDatafile
-   xicsrt.sources._XicsrtPlasmaVmec
-   xicsrt.sources._XicsrtPlasmaVmecDatafile
-   xicsrt.sources._XicsrtPlasmaW7x
-   xicsrt.sources._XicsrtPlasmaW7xSimple
-   xicsrt.sources._XicsrtSourceDirected
-   xicsrt.sources._XicsrtSourceFocused
-   xicsrt.sources._XicsrtSourceGeneric
+   xicsrt.sources.XicsrtPlasmaCubic
+   xicsrt.sources.XicsrtPlasmaCylindrical
+   xicsrt.sources.XicsrtPlasmaGeneric
+   xicsrt.sources.XicsrtPlasmaToroidal
+   xicsrt.sources.XicsrtPlasmaToroidalDatafile
+   xicsrt.sources.XicsrtPlasmaVmec
+   xicsrt.sources.XicsrtPlasmaVmecDatafile
+   xicsrt.sources.XicsrtPlasmaW7x
+   xicsrt.sources.XicsrtPlasmaW7xSimple
+   xicsrt.sources.XicsrtSourceDirected
+   xicsrt.sources.XicsrtSourceFocused
+   xicsrt.sources.XicsrtSourceGeneric

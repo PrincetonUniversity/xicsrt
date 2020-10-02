@@ -7,11 +7,11 @@ xicsrt.tools package
    :show-inheritance:
    :private-members:
 
-Submodules
-----------
+Mathematical Tools
+------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    xicsrt.tools.voigt
    xicsrt.tools.xicsrt_math

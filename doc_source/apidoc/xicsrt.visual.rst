@@ -1,5 +1,5 @@
-xicsrt.visual package
-=====================
+xicsrt.visual
+=============
 
 .. automodule:: xicsrt.visual
    :members:
@@ -7,13 +7,13 @@ xicsrt.visual package
    :show-inheritance:
    :private-members:
 
-Submodules
-----------
+Visualization Modules
+---------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    xicsrt.visual.xicsrt_2d__matplotlib
    xicsrt.visual.xicsrt_3d__plotly
-   xicsrt.visual.xicsrt_ipyvolume
-   xicsrt.visual.xicsrt_visualizer
+   xicsrt.visual.xicsrt_3d__ipyvolume
+

@@ -1,8 +1,19 @@
-xicsrt.visual.xicsrt\_ipyvolume module
-======================================
+xicsrt\_3d\_\_ipyvolume
+=======================
+`xicsrt.visual.xicsrt_3d__ipyvolume`
 
-.. automodule:: xicsrt.visual.xicsrt_ipyvolume
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.visual.xicsrt_3d__ipyvolume
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.visual.xicsrt_3d__ipyvolume
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:
+

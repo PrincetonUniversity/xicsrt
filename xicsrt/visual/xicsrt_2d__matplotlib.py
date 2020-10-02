@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir pablant <npablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
-  - James Kring <jdk0026@tigermail.auburn.edu>
+.. Authors
+    Novimir pablant <npablant@pppl.gov>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+    James Kring <jdk0026@tigermail.auburn.edu>
+
+A set of tools for 2d visualization of the XICSRT results
 """
 
 import numpy as np

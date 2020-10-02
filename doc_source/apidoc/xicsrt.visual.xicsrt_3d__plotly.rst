@@ -1,8 +1,19 @@
-xicsrt.visual.xicsrt\_3d\_\_plotly module
-=========================================
+xicsrt\_3d\_\_plotly
+====================
+`xicsrt.visual.xicsrt_3d__plotly`
 
-.. automodule:: xicsrt.visual.xicsrt_3d__plotly
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.visual.xicsrt_3d__plotly
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.visual.xicsrt_3d__plotly
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:
+

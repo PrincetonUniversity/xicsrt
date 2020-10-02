@@ -7,19 +7,12 @@ xicsrt.util package
    :show-inheritance:
    :private-members:
 
-Subpackages
------------
+Libraries and Utilities
+-----------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    xicsrt.util.profiler
-
-Submodules
-----------
-
-.. toctree::
-   :maxdepth: 4
-
    xicsrt.util.mircolor
    xicsrt.util.mirplot

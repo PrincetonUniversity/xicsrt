@@ -1,3 +1,30 @@
+# -*- coding: utf-8 -*-
+"""
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+
+These are a set of routines for 3D visualization using the
+ipyvolume library.
+
+.. warning::
+
+    This API for this module is currently out of date. The plotly module
+    currently has the latest API implementation.
+
+Example
+-------
+Example code for using this module within a Jupyter notebook.
+
+.. code-block::
+
+    import xicsrt.visual.xicsrt_3d__ipyvolume as xicsrt_3d
+
+    xicsrt_3d.figure()
+    xicsrt_3d.add_rays(results)
+    xicsrt_3d.add_optics(config)
+    xicsrt_3d.add_sources(config)
+    xicsrt_3d.show()
+"""
 
 import ipyvolume as ipv
 import numpy as np
@@ -6,19 +33,6 @@ import matplotlib
 
 from xicsrt import xicsrt_config
 from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
-
-"""
-These are a set of routines for visualization in ipyvolume.
-
-So far I have been using these within a Jupyter notebook.
-Here is some example code:
-
-xicsrt_ipyvolume.figure()
-xicsrt_ipyvolume.add_rays(results, config)
-xicsrt_ipyvolume.add_optics(config)
-xicsrt_ipyvolume.add_sources(config)
-xicsrt_ipyvolume.show()
-"""
 
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
@@ -33,7 +47,8 @@ def figure():
     fig = ipv.figure(width=900, height=900)
     return fig
 
-def add_rays(results, config):
+def add_rays(results):
+    config = results['config']
     _add_ray_history(results['found']['history'], config, lost=False)
     _add_ray_history(results['lost']['history'], config, lost=True)
 

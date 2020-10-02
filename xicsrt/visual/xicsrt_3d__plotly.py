@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir Pablant <npablant@pppl.gov>
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
 
-Description
------------
 These are a set of routines for 3D visualization using the
 plotly library.
 
+Example
+-------
+Example code for using this module within a Jupyter notebook.
 
-Example code for using these within a Jupyter notebook.
+.. code-block::
 
-import xicsrt.visual.xicsrt_3d__plotly as xicsrt_3d
+    import xicsrt.visual.xicsrt_3d__plotly as xicsrt_3d
 
-xicsrt_3d.figure()
-xicsrt_3d.add_rays(results)
-xicsrt_3d.add_optics(config)
-xicsrt_3d.add_sources(config)
-xicsrt_3d.show()
+    xicsrt_3d.figure()
+    xicsrt_3d.add_rays(results)
+    xicsrt_3d.add_optics(config)
+    xicsrt_3d.add_sources(config)
+    xicsrt_3d.show()
 """
 
 import numpy as np

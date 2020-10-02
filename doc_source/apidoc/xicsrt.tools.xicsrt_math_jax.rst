@@ -1,8 +1,18 @@
-xicsrt.tools.xicsrt\_math\_jax module
-=====================================
+xicsrt\_math\_jax
+=================
+`xicsrt.tools.xicsrt_math_jax`
 
-.. automodule:: xicsrt.tools.xicsrt_math_jax
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.tools.xicsrt_math_jax
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.tools.xicsrt_math_jax
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

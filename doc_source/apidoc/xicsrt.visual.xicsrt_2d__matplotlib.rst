@@ -1,8 +1,19 @@
-xicsrt.visual.xicsrt\_2d\_\_matplotlib module
-=============================================
+xicsrt\_2d\_\_matplotlib
+========================
+`xicsrt.visual.xicsrt_2d__matplotlib`
 
-.. automodule:: xicsrt.visual.xicsrt_2d__matplotlib
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.visual.xicsrt_2d__matplotlib
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.visual.xicsrt_2d__matplotlib
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:
+

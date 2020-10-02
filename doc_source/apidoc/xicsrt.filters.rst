@@ -1,5 +1,5 @@
-xicsrt.filters package
-======================
+xicsrt.filters
+==============
 
 .. automodule:: xicsrt.filters
    :members:
@@ -7,11 +7,11 @@ xicsrt.filters package
    :show-inheritance:
    :private-members:
 
-Submodules
-----------
+Built-in Filters Objects
+------------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
-   xicsrt.filters._XicsrtBundleFilter
-   xicsrt.filters._XicsrtBundleFilterSightline
+   xicsrt.filters.XicsrtBundleFilter
+   xicsrt.filters.XicsrtBundleFilterSightline

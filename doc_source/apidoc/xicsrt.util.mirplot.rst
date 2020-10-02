@@ -1,8 +1,18 @@
-xicsrt.util.mirplot module
-==========================
+mirplot
+=======
+`xicsrt.util.mirplot`
 
-.. automodule:: xicsrt.util.mirplot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.util.mirplot
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.util.mirplot
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

@@ -1,8 +1,18 @@
-xicsrt.tools.xicsrt\_math module
-================================
+xicsrt\_math
+============
+`xicsrt.tools.xicsrt_math`
 
-.. automodule:: xicsrt.tools.xicsrt_math
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
+.. automirmodule:: xicsrt.tools.xicsrt_math
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Private Members
+-----------------
+
+.. automirmodule:: xicsrt.tools.xicsrt_math
+    :members:
+    :private-members:
+    :undoc-members:
+    :noindex:
+    :nodocstring:

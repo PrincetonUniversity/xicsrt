@@ -1,16 +1,14 @@
 xicsrt.optics
 =============
 
-Contains all of the built-in optics objects.
-
 .. automodule:: xicsrt.optics
    :members:
    :undoc-members:
    :show-inheritance:
    :private-members:
 
-Optics Objects
---------------
+Built-in Optics Objects
+-----------------------
 
 .. toctree::
    :maxdepth: 1

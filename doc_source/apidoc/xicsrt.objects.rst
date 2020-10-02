@@ -1,5 +1,5 @@
-xicsrt.objects package
-======================
+xicsrt.objects
+=============
 
 .. automodule:: xicsrt.objects
    :members:
@@ -7,13 +7,13 @@ xicsrt.objects package
    :show-inheritance:
    :private-members:
 
-Submodules
-----------
+Objects
+-------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
-   xicsrt.objects._ConfigObject
-   xicsrt.objects._GeometryObject
-   xicsrt.objects._RayArray
-   xicsrt.objects._XicsrtDispatcher
+   xicsrt.objects.ConfigObject
+   xicsrt.objects.GeometryObject
+   xicsrt.objects.RayArray
+   xicsrt.objects.XicsrtDispatcher
