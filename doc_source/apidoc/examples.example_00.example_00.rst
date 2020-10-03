@@ -2,10 +2,7 @@ example\_00
 ===========
 `examples.example_00.example_00`
 
-.. automodule:: examples.example_00.example_00
-    :members:
-    :undoc-members:
-    :member-order: bysource
+Please follow the source comments. (It's more readable this way compared to autodoc for now.)
 
 Source Code
 -----------
@@ -13,4 +10,4 @@ Source Code
 .. literalinclude:: ../../examples/example_00/example_00.py
     :language: python
     :linenos:
-    :lines: 67-
+

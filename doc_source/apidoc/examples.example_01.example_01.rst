@@ -2,10 +2,7 @@ example\_01
 ===========
 `examples.example_01.example_01`
 
-.. automodule:: examples.example_01.example_01
-    :members:
-    :undoc-members:
-    :member-order: bysource
+Please follow the source comments. (It's more readable this way compared to autodoc for now.)
 
 Source Code
 -----------
