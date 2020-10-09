@@ -8,9 +8,11 @@ import numpy as np
 import logging
 from copy import deepcopy
 
+from xicsrt.tools.xicsrt_doc import _dochelper_config
 from xicsrt.objects._ConfigObject import ConfigObject
 from xicsrt.tools import xicsrt_math as xm
 
+@_dochelper_config
 class GeometryObject(ConfigObject):
     """
     The base class for any geometrical objects used in XICSRT.
@@ -30,6 +32,20 @@ class GeometryObject(ConfigObject):
             raise AttributeError(key)
 
     def default_config(self):
+        """
+        origin
+           The x,y,x origin of this element in global coordinates.
+
+        zaxis
+           A unit-vector defining the z-axis of the element in global coordinates.
+           For most optics: z-axis defines the surface normal direction.
+
+        xaxis
+           A unit-vector defining the x-axis of the element in global coordinates.
+           For most optics: x-axis defines the 'width' direction.
+
+           The `yaxis` is defined by cross(zaxis, xaxis)
+        """
         config = super().default_config()
         config['origin'] = np.array([0.0, 0.0, 0.0])
         config['zaxis'] = np.array([0.0, 0.0, 1.0])

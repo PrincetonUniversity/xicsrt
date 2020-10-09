@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir Pablant <npablant@pppl.gov>
-  - James Kring <jdk0026@tigermail.auburn.edu>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+    James Kring <jdk0026@tigermail.auburn.edu>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 import numpy as np
 
@@ -15,6 +14,15 @@ from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 class XicsrtOpticCrystal(XicsrtOpticMesh):
 
     def default_config(self):
+        """
+        crystal_spacing
+          The spacing between crystal planes.
+
+          .. Note::
+
+                This is the nominal 'd' crystal spacing, not the '2d' spacing
+                often used in the literature.
+        """
 
         config = super().default_config()
         

@@ -38,12 +38,16 @@ class ConfigObject():
 
     def default_config(self):
         """
+        class_name
+          Automatically generated.
+
         yo_mama
           Is beautiful!
         """
 
         config = OrderedDict()
         config['class_name'] = self.__class__.__name__
+        config['yo_mama'] = 'Is Beautiful!'
         return config
 
     def get_config(self):

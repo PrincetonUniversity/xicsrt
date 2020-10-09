@@ -21,6 +21,20 @@ class XicsrtOpticGeneric(GeometryObject):
     """
         
     def default_config(self):
+        """
+        width
+          The width of this element. Aligned with the x-axis.
+
+        height
+          The height of this element. Aligned with the y-axis.
+
+        depth:
+          The depth of this element. Aligned with the z-axis.
+
+        pixel_size: float (None)
+          The pixel size, used for binning rays into images.
+          This is currently a single number signifying square pixels.
+        """
         config = super().default_config()
         
         # boolean settings
@@ -32,8 +46,6 @@ class XicsrtOpticGeneric(GeometryObject):
         config['height']         = 0.0
         config['depth']          = 0.0
         config['pixel_size']     = None
-        config['pixel_width']    = None
-        config['pixel_height']   = None
 
         return config
 
@@ -43,10 +55,9 @@ class XicsrtOpticGeneric(GeometryObject):
         # autofill pixel grid sizes
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
-        if self.param['pixel_width'] is None:
-            self.param['pixel_width'] = int(np.ceil(self.param['width'] / self.param['pixel_size']))
-        if self.param['pixel_height'] is None:
-            self.param['pixel_height'] = int(np.ceil(self.param['height'] / self.param['pixel_size']))
+
+        self.param['pixel_width'] = int(np.ceil(self.param['width'] / self.param['pixel_size']))
+        self.param['pixel_height'] = int(np.ceil(self.param['height'] / self.param['pixel_size']))
 
         self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         self.photon_count = 0
