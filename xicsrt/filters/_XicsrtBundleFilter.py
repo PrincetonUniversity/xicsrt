@@ -16,8 +16,8 @@ class XicsrtBundleFilter(ConfigObject):
     def initialize(self):
         super().initialize()
     
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         return config
     
     def filter(self, bundle_input):

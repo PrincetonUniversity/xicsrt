@@ -20,8 +20,8 @@ class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     cross-section.
     """
         
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['major_radius'] = 0.0
         config['minor_radius'] = 0.0
         config['torus_origin'] = np.array([0.0, 0.0, 0.0])

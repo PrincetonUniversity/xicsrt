@@ -13,8 +13,8 @@ from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['mosaic_spread'] = 0.0
         config['mosaic_depth'] = 15
         return config

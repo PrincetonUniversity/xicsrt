@@ -19,8 +19,8 @@ class XicsrtSourceDirected(XicsrtSourceGeneric):
     that an explicit direction can be provided.
     """
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['direction'] = None
         return config
 

@@ -18,8 +18,8 @@ import stelltools
 
 class XicsrtPlasmaVmecDatafile(XicsrtPlasmaVmec):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['emissivity_file']  = None
         config['temperature_file'] = None
         config['velocity_file']    = None

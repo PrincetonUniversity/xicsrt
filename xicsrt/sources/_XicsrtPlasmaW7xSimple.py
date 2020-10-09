@@ -25,8 +25,8 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
     study undertaken by N. Pablant in 2020-02.
     """
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['enable_velocity'] = True
         return config
     

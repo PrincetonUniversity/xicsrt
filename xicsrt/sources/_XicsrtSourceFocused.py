@@ -18,8 +18,8 @@ class XicsrtSourceFocused(XicsrtSourceGeneric):
     To model a planar source set depth to zero.
     """
     
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['target'] = None
         return config
     

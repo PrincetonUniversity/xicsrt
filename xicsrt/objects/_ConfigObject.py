@@ -24,7 +24,7 @@ class ConfigObject():
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
 
-        self.config = self.get_default_config()
+        self.config = self.default_config()
         self.update_config(config, strict)
         self.check_config()
 
@@ -36,7 +36,12 @@ class ConfigObject():
             self.check_param()
             self.initialize()
 
-    def get_default_config(self):
+    def default_config(self):
+        """
+        yo_mama
+          Is beautiful!
+        """
+
         config = OrderedDict()
         config['class_name'] = self.__class__.__name__
         return config

@@ -20,8 +20,8 @@ class XicsrtOpticGeneric(GeometryObject):
     and reflectivity, should be defined in derived classes.
     """
         
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         
         # boolean settings
         config['do_miss_check'] = True

@@ -13,7 +13,7 @@ from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
 
-    def get_default_config(self):
+    def default_config(self):
         """
         config['grid_resolution']:
           Refers to the density of the surface grid it should be
@@ -22,7 +22,7 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
           This is a temporary fix for convenience while working in jupyter
           and it should eventually be changed
         """
-        config = super().get_default_config()
+        config = super().default_config()
         config['radius'] = 1.0
         config['use_meshgrid'] = True
         config['grid_resolution'] = None

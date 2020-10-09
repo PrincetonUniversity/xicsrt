@@ -29,8 +29,8 @@ class GeometryObject(ConfigObject):
         else:
             raise AttributeError(key)
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['origin'] = np.array([0.0, 0.0, 0.0])
         config['zaxis'] = np.array([0.0, 0.0, 1.0])
         config['xaxis'] = None

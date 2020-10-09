@@ -8,12 +8,15 @@ Authors
 """
 import numpy as np
 
+from xicsrt.tools.xicsrt_doc import _dochelper_config
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
+@_dochelper_config
 class XicsrtOpticCrystal(XicsrtOpticMesh):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+
+        config = super().default_config()
         
         # xray optical information and polarization information
         config['crystal_spacing'] = 0.0

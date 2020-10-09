@@ -11,8 +11,8 @@ from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['radius'] = 1.0
         return config
 

@@ -18,8 +18,8 @@ from xicsrt.util import profiler
 
 class XicsrtPlasmaToroidalDatafile(XicsrtPlasmaToroidal):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         config['emissivity_file']  = None
         config['temperature_file'] = None
         config['velocity_file']    = None

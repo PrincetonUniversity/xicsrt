@@ -86,8 +86,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     """
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
 
         # mesh information
         config['use_meshgrid'] = False

@@ -20,8 +20,8 @@ class XicsrtSourceGeneric(GeometryObject):
         super().__init__(*args, **kwargs)
         self.filter_objects = []
             
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
         
         config['width']          = 0.0
         config['height']         = 0.0

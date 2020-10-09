@@ -19,8 +19,8 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
     def __init__(self, config=None, initialize=None):
         super().__init__(config)    
         
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
 
         config['origin'] = None
         config['direction'] = None

@@ -17,8 +17,8 @@ from xicsrt.objects._ConfigObject import ConfigObject
 
 class XicsrtGeneralConfig(ConfigObject):
 
-    def get_default_config(self):
-        config = super().get_default_config()
+    def default_config(self):
+        config = super().default_config()
 
         config['general'] = OrderedDict()
         config['general']['number_of_iter'] = 1
