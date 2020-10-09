@@ -9,8 +9,10 @@ Authors
 import numpy as np
 
 from xicsrt.tools import xicsrt_math
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
+@dochelper_config
 class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
 
     def default_config(self):

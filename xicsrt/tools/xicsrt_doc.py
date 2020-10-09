@@ -40,6 +40,7 @@ class DocHelper:
         if cls.__doc__ == None:
             cls.__doc__ = ''
 
+        cls.__doc__ += '\n'
         cls.__doc__ += 'Configuration Options:\n\n'
         #cls.__doc__ += '----------------------\n\n'
 
@@ -52,7 +53,7 @@ class DocHelper:
         return cls
 
 
-def _dochelper_config(cls):
+def dochelper_config(cls):
     """
     A functional wrapper for the DocHelper class.
     """

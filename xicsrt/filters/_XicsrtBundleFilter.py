@@ -7,8 +7,10 @@ Authors
 
 import numpy as np
 
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.objects._ConfigObject import ConfigObject
 
+@dochelper_config
 class XicsrtBundleFilter(ConfigObject):
     """
     A base class for bundle filters.

@@ -13,10 +13,11 @@ import stelltools
 from mirutil.math import vector
 
 from xicsrt.util import profiler
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.sources._XicsrtPlasmaVmec import XicsrtPlasmaVmec
 
 
-
+@dochelper_config
 class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
     """
     A simple set of plasma profiles based on polynomials.

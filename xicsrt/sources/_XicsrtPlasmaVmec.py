@@ -12,10 +12,12 @@ A plasma source based on a VMEC equilibrium.
 import numpy as np
 
 from xicsrt.util import profiler
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 import stelltools
 
+@dochelper_config
 class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
 
     def default_config(self):

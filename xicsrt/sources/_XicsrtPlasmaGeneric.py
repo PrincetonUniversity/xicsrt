@@ -17,15 +17,19 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
+@dochelper_config
 class XicsrtPlasmaGeneric(GeometryObject):
     """
     A generic plasma object.
 
-    Plasma object will generate a set of ray bundles where each ray
-    bundle has the properties of the plamsa at one particular real-space point.
+    Plasma object will generate a set of ray bundles where each ray bundle
+    has the properties of the plamsa at one particular real-space point.
+
+    Each bundle is modeled by a SourceFocused object.
     """
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +37,25 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.filter_objects = []
 
     def default_config(self):
+        """
+        width
+          The width of this element. Aligned with the x-axis.
+
+        height
+          The height of this element. Aligned with the y-axis.
+
+        depth:
+          The depth of this element. Aligned with the z-axis.
+
+        spread: float (pi) [radians]
+          The angular spread for the emission cone. The spread defines the
+          half-angle of the cone. A value of `pi` results in fully isotropic
+          emission (which is not generally useful in raytracing applications).
+
+        .. warning::
+
+          Config documentation is incomplete.
+        """
         config = super().default_config()
                 
         config['width']          = 0.0

@@ -8,11 +8,11 @@ import numpy as np
 import logging
 from copy import deepcopy
 
-from xicsrt.tools.xicsrt_doc import _dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.objects._ConfigObject import ConfigObject
 from xicsrt.tools import xicsrt_math as xm
 
-@_dochelper_config
+@dochelper_config
 class GeometryObject(ConfigObject):
     """
     The base class for any geometrical objects used in XICSRT.

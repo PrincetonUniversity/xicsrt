@@ -11,8 +11,10 @@ Authors
 from PIL import Image
 import numpy as np
 
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
+@dochelper_config
 class XicsrtOpticDetector(XicsrtOpticMesh):
     """
     A class for detectors.

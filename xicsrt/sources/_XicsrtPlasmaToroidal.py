@@ -9,11 +9,12 @@ import logging
 import numpy as np
 
 from xicsrt.util import profiler
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 import xicsrt.tools.xicsrt_math as xm
 
-
+@dochelper_config
 class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     """
     A plasma object with toroidal geometry and a circular

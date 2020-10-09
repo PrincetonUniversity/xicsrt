@@ -9,16 +9,26 @@ Authors
 
 import numpy as np
 
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
 
+@dochelper_config
 class XicsrtSourceFocused(XicsrtSourceGeneric):
     """
     An extended rectangular ray source that allows focusing towards a target.
 
-    To model a planar source set depth to zero.
+    This is different to a SourceDirected in that the emission cone is aimed
+    at the target for every location in the source. The SourceDirected instead
+    uses a fixed direction for emission.
     """
     
     def default_config(self):
+        """
+        target
+          The target at which to aim the emission cone at each point in the
+          source volume. The emission cone aimed at the target will have
+          an angular spread defined by `spread`.
+        """
         config = super().default_config()
         config['target'] = None
         return config

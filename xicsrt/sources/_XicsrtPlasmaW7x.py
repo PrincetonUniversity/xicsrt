@@ -19,7 +19,9 @@ from mirutil import hdf5
 from mirutil.classes import MirSignalObject
 from mirfusion.xics.analysis.config._XcSystemPaths import XcSystemPaths
 
+from xicsrt.tools.xicsrt_doc import dochelper_config
 
+@dochelper_config
 class W7xPlasma(FluxSurfacePlasma):
     def __init__(self, config):
         super().__init__(config)

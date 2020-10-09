@@ -13,30 +13,90 @@ import scipy.constants as const
 from xicsrt.tools import xicsrt_math
 from xicsrt.util import profiler
 from xicsrt.tools import voigt
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.objects._GeometryObject import GeometryObject
 
+@dochelper_config
 class XicsrtSourceGeneric(GeometryObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filter_objects = []
             
     def default_config(self):
+        """
+        width
+          The width of this element. Aligned with the x-axis.
+
+        height
+          The height of this element. Aligned with the y-axis.
+
+        depth:
+          The depth of this element. Aligned with the z-axis.
+
+        spread: float (pi) [radians]
+          The angular spread for the emission cone. The spread defines the
+          half-angle of the cone. A value of `pi` results in fully isotropic
+          emission (which is not generally useful in raytracing applications).
+
+        intensity: int or float
+          The number of rays for this source to emit. This should be an
+          integer value unless `use_poisson = True`.
+
+          Note: If filters are attached, this will be the number of rays
+          emitted before filtering.
+
+        use_poisson: bool (False)
+          If `True` the `intenisty` will be treated as the expected value for
+          a Poisson distribution and the number of rays will be randomly
+          picked from a Poisson distribution. This is setting is typically
+          only used internally for Plasma sources.
+
+        wavelength_dist: str ('voigt')
+          The type of wavelength distribution for this source.
+          Possible values are: 'voigt', 'uniform', 'monochrome'.
+
+        wavelength: float [angstroms]
+          No documentation yet. Please help improve XICSRT!
+
+        wavelength_range: tuple [angstroms]
+          Only used if `wavelength_dist = "uniform"`
+          No documentation yet. Please help improve XICSRT!
+
+        linewidth: float [1/s]
+          Only used if `wavelength_dist = "voigt"`
+          No documentation yet. Please help improve XICSRT!
+
+        temperature: float [eV]
+          Only used if `wavelength_dist = "voigt"`
+          No documentation yet. Please help improve XICSRT!
+
+        velocity
+          No documentation yet. Please help improve XICSRT!
+
+        filter_list
+          No documentation yet. Please help improve XICSRT!
+
+        """
         config = super().default_config()
-        
-        config['width']          = 0.0
-        config['height']         = 0.0
-        config['depth']          = 0.0
-        
-        config['spread']         = 2*np.pi
+
+        config['width'] = 0.0
+        config['height'] = 0.0
+        config['depth'] = 0.0
+
+        config['spread']         = np.pi
 
         config['wavelength_dist']  = 'voigt'
         config['mass_number']      = 1.0
-        config['wavelength']       = 1.0
-        config['linewidth']        = 0.0
         config['intensity']        = 0.0
+        config['use_poisson']      = False
+
+        # Only used for wavelength_dist == 'voigt' or 'monochrome'
+        config['wavelength']       = 1.0
+
+        # Only used for wavelength_dist == 'voigt'
+        config['linewidth']        = 0.0
         config['temperature']      = 0.0
         config['velocity']         = np.array([0.0, 0.0, 0.0])
-        config['use_poisson']      = False
 
         # Only used for wavelength_dist == 'uniform'
         config['wavelength_range'] = np.array([0.0, 0.0])

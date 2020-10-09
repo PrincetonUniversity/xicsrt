@@ -8,11 +8,13 @@
 import numpy as np
 
 from xicsrt.util import profiler
+from xicsrt.tools.xicsrt_doc import dochelper_config
 from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
 
 from scipy.spatial import cKDTree
 from scipy.interpolate import CloughTocher2DInterpolator as Interpolator
 
+@dochelper_config
 class XicsrtOpticMesh(XicsrtOpticGeneric):
     """
     A optic that can (optionally) use a mesh grid instead of an
