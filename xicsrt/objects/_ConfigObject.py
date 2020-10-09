@@ -42,7 +42,7 @@ class ConfigObject():
           Automatically generated.
 
         yo_mama
-          Is beautiful!
+          Is a wonderful person!
         """
 
         config = OrderedDict()

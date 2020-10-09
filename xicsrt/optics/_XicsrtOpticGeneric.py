@@ -34,18 +34,34 @@ class XicsrtOpticGeneric(GeometryObject):
         pixel_size: float (None)
           The pixel size, used for binning rays into images.
           This is currently a single number signifying square pixels.
+
+        do_trace_local: bool (False)
+          If true: transform rays to optic local coordinates before raytracing,
+          do raytracing in local coordinates, then transform back to global
+          coordinates.
+
+          The default is 'false' as most built-in optics can perform raytracing
+          in global coordinates. This option is convenient for optics with
+          complex geometry for which intersection and reflection equations
+          are easier or more clear to program in fixed local coordinates.
+
+        do_miss_check: bool (true)
+          Perform a check for whether the rays intersect the optic within the
+          defined bounds (usually defined by 'width' and 'height'). If set to
+          `False` all rays with a defined reflection/transmission condition
+          will be traced.
         """
         config = super().default_config()
-        
-        # boolean settings
-        config['do_miss_check'] = True
-        config['do_trace_local']   = False
         
         # spatial information
         config['width']          = 0.0
         config['height']         = 0.0
         config['depth']          = 0.0
         config['pixel_size']     = None
+
+        # boolean settings
+        config['do_trace_local'] = False
+        config['do_miss_check'] = True
 
         return config
 

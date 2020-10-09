@@ -13,15 +13,19 @@ a set of decorators and helper function to aid in self documentation.
 
 Philosophy:
   Python help() should be just as readable as the Sphinx webpage.
+
+Todo:
+  - The config docstrings should all be indented follow the help() standard.
+  - Would it be helpful to show which inherited class the options came from?
 """
 
 import inspect
 
 class DocHelper:
     """
-    A class to hlep generate docstrings for XICSRT.
+    A class to help generate docstrings for XICSRT.
 
-    This is expected to be used as the functional part of the @dochelper decorator
+    This is expected to be used through one of the @_dochelper decorators.
     """
 
     def __init__(self, cls):
@@ -32,7 +36,7 @@ class DocHelper:
         return self.cls
 
     def update_class_docstring(self, cls):
-        print(cls.__name__, cls.__qualname__)
+        #print(cls.__name__, cls.__qualname__)
         if cls.__doc__ == None:
             cls.__doc__ = ''
 
@@ -40,7 +44,6 @@ class DocHelper:
         #cls.__doc__ += '----------------------\n\n'
 
         for ancestor in inspect.getmro(cls):
-            print(ancestor)
             if hasattr(ancestor, 'default_config'):
                 doc = ancestor.default_config.__doc__
                 if doc is not None:
@@ -50,5 +53,8 @@ class DocHelper:
 
 
 def _dochelper_config(cls):
+    """
+    A functional wrapper for the DocHelper class.
+    """
     return DocHelper(cls)()
 
