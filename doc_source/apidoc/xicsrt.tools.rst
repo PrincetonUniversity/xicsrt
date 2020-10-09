@@ -16,3 +16,10 @@ Mathematical Tools
    xicsrt.tools.voigt
    xicsrt.tools.xicsrt_math
    xicsrt.tools.xicsrt_math_jax
+
+Programmatic Tools
+------------------
+.. toctree::
+   :maxdepth: 1
+
+   xicsrt.tools.xicsrt_doc
