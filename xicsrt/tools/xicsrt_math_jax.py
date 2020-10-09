@@ -27,3 +27,27 @@ def vector_rotate(a, b, theta):
 def sinusoidal_spiral(phi, b, r0, theta0):
     r = r0 * (jnp.sin(theta0 + (b-1)*phi)/jnp.sin(theta0))**(1/(b-1))
     return r
+
+def point_to_external(point_local, orientation, origin):
+    return vector_to_external(point_local, orientation) + origin
+
+def point_to_local(point_external, orientation, origin):
+    return vector_to_local(point_external - origin, orientation)
+
+def vector_to_external(vector, orientation):
+    if vector.ndim == 2:
+        vector = jnp.einsum('ij,ki->kj', orientation, vector)
+    elif vector.ndim == 1:
+        vector = jnp.einsum('ij,i->j', orientation, vector)
+    else:
+        raise Exception('vector.ndim must be 1 or 2')
+    return vector
+
+def vector_to_local(vector, orientation):
+    if vector.ndim == 2:
+        vector = jnp.einsum('ji,ki->kj', orientation, vector)
+    elif vector.ndim == 1:
+        vector = jnp.einsum('ji,i->j', orientation, vector)
+    else:
+        raise Exception('vector.ndim must be 1 or 2')
+    return vector

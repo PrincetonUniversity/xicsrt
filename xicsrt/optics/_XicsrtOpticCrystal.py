@@ -46,7 +46,7 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
             
             # Gaussian Distribution
             p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))  
-            p*= self.param['reflectivity']
+            p *= self.param['reflectivity']
 
         elif "file" in self.param['rocking_type']:
             # read datafiles and extract points
