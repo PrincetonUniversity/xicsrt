@@ -7,10 +7,10 @@
 """
 import numpy as np
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
-@dochelper_config
+@dochelper
 class XicsrtOpticCrystal(XicsrtOpticMesh):
 
     def default_config(self):

@@ -8,10 +8,10 @@ Authors
 
 import numpy as np
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
 
-@dochelper_config
+@dochelper
 class XicsrtSourceDirected(XicsrtSourceGeneric):
     """
     An extended rectangular ray source with rays emitted in a preferred

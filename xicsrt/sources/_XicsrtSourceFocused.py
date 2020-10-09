@@ -9,10 +9,10 @@ Authors
 
 import numpy as np
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtSourceGeneric import XicsrtSourceGeneric
 
-@dochelper_config
+@dochelper
 class XicsrtSourceFocused(XicsrtSourceGeneric):
     """
     An extended rectangular ray source that allows focusing towards a target.

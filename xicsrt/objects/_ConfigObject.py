@@ -10,12 +10,12 @@ import logging
 import copy
 from collections import OrderedDict
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 
 # I might want to some of these functions into this object as methods.
 from xicsrt import xicsrt_input
 
-@dochelper_config
+@dochelper
 class ConfigObject():
     """
     A base class for any objects with a configuration.

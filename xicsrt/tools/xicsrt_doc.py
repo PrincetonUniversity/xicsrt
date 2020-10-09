@@ -53,7 +53,7 @@ class DocHelper:
         return cls
 
 
-def dochelper_config(cls):
+def dochelper(cls):
     """
     A functional wrapper for the DocHelper class.
     """

@@ -17,11 +17,11 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
-@dochelper_config
+@dochelper
 class XicsrtPlasmaGeneric(GeometryObject):
     """
     A generic plasma object.

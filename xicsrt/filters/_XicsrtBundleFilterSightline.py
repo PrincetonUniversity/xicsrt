@@ -9,10 +9,10 @@ Authors
 import numpy as np
 from collections import OrderedDict
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.filters._XicsrtBundleFilter import XicsrtBundleFilter
 
-@dochelper_config
+@dochelper
 class XicsrtBundleFilterSightline(XicsrtBundleFilter):
     """
     A bundle filter based on proximity to sightline vectors.

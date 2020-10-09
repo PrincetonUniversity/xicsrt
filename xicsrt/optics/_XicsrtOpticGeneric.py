@@ -10,10 +10,10 @@ from PIL import Image
 import numpy as np
 
 from xicsrt.util import profiler
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
-@dochelper_config
+@dochelper
 class XicsrtOpticGeneric(GeometryObject):
     """
     A generic optical element. 

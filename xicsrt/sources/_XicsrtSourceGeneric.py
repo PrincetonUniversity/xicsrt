@@ -13,10 +13,10 @@ import scipy.constants as const
 from xicsrt.tools import xicsrt_math
 from xicsrt.util import profiler
 from xicsrt.tools import voigt
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
-@dochelper_config
+@dochelper
 class XicsrtSourceGeneric(GeometryObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

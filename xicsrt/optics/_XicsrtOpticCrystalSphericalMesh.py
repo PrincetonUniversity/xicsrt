@@ -9,10 +9,10 @@ Authors
 """
 import numpy as np
 from scipy.spatial import Delaunay
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
-@dochelper_config
+@dochelper
 class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
 
     def default_config(self):

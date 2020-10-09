@@ -11,11 +11,11 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 
 
-@dochelper_config
+@dochelper
 class XicsrtPlasmaCubic(XicsrtPlasmaGeneric):
     """
     A cubic plasma.

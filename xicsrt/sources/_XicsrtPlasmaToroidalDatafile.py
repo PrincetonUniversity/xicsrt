@@ -12,11 +12,11 @@ A plasma source based on a VMEC equilibrium.
 
 import numpy as np
 
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaToroidal import XicsrtPlasmaToroidal
 from xicsrt.util import profiler
 
-@dochelper_config
+@dochelper
 class XicsrtPlasmaToroidalDatafile(XicsrtPlasmaToroidal):
 
     def default_config(self):

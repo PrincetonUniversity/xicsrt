@@ -11,11 +11,11 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.tools.xicsrt_doc import dochelper_config
+from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 from xicsrt.tools.xicsrt_math import cyl_from_car
 
-@dochelper_config
+@dochelper
 class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
     """
     A cylindrical plasma oriented along the Y axis.
