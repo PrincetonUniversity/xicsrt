@@ -5,7 +5,8 @@ def vector_angle(a, b):
     """
     Find the angle between two vectors. Not vectorized.
     """
-    angle = np.arccos(np.dot(a/np.linalg.norm(a), b/np.linalg.norm(b)))
+    dot = np.einsum('ij,ik->i', a, b, optimize=True)
+    angle = np.arccos(dot)
     return angle
 
 def vector_rotate(a, b, theta):

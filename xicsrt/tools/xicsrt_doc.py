@@ -55,7 +55,8 @@ class DocHelper:
 
 def dochelper(cls):
     """
-    A functional wrapper for the DocHelper class.
+    A functional wrapper for the DocHelper class. Intended to be used
+    as a decorator.
     """
     return DocHelper(cls)()
 
