@@ -25,7 +25,7 @@ class DocHelper:
     """
     A class to help generate docstrings for XICSRT.
 
-    This is expected to be used through one of the @_dochelper decorators.
+    This is expected to be used through the @dochelper class decorator.
     """
 
     def __init__(self, cls):

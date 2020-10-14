@@ -13,6 +13,11 @@ from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
 @dochelper
 class XicsrtOpticCrystal(XicsrtOpticMesh):
+    """
+    .. SourceNote
+        See documentation or use help(XicsrtOpticCrystal) for a complete list
+        of config options.
+    """
 
     def default_config(self):
         """
@@ -48,6 +53,10 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         rocking_filetype: str
           The type of rocking curve file to be loaded.
           The following formats are currently supported: 'xop', 'x0h', 'simple'.
+
+          .. Note::
+
+                Actually at this point only 'xop' is supported. np 2020-10-13
 
         rocking_mix: float
           A mixing factor to combine the sigma and pi reflectivities.
@@ -133,8 +142,8 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         #idx = np.argsort(diff)
         #plotlist = mirplot.PlotList()
         #plotlist.append({
-        #     'x': diff[idx[0:1000]] * 1e6
-        #     , 'y': p[idx[0:1000]]
+        #     'x': diff[idx] * 1e6
+        #     , 'y': p[idx]
         # })
         #plotlist.plotToScreen()
 

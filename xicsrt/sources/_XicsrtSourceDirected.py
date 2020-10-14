@@ -22,7 +22,7 @@ class XicsrtSourceDirected(XicsrtSourceGeneric):
 
     This is different from a SourceFocused in that the emission cone is
     always aimed in a fixed direction for every location in the source.
-    The  SourceFocused instead aims the emission cone at a specific target
+    The SourceFocused instead aims the emission cone at a specific target
     so that the aiming direction changes for different locations within
     the source.
     """

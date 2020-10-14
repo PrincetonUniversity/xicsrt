@@ -6,7 +6,7 @@
 A set of utility routines to load bragg reflection data files from
 several external applications including x0h, XOP and SHADOW.
 
-Files will be read and the data returned in a standardized dictionary.
+Data will be returned in a standardized dictionary.
 """
 
 import numpy as np
@@ -21,6 +21,17 @@ def read(filename, filetype=None):
 
     This will switch between the various format specific routines
     based on the filetype parameter.
+
+    Parameters
+    ----------
+    filename: str
+      The file to read.
+
+    Keyword Arguments
+    -----------------
+    filetype: str
+      The source of the given file. If not provided, the filetype will be
+      guessed. Currently supported types are: 'xop', 'x0h'.
     """
 
     # Try to guess the filetype if it was not provided.
@@ -68,7 +79,7 @@ def read_xop(filename):
     """
     Read a data file from XOP and return a standard rocking-curve dict.
 
-    It is expected that filename is the diff_pat.dat file from XOP.
+    It is expected that the given file is diff_pat.dat file from XOP.
     """
     pathname, basename = os.path.split(filename)
     rootname, extname = os.path.splitext(basename)
