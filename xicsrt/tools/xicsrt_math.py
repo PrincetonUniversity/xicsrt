@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
+"""
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+    James Kring <jdk0026@tigermail.auburn.edu>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+A set of mathematical utilities and vector convenience functions for XICSRT.
+"""
+
 import numpy as np
 
 def vector_angle(a, b):
     """
-    Find the angle between two vectors. Not vectorized.
+    Find the angle between two vectors.
     """
     dot = np.einsum('ij,ik->i', a, b, optimize=True)
     angle = np.arccos(dot)
