@@ -14,7 +14,14 @@ def vector_angle(a, b):
     """
     Find the angle between two vectors.
     """
-    dot = np.einsum('ij,ik->i', a, b, optimize=True)
+    a_mod = np.linalg.norm(a)
+    b_mod = np.linalg.norm(b)
+    if a.ndim == 2 & b.ndim == 2:
+        dot = np.einsum('ij,ik->i', a/a_mod, b/b_mod, optimize=True)
+    elif a.ndim == 1 & b.ndim == 1:
+        dot = np.dot(a/a_mod, b/b_mod)
+    else:
+        raise Exception('Input must have 1 or 2 dimensions.')
     angle = np.arccos(dot)
     return angle
 
