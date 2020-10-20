@@ -163,7 +163,6 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     def mesh_interpolate(self, X, mesh, mask):
         profiler.start('mesh_interpolate')
-        normals = np.empty(X.shape)
         X[:, 2] = mesh['interp']['z'](X[:, 0], X[:, 1])
 
         normals = np.empty(X.shape)
@@ -174,7 +173,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         profiler.start('normalize')
         normals = np.einsum(
             'i,ij->ij'
-            ,np.linalg.norm(normals, axis=1)
+            ,1.0/np.linalg.norm(normals, axis=1)
             ,normals
             ,optimize=True)
         profiler.stop('normalize')
