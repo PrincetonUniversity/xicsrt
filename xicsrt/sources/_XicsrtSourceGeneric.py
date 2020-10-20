@@ -55,20 +55,40 @@ class XicsrtSourceGeneric(GeometryObject):
           The type of wavelength distribution for this source.
           Possible values are: 'voigt', 'uniform', 'monochrome'.
 
+          Note: A monchrome distribution can also be achieved by using a 'voigt'
+          distribution with zero linewidth and temperature.
+
         wavelength: float [angstroms]
-          No documentation yet. Please help improve XICSRT!
+          Only used if `wavelength_dist = "monochrome" or "voigt"`
+          Central wavelength of the distribution, in Angstroms.
 
         wavelength_range: tuple [angstroms]
           Only used if `wavelength_dist = "uniform"`
-          No documentation yet. Please help improve XICSRT!
+          The wavelength range of the distribution, in Angstroms.
+          Must be a 2 element tuple, list or array: (min, max).
 
         linewidth: float [1/s]
           Only used if `wavelength_dist = "voigt"`
-          No documentation yet. Please help improve XICSRT!
+          The natural width of the emission line.
+          This will control the Lorentzian contribution to the the overall
+          Voigt profile. If linewidth == 0, the resulting wavelength
+          distribution will be gaussian.
+
+          To convert from a fwhm in [eV]:
+          linewidth = 2*pi*e/h*fwhm_ev
+
+          To translate from linewidth to gamma in the Voigt equation:
+          gamma = linewidth * wavelength**2 / (4*pi*c*1e10)
 
         temperature: float [eV]
           Only used if `wavelength_dist = "voigt"`
-          No documentation yet. Please help improve XICSRT!
+          The temperature of the emission line.
+          This will control the Gaussian contribution to the overall Voigt
+          profile. If temperature == 0, the resulting wavelength distribution
+          will be Lorentzian.
+
+          To translate from temperature to sigma in the Voigt equation:
+          sigma = np.sqrt(temperature/mass_number/amu_kg/c**2*ev_J)*wavelength
 
         velocity
           No documentation yet. Please help improve XICSRT!
@@ -83,22 +103,23 @@ class XicsrtSourceGeneric(GeometryObject):
         config['height'] = 0.0
         config['depth'] = 0.0
 
-        config['spread']         = np.pi
-
-        config['wavelength_dist']  = 'voigt'
-        config['mass_number']      = 1.0
         config['intensity']        = 0.0
         config['use_poisson']      = False
+        config['spread']           = np.pi
 
-        # Only used for wavelength_dist == 'voigt' or 'monochrome'
+        # Possible values: 'monochrome', 'voigt', 'uniform
+        config['wavelength_dist']  = 'voigt'
+
+        # Only used for wavelength_dist = 'voigt' or 'monochrome'
         config['wavelength']       = 1.0
 
-        # Only used for wavelength_dist == 'voigt'
+        # Only used for wavelength_dist = 'voigt'
+        config['mass_number']      = 1.0
         config['linewidth']        = 0.0
         config['temperature']      = 0.0
         config['velocity']         = np.array([0.0, 0.0, 0.0])
 
-        # Only used for wavelength_dist == 'uniform'
+        # Only used for wavelength_dist = 'uniform'
         config['wavelength_range'] = np.array([0.0, 0.0])
         
         config['filter_list']    = []

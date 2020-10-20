@@ -15,7 +15,7 @@ from xicsrt.sources._XicsrtPlasmaGeneric import XicsrtPlasmaGeneric
 import xicsrt.tools.xicsrt_math as xm
 
 @dochelper
-class  XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
+class XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     """
     A plasma object with toroidal geometry and a circular
     cross-section.
