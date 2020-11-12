@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Authors:
-  | Novimir Antoniuk Pablant <npablant@pppl.gov>
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
 """
 import numpy as np
 import logging
@@ -17,6 +17,15 @@ import importlib.util
 from xicsrt.util import profiler
 
 class XicsrtDispatcher():
+    """
+    A class to help find, initialize and then dispatch calls to
+    raytracing objects.
+
+    A dispatcher is used within XICSRT to find and instantiate objects based
+    on their specification within the config dictionary. These objects are
+    then tracked within the dispatcher, allowing methods to be called on all
+    objects sequentially.
+    """
 
     def __init__(self, config=None, section=None):
         self.log = logging.getLogger(self.__class__.__name__)
