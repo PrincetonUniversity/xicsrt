@@ -57,7 +57,7 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
         
         rho = np.sqrt(flx[:,0])
         
-        if True:
+        if False:
             # Flat profile.
             coeff = np.array(
                 [8.6914, 0.0000, -39.3415, 0.0000
@@ -97,7 +97,7 @@ class XicsrtPlasmaW7xSimple(XicsrtPlasmaVmec):
                  ,-1697.5982, 0.0000, 3447.8770, 0.0000
                  ,-2958.4238, 0.0000, 1372.4606, 0.0000
                  ,-341.9065, 0.0000, 34.1610, 0.0000
-                 ,0.0000])
+                 ,0.0000])*-1
 
             value = np.polyval(coeff, rho)
 

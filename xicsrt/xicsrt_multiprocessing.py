@@ -17,7 +17,7 @@ from xicsrt.util import profiler
 from xicsrt import xicsrt_config
 from xicsrt.xicsrt_raytrace import *
 
-def raytrace_multiprocessing(config):
+def raytrace_multiprocessing(config, processes=None):
     """
     Perform a series of ray tracing runs using the a
     :any:`multiprocessing` cpu pool.
@@ -45,7 +45,7 @@ def raytrace_multiprocessing(config):
     mp_result_list = []
     output_list = []
 
-    with Pool() as pool:
+    with Pool(processes) as pool:
         # loop through each configuration in the configuration input file
         # and add a new run into the pool.
         for ii in range(num_runs):

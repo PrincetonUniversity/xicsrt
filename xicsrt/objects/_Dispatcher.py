@@ -16,7 +16,7 @@ import importlib.util
 
 from xicsrt.util import profiler
 
-class XicsrtDispatcher():
+class Dispatcher():
     """
     A class to help find, initialize and then dispatch calls to
     raytracing objects.
@@ -50,13 +50,16 @@ class XicsrtDispatcher():
         elif isinstance(names, str):
             names = [names]
 
+        strict = self.config['general']['strict_config_check']
+
         obj_info = self.find_xicsrt_objects(self.pathlist)
         # self.log.debug(obj_info)
 
         for key in names:
             obj = self._instantiate_single(
                 obj_info
-                ,self.config[self.section][key])
+                ,self.config[self.section][key]
+                ,strict=strict)
             self.objects[key] = obj
             self.meta[key] = {}
 
@@ -83,7 +86,7 @@ class XicsrtDispatcher():
 
         return output
 
-    def _instantiate_single(self, obj_info, config):
+    def _instantiate_single(self, obj_info, config, strict=None):
         """
         Instantiate an object from a list of filenames and a class name.
         """
@@ -97,7 +100,7 @@ class XicsrtDispatcher():
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         cls = getattr(mod, info['name'])
-        obj = cls(config, initialize=False)
+        obj = cls(config, initialize=False, strict=strict)
 
         return obj
 

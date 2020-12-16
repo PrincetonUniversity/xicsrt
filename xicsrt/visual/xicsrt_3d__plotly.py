@@ -25,7 +25,7 @@ import numpy as np
 import plotly.graph_objects as go
 import matplotlib
 
-from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
+from xicsrt.objects._Dispatcher import Dispatcher
 
 m_figure = None
 
@@ -46,14 +46,29 @@ def _thin_mask(mask, max_num):
     return mask
 
 
-def figure():
+def figure(showbackground=False, visible=False):
     global m_figure
 
     layout = {
         'scene':{
             'aspectmode':'data'
+            ,'xaxis':{
+                'showbackground':showbackground
+                ,'visible':visible
+                }
+            ,'yaxis':{
+                'showbackground':showbackground
+                ,'visible':visible
+                }
+            ,'zaxis':{
+                'showbackground':showbackground
+                ,'visible':visible
+                }
             }
         }
+    fig = go.Figure(layout=layout)
+    m_figure = fig
+
     fig = go.Figure(layout=layout)
     m_figure = fig
 
@@ -70,7 +85,7 @@ def _plot_ray_history(history, lost=None, figure=None):
     if figure is None: figure = m_figure
 
     if lost is False:
-        color = 'rgba(255, 0, 0, 0.1)'
+        color = 'rgba(255, 0, 0, 0.01)'
         name = 'found'
     elif lost is True:
         color = 'rgba(0, 0, 255, 0.01)'
@@ -186,7 +201,7 @@ def _add_trace_volume(obj, figure, name=None):
         ,j=tri[:, 1]
         ,k=tri[:, 2]
         ,flatshading=True
-        ,opacity=0.25
+        ,opacity=0.50
         ,name=name)
 
     figure.add_trace(trace)
@@ -267,7 +282,7 @@ def add_sources(config, figure=None):
 def add_object(config, name, section, figure=None):
 
     # Use the dispatcher to instantiate and initialize objects.
-    optics = XicsrtDispatcher(config, section)
+    optics = Dispatcher(config, section)
     optics.instantiate(name)
     optics.setup()
     optics.initialize()

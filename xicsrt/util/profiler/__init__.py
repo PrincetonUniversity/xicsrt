@@ -54,7 +54,7 @@ def report(flush=True):
     indexes = sorted(range(len(totals)), key=totals.__getitem__, reverse=True)
 
     if flush:
-        print('', flush=True)
+        print('', flush=True, end='')
 
     log.info('{:25.25s} {:14.14s}  {:14.14s}  {:6.6s}'.format(
         'name'

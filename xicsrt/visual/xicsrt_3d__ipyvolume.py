@@ -32,7 +32,7 @@ import numpy as np
 import matplotlib
 
 from xicsrt import xicsrt_config
-from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
+from xicsrt.objects._Dispatcher import Dispatcher
 
 def truncate_mask(mask, max_num):
     num_mask = np.sum(mask)
@@ -287,7 +287,7 @@ def add_optics(config):
             # from xicsrt_raytrace.raytrace_single.
             name = 'crystal'
             section = 'optics'
-            optics = XicsrtDispatcher(config, section)
+            optics = Dispatcher(config, section)
             optics.instantiate()
             optics.setup()
             optics.initialize()
@@ -344,7 +344,7 @@ def add_sources(config):
     pathlist.extend(config['general']['pathlist_objects'])
     pathlist.extend(config['general']['pathlist_default'])
     
-    sources = XicsrtDispatcher(config, 'sources')
+    sources = Dispatcher(config, 'sources')
     sources.instantiate()
     sources.setup()
     sources.initialize()

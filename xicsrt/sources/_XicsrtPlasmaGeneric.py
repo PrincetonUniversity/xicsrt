@@ -65,14 +65,14 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['spread']         = 2*np.pi
         config['target']         = None
         
-        config['mass_number']    = 1.0
-        config['wavelength']     = 1.0
-        config['linewidth']      = 0.0
-        config['intensity']      = 0.0
-        config['temperature']    = 0.0
-        config['velocity']       = 0.0
-        config['use_poisson']    = False
-        config['do_monochrome']  = False
+        config['mass_number']     = 1.0
+        config['wavelength']      = 1.0
+        config['linewidth']       = 0.0
+        config['intensity']       = 0.0
+        config['temperature']     = 0.0
+        config['velocity']        = 0.0
+        config['use_poisson']     = False
+        config['wavelength_dist'] = 'voigt'
         
         config['emissivity']      = 0.0
         config['max_rays']        = int(1e7)
@@ -199,18 +199,18 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config['intensity'] = intensity
 
             # constants
-            source_config['width']         = self.param['voxel_size']
-            source_config['height']        = self.param['voxel_size']
-            source_config['depth']         = self.param['voxel_size']
-            source_config['zaxis']         = self.param['zaxis']
-            source_config['xaxis']         = self.param['xaxis']
-            source_config['target']        = self.param['target']
-            source_config['mass_number']   = self.param['mass_number']
-            source_config['wavelength']    = self.param['wavelength']
-            source_config['linewidth']     = self.param['linewidth']
-            source_config['spread']        = self.param['spread']
-            source_config['use_poisson']   = self.param['use_poisson']
-            source_config['do_monochrome'] = self.param['do_monochrome']
+            source_config['width']           = self.param['voxel_size']
+            source_config['height']          = self.param['voxel_size']
+            source_config['depth']           = self.param['voxel_size']
+            source_config['zaxis']           = self.param['zaxis']
+            source_config['xaxis']           = self.param['xaxis']
+            source_config['target']          = self.param['target']
+            source_config['mass_number']     = self.param['mass_number']
+            source_config['wavelength']      = self.param['wavelength']
+            source_config['linewidth']       = self.param['linewidth']
+            source_config['spread']          = self.param['spread']
+            source_config['use_poisson']     = self.param['use_poisson']
+            source_config['wavelength_dist'] = self.param['wavelength_dist']
                 
             #create ray bundle sources and generate bundled rays
             source       = XicsrtSourceFocused(source_config)

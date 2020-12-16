@@ -114,7 +114,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             self.param['mesh_interpolate'] = False
 
         if self.param['mesh_refine'] is None:
-            if self.param['mesh_course_points'] is not None:
+            if self.param['mesh_coarse_points'] is not None:
                 self.param['mesh_refine'] = True
 
     def initialize(self):

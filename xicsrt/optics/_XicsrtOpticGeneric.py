@@ -74,8 +74,27 @@ class XicsrtOpticGeneric(GeometryObject):
         if self.param['pixel_size'] is None:
             self.param['pixel_size'] = self.param['width']/100
 
-        self.param['pixel_width'] = int(np.ceil(self.param['width'] / self.param['pixel_size']))
-        self.param['pixel_height'] = int(np.ceil(self.param['height'] / self.param['pixel_size']))
+        # Determine the number of pixels on the detector.
+        # For now assume that the user set the width of the detector to be
+        # a multiple of the pixel size.
+        #
+        # Except for the detector there is really no reason that this would
+        # always be true, so for now only make this a warning. I need to think
+        # about how to handle this better.
+        pixel_width = self.param['width'] / self.param['pixel_size']
+        pixel_height = self.param['height'] / self.param['pixel_size']
+        try:
+            np.testing.assert_almost_equal(pixel_width, np.round(pixel_width))
+            np.testing.assert_almost_equal(pixel_height, np.round(pixel_height))
+        except AssertionError:
+            self.log.warning(f"Optic width ({self.param['width']:0.4f}x{self.param['height']:0.4f})"
+                             f"is not a multiple of the pixel_size ({self.param['pixel_size']:0.4f})."
+                             f"May lead to truncation of output image."
+                             )
+
+        self.param['pixel_width'] = int(np.round(pixel_width))
+        self.param['pixel_height'] = int(np.round(pixel_height))
+        self.log.debug(f"Pixel grid size: {self.param['pixel_width']} x {self.param['pixel_height']}")
 
         self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         self.photon_count = 0

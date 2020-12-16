@@ -18,6 +18,15 @@ from xicsrt.objects._ConfigObject import ConfigObject
 class XicsrtGeneralConfig(ConfigObject):
 
     def default_config(self):
+        """
+
+        strict_config_check: bool (True)
+          Use strict checking to ensure that the config only contains valid
+          options for the given object. This helps avoid unexpected behavior
+          as well and alerting to typos in the configuration. When set to
+          False, unrecognized config options will be ignored.
+
+        """
         config = super().default_config()
 
         config['general'] = OrderedDict()
@@ -26,7 +35,8 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['random_seed'] = None
         config['general']['pathlist_objects'] = []
         config['general']['pathlist_default'] = get_pathlist_default()
-        
+        config['general']['strict_config_check'] = True
+
         config['general']['output_path'] = None
         config['general']['output_prefix'] = 'xicsrt'
         config['general']['output_suffix'] = None

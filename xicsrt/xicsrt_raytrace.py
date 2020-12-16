@@ -21,7 +21,7 @@ from xicsrt.util import profiler
 
 from xicsrt import xicsrt_config
 from xicsrt import xicsrt_input
-from xicsrt.objects._XicsrtDispatcher import XicsrtDispatcher
+from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
 def raytrace(config, internal=False):
@@ -48,7 +48,7 @@ def raytrace(config, internal=False):
 
     # Setup the dispatchers.
     if 'filters' in config:
-        filters = XicsrtDispatcher(config, 'filters')
+        filters = Dispatcher(config, 'filters')
         filters.instantiate()
         filters.setup()
         filters.initialize()
@@ -56,14 +56,14 @@ def raytrace(config, internal=False):
     else:
         filters = None
 
-    sources = XicsrtDispatcher(config, 'sources')
+    sources = Dispatcher(config, 'sources')
     sources.instantiate()
     sources.apply_filters(filters)
     sources.setup()
     sources.initialize()
     config['sources'] = sources.get_config()
 
-    optics = XicsrtDispatcher(config, 'optics')
+    optics = Dispatcher(config, 'optics')
     optics.instantiate()
     optics.setup()
     optics.initialize()
