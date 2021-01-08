@@ -53,7 +53,6 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['save_meta'] = False
         config['general']['save_history'] = False
         config['general']['save_images'] = False
-        config['general']['save_run_images'] = False
 
         config['general']['print_results'] = True
 

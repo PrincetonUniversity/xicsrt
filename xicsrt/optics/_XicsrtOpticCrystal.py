@@ -134,19 +134,6 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         else:
             raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
 
-        # DEBUGGING:
-        #   Plot the rocking curve.
-        #
-        #from mirutil.plot import mirplot
-        #diff = (incident_angle - bragg_angle)
-        #idx = np.argsort(diff)
-        #plotlist = mirplot.PlotList()
-        #plotlist.append({
-        #     'x': diff[idx] * 1e6
-        #     , 'y': p[idx]
-        # })
-        #plotlist.plotToScreen()
-
         p *= self.param['reflectivity']
 
         # Rreate a random number for each ray between 0 and 1.

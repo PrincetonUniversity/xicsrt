@@ -81,15 +81,13 @@ def raytrace(config, internal=False):
     output = combine_raytrace(output_list)
 
     if internal is False:
-        if config['general']['save_images'] or config['general']['save_run_images']:
-            save_images(output)
         if config['general']['print_results']:
             print_raytrace(output)
         if config['general']['save_config']:
             xicsrt_input.save_config(output['config'])
-    else:
-        if config['general']['save_run_images']:
-            save_images(output)
+
+    if config['general']['save_images']:
+        save_images(output)
 
     profiler.stop('raytrace')
     #profiler.report()
@@ -102,10 +100,10 @@ def raytrace_multi(config):
     Each run will rebuild all objects, reset the random seed and then
     perform the requested number of iterations.
 
-    If the option 'save_run_images' is set, then images will be save
+    If the option 'save_images' is set, then images will be saved
     at the completion of each run. The saving of these run images
-    is the primary reasion to use this routine: it allows periodic
-    outputs during long computations.
+    is one reason to use this routine rather than just increasing
+    the number of iterations: periodic outputs during long computations.
 
     Also see :func:`~xicsrt.xicsrt_multiprocessing.raytrace_multiprocessing`
     for a multiprocessing version of this routine.
