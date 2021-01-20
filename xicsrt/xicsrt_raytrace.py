@@ -24,7 +24,7 @@ from xicsrt import xicsrt_input
 from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
-def raytrace(config, internal=False):
+def raytrace_single(config, internal=False):
     """
     Perform a series of ray tracing iterations.
 
@@ -74,7 +74,7 @@ def raytrace(config, internal=False):
     for ii in range(num_iter):
         logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
         
-        single = _raytrace_single(config, sources, optics)
+        single = _raytrace_iter(config, sources, optics)
         sorted = _sort_raytrace(single, max_lost=max_lost_iter)
         output_list.append(sorted)
         
@@ -93,7 +93,7 @@ def raytrace(config, internal=False):
     #profiler.report()
     return output
 
-def raytrace_multi(config):
+def raytrace(config):
     """
     Perform a series of ray tracing runs.
 
@@ -130,7 +130,7 @@ def raytrace_multi(config):
             random_seed += ii
         config_run['general']['random_seed'] = random_seed
         
-        iteration = raytrace(config_run, internal=True)
+        iteration = raytrace_single(config_run, internal=True)
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
@@ -149,7 +149,7 @@ def raytrace_multi(config):
     profiler.stop('raytrace_multi')
     return output
     
-def _raytrace_single(config, sources, optics):
+def _raytrace_iter(config, sources, optics):
     """ 
     Perform a single iteration of raytracing with the given
     sources and optics. The returned rays are unsorted.

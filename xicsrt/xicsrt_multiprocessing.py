@@ -4,20 +4,10 @@
     Novimir pablant <npablant@pppl.gov>
 """
 
-import numpy as np
-import logging
-
-from copy import deepcopy
-from collections import OrderedDict
-
 from multiprocessing import Pool
-
-from xicsrt.util import profiler
-
-from xicsrt import xicsrt_config
 from xicsrt.xicsrt_raytrace import *
 
-def raytrace_multiprocessing(config, processes=None):
+def raytrace(config, processes=None):
     """
     Perform a series of ray tracing runs using the a
     :any:`multiprocessing` cpu pool.
@@ -61,7 +51,7 @@ def raytrace_multiprocessing(config, processes=None):
             config_run['general']['random_seed'] = random_seed
                 
             arg = (config_run,)
-            mp_result = pool.apply_async(raytrace, arg)
+            mp_result = pool.apply_async(raytrace_single, arg)
             mp_result_list.append(mp_result)
         pool.close()
         pool.join()

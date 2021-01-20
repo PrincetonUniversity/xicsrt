@@ -86,7 +86,7 @@ def run():
     if args.seed:
         config['general']['random_seed'] = args.seed
         
-    result = xicsrt_raytrace.raytrace_multi(config)
+    result = xicsrt_raytrace.raytrace(config)
 
 # Generate the module docstring from the helpstring.
 parser = _get_parser()
