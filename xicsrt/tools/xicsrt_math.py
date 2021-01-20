@@ -89,9 +89,11 @@ def bragg_angle(wavelength, crystal_spacing):
 
 def vector_dist_uniform(theta, number):
     """
-    Create a uniform distribution of vectors with an angular spread
-    of theta. Here theta is the half of the total cone angle
-    (axis to edge).
+    Return unit vectors from a uniform spherical distribution that fall within
+    an angular spread (divergence) of theta.
+
+    The ray cone is aligned along the z-axis.
+    theta is the half-angle of the total cone (axis to edge).
     """
     output = np.empty((number, 3))
 

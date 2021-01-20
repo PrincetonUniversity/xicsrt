@@ -1,3 +1,11 @@
+"""
+To submit an update to pypi:
+  1. Update _version.py
+  2. python setup.py sdist bdist_wheel
+  3. python -m twine upload --repository testpypi dist/*
+  4. python -m twine upload dist/*
+"""
+
 import setuptools
 
 with open('README.md') as ff:
