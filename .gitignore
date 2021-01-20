@@ -28,6 +28,9 @@ doc_build
 __pycache__
 *.egg-info
 
+## Jupyter Notebook
+.ipynb_checkpoints
+
 ## System files to ignore.
 *.DS_Store
 /Icon?
