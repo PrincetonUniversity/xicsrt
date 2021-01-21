@@ -34,10 +34,11 @@ master_doc = 'index'
 # ones.
 import sphinx_rtd_theme
 extensions = [
-    'sphinx.ext.autodoc'
-    ,'sphinx.ext.napoleon'
-    ,'sphinx.ext.viewcode'
-    ,'sphinx_rtd_theme'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.todo',
+    'sphinx_rtd_theme',
     ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,6 +72,11 @@ html_static_path = ['_static']
 from sphinx.ext import autodoc
 
 class MirClassDocumenter(autodoc.ClassDocumenter):
+    """
+    An extention 'Class' with the following new options:
+    - 'nodocstring'
+    - 'nosignature'
+    """
     objtype = 'mirclass'
     directivetype = 'class'
 
@@ -79,6 +85,10 @@ class MirClassDocumenter(autodoc.ClassDocumenter):
     option_spec['nosignature'] = autodoc.bool_option
 
 class MirModuleDocumenter(autodoc.ModuleDocumenter):
+    """
+    An extention 'Module' with the following new options:
+    - 'nodocstring'
+    """
     objtype = 'mirmodule'
     directivetype = 'module'
 
@@ -86,6 +96,9 @@ class MirModuleDocumenter(autodoc.ModuleDocumenter):
     option_spec['nodocstring'] = autodoc.bool_option
 
 def hide_non_private(app, what, name, obj, skip, options):
+    """
+    Enables showing only private-member while supressing public-members.
+    """
     if what in ['module', 'mirmodule']:
         # if private-members is set, show only private members
         if 'private-members' in options and not name.startswith('_'):
@@ -96,11 +109,17 @@ def hide_non_private(app, what, name, obj, skip, options):
     return None
 
 def hide_docstring(app, what, name, obj, options, lines):
+    """
+    Enables the 'nodocstring' option.
+    """
     if what in ['mirclass', 'mirmodule']:
         if 'nodocstring' in options:
             lines.clear()
 
 def hide_signature(app, what, name, obj, options, sig, anno):
+    """
+    Enables the 'nodsigniture' option.
+    """
     if what in ['mirclass', 'mirmodule']:
         if 'nosignature' in options:
             return '', None

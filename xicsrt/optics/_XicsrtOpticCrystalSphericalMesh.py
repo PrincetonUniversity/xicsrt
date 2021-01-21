@@ -14,6 +14,19 @@ from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 @dochelper
 class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
+    """
+    A spherical reflector implemented using a mesh-grid.
+
+    This class meant to be used for two reasons:
+    - As an example and template for how to implement a mesh-grid optic.
+    - For verification of mesh-grid implementation.
+
+    The analytical `XicsrtOpticCrystalSpherical` object should be used for all
+    normal raytracing application.
+
+    .. Warning::
+        This module is significantly out of date. Do not use as is.
+    """
 
     def default_config(self):
         """

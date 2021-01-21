@@ -3,8 +3,7 @@
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
 
-These are a set of routines for 3D visualization using the
-plotly library.
+These are a set of routines for 3D visualization using the plotly library.
 
 Example
 -------
