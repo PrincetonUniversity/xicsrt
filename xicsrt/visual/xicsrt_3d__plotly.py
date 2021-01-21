@@ -143,9 +143,9 @@ def _add_trace_volume(obj, figure, name=None):
     global m_figure
     if figure is None: figure = m_figure
 
-    w = obj.param['width'] / 2.0
-    h = obj.param['height'] / 2.0
-    d = obj.param['depth'] / 2.0
+    w = obj.param['xsize'] / 2.0
+    h = obj.param['ysize'] / 2.0
+    d = obj.param['zsize'] / 2.0
 
     points = np.zeros((8, 3))
     points[0, :] = [w, h, d]

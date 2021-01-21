@@ -58,9 +58,9 @@ class XicsrtPlasmaGeneric(GeometryObject):
         """
         config = super().default_config()
                 
-        config['width']          = 0.0
-        config['height']         = 0.0
-        config['depth']          = 0.0
+        config['xsize']          = 0.0
+        config['ysize']         = 0.0
+        config['zsize']          = 0.0
         
         config['spread']         = 2*np.pi
         config['target']         = None
@@ -89,7 +89,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.param['max_rays']     = int(self.param['max_rays'])
         self.param['bundle_type']  = str.lower(self.param['bundle_type'])
         self.param['bundle_count'] = int(self.param['bundle_count'])
-        self.param['volume']       = self.config['width'] * self.config['height'] * self.config['depth']
+        self.param['volume']       = self.config['xsize'] * self.config['ysize'] * self.config['zsize']
         self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread']/2)**2
         
         
@@ -109,9 +109,9 @@ class XicsrtPlasmaGeneric(GeometryObject):
         
         # randomly spread the bundles around the plasma box
         offset = np.zeros((self.param['bundle_count'], 3))
-        offset[:,0] = np.random.uniform(-1 * self.param['width'] /2, self.param['width'] /2, self.param['bundle_count'])
-        offset[:,1] = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        offset[:,2] = np.random.uniform(-1 * self.param['depth'] /2, self.param['depth'] /2, self.param['bundle_count'])
+        offset[:,0] = np.random.uniform(-1 * self.param['xsize'] /2, self.param['xsize'] /2, self.param['bundle_count'])
+        offset[:,1] = np.random.uniform(-1 * self.param['ysize']/2, self.param['ysize']/2, self.param['bundle_count'])
+        offset[:,2] = np.random.uniform(-1 * self.param['zsize'] /2, self.param['zsize'] /2, self.param['bundle_count'])
 
         bundle_input['origin'][:] = self.point_to_external(offset)
         return bundle_input
@@ -199,9 +199,9 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config['intensity'] = intensity
 
             # constants
-            source_config['width']           = self.param['voxel_size']
-            source_config['height']          = self.param['voxel_size']
-            source_config['depth']           = self.param['voxel_size']
+            source_config['xsize']           = self.param['voxel_size']
+            source_config['ysize']          = self.param['voxel_size']
+            source_config['zsize']           = self.param['voxel_size']
             source_config['zaxis']           = self.param['zaxis']
             source_config['xaxis']           = self.param['xaxis']
             source_config['target']          = self.param['target']

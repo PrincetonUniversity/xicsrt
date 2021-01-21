@@ -70,38 +70,38 @@ class XicsrtOpticCrystalSphericalMesh(XicsrtOpticCrystal):
             res = self.param['grid_resolution']
 
         # Create series of x,y points
-        x_lim = self.param['width']
-        y_lim = self.param['height']
+        x_lim = self.param['xsize']
+        y_lim = self.param['ysize']
 
         #Ensure that crystal has same ratio of mesh points per cm along height & width
-        pts_ratio = self.param['height']/self.param['width']
+        pts_ratio = self.param['ysize']/self.param['xsize']
 
         if res == 1:
-            x_pts = self.param['width']*50
+            x_pts = self.param['xsize']*50
             y_pts = x_pts * pts_ratio
         elif res == 2:
-            x_pts = self.param['width'] * 100
+            x_pts = self.param['xsize'] * 100
             y_pts = x_pts * pts_ratio
         elif res == 3:
-            x_pts = self.param['width'] * 200
+            x_pts = self.param['xsize'] * 200
             y_pts = x_pts * pts_ratio
         elif res == 4:
-            x_pts = self.param['width'] * 300
+            x_pts = self.param['xsize'] * 300
             y_pts = x_pts * pts_ratio
         elif res == 5:
-            x_pts = self.param['width'] * 400
+            x_pts = self.param['xsize'] * 400
             y_pts = x_pts * pts_ratio
         elif res == 6:
-            x_pts = self.param['width'] * 500
+            x_pts = self.param['xsize'] * 500
             y_pts = x_pts * pts_ratio
         elif res == 7:
-            x_pts = self.param['width'] * 600
+            x_pts = self.param['xsize'] * 600
             y_pts = x_pts * pts_ratio
         elif res == 8:
-            x_pts = self.param['width'] * 700
+            x_pts = self.param['xsize'] * 700
             y_pts = x_pts * pts_ratio
         elif res == 20:
-            x_pts = self.param['width'] * 2000
+            x_pts = self.param['xsize'] * 2000
             y_pts = x_pts * pts_ratio
         else:
             x_pts = 4

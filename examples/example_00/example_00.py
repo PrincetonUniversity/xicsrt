@@ -54,10 +54,12 @@ origin
 zaxis
   The direction the optics is pointing. For all of the standard
   optics that come with xicrt, the zaxis is the normal direction.
-width
-  The width of the optic
-height
-  The height of the optic
+xsize
+  The size of the optic along the xaxis.
+  Corresponds to the 'width' of the optic.
+ysize
+  The size of the optic along the yaxis.
+  Corresponds to the 'height' of the optic.
 
 5.
 Finally we pass the configuration to the XICSRT raytracer to perform
@@ -66,7 +68,7 @@ trace history along with images at the detector.
 """
 
 import numpy as np
-from xicsrt import xicsrt_raytrace
+import xicsrt
 
 # 1.
 config = {}
@@ -89,9 +91,9 @@ config['optics']['detector'] = {}
 config['optics']['detector']['class_name'] = 'XicsrtOpticDetector'
 config['optics']['detector']['origin'] = [0.0, 0.0, 1.0]
 config['optics']['detector']['zaxis']  = [0.0, 0.0, -1]
-config['optics']['detector']['width']  = 0.2
-config['optics']['detector']['height'] = 0.2
+config['optics']['detector']['xsize']  = 0.2
+config['optics']['detector']['ysize']  = 0.2
 
 # 5.
-results = xicsrt_raytrace.raytrace(config)
+results = xicsrt.raytrace(config)
 

@@ -45,8 +45,8 @@ def plot_intersect(
     # Get the crystal object from the dispatcher.
     obj = optics.get_object(name)
 
-    xbound = [-1*obj.param['width']/2, obj.param['width']/2]
-    ybound = [-1*obj.param['height']/2, obj.param['height']/2]
+    xbound = [-1*obj.param['xsize']/2, obj.param['xsize']/2]
+    ybound = [-1*obj.param['ysize']/2, obj.param['ysize']/2]
 
     if True:
         # Lets plot the 'lost' rays.

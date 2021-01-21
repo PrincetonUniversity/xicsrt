@@ -164,9 +164,9 @@ def generate_colors(history, config):
             color_list.append(cm.to_rgba(ii / num_wave, alpha=0.5))
 
 def add_surf(obj):
-    w = obj.param['width'] / 2.0
-    h = obj.param['height'] / 2.0
-    d = obj.param['depth'] / 2.0
+    w = obj.param['xsize'] / 2.0
+    h = obj.param['ysize'] / 2.0
+    d = obj.param['zsize'] / 2.0
 
     points = np.zeros((8, 3))
     points[0, :] = [w, h, d]

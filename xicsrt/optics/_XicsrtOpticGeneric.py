@@ -24,6 +24,19 @@ class XicsrtOpticGeneric(GeometryObject):
         
     def default_config(self):
         """
+        xsize
+          The size of this element along the xaxis direction.
+          Typically corresponds to the 'width' of the optic.
+
+        ysize
+          The size of this element along the yaxis direction.
+          Typically corresponds to the 'height' of the optic.
+
+        zsize
+          The size of this element along the zaxis direction.
+          Typically not required, but if needed will correspond to the 'depth'
+          of the optic.
+
         width
           The width of this element. Aligned with the x-axis.
 
@@ -56,9 +69,9 @@ class XicsrtOpticGeneric(GeometryObject):
         config = super().default_config()
         
         # spatial information
-        config['width']          = 0.0
-        config['height']         = 0.0
-        config['depth']          = 0.0
+        config['xsize']          = 0.0
+        config['ysize']          = 0.0
+        config['zsize']          = 0.0
         config['pixel_size']     = None
 
         # boolean settings
@@ -72,7 +85,7 @@ class XicsrtOpticGeneric(GeometryObject):
 
         # autofill pixel grid sizes
         if self.param['pixel_size'] is None:
-            self.param['pixel_size'] = self.param['width']/100
+            self.param['pixel_size'] = self.param['xsize']/100
 
         # Determine the number of pixels on the detector.
         # For now assume that the user set the width of the detector to be
@@ -81,13 +94,13 @@ class XicsrtOpticGeneric(GeometryObject):
         # Except for the detector there is really no reason that this would
         # always be true, so for now only make this a warning. I need to think
         # about how to handle this better.
-        pixel_width = self.param['width'] / self.param['pixel_size']
-        pixel_height = self.param['height'] / self.param['pixel_size']
+        pixel_width = self.param['xsize'] / self.param['pixel_size']
+        pixel_height = self.param['ysize'] / self.param['pixel_size']
         try:
             np.testing.assert_almost_equal(pixel_width, np.round(pixel_width))
             np.testing.assert_almost_equal(pixel_height, np.round(pixel_height))
         except AssertionError:
-            self.log.warning(f"Optic width ({self.param['width']:0.4f}x{self.param['height']:0.4f})"
+            self.log.warning(f"Optic width ({self.param['xsize']:0.4f}x{self.param['ysize']:0.4f})"
                              f"is not a multiple of the pixel_size ({self.param['pixel_size']:0.4f})."
                              f"May lead to truncation of output image."
                              )
@@ -195,8 +208,8 @@ class XicsrtOpticGeneric(GeometryObject):
         
         # Find which rays hit the optic, update mask to remove misses
         if self.param['do_miss_check'] is True:
-            m[m] &= (np.abs(X_local[m,0]) < self.param['width'] / 2)
-            m[m] &= (np.abs(X_local[m,1]) < self.param['height'] / 2)
+            m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
+            m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
 
         return X, rays
     

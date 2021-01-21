@@ -30,9 +30,9 @@ class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
                 
     def bundle_generate(self, bundle_input):
         #create a long list containing random points within the cube's dimensions
-        x_offset = np.random.uniform(-1 * self.param['width']/2,  self.param['width']/2,  self.param['bundle_count'])
-        y_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['bundle_count'])
-        z_offset = np.random.uniform(-1 * self.param['depth']/2,  self.param['depth']/2,  self.param['bundle_count'])
+        x_offset = np.random.uniform(-1 * self.param['xsize']/2,  self.param['xsize']/2,  self.param['bundle_count'])
+        y_offset = np.random.uniform(-1 * self.param['ysize']/2, self.param['ysize']/2, self.param['bundle_count'])
+        z_offset = np.random.uniform(-1 * self.param['zsize']/2,  self.param['zsize']/2,  self.param['bundle_count'])
                  
         bundle_input['origin'][:] = (
             self.origin

@@ -24,14 +24,14 @@ class XicsrtSourceGeneric(GeometryObject):
             
     def default_config(self):
         """
-        width
-          The width of this element. Aligned with the x-axis.
+        xsize
+          The size of this element along the xaxis direction.
 
-        height
-          The height of this element. Aligned with the y-axis.
+        ysize
+          The size of this element along the yaxis direction.
 
-        depth:
-          The depth of this element. Aligned with the z-axis.
+        zsize
+          The size of this element along the zaxis direction.
 
         spread: float (pi) [radians]
           The angular spread for the emission cone. The spread defines the
@@ -99,9 +99,9 @@ class XicsrtSourceGeneric(GeometryObject):
         """
         config = super().default_config()
 
-        config['width'] = 0.0
-        config['height'] = 0.0
-        config['depth'] = 0.0
+        config['xsize'] = 0.0
+        config['ysize'] = 0.0
+        config['zsize'] = 0.0
 
         config['intensity']        = 0.0
         config['use_poisson']      = False
@@ -169,14 +169,14 @@ class XicsrtSourceGeneric(GeometryObject):
      
     def generate_origin(self):
         # generic origin for isotropic rays
-        w_offset = np.random.uniform(-1 * self.param['width']/2 ,  self.param['width']/2, self.param['intensity'])
-        h_offset = np.random.uniform(-1 * self.param['height']/2, self.param['height']/2, self.param['intensity'])
-        d_offset = np.random.uniform(-1 * self.param['depth']/2 ,  self.param['depth']/2, self.param['intensity'])
+        x_offset = np.random.uniform(-1 * self.param['xsize']/2 ,  self.param['xsize']/2, self.param['intensity'])
+        y_offset = np.random.uniform(-1 * self.param['ysize']/2, self.param['ysize']/2, self.param['intensity'])
+        z_offset = np.random.uniform(-1 * self.param['zsize']/2 ,  self.param['zsize']/2, self.param['intensity'])
         
         origin = (self.origin
-                  + np.einsum('i,j', w_offset, self.xaxis)
-                  + np.einsum('i,j', h_offset, self.yaxis)
-                  + np.einsum('i,j', d_offset, self.zaxis))
+                  + np.einsum('i,j', x_offset, self.xaxis)
+                  + np.einsum('i,j', y_offset, self.yaxis)
+                  + np.einsum('i,j', z_offset, self.zaxis))
         return origin
 
     def generate_direction(self, origin):
