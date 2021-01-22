@@ -1,10 +1,10 @@
-XicsrtPlasmaW7xSimple
-=====================
-`xicsrt.sources._XicsrtPlasmaW7xSimple.XicsrtPlasmaW7xSimple`
+Dispatcher
+==========
+`xicsrt.objects._Dispatcher.Dispatcher`
 
 New Members
 -----------
-.. autoclass:: xicsrt.sources._XicsrtPlasmaW7xSimple.XicsrtPlasmaW7xSimple
+.. autoclass:: xicsrt.objects._Dispatcher.Dispatcher
     :members:
     :special-members: __init__
     :undoc-members:
@@ -13,7 +13,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.sources._XicsrtPlasmaW7xSimple.XicsrtPlasmaW7xSimple
+.. automirclass:: xicsrt.objects._Dispatcher.Dispatcher
     :private-members:
     :special-members:
     :undoc-members:
@@ -23,7 +23,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.sources._XicsrtPlasmaW7xSimple.XicsrtPlasmaW7xSimple
+.. automirclass:: xicsrt.objects._Dispatcher.Dispatcher
     :inherited-members:
     :private-members:
     :special-members: __init__

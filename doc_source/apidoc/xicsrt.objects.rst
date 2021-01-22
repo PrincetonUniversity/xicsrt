@@ -1,5 +1,5 @@
 xicsrt.objects
-=============
+==============
 
 .. automodule:: xicsrt.objects
    :members:
@@ -16,4 +16,4 @@ Objects
    xicsrt.objects.ConfigObject
    xicsrt.objects.GeometryObject
    xicsrt.objects.RayArray
-   xicsrt.objects.XicsrtDispatcher
+   xicsrt.objects.Dispatcher

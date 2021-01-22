@@ -1,10 +1,18 @@
+# -*- coding: utf-8 -*-
 """
-To submit an update to pypi:
+.. Authors:
+   Novimir Pablant <npablant@pppl.gov>
+
+To prepare an update:
   1. Update _version.py
-  2. git tag -a v0.4.0 -m "Version 0.4.0""
-  3. python setup.py sdist bdist_wheel
-  4. python -m twine upload --repository testpypi dist/*
-  5. python -m twine upload dist/*
+  2. git tag -a v0.4.0 -m "Version 0.4.0"
+  3. Make everything is merged with 'master' and 'stable'.
+  3. Push to both bitbucket and github.
+
+To submit an update to pypi:
+  1. python setup.py sdist bdist_wheel
+  2. python -m twine upload --repository testpypi dist/*
+  3. python -m twine upload dist/*
 """
 
 import setuptools

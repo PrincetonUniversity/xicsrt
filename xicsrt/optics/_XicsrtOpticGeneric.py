@@ -21,7 +21,7 @@ class XicsrtOpticGeneric(GeometryObject):
     extent. Additional properties, such as as crystal spacing, rocking curve, 
     and reflectivity, should be defined in derived classes.
     """
-        
+
     def default_config(self):
         """
         xsize

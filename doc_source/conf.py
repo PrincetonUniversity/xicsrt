@@ -51,6 +51,8 @@ exclude_patterns = []
 
 add_module_names = False
 
+todo_include_todos = True
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

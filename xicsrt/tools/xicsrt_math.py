@@ -87,48 +87,6 @@ def bragg_angle(wavelength, crystal_spacing):
     bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
     return bragg_angle
 
-def vector_dist_uniform(theta, number):
-    """
-    Return unit vectors from a uniform spherical distribution that fall within
-    an angular spread (divergence) of theta.
-
-    The ray cone is aligned along the z-axis.
-    theta is the half-angle of the total cone (axis to edge).
-    """
-    output = np.empty((number, 3))
-
-    z = np.random.uniform(np.cos(theta), 1, number)
-    phi = np.random.uniform(0, 2*np.pi, number)
-
-    output[:, 0] = np.sqrt(1 - z**2) * np.cos(phi)
-    output[:, 1] = np.sqrt(1 - z**2) * np.sin(phi)
-    output[:, 2] = z
-
-    return output
-
-def vector_dist_gaussian(FWHM, number):
-    """
-    Create a gaussian distribution of vectors with an angular spread
-    of FWHM. Here FWHM is half of the cone angle (axis to edge).
-    """
-    output = np.empty((number, 3))
-
-    # Convert the angluar FWHM to sigma.
-    sigma = FWHM / (2 * np.sqrt(2 * np.log(2)))
-    # convert the angular sigma into a linear-displacement-from-vertical
-    sigma_z = 1 - np.cos(sigma)
-    # create the half-normal distribution of vertical displacement.
-    dist = abs(np.random.normal(0, sigma_z, number))
-    z = 1.0 - dist
-
-    phi = np.random.uniform(0, 2 * np.pi, number)
-
-    output[:, 0] = np.sqrt(1 - z ** 2) * np.cos(phi)
-    output[:, 1] = np.sqrt(1 - z ** 2) * np.sin(phi)
-    output[:, 2] = z
-
-    return output
-
 def cyl_from_car(point_car):
     #convert cartesian coordinates -> cylindirical coordinates
     radius  = np.sqrt(np.power(point_car[0],2) + np.power(point_car[1],2))
