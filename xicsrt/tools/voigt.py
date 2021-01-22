@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-author
-------
-  Novimir Antoniuk Pablant
-    - npablant@pppl.gov
-    - novimir.pablant@amicitas.com
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
 
-description
------------
-  A set of routines realted to dealing with Voigt profiles.
-
+A set of routines for related to Voigt distributions.
 """
 
 import numpy as np

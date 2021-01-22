@@ -11,6 +11,7 @@ import copy
 from collections import OrderedDict
 
 from xicsrt.tools.xicsrt_doc import dochelper
+from xicsrt.tools import xicsrt_string
 
 # I might want to some of these functions into this object as methods.
 from xicsrt import xicsrt_input
@@ -63,7 +64,9 @@ class ConfigObject():
         """
         Perform any setup actions that are needed prior to initialization.
         """
-        pass
+
+        # Simplify all config strings.
+        xicsrt_string.simplify_strings(self.param)
 
     def check_param(self):
         """

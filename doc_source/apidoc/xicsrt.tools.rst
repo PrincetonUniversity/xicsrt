@@ -1,5 +1,5 @@
-xicsrt.tools package
-====================
+xicsrt.tools
+============
 
 .. automodule:: xicsrt.tools
     :members:
@@ -24,3 +24,4 @@ Programmatic Tools
     :maxdepth: 1
 
     xicsrt.tools.xicsrt_doc
+    xicsrt.tools.xicsrt_string

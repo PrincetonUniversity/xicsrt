@@ -1,6 +1,6 @@
 
 XicsrtSourceFocused
-==================
+===================
 `xicsrt.sources._XicsrtSourceFocused.XicsrtSourceFocused`
 
 New Members

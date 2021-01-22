@@ -1,8 +1,8 @@
-xicsrt_doc
-==========
-`xicsrt.tools.xicsrt_doc`
+xicsrt\_string
+==============
+`xicsrt.tools.xicsrt_string`
 
-.. automirmodule:: xicsrt.tools.xicsrt_doc
+.. automirmodule:: xicsrt.tools.xicsrt_string
     :members:
     :undoc-members:
     :member-order: bysource
@@ -10,7 +10,7 @@ xicsrt_doc
 Private Members
 -----------------
 
-.. automirmodule:: xicsrt.tools.xicsrt_doc
+.. automirmodule:: xicsrt.tools.xicsrt_string
     :members:
     :private-members:
     :undoc-members:

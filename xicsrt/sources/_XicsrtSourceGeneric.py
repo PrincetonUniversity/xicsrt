@@ -10,7 +10,7 @@ import numpy as np
 from scipy.stats import cauchy        
 import scipy.constants as const
 
-from xicsrt.tools import xicsrt_math
+from xicsrt.tools import xicsrt_dist
 from xicsrt.util import profiler
 from xicsrt.tools import voigt
 from xicsrt.tools.xicsrt_doc import dochelper
@@ -33,32 +33,69 @@ class XicsrtSourceGeneric(GeometryObject):
         zsize
           The size of this element along the zaxis direction.
 
-        spread: float (pi) [radians]
-          The angular spread for the emission cone. The spread defines the
-          half-angle of the cone. A value of `pi` results in fully isotropic
-          emission (which is not generally useful in raytracing applications).
+        spread_dist : string ('isotropic')
+          | The type of angular distribution to use for the emitted rays.
+          | Available distributions (default is 'isotropic'):
+          |
+          | isotropic
+          |   Isotropic emission (uniform spherical) emitted in a cone (circular
+          |   cross-section) with a half-angle of 'spread'. The axis of the
+          |   emission cone is aligned along the z-axis. 'spread' must be a
+          |   single value (scalar or 1-element array).
+          | isotropic_xy
+          |   Isotropic emission (uniform spherical) emitted in a truncated-cone
+          |   (rectangular cross-section) with different x and y half-angles.
+          |   'spread' can contain either 1, 2 or 4 values:
+          |   s or [s]
+          |     A single value that will be used for both the x and y directions.
+          |   [x, y]
+          |     Two values values that will be used for the x and y directions.
+          |   [xmin, xmax, ymin, ymax]
+          |     For values that define the asymmetric exent in x and y directions.
+          |     Example: [-0.1, 0.1, -0.5, 0.5]
+          | flat
+          |   Flat emission (uniform planar) emitted in a cone (circular cross-
+          |   section) with a half-angle of 'spread'.
+          | flat_xy
+          |   Flat emission (uniform planar) emitted in a truncated-cone
+          |   (rectangular cross-section) with different x and y half-angles.
+          |   'spread' can contain either 1, 2 or 4 values, see above.
+          | gaussian
+          |   Emission with angles away from the z-axis having a Gaussian
+          |   distribution (circular cross-section). The 'spread' defines the
+          |   Half-Width-at-Half-Max (HWHM) of the distribution. 'spread' must
+          |   be a single value (scalar or 1-element array).
+          | gaussian_flat
+          |   !! Not implemented !!
+          |   Cross-section of emission (intersection with constant-z plane) will
+          |   have a Gaussian distribution.
 
-        intensity: int or float
+        spread : float or array (np.pi) [radians]
+          The angular spread for the emission cone. The spread defines the
+          half-angle of the emission cone. See 'spread_dist' for detailed
+          documentation.
+
+        intensity : int or float
           The number of rays for this source to emit. This should be an
           integer value unless `use_poisson = True`.
 
           Note: If filters are attached, this will be the number of rays
           emitted before filtering.
 
-        use_poisson: bool (False)
+        use_poisson : bool (False)
           If `True` the `intenisty` will be treated as the expected value for
           a Poisson distribution and the number of rays will be randomly
           picked from a Poisson distribution. This is setting is typically
           only used internally for Plasma sources.
 
-        wavelength_dist: str ('voigt')
+        wavelength_dist : str ('voigt')
           The type of wavelength distribution for this source.
           Possible values are: 'voigt', 'uniform', 'monochrome'.
 
           Note: A monchrome distribution can also be achieved by using a 'voigt'
           distribution with zero linewidth and temperature.
 
-        wavelength: float [angstroms]
+        wavelength : float [angstroms]
           Only used if `wavelength_dist = "monochrome" or "voigt"`
           Central wavelength of the distribution, in Angstroms.
 
@@ -67,7 +104,7 @@ class XicsrtSourceGeneric(GeometryObject):
           The wavelength range of the distribution, in Angstroms.
           Must be a 2 element tuple, list or array: (min, max).
 
-        linewidth: float [1/s]
+        linewidth : float [1/s]
           Only used if `wavelength_dist = "voigt"`
           The natural width of the emission line.
           This will control the Lorentzian contribution to the the overall
@@ -80,7 +117,7 @@ class XicsrtSourceGeneric(GeometryObject):
           To translate from linewidth to gamma in the Voigt equation:
           gamma = linewidth * wavelength**2 / (4*pi*c*1e10)
 
-        temperature: float [eV]
+        temperature : float [eV]
           Only used if `wavelength_dist = "voigt"`
           The temperature of the emission line.
           This will control the Gaussian contribution to the overall Voigt
@@ -105,6 +142,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         config['intensity']        = 0.0
         config['use_poisson']      = False
+        config['spread_dist']      = 'isotropic'
         config['spread']           = np.pi
 
         # Possible values: 'monochrome', 'voigt', 'uniform
@@ -192,8 +230,12 @@ class XicsrtSourceGeneric(GeometryObject):
 
     def random_direction(self, normal):
 
-        rad_spread = self.param['spread']
-        dir_local  = xicsrt_math.vector_dist_uniform(rad_spread, self.param['intensity'])
+        spread = self.param['spread']
+        dir_local  = xicsrt_dist.vector_distribution(
+            spread,
+            self.param['intensity'],
+            name=self.param['spread_dist'],
+            )
 
         # Generate some basis vectors that are perpendicular
         # to the normal. The orientation does not matter here.

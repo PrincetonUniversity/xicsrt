@@ -8,7 +8,7 @@ Authors
 """
 import numpy as np
 
-from xicsrt.tools import xicsrt_math
+from xicsrt.tools import xicsrt_dist
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
@@ -79,7 +79,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         m = mask
 
         rad_spread = self.param['mosaic_spread']
-        dir_local = xicsrt_math.vector_dist_gaussian(rad_spread, np.sum(m))
+        dir_local = xicsrt_dist.vector_dist_gaussian(rad_spread, np.sum(m))
 
         R = np.empty((np.sum(m), 3, 3,), dtype=np.float64)
 

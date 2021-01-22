@@ -24,13 +24,12 @@ def vector_distribution(spread, number, name=None):
 
     Parameters
     ----------
-    spread : float or array
-        [radians]
-        Can be a scalar or an array. See individual distributions for format
-        and definitions.
+    spread : float or array [radians]
+      Can be a scalar or an array. See individual distributions for format
+      and definitions.
 
     number : int
-        The number of vectors to generate.
+      The number of vectors to generate.
 
     Returns
     -------
@@ -65,12 +64,11 @@ def vector_dist_isotropic(spread, number):
 
     Parameters
     ----------
-    spread : float
-        [radians]
-        The half-angle of the emitted cone of vectors (axis to edge).
+    spread : float [radians]
+      The half-angle of the emitted cone of vectors (axis to edge).
 
     number : int
-        The number of vectors to generate.
+      The number of vectors to generate.
 
     Returns
     -------
@@ -106,26 +104,25 @@ def vector_dist_isotropic_xy(spread, number):
 
     Parameters
     ----------
-    spread : float or array
-        [radians]
-        The half-angles in the x and y directions that define the extent of the
-        truncated-cone of vectors. Spread can be contain either 1,2 or 4 values.
-
-        | s or [s]
-        |     A single value that will be used for both the x and y directions.
-        | [x, y]
-        |     Two values values that will be used for the x and y directions.
-        | [xmin, xmax, ymin, ymax]
-        |     For values that define the asymmetric exent in x and y directions.
-        |     Example: [-0.1, 0.1, -0.5, 0.5]
+    spread : float or array [radians]
+      | The half-angles in the x and y directions that define the extent of the
+      | truncated-cone of vectors. Spread can be contain either 1,2 or 4 values.
+      |
+      | s or [s]
+      |   A single value that will be used for both the x and y directions.
+      | [x, y]
+      |   Two values values that will be used for the x and y directions.
+      | [xmin, xmax, ymin, ymax]
+      |   For values that define the asymmetric exent in x and y directions.
+      |   Example: [-0.1, 0.1, -0.5, 0.5]
 
     number : int
-        The number of vectors to generate.
+      The number of vectors to generate.
 
     Returns
     -------
     ndarray
-        A numpy array of shape (number, 3) containing the generated unit vectors.
+      A numpy array of shape (number, 3) containing the generated unit vectors.
     """
     theta = _parse_spread_xy(spread)
 
@@ -159,23 +156,22 @@ def vector_dist_isotropic_xy(spread, number):
 def vector_dist_flat(spread, number):
     """
     Return unit vectors from an flat (uniform planar) distribution that
-    fall within an angular spread (divergence) of theta.
+    fall within an angular spread.
 
     The ray cone is aligned along the z-axis.
 
     Parameters
     ----------
-    spread : float
-        [radians]
-        The half-angle of the emitted cone of vectors (axis to edge).
+    spread : float [radians]
+      The half-angle of the emitted cone of vectors (axis to edge).
 
     number : int
-        The number of vectors to generate.
+      The number of vectors to generate.
 
     Returns
     -------
     ndarray
-        A numpy array of shape (number, 3) containing the generated unit vectors.
+      A numpy array of shape (number, 3) containing the generated unit vectors.
     """
     theta = _parse_spread_single(spread)
 
@@ -204,26 +200,25 @@ def vector_dist_flat_xy(spread, number):
 
     Parameters
     ----------
-    spread : float or array
-        [radians]
-        The half-angles in the x and y directions that define the extent of the
-        truncated-cone of vectors. Spread can be contain either 1,2 or 4 values.
-
-        | s or [s]
-        |     A single value that will be used for both the x and y directions.
-        | [x, y]
-        |     Two values values that will be used for the x and y directions.
-        | [xmin, xmax, ymin, ymax]
-        |     For values that define the asymmetric exent in x and y directions.
-        |     Example: [-0.1, 0.1, -0.5, 0.5]
+    spread : float or array [radians]
+      | The half-angles in the x and y directions that define the extent of the
+      | truncated-cone of vectors. Spread can be contain either 1,2 or 4 values.
+      |
+      | s or [s]
+      |   A single value that will be used for both the x and y directions.
+      | [x, y]
+      |   Two values values that will be used for the x and y directions.
+      | [xmin, xmax, ymin, ymax]
+      |   For values that define the asymmetric exent in x and y directions.
+      |   Example: [-0.1, 0.1, -0.5, 0.5]
 
     number : int
-        The number of vectors to generate.
+      The number of vectors to generate.
 
     Returns
     -------
     ndarray
-        A numpy array of shape (number, 3) containing the generated unit vectors.
+      A numpy array of shape (number, 3) containing the generated unit vectors.
     """
     theta = _parse_spread_xy(spread)
     range = np.tan(theta)
@@ -253,14 +248,13 @@ def vector_dist_gaussian(spread, number):
 
     Parameters
     ----------
-    spread : float
-        [radians]
-        The half-with-at-half-max (hwhm) of the Gaussian angular distribution.
+    spread : float [radians]
+      The half-with-at-half-max (hwhm) of the Gaussian angular distribution.
 
     Returns
     -------
     ndarray
-        A numpy array of shape (number, 3) containing the generated unit vectors.
+      A numpy array of shape (number, 3) containing the generated unit vectors.
     """
 
     theta = _parse_spread_single(spread)

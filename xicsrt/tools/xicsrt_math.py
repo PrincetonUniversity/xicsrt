@@ -45,8 +45,8 @@ def normalize(vector):
     """
     Normalize a vector or an array of vectors.
     If an array of vectors is given it should have the shape (N,M) where
-      N: Number of vectors
-      M: Vector length
+    |  N: Number of vectors
+    |  M: Vector length
     """
 
     if vector.ndim > 1:

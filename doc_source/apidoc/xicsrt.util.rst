@@ -1,5 +1,5 @@
-xicsrt.util package
-===================
+xicsrt.util
+===========
 
 .. automodule:: xicsrt.util
    :members:
