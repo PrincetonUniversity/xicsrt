@@ -177,25 +177,22 @@ def getSchemeColor(name, index_input, num_colors=None):
     """
     Return a color for the current scheme.
 
-    return
+    Return
     ------
-
     A 4 element tuple is returned:
     (red, green, blue, alpha)
 
 
-    inputs
-    ------
-
+    Parameters
+    ----------
     color_scheme (string)
       A name for the color scheme to use.
 
     index (int)
       The index of the color to take from the color scheme.
 
-    keywords
+    Keywords
     --------
-
     num_colors (int)
       The number of colors needed as part of the scheme. 
       This only affect gradient based schemes.

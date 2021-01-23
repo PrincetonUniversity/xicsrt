@@ -71,6 +71,7 @@ License
 
     apidoc/xicsrt
     apidoc/examples
+    development
 
 Indices and tables:
 -------------------

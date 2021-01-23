@@ -17,75 +17,61 @@ from scipy.interpolate import CloughTocher2DInterpolator as Interpolator
 @dochelper
 class XicsrtOpticMesh(XicsrtOpticGeneric):
     """
-    A optic that can (optionally) use a mesh grid instead of an
-    analytical shape.  The use of the grid is controlled by
-    the config option 'use_meshgrid'.
+    A optic that can (optionally) use a mesh grid instead of an analytical
+    shape.  The use of the grid is controlled by the config option
+    'use_meshgrid'.
 
-    This object can be considered to be 'generic' and it is
-    appropriate for all other optics to inherit this object
-    instead of XicsrtOpticGeneric.
+    This object can be considered to be 'generic' and it is appropriate for all
+    other optics to inherit this object instead of :any:`XicsrtOpticGeneric`.
 
-    Programming Notes
-    -----------------
-      Raytracing of mesh optics is fundamentally slow, because
-      of the need to find which mesh face is intersected by
-      each ray.  For the simplest implementations (as used here)
-      this requires testing each ray against each mesh face leading
-      to the speed going as the number of mesh faces squared.
+    **Programming Notes**
 
-      Some optimization of the mesh_intersection_check has been
-      completed. What is currently implemented here is the fastest
-      pure python method found so far, and does not include any
-      acceleration. The other methods that have been tried are saved
-      in the archive folder, along with some documentation on
-      performance.
+    Raytracing of mesh optics is fundamentally slow, because of the need to
+    find which mesh face is intersected by each ray.  For the simplest
+    implementations this requires testing each ray against each mesh face
+    leading to the speed scaling as the number of mesh faces
+    (or equivilently mesh_density^2).
 
-      To improve performance more, there are two things that could be
-      done: The first is to improve the base performance using
-      cython or numba. This would allow the Möller–Trumbore algorithm
-      to be implemented as a loop instead of being vectorized. This will
-      allow termination of the loop early for misses, and is expected
-      to run much faster. The second is to implement some acceleration
-      based on pre-selection of faces.
+    Some optimization of the basic calculation been completed. The
+    mesh_intersect_1 method implements the Möller–Trumbore algorithm and is
+    the fastest pure python algorithm found so far. Other variations that have
+    been tried are saved in the archive folder, along with some documentation
+    on performance.
 
-      For acceleration and pre-selection I currently have two ideas:
+    To further improve performance this class (optionally) also makes use of
+    pre-selection with a course mesh. First the intersection with the course
+    mesh is found for each ray. Then only the 8 nearby faces on the full mesh
+    are checked for the final intersection location. This method improves
+    the performance to (num_faces_course + 8).
 
-      1. Allow the user to specify a low-resolution mesh that can be
-        used for pre-selection.  First we would find the intersection
-        with the low-resolution mesh, and then use this information
-        to choose which faces on the full resolution mesh to test.
-        a. Search for the points in the full mesh that are closest
-          to the intersection with the low resolution mesh. Then
-          choose the faces that include that point. A KDTree lookup
-          should be used here.
-        b. Precalculate all of the mesh faces that are enclosed by
-          the course mesh. Probably the best way to do this is
-          project the points from the full mesh on the course mesh
-          face along the course mesh normal.
+    The current algorithm for pre-selection (mesh refinement) is not perfect
+    in that the nearby faces are not always appropriately chosen leading to a
+    small number of rays being 'lost'. These errors can be minimized by
+    increasing the resolution of the course mesh and ensuring that the grid
+    spacing is approximately equal in the x and y directions.
 
-        Method (a) has the advantage that the number of faces to be
-        tested on the full mesh is fixed to a small number (8 or less
-        for a rectangular grid). Method (b) has the advantage that the
-        full resolution faces to test can be pre-calculated and so the
-        point search for each ray can be avoided.
+    Further performance improvement could be gained by using numba or jax.
+    This would allow the Möller–Trumbore algorithm to be implemented as a
+    loop (instead of being vectorized) where the calculation can be terminated
+    early when no hit is found.
 
-        This method (using either a or b) requires well behaved meshes
-        and still has an issue with rays that intersect with a shallow
-        angle of incidence. This cannot be completely resolved, but at
-        least can be mitigated; for example by including multiple near
-        by points in method (a) or or overfilling in method (b).
+    .. Todo::
+      XicsrtOpticMesh: Improve the pre-selection (mesh refinement algorithm) to
+      eliminate ray losses. The current method is as follows:
 
-      2. Setup a set of cubes that encompass the mesh, then check
-        first for intersections with the cubes, then with the faces
-        enclosed in the cubes.  If the cubes are axis-aligned, this
-        the cube intersection can be quite fast. Unfortunately the
-        mesh orientation may not correspond well with axis-aligned
-        cubes. There are ways around this, but overall I don't really
-        think this method is well suited for this particular problem.
-        The main advantage is that it will work even if the grid
-        is badly behaved, and does not have any issues with shallow
-        angles of incidence.
+      1. Calculate intersection with course grid.
+      2. Find the point on the fine grid closest to the intersection.
+      3. Test all faces on the fine grid that contain this point.
 
+      The problem is that the closest point may not always be part of the face
+      that actually has the intersection. This can happen if the fine and course
+      grid have very different densities, but also even in the perfect case if
+      the ray hits near the edge of a face and the grid density is not even in
+      the x and y directions.
+
+      What is needed is a better selection of nearby faces. There is also a
+      potential to improve computational speed slightly by testing fewer faces
+      on the fine grid.
     """
 
     def default_config(self):
@@ -266,6 +252,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         profiler.stop('mesh_initialize')
 
     def mesh_intersect_1(self, rays, mesh):
+        """
+        Find the intersection of rays with the mesh using the Möller–Trumbore
+        algorithm.
+        """
         profiler.start('mesh_intersect_1')
         O = rays['origin']
         D = rays['direction']
@@ -331,8 +321,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         """
         Check for ray intersection with a list of mesh faces.
 
-        Programming Notes:
-        ------------------
+        Programming Notes
+        -----------------
         Because of the mesh indexing, the arrays here have different
         dimensions than in mesh_intersect_1, and need a different
         vectorization.

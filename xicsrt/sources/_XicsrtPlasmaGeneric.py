@@ -13,6 +13,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
+from xicsrt.tools import xicsrt_dist
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
@@ -26,9 +27,6 @@ class XicsrtPlasmaGeneric(GeometryObject):
     has the properties of the plasma at one particular real-space point.
 
     Each bundle is modeled by a SourceFocused object.
-
-    .. todo::
-        Add a calculation of the solid_angle for the isotropic_xy distribution.
     """
 
     def __init__(self, *args, **kwargs):
@@ -68,25 +66,22 @@ class XicsrtPlasmaGeneric(GeometryObject):
         wavelength : float (1.0) [Angstroms]
           No documentation yet. Please help improve XICSRT!
 
-        mass_number
+        mass_number : float (1.0) [au]
           No documentation yet. Please help improve XICSRT!
 
         linewidth : float (0.0) [1/s]
           No documentation yet. Please help improve XICSRT!
 
-        intensity
+        emissivity : float (0.0) [ph/m^3/sr]
           No documentation yet. Please help improve XICSRT!
 
-        temperature
+        temperature : float (0.0) [eV]
           No documentation yet. Please help improve XICSRT!
 
-        velocity
+        velocity : float (0.0) [m/s]
           No documentation yet. Please help improve XICSRT!
 
-        emissivity
-          No documentation yet. Please help improve XICSRT!
-
-        time_resolution
+        time_resolution : float (1e-3) [s]
           No documentation yet. Please help improve XICSRT!
 
         bundle_type : string ('voxel')
@@ -106,10 +101,10 @@ class XicsrtPlasmaGeneric(GeometryObject):
           the plasma. For raytracing studies this value should be explicitly
           set to a value much larger than volume/bundle_volume!
 
-        max_rays
+        max_rays : int (1e7)
           No documentation yet. Please help improve XICSRT!
 
-        max_bundles
+        max_bundles : int (1e7)
           No documentation yet. Please help improve XICSRT!
 
         filter_list
@@ -132,11 +127,10 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['mass_number']     = 1.0
         config['linewidth']       = 0.0
 
-        config['intensity']       = 0.0
+        config['emissivity']      = 0.0
         config['temperature']     = 0.0
         config['velocity']        = 0.0
 
-        config['emissivity']      = 0.0
         config['time_resolution'] = 1e-3
         config['bundle_type']     = 'voxel'
         config['bundle_volume']   = 1e-3
@@ -157,9 +151,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             self.param['bundle_count'] = self.param['volume']/self.param['bundle_volume']
         self.param['bundle_count'] = int(np.round(self.param['bundle_count']))
 
-        if self.param['spread_dist'] != 'isotropic':
-            raise Exception(f"Calculation of solid_angle not implemented for {self.param['spread_dist']} distribution.")
-        self.param['solid_angle']  = 4 * np.pi * np.sin(self.config['spread']/2)**2
+        self.param['solid_angle']  = xicsrt_dist.solid_angle(self.config['spread']/2)
 
 
     def setup_bundles(self):

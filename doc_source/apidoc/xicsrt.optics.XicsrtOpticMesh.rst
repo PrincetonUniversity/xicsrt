@@ -30,6 +30,3 @@ Inherited Members
     :noindex:
     :nodocstring:
     :nosignature:
-
-
-v36

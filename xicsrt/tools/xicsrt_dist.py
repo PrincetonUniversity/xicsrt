@@ -31,12 +31,15 @@ def vector_distribution(spread, number, name=None):
     number : int
       The number of vectors to generate.
 
+    name : string ('isotropic')
+      The name of the vector distribution. Available names:
+      'isotropic', 'isotropic_xy', 'flat', 'flat_xy', 'gaussian'.
+
     Returns
     -------
     ndarray
-        A numpy array of shape (number, 3) containing the generated unit vectors.
+      A numpy array of shape (number, 3) containing the generated unit vectors.
     """
-
     if name is None: name = 'isotropic'
 
     name = name.lower()
@@ -54,6 +57,25 @@ def vector_distribution(spread, number, name=None):
         raise Exception(f'Distribution "{name}" is not known.')
 
     return func(spread, number)
+
+def solid_angle(spread, name=None):
+    """
+    A convenience function to retrieve solid angles that correspond to
+    the various vector distributions.
+
+    Units: [sr]
+    """
+    if name is None: name = 'isotropic'
+
+    name = name.lower()
+    if name == 'isotropic':
+        func = solid_angle_isotropic
+    elif name == 'isotropic_xy':
+        func = solid_angle_isotropic_xy
+    else:
+        raise Exception(f'Solid angle calculation for "{name}" is not available.')
+
+    return func(spread)
 
 def vector_dist_isotropic(spread, number):
     """
@@ -87,6 +109,16 @@ def vector_dist_isotropic(spread, number):
 
     return output
 
+def solid_angle_isotropic(spread):
+    """
+    Calculate the solid angle for the vector_dist_isotropic distribution.
+
+    Units: [sr]
+    """
+    theta = _parse_spread_single(spread)
+    solid_angle = 4 * np.pi * np.sin(theta[0]/2)**2
+    return solid_angle
+
 def vector_dist_isotropic_xy(spread, number):
     """
     Return random unit vectors from an isotroptic (uniform spherical) distribution
@@ -100,7 +132,9 @@ def vector_dist_isotropic_xy(spread, number):
         of the x and y spread.
 
     .. Todo::
-        Replace this function with a more efficent calculation.
+        Replace vector_dist_isotropic_xy with a more efficent calculation.
+        A possible approach is to calculate the 2D Joint Cumulative
+        Distribution Function for isotropic emission on a flat plane.
 
     Parameters
     ----------
@@ -152,6 +186,21 @@ def vector_dist_isotropic_xy(spread, number):
         n_filled += n_new
 
     return output
+
+def solid_angle_isotropic_xy(spread):
+    """
+    Calculate the solid angle for the vector_dist_isotropic_xy distribution.
+
+    Units: [sr]
+    """
+    theta = _parse_spread_xy(spread)
+    solid_angle = (
+        np.arcsin(np.abs(np.sin(theta[0])*np.sin(theta[2])))
+        + np.arcsin(np.abs(np.sin(theta[0])*np.sin(theta[3])))
+        + np.arcsin(np.abs(np.sin(theta[1])*np.sin(theta[2])))
+        + np.arcsin(np.abs(np.sin(theta[1])*np.sin(theta[3])))
+        )
+    return solid_angle
 
 def vector_dist_flat(spread, number):
     """

@@ -9,8 +9,7 @@ from xicsrt.xicsrt_raytrace import *
 
 def raytrace(config, processes=None):
     """
-    Perform a series of ray tracing runs using the a
-    :any:`multiprocessing` cpu pool.
+    Perform a series of ray tracing runs using the `multiprocessing` cpu pool.
 
     Each run will rebuild all objects, reset the random seed and then
     perform the requested number of iterations.
@@ -20,8 +19,8 @@ def raytrace(config, processes=None):
     is the primary reasion to use this routine: it allows periodic
     outputs during long computations.
 
-    Also see :func:`~xicsrt.xicsrt_raytrace.raytrace_multi`
-    for a single process version of this routine.
+    Also see :func:`~xicsrt.xicsrt_raytrace.raytrace` for a single process
+    version of this routine.
     """
     profiler.start('raytrace_multiprocessing')
     

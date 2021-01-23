@@ -3,7 +3,7 @@ xicsrt\_raytrace
 `xicsrt.xicsrt_raytrace`
 
 .. automirmodule:: xicsrt.xicsrt_raytrace
-    :members: raytrace, raytrace_multi
+    :members: raytrace, raytrace_single
     :undoc-members:
     :member-order: bysource
 
@@ -17,7 +17,7 @@ raytracing runs.
 
 .. automirmodule:: xicsrt.xicsrt_raytrace
     :members:
-    :exclude-members: raytrace, raytrace_multi
+    :exclude-members: raytrace, raytrace_single
     :undoc-members:
     :noindex:
     :nodocstring:
@@ -32,5 +32,3 @@ Private Members
     :undoc-members:
     :noindex:
     :nodocstring:
-
-v21

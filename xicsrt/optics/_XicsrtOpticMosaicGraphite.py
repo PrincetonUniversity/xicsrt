@@ -14,6 +14,15 @@ from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 @dochelper
 class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
+    """
+    A class to handle Mosaic Graphite optics.
+
+    .. Todo::
+      XicsrtOpticMosaicGraphite efficiency could be improved by
+      including pre-filter. The prefilter would use a step-function
+      rocking curve to exclude rays that are outside the likely range
+      of reflection with the current mosaic spread.
+    """
 
     def default_config(self):
         config = super().default_config()
@@ -29,12 +38,6 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         crystalite that satisfies the Bragg condition. This method
         of calculation replicates both the HOPG 'focusing' qualities
         as well as the expected througput.
-
-        To Do:
-            Efficiency could be greatly improved by including pre-filter.
-            The prefilter would use a step-function rocking curve to
-            exclude rays that are outside the possible range of reflection
-            with the current mosaic spread.
         """
         m = rays['mask']
 

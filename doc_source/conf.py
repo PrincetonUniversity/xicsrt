@@ -50,9 +50,12 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# Define any custom options.
 add_module_names = False
-
 todo_include_todos = True
+todo_link_only = True
+
+napoleon_custom_sections = ['Programming Notes']
 
 # -- Options for HTML output -------------------------------------------------
 

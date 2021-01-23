@@ -6,7 +6,7 @@
     James Kring <jdk0026@tigermail.auburn.edu>
 
 Entry point to XICSRT.
-Contains the main function that are called to perform raytracing.
+Contains the main functions that are called to perform raytracing.
 """
 
 import numpy as np
@@ -24,74 +24,6 @@ from xicsrt import xicsrt_input
 from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
-def raytrace_single(config, internal=False):
-    """
-    Perform a series of ray tracing iterations.
-
-    If history is enabled, sort the rays into those that are detected and 
-    those that are lost (found and lost). The found ray history will be 
-    returned in full. The lost ray history will be truncated to allow 
-    analysis of lost ray pattern while still limiting memory usage.
-    """
-    profiler.start('raytrace')
-
-    # Update the default config with the user config.
-    config = xicsrt_config.get_config(config)
-    config = xicsrt_config.config_to_numpy(config)
-    check_config(config)
-
-    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
-    np.random.seed(config['general']['random_seed'])
-    
-    num_iter = config['general']['number_of_iter']
-    max_lost_iter = int(config['general']['history_max_lost']/num_iter)
-
-    # Setup the dispatchers.
-    if 'filters' in config:
-        filters = Dispatcher(config, 'filters')
-        filters.instantiate()
-        filters.setup()
-        filters.initialize()
-        config['filters'] = filters.get_config()
-    else:
-        filters = None
-
-    sources = Dispatcher(config, 'sources')
-    sources.instantiate()
-    sources.apply_filters(filters)
-    sources.setup()
-    sources.initialize()
-    config['sources'] = sources.get_config()
-
-    optics = Dispatcher(config, 'optics')
-    optics.instantiate()
-    optics.setup()
-    optics.initialize()
-    config['optics'] = optics.get_config()
-
-    # Do the actual raytracing
-    output_list = []
-    for ii in range(num_iter):
-        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
-        
-        single = _raytrace_iter(config, sources, optics)
-        sorted = _sort_raytrace(single, max_lost=max_lost_iter)
-        output_list.append(sorted)
-        
-    output = combine_raytrace(output_list)
-
-    if internal is False:
-        if config['general']['print_results']:
-            print_raytrace(output)
-        if config['general']['save_config']:
-            xicsrt_input.save_config(output['config'])
-
-    if config['general']['save_images']:
-        save_images(output)
-
-    profiler.stop('raytrace')
-    #profiler.report()
-    return output
 
 def raytrace(config):
     """
@@ -105,8 +37,8 @@ def raytrace(config):
     is one reason to use this routine rather than just increasing
     the number of iterations: periodic outputs during long computations.
 
-    Also see :func:`~xicsrt.xicsrt_multiprocessing.raytrace_multiprocessing`
-    for a multiprocessing version of this routine.
+    Also see :func:`~xicsrt.xicsrt_multiprocessing.raytrace` for a
+    multiprocessing version of this routine.
     """
     profiler.start('raytrace_multi')
     
@@ -148,11 +80,80 @@ def raytrace(config):
         
     profiler.stop('raytrace_multi')
     return output
-    
+
+def raytrace_single(config, internal=False):
+    """
+    Perform a single raytrace run consisting of multiple iterations.
+
+    If history is enabled, sort the rays into those that are detected and
+    those that are lost (found and lost). The found ray history will be
+    returned in full. The lost ray history will be truncated to allow
+    analysis of lost ray pattern while still limiting memory usage.
+    """
+    profiler.start('raytrace')
+
+    # Update the default config with the user config.
+    config = xicsrt_config.get_config(config)
+    config = xicsrt_config.config_to_numpy(config)
+    check_config(config)
+
+    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
+    np.random.seed(config['general']['random_seed'])
+
+    num_iter = config['general']['number_of_iter']
+    max_lost_iter = int(config['general']['history_max_lost']/num_iter)
+
+    # Setup the dispatchers.
+    if 'filters' in config:
+        filters = Dispatcher(config, 'filters')
+        filters.instantiate()
+        filters.setup()
+        filters.initialize()
+        config['filters'] = filters.get_config()
+    else:
+        filters = None
+
+    sources = Dispatcher(config, 'sources')
+    sources.instantiate()
+    sources.apply_filters(filters)
+    sources.setup()
+    sources.initialize()
+    config['sources'] = sources.get_config()
+
+    optics = Dispatcher(config, 'optics')
+    optics.instantiate()
+    optics.setup()
+    optics.initialize()
+    config['optics'] = optics.get_config()
+
+    # Do the actual raytracing
+    output_list = []
+    for ii in range(num_iter):
+        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
+
+        single = _raytrace_iter(config, sources, optics)
+        sorted = _sort_raytrace(single, max_lost=max_lost_iter)
+        output_list.append(sorted)
+
+    output = combine_raytrace(output_list)
+
+    if internal is False:
+        if config['general']['print_results']:
+            print_raytrace(output)
+        if config['general']['save_config']:
+            xicsrt_input.save_config(output['config'])
+
+    if config['general']['save_images']:
+        save_images(output)
+
+    profiler.stop('raytrace')
+    # profiler.report()
+    return output
+
 def _raytrace_iter(config, sources, optics):
     """ 
-    Perform a single iteration of raytracing with the given
-    sources and optics. The returned rays are unsorted.
+    Perform a single iteration of raytracing with the given sources and optics.
+    The returned rays are unsorted.
     """
     profiler.start('raytrace_single')
 
