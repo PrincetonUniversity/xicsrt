@@ -14,12 +14,14 @@ New Members
 New Private Members
 -------------------
 .. automirclass:: xicsrt.objects._RayArray.RayArray
+    :members:
     :private-members:
-    :special-members:
+    :special-members: __init__
     :undoc-members:
     :noindex:
     :nodocstring:
     :nosignature:
+    :nopublic:
 
 Inherited Members
 -----------------

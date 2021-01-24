@@ -15,12 +15,14 @@ New Members
 New Private Members
 -------------------
 .. automirclass:: xicsrt.sources._XicsrtSourceFocused.XicsrtSourceFocused
+    :members:
     :private-members:
-    :special-members:
+    :special-members: __init__
     :undoc-members:
     :noindex:
     :nodocstring:
     :nosignature:
+    :nopublic:
 
 Inherited Members
 -----------------

@@ -13,12 +13,14 @@ New Members
 New Private Members
 -------------------
 .. automirclass:: xicsrt.optics._XicsrtOpticCrystal.XicsrtOpticCrystal
+    :members:
     :private-members:
-    :special-members:
+    :special-members: __init__
     :undoc-members:
     :noindex:
     :nodocstring:
     :nosignature:
+    :nopublic:
 
 Inherited Members
 -----------------

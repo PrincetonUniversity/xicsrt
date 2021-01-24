@@ -84,9 +84,31 @@ XICSRT code base. Time estimates include time for testing and verification.
   |     added: 2021-01-24
 
 
+.. admonition:: Improve mesh-grid pre-selection algorithm
+
+  | Time Estimate: **2 weeks**
+  | Mesh-grid optics in XICS use a mesh-refinement alorithm that uses
+    a course grid to pre-select faces to test on the full mesh. The
+    current algorithm is lossy, and often tests more faces than are
+    actually required.
+
+  The goal of this project is to improve the pre-selection algorithm
+  to eliminate ray losses. This can likely be done while also improving
+  performance and allowing coarser pre-selection grids.
+
+  The specific methods in :any:`XicsrtOpticMesh` that need improvement is
+  :any:`find_near_faces` however to achive this change will also be needed
+  in :any:`_mesh_precalc<XicsrtOpticMesh>` and :any:`mesh_intersect_2`.
+
+  Note:
+    Consider how the new algorithm will perform with grids in which
+    the x & y point density are very different. The current algorithm
+    behaves especially poorly in terms of losses in those cases.
+
+
 .. admonition:: Develop a numba accelerated version of XICSRT
 
-  | Time Estimate: **1.5 months**
+  | Time Estimate: **1 month**
   | Performance of XICSRT can likely be dramatically improved by using the
     the `numba`_ package. Numba provides just-in-time compilation of python
     code and is highly integrated with numpy, making it well suited for
@@ -109,9 +131,9 @@ XICSRT code base. Time estimates include time for testing and verification.
   Note:
     XICSRT is already highly vectorized and utilizes numpy array manipulations
     whenever possible. These operations are already very fast, and some are
-    even optimized for multiple processes. For this reason it is unclear
+    even optimized for multiple processors. For this reason it is unclear
     how much speed improvement is actually achievable with numba. During
-    development of the numba branch please also look into improving the
+    development of the numba branch please also look into optimizing the
     standard numpy code.
 
   Note:

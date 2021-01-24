@@ -16,3 +16,4 @@ Private Members
     :undoc-members:
     :noindex:
     :nodocstring:
+    :nopublic:

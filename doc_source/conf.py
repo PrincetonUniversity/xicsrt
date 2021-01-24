@@ -91,6 +91,7 @@ class MirClassDocumenter(autodoc.ClassDocumenter):
     option_spec = autodoc.ClassDocumenter.option_spec
     option_spec['nodocstring'] = autodoc.bool_option
     option_spec['nosignature'] = autodoc.bool_option
+    option_spec['nopublic'] = autodoc.bool_option
 
 class MirModuleDocumenter(autodoc.ModuleDocumenter):
     """
@@ -102,16 +103,19 @@ class MirModuleDocumenter(autodoc.ModuleDocumenter):
 
     option_spec = autodoc.ModuleDocumenter.option_spec
     option_spec['nodocstring'] = autodoc.bool_option
+    option_spec['nopublic'] = autodoc.bool_option
 
 def hide_non_private(app, what, name, obj, skip, options):
     """
     Enables showing only private-member while supressing public-members.
     """
-    if what in ['module', 'mirmodule']:
-        # if private-members is set, show only private members
-        if 'private-members' in options and not name.startswith('_'):
-            # skip public methods
-            return True
+
+    if what in ['mirmodule', 'mirclass']:
+        if 'nopublic' in options:
+            # if private-members is set, show only private members
+            if 'private-members' in options and not name.startswith('_'):
+                # skip public methods
+                return True
 
     # do not modify skip - private methods will be shown
     return None
