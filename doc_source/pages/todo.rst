@@ -1,16 +1,11 @@
 
-Development Guide
-=================
+.. _list of todo items:
 
-This document contains a guide for development of XICSRT.
-
-Todo List
----------
-
+List of Todo Items
+==================
 A list of needed improvements for XICSRT.
 
 Please also see the open `issues`_ on the bitbucket git repository.
-
 
 .. todolist::
 

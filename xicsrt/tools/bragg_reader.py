@@ -24,12 +24,12 @@ def read(filename, filetype=None):
 
     Parameters
     ----------
-    filename: str
+    filename : str
       The file to read.
 
     Keyword Arguments
     -----------------
-    filetype: str
+    filetype : str
       The source of the given file. If not provided, the filetype will be
       guessed. Currently supported types are: 'xop', 'x0h'.
     """
@@ -70,9 +70,7 @@ def _read_xop__diff_pat_dat__header(filename):
     return header
 
 def _read_xop__diff_pat_dat__data(filename):
-    filepath = '/u/npablant/analysis/oasys/xicsrt_validation_00/diff_pat.dat'
-    data = np.loadtxt(filepath, dtype=np.float64)
-
+    data = np.loadtxt(filename, dtype=np.float64)
     return data
 
 def read_xop(filename):

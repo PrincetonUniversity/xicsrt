@@ -60,7 +60,6 @@ XICSRT is run by supplying a `config` dictionary to `xicsrt.raytrace(config)`.
 
 To learn how format the input, and interpret the output, see the: :any:`examples`.
 
-
 License
 -------
 .. include:: ../LICENSE
@@ -71,7 +70,7 @@ License
 
     apidoc/xicsrt
     apidoc/examples
-    development
+    pages/development
 
 Indices and tables:
 -------------------

@@ -7,12 +7,11 @@ Authors
   - Yevgeniy Yakusevich <eugenethree@gmail.com>
 """
 
-
-from PIL import Image
 import numpy as np
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
+
 
 @dochelper
 class XicsrtOpticDetector(XicsrtOpticMesh):
@@ -26,4 +25,3 @@ class XicsrtOpticDetector(XicsrtOpticMesh):
     handled.
     """
     pass
-        

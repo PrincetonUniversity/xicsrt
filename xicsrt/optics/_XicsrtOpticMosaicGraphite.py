@@ -37,7 +37,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         of x-rays into the HOPG until the eventually encounter a
         crystalite that satisfies the Bragg condition. This method
         of calculation replicates both the HOPG 'focusing' qualities
-        as well as the expected througput.
+        as well as the expected throughput.
         """
         m = rays['mask']
 
