@@ -38,15 +38,6 @@ class XicsrtOpticGeneric(GeometryObject):
           Typically not required, but if needed will correspond to the 'depth'
           of the optic.
 
-        width
-          The width of this element. Aligned with the x-axis.
-
-        height
-          The height of this element. Aligned with the y-axis.
-
-        depth:
-          The depth of this element. Aligned with the z-axis.
-
         pixel_size: float (None)
           The pixel size, used for binning rays into images.
           This is currently a single number signifying square pixels.

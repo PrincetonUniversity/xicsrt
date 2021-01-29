@@ -30,26 +30,81 @@ XICSRT code base. Time estimates include time for testing and verification.
 
 .. admonition:: Add a cylindrical reflector object
 
-  | Time Estimate: < 1 week
+  | Time Estimate: **1 week**
   | Create an object named `XicsrtOpticCrystalCylindrical`. Object should be
     very similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal
     geometry. The object should be defined with a major and minor radius. Test
     against :any:`XicsrtOpticCrystal`, :any:`XicsrtOpticCrystalSpherical` and
     `XicsrtOpticCrystalToroidal`.
 
-  |     added: 2021-01-24
+  |     added: 2021-01-24 by Novimir
 
 
 .. admonition:: Add a toroidal reflector object
 
-  | Time Estimate: **< 1 week**
+  | Time Estimate: **1 week**
   | Create an object named `XicsrtOpticCrystalToroidal`. Object should be very
     similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal geometry.
     The object should be defined with a major and minor radius. Test against
     :any:`XicsrtOpticCrystal`, :any:`XicsrtOpticCrystalSpherical` and
     `XicsrtOpticCrystalCylindrical`.
 
-  |     added: 2021-01-24
+  |     added: 2021-01-24 by Novimir
+
+
+.. admonition:: Create an Aperature Optic
+
+  | Time Estimate: **<1 week**
+  | Create an object named `XicsrtOpticAperature` that can act as an aperture
+    to filter rays.  The shape of the aperture should be implemented as a
+    configuration option. Most of the coding for this should actually be
+    implemented into :any:`XicsrtOpticGeneric` so that the code can also be
+    used to control the size of optics.  This aperture object should inherit
+    from :any:`XicsrtOpticMesh`, and will probably not have any differences
+    except for the default config options.
+
+  The options need to support at least rectangular and circular aperture
+  shapes and should be implemented in such a way that it is:
+
+  1. Easy to add additional simple shapes in the base code.
+  2. Easy for a user to extend to complex shapes by creating a subclass of
+     the object.
+
+  The mechanism used for this object should also be applicable to set the
+  size of optics objects. This brings up some additional considerations:
+
+  3. Make sure that the aperture check is done as early as possible so
+     that rays are excluded before any other calculations (such as
+     reflection, Bragg check, etc).  Of course the ray intersection
+     needs to be calculated before the aperture check.
+  4. Aperture needs to be compatible with mesh optics. Make sure to check
+     how the aperture fits in with the code in :any:`XicsrtOpticMesh`.
+  5. Consider the possibility that some future optics types may need both an
+     entrance-aperture and an exit-aperture. This capability is not currently
+     needed, but make the code easily extensible to this idea if needed.
+
+  Finally we need to consider how to deal with the `size` specification
+  for the aperture and more generaly the optic size. Currently only a
+  rectangular optic shape is supported and the shape is defined by the
+  `xsize`, `ysize` and `zsize` config options. These names don't make sense
+  for a circular aperture. I have two ideas for how to handle this:
+
+  a. Use a single `size` option that now becomes an array. The interpretation
+     of this array will depend on on the shape specification. So for example
+     a rectangular aperture would interpret `config['size'] = [0.1, 0.2]` as
+     as an `xsize` and `ysize`, while a circular aperture would interpret
+     `config['size'] = 0.1` as a radius.
+  b. Introduce new `-size` options as needed for each aperture shape. So for a
+     circular aperture introduce an `rsize` config option.
+
+  I tend to prefer option (a), but would like some feedback. Option (a) is
+  good because there are no unused `-size` specifications floating around to
+  cause confusion. We don't need to check whether the right `-size` option is
+  being specified by the user. However, option (a) means that `size` now has a
+  variable length which is potentially confusing to the user and now requires
+  some parsing code similar to :any:`xicsrt_dist`.
+
+  |     added: 2021-01-29 by Novimir
 
 
 .. admonition:: Improve algorithm for isotropic emission with x & y limits
@@ -81,7 +136,7 @@ XICSRT code base. Time estimates include time for testing and verification.
 
   It is important that the final algorithm is accurate to machine precision.
 
-  |     added: 2021-01-24
+  |     added: 2021-01-24 by Novimir
 
 
 .. admonition:: Improve mesh-grid pre-selection algorithm
@@ -101,9 +156,15 @@ XICSRT code base. Time estimates include time for testing and verification.
   in :any:`_mesh_precalc<XicsrtOpticMesh>` and :any:`mesh_intersect_2`.
 
   Note:
+    For a very course pre-selection grid and oblique incidence some ray
+    loss will be expected even for this new algorithm.
+
+  Note:
     Consider how the new algorithm will perform with grids in which
-    the x & y point density are very different. The current algorithm
+    the x & y point densities are very different. The current algorithm
     behaves especially poorly in terms of losses in those cases.
+
+  |     added: 2021-01-24 by Novimir
 
 
 .. admonition:: Develop a numba accelerated version of XICSRT
@@ -141,7 +202,7 @@ XICSRT code base. Time estimates include time for testing and verification.
     cross-platform compatiblity, and pure python. Code changes that improve
     performance but make the code very complex should be avoided.
 
-  |     added: 2021-01-24
+  |     added: 2021-01-24 by Novimir
 
 
 .. _issues: https://bitbucket.org/amicitas/xicsrt/issues
