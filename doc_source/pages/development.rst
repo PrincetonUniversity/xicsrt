@@ -54,7 +54,7 @@ XICSRT code base. Time estimates include time for testing and verification.
 
 .. admonition:: Create an Aperature Optic
 
-  | Time Estimate: **<1 week**
+  | Time Estimate: **2 weeks**
   | Create an object named `XicsrtOpticAperature` that can act as an aperture
     to filter rays.  The shape of the aperture should be implemented as a
     configuration option. Most of the coding for this should actually be
@@ -79,7 +79,9 @@ XICSRT code base. Time estimates include time for testing and verification.
      needs to be calculated before the aperture check.
   4. Aperture needs to be compatible with mesh optics. Make sure to check
      how the aperture fits in with the code in :any:`XicsrtOpticMesh`.
-  5. Consider the possibility that some future optics types may need both an
+  5. Implement a way to deal with the pixel grid size used for image
+     output. Currently this is based on a rectangular aperture.
+  6. Consider the possibility that some future optics types may need both an
      entrance-aperture and an exit-aperture. This capability is not currently
      needed, but make the code easily extensible to this idea if needed.
 
@@ -90,7 +92,7 @@ XICSRT code base. Time estimates include time for testing and verification.
   for a circular aperture. I have two ideas for how to handle this:
 
   a. Use a single `size` option that now becomes an array. The interpretation
-     of this array will depend on on the shape specification. So for example
+     of this array will depend on on the shape specification. For example
      a rectangular aperture would interpret `config['size'] = [0.1, 0.2]` as
      as an `xsize` and `ysize`, while a circular aperture would interpret
      `config['size'] = 0.1` as a radius.
@@ -203,6 +205,52 @@ XICSRT code base. Time estimates include time for testing and verification.
     performance but make the code very complex should be avoided.
 
   |     added: 2021-01-24 by Novimir
+
+
+.. admonition:: Make sure that RayDict is used everywhere
+
+  | Time Estimate: **< 1 week**
+  | In XICSRT the rays that we are tracing are always kept in a dictionary
+    with some standard entries such as 'origin', 'direction', 'mask', etc..
+    This dictionary should always be an instance of the RayDict object.
+    Right now this is inconsistent; in some places the RayDict is used, in
+    others a regular dict is used instead.  This project is to go through
+    the code and make sure that RayDict is used everywhere.
+
+  Note:
+    Right now, 2020-02-01, the object is called :any:`RayArray`. This should
+    be renamed to something better and more understandable such as `RayDict`,
+    `RayObject`, `XicrtRays` etc.
+
+  Note:
+    In general XICSRT should always treat RayDict as a regular dict.
+    The reason for using RayDict is primarily for consistency, but also
+    so that the RayDict object can eventually contain some convenience
+    methods.
+
+  |     added: 2021-02-01 by Novimir
+
+
+.. admonition:: Better logging for xicsrt_multiprocessing
+
+  | Time Estimate: **1 week**
+  | Currently When running a raytrace using :any:`xicsrt_multiprocessing.raytrace`
+    in a Jupyter notebook there is not useful progress information displayed.
+    We need to figure out a way to provide at least some minimial information
+    on the number of runs and interations completed that showup in the notebook
+    while execution is ongoing.
+
+  Simply using the image suffix and a 'run XX is complete' would be enough here.
+  Calculating a percentage or estimated time might be a bonus, but we need to
+  be careful not to introduce overly complicated code.
+
+  Note:
+    Some logging information is displayed within the terminal session in which
+    the Jupyter notebook is running, but not in the notebook webpage. This is
+    of course not sufficient since many users will not be running Jupyter from
+    a terminal, or that terminal session will be hidden.
+
+  |     added: 2021-02-04 by Novimir
 
 
 .. _issues: https://bitbucket.org/amicitas/xicsrt/issues

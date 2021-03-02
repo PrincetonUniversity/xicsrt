@@ -135,7 +135,7 @@ class XicsrtOpticGeneric(GeometryObject):
         depending on the how the optic is designed and the value
         of the configuration option: 'do_trace_local'.
 
-        This method can be re-implemented by indiviual optics.
+        This method can be re-implemented by individual optics.
         """
         m = rays['mask']
 
