@@ -9,7 +9,6 @@
 
 import numpy as np
 import logging
-from collections import OrderedDict
 import os
 
 from xicsrt import xicsrt_input
@@ -29,7 +28,7 @@ class XicsrtGeneralConfig(ConfigObject):
         """
         config = super().default_config()
 
-        config['general'] = OrderedDict()
+        config['general'] = dict()
         config['general']['number_of_iter'] = 1
         config['general']['number_of_runs'] = 1
         config['general']['random_seed'] = None
@@ -58,10 +57,10 @@ class XicsrtGeneralConfig(ConfigObject):
 
         config['general']['make_directories'] = False
 
-        config['sources'] = OrderedDict()
-        config['optics'] = OrderedDict()
-        config['filters'] = OrderedDict()
-        config['scenario'] = OrderedDict()
+        config['sources'] = dict()
+        config['optics'] = dict()
+        config['filters'] = dict()
+        config['scenario'] = dict()
     
         return config
         
