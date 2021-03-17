@@ -12,7 +12,6 @@ import numpy as np
 from xicsrt.util import mirplot
 from xicsrt.objects._Dispatcher import Dispatcher
 
-
 def plot_intersect(
         results,
         name=None,
@@ -20,6 +19,8 @@ def plot_intersect(
         aspect=None,
         alpha_lost=None,
         alpha_found=None,
+        xbound=None,
+        ybound=None,
         ):
     """
     Plot the intersection of rays with the given optic.
@@ -35,7 +36,7 @@ def plot_intersect(
 
     config = results['config']
 
-    print(name,section)
+    print(name, section)
     # Use the dispatcher in instantiate and initialize objects.
     optics = Dispatcher(config, section)
     optics.instantiate([name])
@@ -45,8 +46,10 @@ def plot_intersect(
     # Get the crystal object from the dispatcher.
     obj = optics.get_object(name)
 
-    xbound = [-1*obj.param['xsize']/2, obj.param['xsize']/2]
-    ybound = [-1*obj.param['ysize']/2, obj.param['ysize']/2]
+    if xbound is None:
+        xbound = np.array([-1*obj.param['xsize']/2, obj.param['xsize']/2])*1.2
+    if ybound is None:
+        ybound = np.array([-1*obj.param['ysize']/2, obj.param['ysize']/2])*1.2
 
     if True:
         # Lets plot the 'lost' rays.
@@ -58,14 +61,14 @@ def plot_intersect(
         if np.sum(mask) > 0:
             plotlist.append({
                 'name': '0'
-                ,'type': 'scatter'
-                ,'x': origin_loc[mask, 0]
-                ,'y': origin_loc[mask, 1]
-                ,'xbound': xbound
-                ,'ybound': ybound
-                ,'aspect': aspect
-                ,'alpha': alpha_lost
-                ,'color':'#0000e8'
+                , 'type': 'scatter'
+                , 'x': origin_loc[mask, 0]
+                , 'y': origin_loc[mask, 1]
+                , 'xbound': xbound
+                , 'ybound': ybound
+                , 'aspect': aspect
+                , 'alpha': alpha_lost
+                , 'color': '#0000e8'
             })
 
         # mask = (origin_ext[:, 0] != 0.0)
@@ -73,14 +76,14 @@ def plot_intersect(
         if np.sum(mask) > 0:
             plotlist.append({
                 'name': '0'
-                ,'type': 'scatter'
-                ,'x': origin_loc[mask, 0]
-                ,'y': origin_loc[mask, 1]
-                ,'xbound': xbound
-                ,'ybound': ybound
-                ,'aspect': aspect
-                ,'alpha': alpha_lost
-                ,'color':'royalblue'
+                , 'type': 'scatter'
+                , 'x': origin_loc[mask, 0]
+                , 'y': origin_loc[mask, 1]
+                , 'xbound': xbound
+                , 'ybound': ybound
+                , 'aspect': aspect
+                , 'alpha': alpha_lost
+                , 'color': 'royalblue'
             })
 
     if True:
@@ -93,14 +96,27 @@ def plot_intersect(
         if np.sum(mask) > 0:
             plotlist.append({
                 'name': '0'
-                ,'type': 'scatter'
-                ,'x': origin_loc[mask, 0]
-                ,'y': origin_loc[mask, 1]
-                ,'xbound': xbound
-                ,'ybound': ybound
-                ,'aspect': aspect
-                ,'alpha': alpha_found
-                ,'color': 'red'
+                , 'type': 'scatter'
+                , 'x': origin_loc[mask, 0]
+                , 'y': origin_loc[mask, 1]
+                , 'xbound': xbound
+                , 'ybound': ybound
+                , 'aspect': aspect
+                , 'alpha': alpha_found
+                , 'color': 'red'
             })
+
+    if True:
+        # Plot the optic extent as taken from the xsize and ysize.
+        # In the future we should also plot the aperture (if defined).
+        opt_x = obj.param['xsize']/2
+        opt_y = obj.param['ysize']/2
+        plotlist.append({
+            'name': '0',
+            'x': [-1*opt_x, opt_x, opt_x, -1*opt_x, -1*opt_x],
+            'y': [opt_y, opt_y, -1*opt_y, -1*opt_y, opt_y],
+            'linestyle': '--',
+            'color': 'black',
+        })
 
     p = plotlist.plotToScreen()
