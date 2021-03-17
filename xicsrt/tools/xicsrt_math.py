@@ -87,24 +87,123 @@ def bragg_angle(wavelength, crystal_spacing):
     bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
     return bragg_angle
 
+
 def cyl_from_car(point_car):
-    #convert cartesian coordinates -> cylindirical coordinates
-    radius  = np.sqrt(np.power(point_car[0],2) + np.power(point_car[1],2))
-    azimuth = np.arctan2(point_car[1], point_car[0])
-    height  = point_car[2]
-    point_cyl = [radius, azimuth, height]
+    """
+    Convert from cartesian to cylindrical coordinates.
+    """
+    if not isinstance(point_car, np.ndarray):
+        point_car = np.array(point_car)
+
+    point_cyl = np.empty(point_car.shape)
+
+    if point_car.ndim == 2:
+        point_cyl[:, 0] = np.sqrt(np.sum(point_car[:, 0:2]**2, 1))
+        point_cyl[:, 1] = np.arctan2(point_car[:, 1], point_car[:, 0])
+        point_cyl[:, 2] = point_car[:, 2]
+    else:
+        point_cyl[0] = np.sqrt(np.sum(point_car[0:2]**2))
+        point_cyl[1] = np.arctan2(point_car[1], point_car[0])
+        point_cyl[2] = point_car[2]
+
     return point_cyl
 
-def tor_from_car(point_car, a):
+
+def car_from_cyl(point_cyl):
     """
-    point_car   = Cartesian Coordinates [x,y,z]
-    a           = Torus Major Radius
-    point_tor   = [Minor Radius, Poloidal Angle, Toroidal Angle]
+    Convert from cylindrical to cartesian coordinates.
     """
-    rho  = np.sqrt(np.power(point_car[0],2) + np.power(point_car[1],2))
-    tor  = np.arctan2(point_car[1], point_car[0]) + np.pi
-    w    = rho - a
-    pol  = np.arctan2(point_car[2], w)
-    rad  = np.sqrt(np.power(point_car[2],2) + np.power(w,2))
-    point_tor = np.asarray([rad, pol, tor])
+    if not isinstance(point_cyl, np.ndarray):
+        point_cyl = np.array(point_cyl)
+
+    point_car = np.empty(point_cyl.shape)
+
+    if point_cyl.ndim == 2:
+        point_car[:, 0] = point_cyl[:, 0]*np.cos(point_cyl[:, 1])
+        point_car[:, 1] = point_cyl[:, 0]*np.sin(point_cyl[:, 1])
+        point_car[:, 2] = point_cyl[:, 2]
+    else:
+        point_car[0] = point_cyl[0]*np.cos(point_cyl[1])
+        point_car[1] = point_cyl[0]*np.sin(point_cyl[1])
+        point_car[2] = point_cyl[2]
+
+    return point_car
+
+
+def tor_from_car(point_car, major_radius):
+    """
+    Convert from cartesian to toroidal coordinates.
+
+    Arguments
+    ---------
+    point_car: array [meters]
+      Cartesian coordinates [x,y,z]
+
+    major_radius: float [meters]
+      Torus Major Radius
+
+    Returns
+    -------
+    point_tor: array [meters]
+      Toroidal coordinates [r_min, theta_poloidal, theta_toroidal]
+    """
+    if not isinstance(point_car, np.ndarray):
+        point_car = np.array(point_car)
+
+    point_tor = np.empty(point_car.shape)
+
+    if point_tor.ndim == 2:
+        d = np.linalg.norm(point_car[:, 0:2], axis=1) - major_radius
+        point_tor[:, 2] = np.arctan2(point_car[:, 1], point_car[:, 0])
+        point_tor[:, 1] = np.arctan2(point_car[:, 2], d)
+        point_tor[:, 0] = np.sqrt(np.power(point_car[:, 2], 2) + np.power(d, 2))
+    else:
+        d = np.linalg.norm(point_car[0:2]) - major_radius
+        point_tor[2] = np.arctan2(point_car[1], point_car[0])
+        point_tor[1] = np.arctan2(point_car[2], d)
+        point_tor[0] = np.sqrt(np.power(point_car[2], 2) + np.power(d, 2))
+
     return point_tor
+
+
+def car_from_tor(point_tor, major_radius):
+    """
+    Convert from toroidal to cartesian coordinates.
+
+    Arguments
+    ---------
+    point_tor: array [meters]
+      Toroidal coordinates [r_min, theta_poloidal, theta_toroidal]
+
+    major_radius: float [meters]
+      Torus Major Radius
+
+    Returns
+    -------
+    point_car: array [meters]
+      Cartesian coordinates [x,y,z]
+    """
+
+    if not isinstance(point_tor, np.ndarray):
+        point_tor = np.array(point_tor)
+
+    point_car = np.empty(point_tor.shape)
+
+    if point_tor.ndim == 2:
+        point_car[:, 0] = major_radius*np.cos(point_tor[:, 2])
+        point_car[:, 1] = major_radius*np.sin(point_tor[:, 2])
+        vector = point_car[:, 0:2]/np.linalg.norm(point_car[:, 0:2], axis=1)
+
+        point_car[:, 0] = point_car[:, 0] + vector[:, 0]*point_tor[:, 0]*np.cos(point_tor[:, 1])
+        point_car[:, 1] = point_car[:, 1] + vector[:, 1]*point_tor[:, 0]*np.cos(point_tor[:, 1])
+        point_car[:, 2] = point_tor[:, 0]*np.sin(point_tor[:, 1])
+    else:
+        point_car[0] = major_radius*np.cos(point_tor[2])
+        point_car[1] = major_radius*np.sin(point_tor[2])
+        vector = point_car[0:2]/np.linalg.norm(point_car[0:2])
+
+        point_car[0] = point_car[0] + vector[0]*point_tor[0]*np.cos(point_tor[1])
+        point_car[1] = point_car[1] + vector[1]*point_tor[0]*np.cos(point_tor[1])
+        point_car[2] = point_tor[0]*np.sin(point_tor[1])
+
+    return point_car

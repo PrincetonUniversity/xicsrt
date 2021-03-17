@@ -21,9 +21,11 @@ Example code for using this module within a Jupyter notebook.
 """
 
 import numpy as np
+import scipy
 import plotly.graph_objects as go
 import matplotlib
 
+from xicsrt import xicsrt_public
 from xicsrt.objects._Dispatcher import Dispatcher
 
 m_figure = None
@@ -68,11 +70,14 @@ def figure(showbackground=False, visible=False):
     fig = go.Figure(layout=layout)
     m_figure = fig
 
-    fig = go.Figure(layout=layout)
-    m_figure = fig
-
     return fig
 
+
+def show(figure=None):
+    global m_figure
+    if figure is None: figure = m_figure
+
+    figure.show()
 
 def add_rays(results, figure=None):
     _plot_ray_history(results['found']['history'], lost=False, figure=figure)
@@ -216,6 +221,7 @@ def _add_trace_mesh(obj, figure=None, name=None):
     points = obj.param['mesh_points']
 
     if True:
+        # Plot gridlines
         lines = []
         for f in faces:
             lines.append([f[0], f[1]])
@@ -248,6 +254,7 @@ def _add_trace_mesh(obj, figure=None, name=None):
         figure.add_trace(trace)
 
     if True:
+        # Plot surface
         norm = matplotlib.colors.Normalize(np.min(points[:, 2]), np.max(points[:, 2]))
         cm = matplotlib.cm.ScalarMappable(norm=norm, cmap='plasma')
         color = cm.to_rgba(points[:, 2], alpha=0.75)
@@ -297,8 +304,89 @@ def add_object(config, name, section, figure=None):
         _add_trace_volume(obj, figure, name)
 
 
-def show(figure=None):
+def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
+    """
+    Generate points on a flux surface.
+    The given input object must have a method 'car_from_flx'.
+    """
+    if range_m is None: range_m = (0, 2*np.pi)
+    if range_n is None: range_n = (-np.pi/4, np.pi/4)
+
+    num_m = 51
+    num_n = 51
+
+    num_points = num_m*num_n
+    flx = np.empty((num_points, 3))
+
+    val_m = np.linspace(range_m[0], range_m[1], num_m, endpoint=True)
+    val_n = np.linspace(range_n[0], range_n[1], num_n, endpoint=True)
+
+    num_points = num_m*num_n
+    flx = np.empty((num_points, 3))
+
+    val_mm, val_nn = np.meshgrid(val_m, val_n, indexing='ij')
+    flx[:, 0] = s
+    flx[:, 1] = val_mm.flatten()
+    flx[:, 2] = val_nn.flatten()
+
+    # This should be callable without a loop, but for now leave this as is
+    # to support the VMEC stelltools module.
+    car = np.empty(flx.shape)
+    for ii in range(flx.shape[0]):
+        car[ii, :] = obj.car_from_flx(flx[ii, :])
+
+    return flx, car
+
+
+def add_fluxsurfaces(
+        config,
+        name,
+        section=None,
+        figure=None,
+        alpha=None,
+        flatshading=None,
+        **kwargs):
+    """
+    Plot the 3D flux surfaces of a plasma source.
+    This should work for any object that has a 'car_from_flx' method.
+    """
     global m_figure
     if figure is None: figure = m_figure
 
-    figure.show()
+    if alpha is None: alpha = 0.5
+    if flatshading is None: flatshading = True
+
+    obj = xicsrt_public.get_element(config, name, section)
+
+    norm = matplotlib.colors.Normalize(0.0, 1.0)
+    cm = matplotlib.cm.ScalarMappable(norm=norm, cmap='plasma_r')
+
+    rho_array = np.linspace(0.0, 1.0, 10, endpoint=True)
+    for ii, rho in enumerate(reversed(rho_array)):
+        flx, car = _gen_fluxsurface_mesh(obj, rho**2, **kwargs)
+
+        # Triangulation only needs to be done once since all the meshes
+        # are generated using the same point ordering.
+        if ii == 0:
+            tri = scipy.spatial.Delaunay(flx[:, 1:])
+
+        faces = tri.simplices
+
+        color = np.array(cm.to_rgba(rho))*255
+        color = color.astype(int)
+        color_string = f'rgb({color[0]}, {color[1]}, {color[2]})'
+
+        trace = go.Mesh3d(
+            x=car[:, 0],
+            y=car[:, 1],
+            z=car[:, 2],
+            i=faces[:, 0],
+            j=faces[:, 1],
+            k=faces[:, 2],
+            color=color_string,
+            flatshading=flatshading,
+            opacity=alpha
+        )
+
+        figure.add_trace(trace)
+
