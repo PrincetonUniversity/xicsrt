@@ -7,7 +7,6 @@ Authors
 """
 
 import numpy as np
-from collections import OrderedDict
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.filters._XicsrtBundleFilter import XicsrtBundleFilter
@@ -17,9 +16,6 @@ class XicsrtBundleFilterSightline(XicsrtBundleFilter):
     """
     A bundle filter based on proximity to sightline vectors.
     """
-
-    def __init__(self, config=None, initialize=None):
-        super().__init__(config)    
         
     def default_config(self):
         config = super().default_config()

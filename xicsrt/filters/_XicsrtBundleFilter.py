@@ -14,9 +14,7 @@ from xicsrt.objects._ConfigObject import ConfigObject
 class XicsrtBundleFilter(ConfigObject):
     """
     A base class for bundle filters.
-    """    
-    def initialize(self):
-        super().initialize()
+    """
     
     def default_config(self):
         config = super().default_config()
