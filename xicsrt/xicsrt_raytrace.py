@@ -157,25 +157,25 @@ def _raytrace_iter(config, sources, optics):
     """
     profiler.start('raytrace_single')
 
-    # Copy some config entries to local variables.
-    # This is only to make tho code below more readable.
+    # Setup local names for a few config entries.
+    # This is only to make the code below more readable.
     keep_meta    = config['general']['keep_meta']
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
-    rays = sources.generate_rays(history=keep_history)
-    rays = optics.trace(rays, history=keep_history, images=keep_images)
+    rays = sources.generate_rays(keep_history=keep_history)
+    rays = optics.trace(rays, keep_history=keep_history, keep_images=keep_images)
 
     # Combine sources and optics outputs.
     meta    = OrderedDict()
     image   = OrderedDict()
     history = OrderedDict()
     
-    #if keep_meta:
-    for key in sources.meta:
-        meta[key] = sources.meta[key]
-    for key in optics.meta:
-        meta[key] = optics.meta[key]
+    if keep_meta:
+        for key in sources.meta:
+            meta[key] = sources.meta[key]
+        for key in optics.meta:
+            meta[key] = optics.meta[key]
     
     if keep_images:
         for key in sources.image:
@@ -183,7 +183,7 @@ def _raytrace_iter(config, sources, optics):
         for key in optics.image:
             image[key] = optics.image[key]    
     
-    if keep_history:     
+    if keep_history:
         for key in sources.history:
             history[key] = sources.history[key]
         for key in optics.history:
@@ -278,18 +278,18 @@ def combine_raytrace(input_list):
         key_meta_list = list(input_list[0]['total']['meta'][key_opt].keys())
         for key_meta in key_meta_list:
             output['total']['meta'][key_opt][key_meta] = 0
-            for ii_run in range(num_iter):
-                output['total']['meta'][key_opt][key_meta] += input_list[ii_run]['total']['meta'][key_opt][key_meta]
+            for ii_iter in range(num_iter):
+                output['total']['meta'][key_opt][key_meta] += input_list[ii_iter]['total']['meta'][key_opt][key_meta]
 
     # Combine the images.
     for key_opt in key_opt_list:
         if key_opt in input_list[0]['total']['image']:
             output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
-            for ii_run in range(num_iter):
-                output['total']['image'][key_opt] += input_list[ii_run]['total']['image'][key_opt]
+            for ii_iter in range(num_iter):
+                output['total']['image'][key_opt] += input_list[ii_iter]['total']['image'][key_opt]
 
     # Combine all the histories.
-    if len(input_list[ii_run]['found']['history']) > 0:
+    if len(input_list[0]['found']['history']) > 0:
         final_num_found = 0
         final_num_lost = 0
         for ii_run in range(num_iter):

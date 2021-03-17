@@ -61,7 +61,6 @@ class Dispatcher():
                 ,self.config[self.section][key]
                 ,strict=strict)
             self.objects[key] = obj
-            self.meta[key] = {}
 
     def find_xicsrt_objects(self, pathlist):
 
@@ -131,12 +130,12 @@ class Dispatcher():
         for key, obj in self.objects.items():
             obj.initialize(*args, **kwargs)
 
-    def generate_rays(self, history=None):
+    def generate_rays(self, keep_meta=None, keep_history=None):
         """
         Generates rays from all sources.
         """
-        if history is None:
-            history is False
+        if keep_meta is None: keep_meta = True
+        if keep_history is None: keep_history = False
             
         if len(self.objects) == 0:
             raise Exception('No ray sources defined.')
@@ -146,20 +145,23 @@ class Dispatcher():
         for key, obj in self.objects.items():
             rays = obj.generate_rays()
 
-            self.meta[key]['num_out'] = np.sum(rays['mask'])
+            if keep_meta:
+                self.meta[key] = OrderedDict()
+                self.meta[key]['num_out'] = np.sum(rays['mask'])
             
-            if history:
+            if keep_history:
                 self.history[key] = deepcopy(rays)
                 
         return rays
             
-    def trace(self, rays, images=None, history=None):
-        if history is None:
-            history is False
-            
-        if images is None:
-            images is False
-            
+    def trace(self, rays, keep_meta=None, keep_history=None, keep_images=None):
+        """
+        Perform raytracing for each object in sequence.
+        """
+        if keep_meta is None: keep_meta = True
+        if keep_history is None: keep_history = False
+        if keep_images is None: keep_images = False
+
         profiler.start('Dispatcher: raytrace')
 
         for key, obj in self.objects.items():
@@ -168,12 +170,14 @@ class Dispatcher():
             rays = obj.trace_global(rays)
             profiler.stop('Dispatcher: trace_global')
 
-            self.meta[key]['num_out'] = np.sum(rays['mask'])
+            if keep_meta:
+                self.meta[key] = OrderedDict()
+                self.meta[key]['num_out'] = np.sum(rays['mask'])
             
-            if history:
+            if keep_history:
                 self.history[key] = deepcopy(rays)
 
-            if images:
+            if keep_images:
                 profiler.start('Dispatcher: collect')
                 self.image[key] = obj.make_image(rays)
                 profiler.stop('Dispatcher: collect')
