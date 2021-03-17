@@ -9,12 +9,14 @@ A collections of routines to simplify interactive use of XICSRT.
 """
 import numpy as np
 
+from xicsrt import xicsrt_config
 from xicsrt.objects._Dispatcher import Dispatcher
 
-def get_element(config, name, section=None, initialize=True):
+def get_element(config_user, name, section=None, initialize=True):
     """
     Retrieves an raytracing element (source or optic) object.
     """
+    config = xicsrt_config.get_config(config_user)
     if section is None:
         section = _find_element_section(config, name)
 

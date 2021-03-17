@@ -7,6 +7,7 @@ Authors
 """
 import logging
 import numpy as np
+from copy import copy
 
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
@@ -40,6 +41,12 @@ class XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
         return np.sqrt(point_flx[0])
+
+    def car_from_flx(self, point_flx):
+        point_tor = copy(point_flx)
+        point_tor[...,0] = np.sqrt(point_tor[...,0])*self.param['minor_radius']
+        point_car = xm.car_from_tor(point_tor, self.param['major_radius'])
+        return point_car
 
     def bundle_generate(self, bundle_input):
 
