@@ -6,8 +6,9 @@
 To prepare an update:
   1. Update _version.py
   2. git tag -a v0.4.0 -m "Version 0.4.0"
-  3. Make everything is merged with 'master' and 'stable'.
-  3. Push to both bitbucket and github.
+  3. git push --tags
+  4. Make everything is merged with 'master' and 'stable'.
+  5. Push to both bitbucket and github.
 
 To submit an update to pypi:
   1. python setup.py sdist bdist_wheel
