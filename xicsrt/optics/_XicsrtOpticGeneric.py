@@ -14,6 +14,8 @@ from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
+from xicsrt.tools import aperture_types
+
 @dochelper
 class XicsrtOpticGeneric(GeometryObject):
     """
@@ -37,14 +39,6 @@ class XicsrtOpticGeneric(GeometryObject):
           The size of this element along the zaxis direction.
           Typically not required, but if needed will correspond to the 'depth'
           of the optic.
-          
-        opt_size:  numpy array (np.array([[0,0],[0],[0]]))
-          The size of the actual optical elements. All rays hitting outside
-          the optical element will be masked. The entire optical elemnt will
-          behave like a detector.
-          
-        opt_size
-          The size of the actual optical instrument that interacts with rays
 
         pixel_size: float (None)
           The pixel size, used for binning rays into images.
@@ -72,12 +66,15 @@ class XicsrtOpticGeneric(GeometryObject):
         config['xsize']          = 0.0
         config['ysize']          = 0.0
         config['zsize']          = 0.0
-        config['opt_size']       = None
         config['pixel_size']     = None
 
         # boolean settings
         config['do_trace_local'] = False
         config['do_miss_check'] = True
+        
+        #aperture info
+        config['aperture_info'] = [{'type':None,'size':None,'origin':[0,0]}]
+        config['aperture_logic'] = 'physical'
 
         return config
 
@@ -150,7 +147,7 @@ class XicsrtOpticGeneric(GeometryObject):
 
         distance = self.intersect(rays)
         X, rays  = self.intersect_check(rays, distance)
-        self.aperture(X, rays, m)
+        rays = self.aperture(X, rays)
         self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
         normals  = self.generate_normals(X, rays)
         rays     = self.reflect_vectors(X, rays, normals)
@@ -192,6 +189,7 @@ class XicsrtOpticGeneric(GeometryObject):
             distance = np.zeros(m.shape, dtype=np.float64)
             distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
                            / np.dot(D[m], self.param['zaxis']))
+
         # Update the mask to only include positive distances.
         m &= (distance >= 0)
 
@@ -203,40 +201,39 @@ class XicsrtOpticGeneric(GeometryObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
-        X_local = np.zeros(O.shape, dtype=np.float64)
-        
+
         # X is the 3D point where the ray intersects the optic
         # There is no reason to make a new X array here
         # instead of modifying O except to make debugging easier.
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
 
-        X_local[m] = self.point_to_local(X[m])
-        
         if self.param['do_trace_local']:
-        # Find which rays hit the optic, update mask to remove misses
-            if self.param['do_miss_check'] is True:
-                m[m] &= (np.abs(X[m,0]) < self.param['xsize'] / 2)
-                m[m] &= (np.abs(X[m,1]) < self.param['ysize'] / 2)
-        else:   
-            if self.param['do_miss_check'] is True:
-                m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
-                m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
+            X_local = X
+        else:
+            X_local = np.zeros(X.shape, dtype=np.float64)
+            X_local[m] = self.point_to_local(X[m])
+
+        if self.param['do_miss_check'] is True:
+            m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
+            m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
         
         return X, rays
     
-    def aperture(self, X, rays, m):
-        '''
-        Masks all rays that do pass through the aperature of the optic.
-        '''
-        self.aperture_check(X, rays,m)
-        return
-    
-    def aperture_check(self,X,rays,m):
-        '''
-        Generic optic does not mask currenlty
-        '''
-        pass
-    
+    def aperture(self, X, rays):
+        
+        if self.param['aperture_info'].all() != None:
+            m = rays['mask']
+
+            if self.param['do_trace_local']:
+                X_local = X
+            else:
+                X_local = np.zeros(X.shape, dtype=np.float64)
+                X_local[m] = self.point_to_local(X[m])
+            #chnage output to mask, dont need to pass rays
+            m = aperture_types.build_aperture(X_local, m, self.param['aperture_info'],self.param['aperture_logic'])
+        
+        return rays
+
     def generate_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
