@@ -73,8 +73,7 @@ class XicsrtOpticGeneric(GeometryObject):
         config['do_miss_check'] = True
         
         #aperture info
-        config['aperture_info'] = None
-
+        config['aperture_info']  = [{'shape':None,'size':None,'origin':None,'logic':None}]
         return config
 
     def initialize(self):
@@ -220,7 +219,7 @@ class XicsrtOpticGeneric(GeometryObject):
     
     def aperture(self, X, rays):
         
-        if self.param['aperture_info'] != None:
+        if (self.param['aperture_info'][0]['shape'] != None):
             m = rays['mask']
 
             if self.param['do_trace_local']:
