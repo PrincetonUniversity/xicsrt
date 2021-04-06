@@ -73,8 +73,7 @@ class XicsrtOpticGeneric(GeometryObject):
         config['do_miss_check'] = True
         
         #aperture info
-        config['aperture_info'] = [{'type':None,'size':None,'origin':[0,0]}]
-        config['aperture_logic'] = 'physical'
+        config['aperture_info'] = None
 
         return config
 
@@ -221,7 +220,7 @@ class XicsrtOpticGeneric(GeometryObject):
     
     def aperture(self, X, rays):
         
-        if self.param['aperture_info'].all() != None:
+        if self.param['aperture_info'] != None:
             m = rays['mask']
 
             if self.param['do_trace_local']:
@@ -229,8 +228,8 @@ class XicsrtOpticGeneric(GeometryObject):
             else:
                 X_local = np.zeros(X.shape, dtype=np.float64)
                 X_local[m] = self.point_to_local(X[m])
-            #chnage output to mask, dont need to pass rays
-            m = aperture_types.build_aperture(X_local, m, self.param['aperture_info'],self.param['aperture_logic'])
+                
+            m = aperture_types.build_aperture(X_local, m, self.param['aperture_info'])
         
         return rays
 
