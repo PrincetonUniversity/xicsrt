@@ -14,6 +14,8 @@ from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
+from xicsrt.tools import aperture_types
+
 @dochelper
 class XicsrtOpticGeneric(GeometryObject):
     """
@@ -69,7 +71,9 @@ class XicsrtOpticGeneric(GeometryObject):
         # boolean settings
         config['do_trace_local'] = False
         config['do_miss_check'] = True
-
+        
+        #aperture info
+        config['aperture_info']  = [{'shape':None,'size':None,'origin':None,'logic':None}]
         return config
 
     def initialize(self):
@@ -135,12 +139,13 @@ class XicsrtOpticGeneric(GeometryObject):
         depending on the how the optic is designed and the value
         of the configuration option: 'do_trace_local'.
 
-        This method can be re-implemented by individual optics.
+        This method can be re-implemented by indiviual optics.
         """
         m = rays['mask']
 
         distance = self.intersect(rays)
         X, rays  = self.intersect_check(rays, distance)
+        rays = self.aperture(X, rays)
         self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
         normals  = self.generate_normals(X, rays)
         rays     = self.reflect_vectors(X, rays, normals)
@@ -174,9 +179,14 @@ class XicsrtOpticGeneric(GeometryObject):
         D = rays['direction']
         m = rays['mask']
         
-        distance = np.zeros(m.shape, dtype=np.float64)
-        distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
-                       / np.dot(D[m], self.param['zaxis']))
+        if self.param['do_trace_local']:
+            distance = np.zeros(m.shape, dtype=np.float64)
+            distance[m] = (np.dot((0 - O[m]), np.array([ 0., 0., 1.]))
+                           / np.dot(D[m], np.array([ 0., 0., 1.])))
+        else:
+            distance = np.zeros(m.shape, dtype=np.float64)
+            distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
+                           / np.dot(D[m], self.param['zaxis']))
 
         # Update the mask to only include positive distances.
         m &= (distance >= 0)
@@ -189,22 +199,39 @@ class XicsrtOpticGeneric(GeometryObject):
         m = rays['mask']
         
         X = np.zeros(O.shape, dtype=np.float64)
-        X_local = np.zeros(O.shape, dtype=np.float64)
-        
+
         # X is the 3D point where the ray intersects the optic
         # There is no reason to make a new X array here
         # instead of modifying O except to make debugging easier.
         X[m] = O[m] + D[m] * distance[m,np.newaxis]
 
-        X_local[m] = self.point_to_local(X[m])
-        
-        # Find which rays hit the optic, update mask to remove misses
+        if self.param['do_trace_local']:
+            X_local = X
+        else:
+            X_local = np.zeros(X.shape, dtype=np.float64)
+            X_local[m] = self.point_to_local(X[m])
+
         if self.param['do_miss_check'] is True:
             m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
             m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
-
+        
         return X, rays
     
+    def aperture(self, X, rays):
+        
+        if (self.param['aperture_info'][0]['shape'] != None):
+            m = rays['mask']
+
+            if self.param['do_trace_local']:
+                X_local = X
+            else:
+                X_local = np.zeros(X.shape, dtype=np.float64)
+                X_local[m] = self.point_to_local(X[m])
+                
+            m = aperture_types.build_aperture(X_local, m, self.param['aperture_info'])
+        
+        return rays
+
     def generate_normals(self, X, rays):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
