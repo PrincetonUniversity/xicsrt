@@ -10,6 +10,17 @@ A set of mathematical utilities and vector convenience functions for XICSRT.
 
 import numpy as np
 
+def toarray(a):
+    """
+    Convert the input to a ndarray with at least 1 dimension.
+    This is similar to the numpy function atleast_1d, but has less overhead
+    and is jax compatible.
+    """
+    a = np.asarray(a)
+    if a.ndim == 0:
+        a = a.reshape(1)
+    return a
+
 def vector_angle(a, b):
     """
     Find the angle between two vectors.
