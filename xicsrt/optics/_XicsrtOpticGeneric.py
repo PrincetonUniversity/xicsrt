@@ -59,6 +59,13 @@ class XicsrtOpticGeneric(GeometryObject):
           defined bounds (usually defined by 'width' and 'height'). If set to
           `False` all rays with a defined reflection/transmission condition
           will be traced.
+
+        aperture: dict or array (None)
+          Define one or more apertures to to apply to this optic.
+          Each aperture is defined as a dictionary with the following keys:
+          shape, size, origin, logic. The origin and logic field keys are
+          optional. The interpretation of size will depend on the provided
+          shape.
         """
         config = super().default_config()
         
@@ -73,7 +80,8 @@ class XicsrtOpticGeneric(GeometryObject):
         config['do_miss_check'] = True
         
         #aperture info
-        config['aperture_info']  = [{'shape':None,'size':None,'origin':None,'logic':None}]
+        config['aperture']  = None
+
         return config
 
     def initialize(self):
@@ -218,17 +226,17 @@ class XicsrtOpticGeneric(GeometryObject):
         return X, rays
     
     def aperture(self, X, rays):
-        
-        if (self.param['aperture_info'][0]['shape'] != None):
-            m = rays['mask']
+        m = rays['mask']
 
+        if self.param['aperture'] is not None:
             if self.param['do_trace_local']:
                 X_local = X
             else:
                 X_local = np.zeros(X.shape, dtype=np.float64)
                 X_local[m] = self.point_to_local(X[m])
-                
-            m = aperture_types.build_aperture(X_local, m, self.param['aperture_info'])
+
+            m_aperture = aperture_types.aperture_mask(X_local, m, self.param['aperture'])
+            m[m] = m_aperture[m]
         
         return rays
 

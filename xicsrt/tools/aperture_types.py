@@ -1,88 +1,172 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 23 08:22:23 2021
+.. Authors
+     Nathan Bartlett <nbb0011@auburn.edu>
+     Novimir Pablant <npablant@pppl.gov>
 
-@author: nathanbartlett
+A set of apertures for ray filtering.
 """
 
-
 import numpy as np
+import xicsrt.tools.xicsrt_math as xm
 
-def build_aperture(X_local, m, aperture_info = None):
-    
-    m_initial = m.copy()
-    for ii in range(len(aperture_info)):
-        m_test = m_initial.copy()
-        
-        if aperture_info[ii]['logic'] == 'and':
-        
-            m &= aperture_selection(X_local, m_test, aperture_info,ii)
-            
-        elif aperture_info[ii]['logic'] == 'or':
-            
-            m |= aperture_selection(X_local, m_test, aperture_info,ii)
-            
-        elif aperture_info[ii]['logic'] == 'not':
-            
-            m &= ~(aperture_selection(X_local, m_test, aperture_info,ii))
-        
+def aperture_mask(X_local, m, aperture_info):
+    """
+    Generate a mask array for the given aperture (or array of apertures).
+    """
+
+    # Convert the aperture info to an array, if was not already.
+    aperture_info = xm.toarray(aperture_info)
+
+    m_out = m.copy()
+    for aperture in aperture_info:
+        aperture = _aperture_defaults(aperture)
+
+        m_test = m.copy()
+        m_test = aperture_selector(X_local, m_test, aperture, _internal=True)
+
+        logic = aperture['logic']
+        if logic == 'and':
+            m_out[m] &= m_test[m]
+        elif logic == 'not':
+            m_out[m] &= ~m_test[m]
+        elif logic == 'or':
+            m_out[m] |= m_test[m]
+        elif logic == 'nand':
+            m_out[m] = ~(m_out[m] & m_test[m])
+        elif logic == 'nor':
+            m_out[m] = ~(m_out[m] | m_test[m])
+        elif logic == 'xor':
+            m_out[m] ^= m_test[m]
+        elif logic == 'xnor':
+            m_out[m] = ~(m_out[m] ^ m_test[m])
         else:
-            raise Exception('Aperture shape is not known.')
+            raise Exception(f'Aperture logic "{logic}" is not known.')
             
-    m &= m_initial
-            
-    return m
-       
-def aperture_selection(X_local, m, aperture_info = None, aperture_number = 0):
-    aperture_shape = aperture_info[aperture_number]['shape']
-    if aperture_shape is None: aperture_shape = 'none'
-    aperture_shape = aperture_shape.lower()
-    if aperture_shape == 'none':
-        func = no_aperture
-    elif aperture_shape == 'circle':
-        func = circle_aperture
-    elif aperture_shape == 'square':
-        func = square_aperture
-    elif aperture_shape == 'elipse':
-        func = elipse_aperture
+    return m_out
+
+
+def aperture_selector(X_local, m, aperture, _internal=False):
+    """
+    Will call the appropriate aperture function for the given aperture name.
+
+    .. Note::
+       This selector and all the individual function will modify the mask array
+       in place.
+    """
+
+    if not _internal:
+        aperture = _aperture_defaults(aperture)
+
+    shape = aperture['shape']
+    if shape == 'none':
+        func = aperture_none
+    elif shape == 'circle':
+        func = aperture_circle
+    elif shape == 'square':
+        func = aperture_square
+    elif shape == 'rectangle':
+        func = aperture_rectangle
+    elif shape == 'ellipse':
+        func = aperture_ellipse
     else:
-        raise Exception(f'Aperture shape: "{aperture_shape}" is not known.')
+        raise Exception(f'Aperture shape: "{shape}" is not implemented.')
 
-    return func(X_local, m, aperture_info, aperture_number)
-    
+    return func(X_local, m, aperture)
 
-def no_aperture(X_local, m, aperture_info, aperture_number = 0):
+
+def _aperture_defaults(aperture):
+    new = {
+        'shape':None,
+        'size':None,
+        'origin':None,
+        'logic':None,
+        }
+    new.update(aperture)
+
+    if new['origin'] is None: new['origin'] = np.array([0.0, 0.0])
+    if new['shape'] is None: new['shape'] = 'none'
+    if new['logic'] is None: new['logic'] = 'and'
+
+    new['size'] = xm.toarray(new['size'])
+    new['origin'] = xm.toarray(new['origin'])
+    new['shape'] = new['shape'].lower()
+    new['logic'] = new['logic'].lower()
+
+    return new
+
+
+def aperture_none(X_local, m, aperture):
+    """
+    An empty aperture object.
+    """
+    return m
+
+
+def aperture_circle(X_local, m, aperture):
+    """
+    A circular Aperture.
+
+    name: 'circle'
+    size: [radius]
+      Contains the radius of the aperture.
+    """
+    origin_x = aperture['origin'][0]
+    origin_y = aperture['origin'][1]
+    size = aperture['size'][0]
+    m[m] &= (((X_local[m,0] - origin_x)**2 + (X_local[m,1] - origin_y)**2) < size**2)
     
     return m
 
-def circle_aperture(X_local, m, aperture_info,aperture_number = 0):
-    # circle aperture.
-    relative_origin_x = aperture_info[aperture_number]['origin'][0]
-    relative_origin_y = aperture_info[aperture_number]['origin'][1]
-    aperture_size = aperture_info[aperture_number]['size'][0]
-    m[m] &= ((X_local[m,0] -relative_origin_x)**2 + (X_local[m,1] + relative_origin_y)**2  < aperture_size**2)
+
+def aperture_square(X_local, m, aperture):
+    """
+    A square Aperture.
+
+    name: 'square'
+    size: [x, y]
+      Contains the x and y size (full width) of the aperture.
+    """
+    size = aperture['size'][0]
+    origin_x = aperture['origin'][0]
+    origin_y = aperture['origin'][1]
+    m[m] &= (np.abs((X_local[m, 0] - origin_x)) < size/2)
+    m[m] &= (np.abs((X_local[m, 1] - origin_y)) < size/2)
+
+    return m
+
+
+def aperture_rectangle(X_local, m, aperture):
+    """
+    A rectangular Aperture.
+
+    name: 'rectangle'
+    size: [x, y]
+      Contains the x and y size (full width) of the aperture.
+    """
+    size_x = aperture['size'][0]
+    size_y = aperture['size'][1]
+    origin_x = aperture['origin'][0]
+    origin_y = aperture['origin'][1]
+    m[m] &= (np.abs((X_local[m,0] - origin_x)) < size_x / 2)
+    m[m] &= (np.abs((X_local[m,1] - origin_y)) < size_y / 2)
     
     return m
 
-def square_aperture(X_local, m, aperture_info,aperture_number = 0):
-    # rectangular aperture
-    aperture_size_x = aperture_info[aperture_number]['size'][0]
-    aperture_size_y = aperture_info[aperture_number]['size'][1]
-    relative_origin_x = aperture_info[aperture_number]['origin'][0]
-    relative_origin_y = aperture_info[aperture_number]['origin'][1]
-    m[m] &= (np.abs((X_local[m,0] - relative_origin_x)) < aperture_size_x / 2)
-    m[m] &= (np.abs((X_local[m,1] - relative_origin_y)) < aperture_size_y / 2)
-    
-    return m
 
-def elipse_aperture(X_local, m, aperture_info,aperture_number = 0):
-    # rectangular aperture
-    aperture_size_x = aperture_info[aperture_number]['size'][0]
-    aperture_size_y = aperture_info[aperture_number]['size'][1]
-    relative_origin_x = aperture_info[aperture_number]['origin'][0]
-    relative_origin_y = aperture_info[aperture_number]['origin'][1]
-    m[m] &= (((X_local[m,0] - relative_origin_x)/aperture_size_x)**2 + ((X_local[m,1] - relative_origin_y)/aperture_size_y)**2< 1)
+def aperture_ellipse(X_local, m, aperture):
+    """
+    An elliptical Aperture.
+
+    name: 'ellipse'
+    size: [x, y]
+      Contains the x and y size (full width) of the aperture.
+    """
+    size_x = aperture['size'][0]
+    size_y = aperture['size'][1]
+    origin_x = aperture['origin'][0]
+    origin_y = aperture['origin'][1]
+    m[m] &= ((((X_local[m,0] - origin_x)/size_x)**2 + ((X_local[m,1] - origin_y)/size_y)**2) < 1)
     
     return m
 
