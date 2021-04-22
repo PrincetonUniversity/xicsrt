@@ -10,7 +10,7 @@ description: >
   XICSRT is a general purpose, photon based, raytracing code intended for both optical and x-ray raytracing.
 
 # list of words or phrases that describe the software; separate terms with a semicolon
-keywords: ray tracing
+keywords: "ray tracing"
 
 # repository URL or landing page URL
 repository_link: "https://github.com/PrincetonUniversity/xicsrt"
@@ -20,7 +20,8 @@ repository_link: "https://github.com/PrincetonUniversity/xicsrt"
 
 # license for the software
 licenses:
-- "MIT"
+- "MIT Licence"
+
 
 # add as many developers as needed; first and last name required
 developers:
@@ -28,26 +29,38 @@ developers:
   last_name: Pablant
   middle_name: Antoniuk
   email: npablant@pppl.gov
+  orcid: "0000-0001-6617-8459"
   affiliations:
   - "Princeton Plasma Physics Laboratory (PPPL)"
 
 # organization which had primary responsibility for developing the software
 research_organizations:
-- organization_name: "PPPL"
+- organization_name: "Princeton Plasma Physics Laboratory (PPPL)"
   DOE: true
 
 # sponsoring or funding office of the software product
 sponsoring_organizations:
-- organization_name: "PPPL"
+- organization_name: "USDOE Office of Science (SC), Fusion Energy Sciences (FES)"
   DOE: true
   # award/contract number that is largely responsibile for funding the project; at least one valid entry is required
   primary_award: "AC02-09CH11466"
 
-#provide name, email, phone number, and organization of the submitter. This contact info will serve as the point of contact for DOE if there are questions regarding the software; this information will not be shared publicly
+# provide name, email, phone number, and organization of the submitter. This contact info will serve as the point of contact for DOE if there are questions regarding the software; this information will not be shared publicly
 recipient_name: "Novimir A. Pablant"
 recipient_email: "npablant@pppl.gov"
 recipient_phone: "+1 609-243-2070"
 recipient_org: "PPPL"
 
-#software release date
+# Software characteristics
+programming_languages:
+- "Python"
+-
+# Other Metadata
+country_of_origin: "United States"
+
+# osti.gov code id and related information
+code_id: 55767
+site_ownership_code: "PPPL"
+
+# software release date
 release_date: "2021-09-21"
