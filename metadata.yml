@@ -1,0 +1,53 @@
+
+# title of the software
+software_title: "XICSRT: Photon based raytracing in Python"
+
+# abbreviated title or acronym for the software
+acronym: "xicsrt"
+
+# provide clear, concise and publicly releasable description of the software
+description: >
+  XICSRT is a general purpose, photon based, raytracing code intended for both optical and x-ray raytracing.
+
+# list of words or phrases that describe the software; separate terms with a semicolon
+keywords: ray tracing
+
+# repository URL or landing page URL
+repository_link: "https://github.com/PrincetonUniversity/xicsrt"
+
+# unique persistent identifier which references a digital object and provides long-term access
+# doi: "10.5072/23892"
+
+# license for the software
+licenses:
+- "MIT"
+
+# add as many developers as needed; first and last name required
+developers:
+- first_name: Novimir
+  last_name: Pablant
+  middle_name: Antoniuk
+  email: npablant@pppl.gov
+  affiliations:
+  - "Princeton Plasma Physics Laboratory (PPPL)"
+
+# organization which had primary responsibility for developing the software
+research_organizations:
+- organization_name: "PPPL"
+  DOE: true
+
+# sponsoring or funding office of the software product
+sponsoring_organizations:
+- organization_name: "PPPL"
+  DOE: true
+  # award/contract number that is largely responsibile for funding the project; at least one valid entry is required
+  primary_award: "AC02-09CH11466"
+
+#provide name, email, phone number, and organization of the submitter. This contact info will serve as the point of contact for DOE if there are questions regarding the software; this information will not be shared publicly
+recipient_name: "Novimir A. Pablant"
+recipient_email: "npablant@pppl.gov"
+recipient_phone: "+1 609-243-2070"
+recipient_org: "PPPL"
+
+#software release date
+release_date: "2021-09-21"

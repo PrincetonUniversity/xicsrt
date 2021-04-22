@@ -40,7 +40,7 @@ params ={
     'description': 'A photon based raytracing application written in Python.',
     'long_description': long_description,
     'long_description_content_type': 'text/markdown',
-    'url': 'http://amicitas.bitbucket.org/xicsrt',
+    'url': 'https://github.com/PrincetonUniversity/xicsrt',
     'license': 'MIT',
     'packages': setuptools.find_packages(),
     'classifiers': classifiers,
