@@ -108,6 +108,7 @@ def aperture_circle(X_local, m, aperture):
     A circular Aperture.
 
     name: 'circle'
+    
     size: [radius]
       Contains the radius of the aperture.
     """
@@ -124,6 +125,7 @@ def aperture_square(X_local, m, aperture):
     A square Aperture.
 
     name: 'square'
+
     size: [x, y]
       Contains the x and y size (full width) of the aperture.
     """
@@ -141,6 +143,7 @@ def aperture_rectangle(X_local, m, aperture):
     A rectangular Aperture.
 
     name: 'rectangle'
+
     size: [x, y]
       Contains the x and y size (full width) of the aperture.
     """
@@ -159,6 +162,7 @@ def aperture_ellipse(X_local, m, aperture):
     An elliptical Aperture.
 
     name: 'ellipse'
+
     size: [x, y]
       Contains the x and y size (full width) of the aperture.
     """

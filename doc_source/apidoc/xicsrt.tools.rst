@@ -7,6 +7,15 @@ xicsrt.tools
     :show-inheritance:
     :private-members:
 
+Raytracing Tools
+----------------
+
+.. toctree::
+    :maxdepth: 1
+
+    xicsrt.tools.aperture
+    xicsrt.tools.xicsrt_dist
+
 Mathematical Tools
 ------------------
 
@@ -14,7 +23,6 @@ Mathematical Tools
     :maxdepth: 1
 
     xicsrt.tools.voigt
-    xicsrt.tools.xicsrt_dist
     xicsrt.tools.xicsrt_math
     xicsrt.tools.xicsrt_math_jax
 
