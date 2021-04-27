@@ -8,6 +8,7 @@
 import numpy as np
 
 from xicsrt.tools.xicsrt_doc import dochelper
+from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 @dochelper
@@ -22,7 +23,7 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         super().initialize()
         self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
     
-    def intersect(self, rays):
+    def intersect_distance(self, rays):
         """
         Calulate the distance to the intersection of the rays with the
         spherical optic.
@@ -65,11 +66,12 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
 
         # Distance traveled by the ray before hitting the optic
         distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
-        return distance
 
-    def generate_normals(self, X, rays):
+        return rays, distance
+
+    def generate_normals(self, rays, X):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
-        normals[m] = self.normalize(self.param['center'] - X[m])
+        normals[m] = xm.normalize(self.param['center'] - X[m])
         return normals
 

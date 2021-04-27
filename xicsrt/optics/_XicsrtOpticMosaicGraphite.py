@@ -45,13 +45,13 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
 
         if self.param['use_meshgrid'] is False:
             distance = self.intersect(rays)
-            X, rays  = self.intersect_check(rays, distance)
-            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
+            rays, X  = self.intersect_check(rays, distance)
+            self.log.debug(' Rays on   {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
             for ii in range(self.param['mosaic_depth']):
                 temp_mask = (~ mosaic_mask) & m
                 self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
-                normals  = self.generate_normals(X, rays, temp_mask)
-                rays     = self.reflect_vectors(X, rays, normals, temp_mask)
+                normals  = self.generate_normals(rays, X, temp_mask)
+                rays     = self.reflect_vectors(rays, X, normals, temp_mask)
                 mosaic_mask[temp_mask] = True
             m[:] &= mosaic_mask
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
@@ -61,15 +61,15 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             for ii in range(self.param['mosaic_depth']):
                 temp_mask = (~ mosaic_mask) & m
                 self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
-                normals = self.mesh_normals(X, rays, hits, temp_mask)
-                rays = self.reflect_vectors(X, rays, normals, temp_mask)
+                normals = self.mesh_normals(rays, X, hits, temp_mask)
+                rays = self.reflect_vectors(rays, X, normals, temp_mask)
                 mosaic_mask[temp_mask] = True
             m[:] &= mosaic_mask
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
 
         return rays
 
-    def mosaic_normals(self, normals, rays, mask=None):
+    def mosaic_normals(self, rays, normals, mask=None):
         """
         Add mosaic spread to the normals.
         """
@@ -97,13 +97,13 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         normals[m] = np.einsum('ij,ijk->ik', dir_local, R)
         return normals
 
-    def generate_normals(self, X, rays, mask=None):
+    def generate_normals(self, rays, X, mask=None):
         normals = super().generate_normals(X, rays)
-        normals = self.mosaic_normals(normals, rays, mask)
+        normals = self.mosaic_normals(rays, normals, mask)
         return normals
     
-    def mesh_normals(self, X, rays, hits, mask=None):
+    def mesh_normals(self, rays, X, hits, mask=None):
         normals = super().mesh_normals(hits, self.param['mesh'])
-        normals = self.mosaic_normals(normals, rays, mask)
+        normals = self.mosaic_normals(rays, normals, mask)
         return normals
 

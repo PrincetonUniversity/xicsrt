@@ -9,6 +9,7 @@ import numpy as np
 
 from xicsrt.tools import bragg_reader
 from xicsrt.tools.xicsrt_doc import dochelper
+from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
 
 @dochelper
@@ -33,7 +34,7 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
           A reflectivity factor for this optic. The reflectivity will modify
           the probability that a ray will reflect from this optic.
 
-        do_bragg_check: bool (True)
+        check_bragg: bool (True)
           Switch between x-ray Bragg reflections and optical reflections for
           this optic. If True, a rocking curve will be used to determine the
           probability of reflection for rays based on their incident angle.
@@ -71,7 +72,7 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         config['crystal_spacing'] = 0.0
         config['reflectivity']    = 1.0
 
-        config['do_bragg_check']     = True
+        config['check_bragg']     = True
         config['rocking_type']       = 'gaussian'
         config['rocking_fwhm']       = None
         config['rocking_file']       = None
@@ -161,15 +162,15 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
         dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * normals[m]))
-        incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / self.norm(D[m]))
+        incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / xm.magnitude(D[m]))
 
         #check which rays satisfy bragg, update mask to remove those that don't
-        if self.param['do_bragg_check'] is True:
+        if self.param['check_bragg'] is True:
             m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
 
         return rays, normals
     
-    def reflect_vectors(self, X, rays, normals, mask=None):
+    def reflect_vectors(self, rays, X, normals, mask=None):
         if mask is None:
             mask = rays['mask']
         O = rays['origin']

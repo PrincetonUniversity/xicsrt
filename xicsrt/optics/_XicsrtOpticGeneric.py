@@ -44,7 +44,7 @@ class XicsrtOpticGeneric(GeometryObject):
           The pixel size, used for binning rays into images.
           This is currently a single number signifying square pixels.
 
-        do_trace_local: bool (False)
+        trace_local: bool (False)
           If true: transform rays to optic local coordinates before raytracing,
           do raytracing in local coordinates, then transform back to global
           coordinates.
@@ -54,11 +54,11 @@ class XicsrtOpticGeneric(GeometryObject):
           complex geometry for which intersection and reflection equations
           are easier or more clear to program in fixed local coordinates.
 
-        do_miss_check: bool (true)
+        check_size: bool (true)
           Perform a check for whether the rays intersect the optic within the
-          defined bounds (usually defined by 'width' and 'height'). If set to
+          defined bounds (usually defined by 'xsize' an 'ysize'). If set to
           `False` all rays with a defined reflection/transmission condition
-          will be traced.
+          will be traced if an intersection can be determined.
 
         aperture: dict or array (None)
           Define one or more apertures to to apply to this optic.
@@ -66,21 +66,28 @@ class XicsrtOpticGeneric(GeometryObject):
           shape, size, origin, logic. The origin and logic field keys are
           optional. The interpretation of size will depend on the provided
           shape.
+
+        check_aperture: bool (true)
+          Perform a check for whether the rays intersect the optic within the
+          defined bounds (usually defined by 'xsize' an 'ysize'). If set to
+          `False` all rays with a defined reflection/transmission condition
+          will be traced if an intersection can be determined.
         """
         config = super().default_config()
         
         # spatial information
-        config['xsize']          = 0.0
-        config['ysize']          = 0.0
-        config['zsize']          = 0.0
+        config['xsize']          = None
+        config['ysize']          = None
+        config['zsize']          = None
         config['pixel_size']     = None
 
         # boolean settings
-        config['do_trace_local'] = False
-        config['do_miss_check'] = True
+        config['trace_local'] = False
+        config['check_size'] = True
+        config['check_aperture'] = True
         
         #aperture info
-        config['aperture']  = None
+        config['aperture'] = None
 
         return config
 
@@ -128,13 +135,13 @@ class XicsrtOpticGeneric(GeometryObject):
         configuration option.
         """
 
-        if self.param['do_trace_local']:
+        if self.param['trace_local']:
             self.log.debug('Converting to local coordinates.')
             rays = self.ray_to_local(rays, copy=False)
 
         rays = self.trace(rays)
 
-        if self.param['do_trace_local']:
+        if self.param['trace_local']:
             self.log.debug('Converting to external coordinates.')
             rays = self.ray_to_external(rays, copy=False)
         return rays
@@ -145,49 +152,58 @@ class XicsrtOpticGeneric(GeometryObject):
 
         Raytracing here may be done in global or local coordinates
         depending on the how the optic is designed and the value
-        of the configuration option: 'do_trace_local'.
+        of the configuration option: 'trace_local'.
 
         This method can be re-implemented by indiviual optics.
         """
         m = rays['mask']
 
-        distance = self.intersect(rays)
-        X, rays  = self.intersect_check(rays, distance)
-        rays = self.aperture(X, rays)
-        self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
-        normals  = self.generate_normals(X, rays)
-        rays     = self.reflect_vectors(X, rays, normals)
+        rays, X = self.intersect(rays)
+        rays = self.check_bounds(rays, X)
+
+        self.log.debug(' Rays on   {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
+        normals  = self.generate_normals(rays, X)
+        rays     = self.reflect_vectors(rays, X, normals)
         self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
 
         return rays
 
-    def normalize(self, vector):
-        magnitude = self.norm(vector)
-        vector_norm = vector / magnitude[:, np.newaxis]
-        return vector_norm
-        
-    def norm(self, vector):
-        magnitude = np.einsum('ij,ij->i', vector, vector) ** .5
-        return magnitude
-
-    def distance_point_to_line(origin, normal, point):
-        o = origin
-        n = normal
-        p = point
-        t = np.dot(p - o, n) / np.dot(n, n)
-        d = np.linalg.norm(np.outer(t, n) + o - p, axis=1)
-        return d
-
     def intersect(self, rays):
         """
-        Intersection with a plane.
+        Calculate the intersection between the incoming rays and this optic.
+
+        Programming Notes
+        -----------------
+
+        When creating an new optic one can choose to reimplement either
+        this method or `intersect_distance`, whichever is easier.
         """
-        
+
+        rays, distance = self.intersect_distance(rays)
+
+        O = rays['origin']
+        D = rays['direction']
+        m = rays['mask']
+
+        # X is the 3D point where the ray intersects the optic
+        # As far as I know there is no reason to make a new X array here
+        # instead of modifying O except to make debugging easier.
+        # -- Novimir (2021-04)
+        X = np.zeros(O.shape, dtype=np.float64)
+        X[m] = O[m] + D[m] * distance[m, np.newaxis]
+
+        return rays, X
+
+    def intersect_distance(self, rays):
+        """
+        Calculate the distance to an intersection with a plane.
+        """
+
         O = rays['origin']
         D = rays['direction']
         m = rays['mask']
         
-        if self.param['do_trace_local']:
+        if self.param['trace_local']:
             distance = np.zeros(m.shape, dtype=np.float64)
             distance[m] = (np.dot((0 - O[m]), np.array([ 0., 0., 1.]))
                            / np.dot(D[m], np.array([ 0., 0., 1.])))
@@ -199,54 +215,69 @@ class XicsrtOpticGeneric(GeometryObject):
         # Update the mask to only include positive distances.
         m &= (distance >= 0)
 
-        return distance
-    
-    def intersect_check(self, rays, distance):
-        O = rays['origin']
-        D = rays['direction']
+        return rays, distance
+
+    def check_bounds(self, rays, X):
         m = rays['mask']
-        
-        X = np.zeros(O.shape, dtype=np.float64)
 
-        # X is the 3D point where the ray intersects the optic
-        # There is no reason to make a new X array here
-        # instead of modifying O except to make debugging easier.
-        X[m] = O[m] + D[m] * distance[m,np.newaxis]
-
-        if self.param['do_trace_local']:
+        if self.param['trace_local']:
             X_local = X
         else:
             X_local = np.zeros(X.shape, dtype=np.float64)
             X_local[m] = self.point_to_local(X[m])
 
-        if self.param['do_miss_check'] is True:
-            m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
-            m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
-        
-        return X, rays
-    
-    def aperture(self, X, rays):
+        rays = self.check_size(rays, X_local)
+        rays = self.check_aperture(rays, X_local)
+
+        return rays
+
+    def check_size(self, rays, X_local):
+        """
+        Check if the ray intersection is within the optic bounds as set
+        by the xsize, ysize and zsize config options.
+
+        Note:
+            This method expects to be given the ray intersections in local
+            coordinates. Generally this method should not be called directly
+            instead use `check_bounds`.
+        """
         m = rays['mask']
 
-        if self.param['aperture'] is not None:
-            if self.param['do_trace_local']:
-                X_local = X
-            else:
-                X_local = np.zeros(X.shape, dtype=np.float64)
-                X_local[m] = self.point_to_local(X[m])
+        if self.param['check_size']:
+            if self.param['xsize'] is not None:
+                m[m] &= (np.abs(X_local[m,0]) < self.param['xsize'] / 2)
+            if self.param['ysize'] is not None:
+                m[m] &= (np.abs(X_local[m,1]) < self.param['ysize'] / 2)
+            if self.param['zsize'] is not None:
+                m[m] &= (np.abs(X_local[m,2]) < self.param['zsize'] / 2)
+        
+        return rays
+    
+    def check_aperture(self, rays, X_local):
+        """
+        Check if the ray intersection is within the aperture as set
+        by the 'aperture' config option.
 
+        Note:
+            This method expects to be given the ray intersections in local
+            coordinates. Generally this method should not be called directly
+            instead use `check_bounds`.
+        """
+        m = rays['mask']
+
+        if self.param['check_aperture']:
             m_aperture = aperture.aperture_mask(X_local, m, self.param['aperture'])
             m[m] = m_aperture[m]
         
         return rays
 
-    def generate_normals(self, X, rays):
+    def generate_normals(self, rays, X):
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.param['zaxis']
         return normals
 
-    def reflect_vectors(self, X, rays, normals=None, mask=None):
+    def reflect_vectors(self, rays, X, normals=None, mask=None):
         """
         Generic optic has no reflection, rays just pass through.
         """

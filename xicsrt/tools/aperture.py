@@ -15,6 +15,9 @@ def aperture_mask(X_local, m, aperture_info):
     Generate a mask array for the given aperture (or array of apertures).
     """
 
+    if aperture_info is None:
+        return m
+
     # Convert the aperture info to an array, if was not already.
     aperture_info = xm.toarray(aperture_info)
 
@@ -108,7 +111,7 @@ def aperture_circle(X_local, m, aperture):
     A circular Aperture.
 
     name: 'circle'
-    
+
     size: [radius]
       Contains the radius of the aperture.
     """

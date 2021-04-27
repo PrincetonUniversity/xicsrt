@@ -142,7 +142,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
                 X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
             else:
                 normals = self.mesh_normals(hits, self.param['mesh'])
-            rays = self.reflect_vectors(X, rays, normals)
+            rays = self.reflect_vectors(rays, X, normals)
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
         return rays

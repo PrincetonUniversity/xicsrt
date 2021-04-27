@@ -10,6 +10,16 @@ A set of mathematical utilities and vector convenience functions for XICSRT.
 
 import numpy as np
 
+
+def distance_point_to_line(origin, normal, point):
+    o = origin
+    n = normal
+    p = point
+    t = np.dot(p - o, n) / np.dot(n, n)
+    d = np.linalg.norm(np.outer(t, n) + o - p, axis=1)
+    return d
+
+
 def toarray(a):
     """
     Convert the input to a ndarray with at least 1 dimension.
@@ -20,6 +30,7 @@ def toarray(a):
     if a.ndim == 0:
         a = a.reshape(1)
     return a
+
 
 def vector_angle(a, b):
     """
@@ -36,6 +47,7 @@ def vector_angle(a, b):
     angle = np.arccos(dot)
     return angle
 
+
 def vector_rotate(a, b, theta):
     """
     Rotate vector a around vector b by an angle theta (radians)
@@ -51,6 +63,19 @@ def vector_rotate(a, b, theta):
     w = np.cross(b_hat, v)
     c = u + v * np.cos(theta) + w * np.sin(theta)
     return c
+
+
+def magnitude(vector):
+    """
+    Calculate magnitude of a vector or array of vectors.
+    """
+    if vector.ndim > 1:
+        mag = np.linalg.norm(vector, axis=1)
+    else:
+        mag = np.linalg.norm(vector)
+
+    return mag
+
 
 def normalize(vector):
     """
@@ -69,9 +94,11 @@ def normalize(vector):
 
     return vector
 
+
 def sinusoidal_spiral(phi, b, r0, theta0):
     r = r0 * (np.sin(theta0 + (b-1)*phi)/np.sin(theta0))**(1/(b-1))
     return r
+
 
 def rotation_matrix(axis, theta):
     """
@@ -90,6 +117,7 @@ def rotation_matrix(axis, theta):
         ,[2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
     return matrix
+
 
 def bragg_angle(wavelength, crystal_spacing):
     """
