@@ -106,13 +106,8 @@ def _plot_ray_history(history, lost=None, figure=None):
         # All rays leaving this optic element.
         mask = history[key_list[ii]]['mask']
 
-        # This is a temporary solution to filter lost rays for
-        # which no intersection at the next optic was calculated.
-        #
-        # This is not a good solution overall since it is possible
-        # to imagine a case where we would want to retain rays at
-        # the origin.
-        mask &= history[key_list[ii+1]]['origin'][:, 0] != 0.0
+        # Filter rays for which there is no intersection at the next optic.
+        mask &= np.all(history[key_list[ii+1]]['origin'][:, :] != np.nan, axis=1)
 
         num_mask = np.sum(mask)
 

@@ -94,34 +94,37 @@ class XicsrtOpticGeneric(GeometryObject):
     def initialize(self):
         super().initialize()
 
-        # autofill pixel grid sizes
-        if self.param['pixel_size'] is None:
-            self.param['pixel_size'] = self.param['xsize']/100
+        if self.param['xsize'] and self.param['ysize']:
+            # autofill pixel grid sizes
+            if self.param['pixel_size'] is None:
+                self.param['pixel_size'] = self.param['xsize']/100
 
-        # Determine the number of pixels on the detector.
-        # For now assume that the user set the width of the detector to be
-        # a multiple of the pixel size.
-        #
-        # Except for the detector there is really no reason that this would
-        # always be true, so for now only make this a warning. I need to think
-        # about how to handle this better.
-        pixel_width = self.param['xsize'] / self.param['pixel_size']
-        pixel_height = self.param['ysize'] / self.param['pixel_size']
-        try:
-            np.testing.assert_almost_equal(pixel_width, np.round(pixel_width))
-            np.testing.assert_almost_equal(pixel_height, np.round(pixel_height))
-        except AssertionError:
-            self.log.warning(f"Optic width ({self.param['xsize']:0.4f}x{self.param['ysize']:0.4f})"
-                             f"is not a multiple of the pixel_size ({self.param['pixel_size']:0.4f})."
-                             f"May lead to truncation of output image."
-                             )
+            # Determine the number of pixels on the detector.
+            # For now assume that the user set the width of the detector to be
+            # a multiple of the pixel size.
+            #
+            # Except for the detector there is really no reason that this would
+            # always be true, so for now only make this a warning. I need to think
+            # about how to handle this better.
+            pixel_width = self.param['xsize'] / self.param['pixel_size']
+            pixel_height = self.param['ysize'] / self.param['pixel_size']
+            try:
+                np.testing.assert_almost_equal(pixel_width, np.round(pixel_width))
+                np.testing.assert_almost_equal(pixel_height, np.round(pixel_height))
+            except AssertionError:
+                self.log.warning(f"Optic width ({self.param['xsize']:0.4f}x{self.param['ysize']:0.4f})"
+                                 f"is not a multiple of the pixel_size ({self.param['pixel_size']:0.4f})."
+                                 f"May lead to truncation of output image."
+                                 )
 
-        self.param['pixel_width'] = int(np.round(pixel_width))
-        self.param['pixel_height'] = int(np.round(pixel_height))
-        self.log.debug(f"Pixel grid size: {self.param['pixel_width']} x {self.param['pixel_height']}")
+            self.param['pixel_width'] = int(np.round(pixel_width))
+            self.param['pixel_height'] = int(np.round(pixel_height))
+            self.log.debug(f"Pixel grid size: {self.param['pixel_width']} x {self.param['pixel_height']}")
 
-        self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
-        self.photon_count = 0
+            self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+            self.param['enable_image'] = True
+        else:
+            self.param['enable_image'] = False
 
     def trace_global(self, rays):
         """
@@ -185,11 +188,11 @@ class XicsrtOpticGeneric(GeometryObject):
         D = rays['direction']
         m = rays['mask']
 
-        # X is the 3D point where the ray intersects the optic
-        # As far as I know there is no reason to make a new X array here
-        # instead of modifying O except to make debugging easier.
-        # -- Novimir (2021-04)
-        X = np.zeros(O.shape, dtype=np.float64)
+        # X is the 3D point where the ray intersects the optic.
+        # It may be better, from a memory perspective, to modify O in place
+        # instead of creating a new array. If this is done we need to be sure to
+        # set O to np.nan where no intersection exists.
+        X = np.full(O.shape, np.nan, dtype=np.float64)
         X[m] = O[m] + D[m] * distance[m, np.newaxis]
 
         return rays, X
@@ -282,7 +285,11 @@ class XicsrtOpticGeneric(GeometryObject):
         Generic optic has no reflection, rays just pass through.
         """
         O = rays['origin']
-        O[:]  = X[:]
+
+        # The following line does two things:
+        # 1. Set the origin for rays (lost or found) with an intersection.
+        # 2. Set the rays without an intersection to nan.
+        O[:] = X[:]
         
         return rays
 
@@ -295,9 +302,13 @@ class XicsrtOpticGeneric(GeometryObject):
         -----------------
 
         It is important thas this calculation is compatible with intersect_check
-        in terms of floating point errors.  The simple way to achive this is
+        in terms of floating point errors.  The simple way to achieve this is
         to ensure that both use the same calculation method.
         """
+
+        if not self.param['enable_image']:
+            return None
+
         image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
         X = rays['origin']
         m = rays['mask'].copy()
@@ -310,7 +321,7 @@ class XicsrtOpticGeneric(GeometryObject):
             # to local optical 'pixel' coordinates.
             point_loc = self.point_to_local(X[m])
             pix = point_loc / self.param['pixel_size']
-                
+
             # Convert from pixels to channels.
             # The channel coordinate is defined from the *center* of the bottom left
             # pixel. The pixel coordinate is define from the geometrical center of
@@ -347,12 +358,19 @@ class XicsrtOpticGeneric(GeometryObject):
         """
         Perform ongoing collection into an internal image.
         """
+        if not self.param['enable_image']:
+            raise Exception('Images are not enabled. Check config parameters.')
+
         image = self.make_image(rays)
         self.image[:,:] += image
         
         return self.image[:,:] 
         
-    def output_image(self, image_name, rotate=None):
+    def save_image(self, image_name, rotate=None):
+
+        if not self.param['enable_image']:
+            raise Exception('Images are not enabled. Check config parameters.')
+
         if rotate:
             out_array = np.rot90(self.image)
         else:

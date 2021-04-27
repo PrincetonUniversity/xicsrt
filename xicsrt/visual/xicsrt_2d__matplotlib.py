@@ -53,26 +53,13 @@ def plot_intersect(
 
     if True:
         # Lets plot the 'lost' rays.
-        # This will include all the found rays.
         origin_ext = results['lost']['history'][name]['origin']
         origin_loc = obj.point_to_local(origin_ext)
 
-        mask = results['lost']['history'][name]['mask']
-        if np.sum(mask) > 0:
-            plotlist.append({
-                'name': '0'
-                , 'type': 'scatter'
-                , 'x': origin_loc[mask, 0]
-                , 'y': origin_loc[mask, 1]
-                , 'xbound': xbound
-                , 'ybound': ybound
-                , 'aspect': aspect
-                , 'alpha': alpha_lost
-                , 'color': '#0000e8'
-            })
-
-        # mask = (origin_ext[:, 0] != 0.0)
-        mask = ~mask
+        # We only want to plot the rays that intersected this optic.
+        # This mask will likely need to be changed in the future once I
+        # improve the handling of lost rays.
+        mask = np.all(origin_ext[:, :] != np.nan, axis=1)
         if np.sum(mask) > 0:
             plotlist.append({
                 'name': '0'
@@ -88,11 +75,9 @@ def plot_intersect(
 
     if True:
         # Lets plot the 'found' rays.
-        # This will include all the found rays.
         origin_ext = results['found']['history'][name]['origin']
         origin_loc = obj.point_to_local(origin_ext)
-        # mask = results['found']['history'][name]['mask']
-        mask = (origin_ext[:, 0] != 0.0)
+        mask = results['found']['history'][name]['mask']
         if np.sum(mask) > 0:
             plotlist.append({
                 'name': '0'

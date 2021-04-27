@@ -261,7 +261,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         D = rays['direction']
         m = rays['mask']
 
-        X = np.zeros(D.shape, dtype=np.float64)
+        X = np.full(D.shape, np.nan, dtype=np.float64)
 
         # Copying these makes the code easier to read,
         # but may increase memory usage for dense meshes.
@@ -339,7 +339,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         m = rays['mask']
         num_rays = len(m)
 
-        X = np.zeros(D.shape, dtype=np.float64)
+        X = np.full(D.shape, np.nan, dtype=np.float64)
         hits = np.empty(num_rays, dtype=np.int)
         epsilon = 1e-15
 

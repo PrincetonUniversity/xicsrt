@@ -284,9 +284,12 @@ def combine_raytrace(input_list):
     # Combine the images.
     for key_opt in key_opt_list:
         if key_opt in input_list[0]['total']['image']:
-            output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
-            for ii_iter in range(num_iter):
-                output['total']['image'][key_opt] += input_list[ii_iter]['total']['image'][key_opt]
+            if input_list[0]['total']['image'][key_opt] is not None:
+                output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
+                for ii_iter in range(num_iter):
+                    output['total']['image'][key_opt] += input_list[ii_iter]['total']['image'][key_opt]
+            else:
+                output['total']['image'][key_opt] = None
 
     # Combine all the histories.
     if len(input_list[0]['found']['history']) > 0:
@@ -377,15 +380,16 @@ def save_images(results):
 
     for key_opt in results['config']['optics']:
         if key_opt in results['total']['image']:
-            filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext
-            filepath = os.path.join(results['config']['general']['output_path'], filename)
-            
-            image_temp = results['total']['image'][key_opt]
-            if rotate:
-                image_temp = np.rot90(image_temp)
-            
-            generated_image = Image.fromarray(image_temp)
-            generated_image.save(filepath)
-            
-            logging.info('Saved image: {}'.format(filepath))
+            if results['total']['image'][key_opt] is not None:
+                filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext
+                filepath = os.path.join(results['config']['general']['output_path'], filename)
+
+                image_temp = results['total']['image'][key_opt]
+                if rotate:
+                    image_temp = np.rot90(image_temp)
+
+                generated_image = Image.fromarray(image_temp)
+                generated_image.save(filepath)
+
+                logging.info('Saved image: {}'.format(filepath))
         
