@@ -14,7 +14,7 @@ from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
-from xicsrt.tools import aperture_types
+from xicsrt.tools import aperture
 
 @dochelper
 class XicsrtOpticGeneric(GeometryObject):
@@ -235,7 +235,7 @@ class XicsrtOpticGeneric(GeometryObject):
                 X_local = np.zeros(X.shape, dtype=np.float64)
                 X_local[m] = self.point_to_local(X[m])
 
-            m_aperture = aperture_types.aperture_mask(X_local, m, self.param['aperture'])
+            m_aperture = aperture.aperture_mask(X_local, m, self.param['aperture'])
             m[m] = m_aperture[m]
         
         return rays
