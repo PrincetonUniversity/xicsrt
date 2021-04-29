@@ -193,7 +193,7 @@ class Dispatcher():
         
         # read the filter list for each source and dispatch the matching filters
         for key in self.objects:      
-            for filter in filters.objects:
-                if str(filters.objects[filter].name) in self.objects[key].config['filter_list']:
-                    self.objects[key].filter_objects.append(filters.objects[filter])
+            for filter_name in filters.objects:
+                if filter_name in self.objects[key].config['filter_list']:
+                    self.objects[key].filter_objects.append(filters.objects[filter_name])
 

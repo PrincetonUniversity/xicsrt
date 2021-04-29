@@ -105,6 +105,7 @@ def raytrace_single(config, internal=False):
 
     # Setup the dispatchers.
     if 'filters' in config:
+        logging.debug("Creating filters")
         filters = Dispatcher(config, 'filters')
         filters.instantiate()
         filters.setup()
@@ -113,6 +114,7 @@ def raytrace_single(config, internal=False):
     else:
         filters = None
 
+    logging.debug("Creating sources")
     sources = Dispatcher(config, 'sources')
     sources.instantiate()
     sources.apply_filters(filters)
@@ -120,6 +122,7 @@ def raytrace_single(config, internal=False):
     sources.initialize()
     config['sources'] = sources.get_config()
 
+    logging.debug("Creating optics")
     optics = Dispatcher(config, 'optics')
     optics.instantiate()
     optics.setup()
@@ -163,7 +166,9 @@ def _raytrace_iter(config, sources, optics):
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
+    logging.debug('Generating rays')
     rays = sources.generate_rays(keep_history=keep_history)
+    logging.debug('Raytracing optics')
     rays = optics.trace(rays, keep_history=keep_history, keep_images=keep_images)
 
     # Combine sources and optics outputs.

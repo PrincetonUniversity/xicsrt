@@ -52,20 +52,22 @@ def figure(showbackground=False, visible=False):
 
     layout = {
         'scene':{
-            'aspectmode':'data'
-            ,'xaxis':{
-                'showbackground':showbackground
-                ,'visible':visible
-                }
-            ,'yaxis':{
-                'showbackground':showbackground
-                ,'visible':visible
-                }
-            ,'zaxis':{
-                'showbackground':showbackground
-                ,'visible':visible
-                }
-            }
+            'aspectmode':'data',
+            'xaxis':{
+                'showbackground':showbackground,
+                'visible':visible,
+                },
+            'yaxis':{
+                'showbackground':showbackground,
+                'visible':visible,
+                },
+            'zaxis':{
+                'showbackground':showbackground,
+                'visible':visible,
+                },
+            },
+        'paper_bgcolor':'rgba(0,0,0,0)',
+        'plot_bgcolor':'rgba(0,0,0,0)',
         }
     fig = go.Figure(layout=layout)
     m_figure = fig
@@ -312,7 +314,7 @@ def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
     The given input object must have a method 'car_from_flx'.
     """
     if range_m is None: range_m = (0, 2*np.pi)
-    if range_n is None: range_n = (-np.pi/4, np.pi/4)
+    if range_n is None: range_n = (0, np.pi/4)
 
     num_m = 51
     num_n = 51

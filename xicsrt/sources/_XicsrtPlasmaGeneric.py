@@ -155,6 +155,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
 
     def setup_bundles(self):
+        self.log.debug('Starting setup_bundles')
         if self.param['bundle_type'] == 'point':
             self.param['voxel_size'] = 0.0
         elif self.param['bundle_type'] == 'voxel':
@@ -187,9 +188,11 @@ class XicsrtPlasmaGeneric(GeometryObject):
         return self.param['velocity']
 
     def bundle_generate(self, bundle_input):
+        self.log.debug('Starting bundle_generate')
         return bundle_input
 
     def bundle_filter(self, bundle_input):
+        self.log.debug('Starting bundle_filter')
         for filter in self.filter_objects:
             bundle_input = filter.filter(bundle_input)
         return bundle_input
@@ -218,6 +221,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             * self.param['volume']
             / (self.param['bundle_count'] * self.param['bundle_volume'])))
 
+        self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
         if predicted_rays > self.param['max_rays']:
             raise ValueError(
                 'Current settings will produce too many rays. Please reduce '

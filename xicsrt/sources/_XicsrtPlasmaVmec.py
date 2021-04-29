@@ -56,6 +56,8 @@ class XicsrtPlasmaVmec(XicsrtPlasmaGeneric):
         return np.sqrt(point_flx[0])
 
     def bundle_generate(self, bundle_input):
+        self.log.debug('Starting bundle_generate')
+
         self.initialize_vmec()
         
         profiler.start("Bundle Input Generation")

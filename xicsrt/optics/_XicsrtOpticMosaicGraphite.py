@@ -44,8 +44,8 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool)
 
         if self.param['use_meshgrid'] is False:
-            distance = self.intersect(rays)
-            rays, X  = self.intersect_check(rays, distance)
+            rays, X = self.intersect(rays)
+            rays  = self.check_bounds(rays, X)
             self.log.debug(' Rays on   {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
             for ii in range(self.param['mosaic_depth']):
                 temp_mask = (~ mosaic_mask) & m
@@ -57,6 +57,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
         else:
             X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])
+            rays  = self.check_bounds(rays, X)
             self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
             for ii in range(self.param['mosaic_depth']):
                 temp_mask = (~ mosaic_mask) & m
@@ -98,7 +99,7 @@ class XicsrtOpticMosaicGraphite(XicsrtOpticCrystal):
         return normals
 
     def generate_normals(self, rays, X, mask=None):
-        normals = super().generate_normals(X, rays)
+        normals = super().generate_normals(rays, X)
         normals = self.mosaic_normals(rays, normals, mask)
         return normals
     

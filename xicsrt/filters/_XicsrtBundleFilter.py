@@ -9,9 +9,10 @@ import numpy as np
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._ConfigObject import ConfigObject
+from xicsrt.objects._GeometryObject import GeometryObject
 
 @dochelper
-class XicsrtBundleFilter(ConfigObject):
+class XicsrtBundleFilter(GeometryObject):
     """
     A base class for bundle filters.
     """
