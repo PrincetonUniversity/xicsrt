@@ -20,7 +20,7 @@ def distance_point_to_line(origin, normal, point):
     return d
 
 
-def toarray(a):
+def toarray_1d(a):
     """
     Convert the input to a ndarray with at least 1 dimension.
     This is similar to the numpy function atleast_1d, but has less overhead
@@ -246,3 +246,23 @@ def car_from_tor(point_tor, major_radius):
         point_car[2] = point_tor[0]*np.sin(point_tor[1])
 
     return point_car
+
+
+def point_in_triangle_2d(pt, p0, p1, p2):
+    """
+    Determine if a point (or set of points) fall within a triangle as specified
+    by three vertices.  Calculation is performed in two dimensions (2D).
+    """
+    pt = np.asarray(pt)
+    if pt.ndim == 2:
+        area = 0.5 * (-p1[1] * p2[0] + p0[1] * (-p1[0] + p2[0]) + p0[0] * (p1[1] - p2[1]) + p1[0] * p2[1])
+        a = 1 / (2 * area) * (p0[1] * p2[0] - p0[0] * p2[1] + (p2[1] - p0[1]) * pt[:, 0] + (p0[0] - p2[0]) * pt[:, 1])
+        b = 1 / (2 * area) * (p0[0] * p1[1] - p0[1] * p1[0] + (p0[1] - p1[1]) * pt[:, 0] + (p1[0] - p0[0]) * pt[:, 1])
+        c = 1 - a - b
+    else:
+        area = 0.5 * (-p1[1] * p2[0] + p0[1] * (-p1[0] + p2[0]) + p0[0] * (p1[1] - p2[1]) + p1[0] * p2[1])
+        a = 1 / (2 * area) * (p0[1] * p2[0] - p0[0] * p2[1] + (p2[1] - p0[1]) * pt[0] + (p0[0] - p2[0]) * pt[1])
+        b = 1 / (2 * area) * (p0[0] * p1[1] - p0[1] * p1[0] + (p0[1] - p1[1]) * pt[0] + (p1[0] - p0[0]) * pt[1])
+        c = 1 - a - b
+
+    return (a >= 0) & (b >= 0) & (c >= 0)

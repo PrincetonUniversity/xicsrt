@@ -179,6 +179,7 @@ def getSchemeColor(name, index_input, num_colors=None):
 
     Return
     ------
+
     A 4 element tuple is returned:
     (red, green, blue, alpha)
 
@@ -193,6 +194,7 @@ def getSchemeColor(name, index_input, num_colors=None):
 
     Keywords
     --------
+
     num_colors (int)
       The number of colors needed as part of the scheme. 
       This only affect gradient based schemes.
@@ -305,7 +307,7 @@ class PlotList(list):
         self.log.info('Saved figure to file: {}'.format(filename))
 
 
-    def _autonamePlots(self):
+    def _autonamePlots(self, sequential=False):
         """
         Automatically name any plots that were not given a name by the user.
         """
@@ -313,7 +315,11 @@ class PlotList(list):
         count = 0
         for ff in self:
             if not 'name' in ff:
-                ff['name'] = '_autoname_{:02d}'.format(count)
+                if sequential:
+                    num = count
+                else:
+                    num = 0
+                ff['name'] = '_autoname_{:02d}'.format(num)
                 count += 1
 
 
@@ -627,7 +633,8 @@ class PlotList(list):
         if 'ylabel' in properties:
             axis.set_ylabel(properties['ylabel'])
         if 'supress_xticklabels' in properties:
-            axis.set_xticklabels([])
+            if properties['supress_xticklabels']:
+                axis.set_xticklabels([])
         if 'legend' in properties:
             if properties['legend']:
                 axis.legend(loc=properties.get('legend_location')

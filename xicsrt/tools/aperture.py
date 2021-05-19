@@ -19,7 +19,7 @@ def aperture_mask(X_local, m, aperture_info):
         return m
 
     # Convert the aperture info to an array, if was not already.
-    aperture_info = xm.toarray(aperture_info)
+    aperture_info = xm.toarray_1d(aperture_info)
 
     m_out = m.copy()
     for aperture in aperture_info:
@@ -91,8 +91,8 @@ def _aperture_defaults(aperture):
     if new['shape'] is None: new['shape'] = 'none'
     if new['logic'] is None: new['logic'] = 'and'
 
-    new['size'] = xm.toarray(new['size'])
-    new['origin'] = xm.toarray(new['origin'])
+    new['size'] = xm.toarray_1d(new['size'])
+    new['origin'] = xm.toarray_1d(new['origin'])
     new['shape'] = new['shape'].lower()
     new['logic'] = new['logic'].lower()
 
