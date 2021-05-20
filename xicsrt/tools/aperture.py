@@ -72,6 +72,8 @@ def aperture_selector(X_local, m, aperture, _internal=False):
         func = aperture_rectangle
     elif shape == 'ellipse':
         func = aperture_ellipse
+    elif shape == 'triangle':
+        func = aperture_triangle
     else:
         raise Exception(f'Aperture shape: "{shape}" is not implemented.')
 
@@ -81,7 +83,6 @@ def aperture_selector(X_local, m, aperture, _internal=False):
 def _aperture_defaults(aperture):
     new = {
         'shape':None,
-        'size':None,
         'origin':None,
         'logic':None,
         }
@@ -91,10 +92,15 @@ def _aperture_defaults(aperture):
     if new['shape'] is None: new['shape'] = 'none'
     if new['logic'] is None: new['logic'] = 'and'
 
-    new['size'] = xm.toarray_1d(new['size'])
     new['origin'] = xm.toarray_1d(new['origin'])
     new['shape'] = new['shape'].lower()
     new['logic'] = new['logic'].lower()
+
+    if 'size' in new:
+        new['size'] = xm.toarray_1d(new['size'])
+
+    if 'vertices' in new:
+        new['vertices'] = np.asarray(new['vertices'])
 
     return new
 
@@ -178,7 +184,24 @@ def aperture_ellipse(X_local, m, aperture):
     return m
 
 
+def aperture_triangle(X_local, m, aperture):
+    """
+    An triangular aperture defined by three vertices.
 
+    name: 'ellipse'
+
+    vertices: [[x0, y0], [x1,y1], [x2,y2]]
+      Contains the three vertices of the aperture.
+    """
+
+    m[m] = xm.point_in_triangle_2d(
+        X_local[m,0:2],
+        aperture['vertices'][0,0:2]+aperture['origin'][0:2],
+        aperture['vertices'][1,0:2]+aperture['origin'][0:2],
+        aperture['vertices'][2,0:2]+aperture['origin'][0:2],
+        )
+
+    return m
 
 
 
