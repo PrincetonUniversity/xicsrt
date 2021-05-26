@@ -11,6 +11,7 @@ from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
 
+from scipy.spatial import Delaunay
 from scipy.spatial import cKDTree
 from scipy.interpolate import CloughTocher2DInterpolator as Interpolator
 
@@ -75,6 +76,28 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
     """
 
     def default_config(self):
+        """
+        use_meshgrid: bool (False)
+          Flag to determine whether the meshgrid definition should be enabled.
+
+          This optic is designed with this flag so that optics with complex
+          reflection behavior can subclass from this optic and then be used
+          with or without a meshgrid definition.  If this flag is set to False
+          then this optic will behave the same as a generic optic
+          (XicsrtGenericOptic).
+
+        mesh_points
+        mesh_faces
+        mesh_normals
+
+        mesh_coarse_points
+        mesh_coarse_faces
+        mesh_coarse_normals
+
+        mesh_interpolate
+        mesh_refine
+
+        """
         config = super().default_config()
 
         # mesh information
@@ -125,7 +148,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             else:
                 X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
                 num_rays_coarse = np.sum(rays['mask'])
-                faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'])
+                faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'], rays['mask'])
                 X, rays, hits = self.mesh_intersect_2(
                     rays
                     ,self.param['mesh']
@@ -141,7 +164,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             if self.param['mesh_interpolate']:
                 X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
             else:
-                normals = self.mesh_normals(hits, self.param['mesh'])
+                normals = self.mesh_normals(hits, self.param['mesh'], rays['mask'])
             rays = self.reflect_vectors(rays, X, normals)
             self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
 
@@ -174,6 +197,11 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         output['faces'] = faces
         output['points'] = points
         output['normals'] = normals
+
+        if faces is None:
+            tri = Delaunay(points[:, 0:2])
+            faces = tri.simplices
+            output['faces'] = faces
 
         if self.param['mesh_interpolate']:
             # Create a set of interpolators.
@@ -386,8 +414,10 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         return X, rays, hits
 
-    def mesh_normals(self, hits, mesh):
-        normals = mesh['faces_normal'][hits, :]
+    def mesh_normals(self, hits, mesh, mask):
+        m = mask
+        normals = np.zeros((len(m), 3), dtype=np.float64)
+        normals[m, :] = mesh['faces_normal'][hits[m], :]
         return normals
 
     def mesh_get_index(self, hits, faces):
@@ -404,7 +434,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     def find_point_faces(self, p_idx, faces, mask=None):
         """
-        Find all of the the faces that include a given point.
+        Find all of the the faces that include a given mesh point.
         """
         profiler.start('find_point_faces')
         if mask is None:
@@ -420,10 +450,15 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         profiler.stop('find_point_faces')
         return p_faces_idx, p_faces_mask
 
-    def find_near_faces(self, X, mesh):
+    def find_near_faces(self, X, mesh, mask):
+        m = mask
         profiler.start('find_near_faces')
-        idx = mesh['points_tree'].query(X)[1]
-        faces_idx = mesh['p_faces_idx'][:, idx]
-        faces_mask = mesh['p_faces_mask'][:, idx]
+        idx = mesh['points_tree'].query(X[m])[1]
+
+        faces_idx = np.zeros((8, len(m)), dtype=np.int)
+        faces_mask = np.zeros((8, len(m)), dtype=np.bool)
+
+        faces_idx[:, m] = mesh['p_faces_idx'][:, idx]
+        faces_mask[:, m] = mesh['p_faces_mask'][:, idx]
         profiler.stop('find_near_faces')
         return faces_idx, faces_mask
