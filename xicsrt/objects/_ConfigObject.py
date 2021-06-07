@@ -51,7 +51,7 @@ class ConfigObject():
 
         config = OrderedDict()
         config['class_name'] = self.__class__.__name__
-        config['yo_mama'] = 'Is wonderful!'
+        config['yo_mama'] = 'Is a beautiful person and she loves you.'
         return config
 
     def get_config(self):

@@ -71,6 +71,11 @@ def get_config(config_user=None):
     return config
 
 def update_config(config, config_user):
+    """
+    Update a given config with the values from a second config.
+
+    This is helpful when updating a default config with user values.
+    """
     obj_config =  XicsrtGeneralConfig()
     obj_config.update_config(config, strict=False, update=True)
     obj_config.update_config(config_user, strict=False, update=True)
