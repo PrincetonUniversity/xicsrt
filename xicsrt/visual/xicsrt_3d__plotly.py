@@ -81,25 +81,46 @@ def show(figure=None):
 
     figure.show()
 
-def add_rays(results, figure=None):
-    _plot_ray_history(results['found']['history'], lost=False, figure=figure)
-    _plot_ray_history(results['lost']['history'], lost=True, figure=figure)
+def add_rays(results, **kwargs):
+    _plot_ray_history(results['lost']['history'], lost=True, **kwargs)
+    _plot_ray_history(results['found']['history'], lost=False, **kwargs)
 
+def _plot_ray_history(
+        history,
+        lost=None,
+        figure=None,
+        color=None,
+        lost_color=None,
+        found_color=None,
+        #alpha=None,
+        #lost_alpha=None,
+        #found_alpha=None,
+        ):
 
-def _plot_ray_history(history, lost=None, figure=None):
     global m_figure
     if figure is None: figure = m_figure
 
+    #print(lost_color, found_color)
+
     if lost is False:
-        color = 'rgba(255, 0, 0, 0.01)'
+        if color is None:
+            color = 'rgba(255, 0, 0, 0.01)'
+        if found_color is not None:
+            color = found_color
         name = 'found'
     elif lost is True:
-        color = 'rgba(0, 0, 255, 0.01)'
+        if color is None:
+            color = 'rgba(0, 0, 255, 0.01)'
+        if lost_color is not None:
+            color = lost_color
         name = 'lost'
     else:
-        color = 'rgba(0, 0, 0, 0.1)'
+        if color is None:
+            color = 'rgba(0, 0, 0, 0.1)'
         name = 'other'
-        
+
+    color_plotly = _make_plotly_color(color, alpha=None)
+
     num_elem = len(history)
     key_list = list(history.keys())
     
@@ -128,7 +149,7 @@ def _plot_ray_history(history, lost=None, figure=None):
         y = np.dstack((y0, y1, nan)).flatten()
         z = np.dstack((z0, z1, nan)).flatten()
 
-        line = {'color': color}
+        line = {'color':color_plotly}
         data = go.Scatter3d(
             x=x
             ,y=y
@@ -394,3 +415,11 @@ def add_fluxsurfaces(
 
         figure.add_trace(trace)
 
+
+def _make_plotly_color(color, alpha=None):
+    if isinstance(color, str):
+        color_str = color
+    else:
+        raise Exception('Only plotly color strings are currently supported.')
+
+    return color_str
