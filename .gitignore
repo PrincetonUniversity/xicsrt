@@ -1,12 +1,13 @@
 ## -----------------------------------------------------------------------------
 ## General filetype exclusions.
 
-##
+## Project development files
 results
 archive
 dist
 build
 doc_build
+xicsrt_contrib
 
 ## Data files
 *.nc

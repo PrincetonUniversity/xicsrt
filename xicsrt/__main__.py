@@ -12,6 +12,7 @@ import logging
 import io
 
 from xicsrt import xicsrt_raytrace
+from xicsrt import xicsrt_multiprocessing
 from xicsrt import xicsrt_input
 
 def _get_parser():
@@ -19,14 +20,17 @@ def _get_parser():
         "\n    xicsrt_command.py"
         ,description = """
 description:
-  Perform an XICSRT raytrace.
+  Perform an XICSRT raytrace from the command line.
 
   The input to this command should be an XICSRT configuration dictionary
-  in json format.
+  in json format. (Support for pickle and hdf5 formats coming soon.)
 
 
-example:
-  python xicsrt_command.py config.json
+example 1:
+  xicsrt config.json
+  
+example 2: 
+  python -m xicsrt config.json
 
 """
         ,formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=79))
