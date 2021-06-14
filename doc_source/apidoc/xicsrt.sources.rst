@@ -18,8 +18,6 @@ Built-in Source Objects
    xicsrt.sources.XicsrtPlasmaGeneric
    xicsrt.sources.XicsrtPlasmaToroidal
    xicsrt.sources.XicsrtPlasmaToroidalDatafile
-   xicsrt.sources.XicsrtPlasmaVmec
-   xicsrt.sources.XicsrtPlasmaVmecDatafile
    xicsrt.sources.XicsrtSourceDirected
    xicsrt.sources.XicsrtSourceFocused
    xicsrt.sources.XicsrtSourceGeneric
