@@ -95,8 +95,8 @@ def plot_intersect(
                 , 'type': 'scatter'
                 , 'x': origin_loc[mask, 0]*scale
                 , 'y': origin_loc[mask, 1]*scale
-                , 'xbound': xbound
-                , 'ybound': ybound
+                , 'xbound': xbound*scale
+                , 'ybound': ybound*scale
                 , 'aspect': aspect
                 , 'alpha': lost_alpha
                 , 'color': lost_color
