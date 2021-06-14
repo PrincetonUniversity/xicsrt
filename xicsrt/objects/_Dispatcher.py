@@ -63,6 +63,17 @@ class Dispatcher():
             self.objects[key] = obj
 
     def find_xicsrt_objects(self, pathlist):
+        """
+        Return a dictionary with all the XICSRT objects found in the given
+        list of paths. Objects are identified by looking for python files
+        that start with '_Xicsrt' prefix.
+
+        Programming Notes
+        -----------------
+        If a given path does not exist glob will just return and empty list.
+        For this reason no path existence checking is needed (unless we want
+        to raise a user friendly error).
+        """
 
         filepath_list = []
         name_list = []

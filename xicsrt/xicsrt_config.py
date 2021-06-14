@@ -93,9 +93,20 @@ def get_pathlist_default():
     Return a list of the default sources and optics directories.
     These locations will be based on the location of this module.
     """
-    path_module = os.path.dirname(os.path.abspath(__file__))
+
     pathlist_default = []
+
+    # Add paths to built-in objects.
+    path_module = os.path.dirname(os.path.abspath(__file__))
     pathlist_default.append(os.path.join(path_module, 'filters'))
     pathlist_default.append(os.path.join(path_module, 'sources'))
     pathlist_default.append(os.path.join(path_module, 'optics'))
+
+    # Add paths to the xicsrt_contrib objects.
+    path_module_contrib = os.path.join(os.path.dirname(path_module), 'xicsrt_contrib')
+    if os.path.exists(path_module_contrib):
+        pathlist_default.append(os.path.join(path_module_contrib, 'filters'))
+        pathlist_default.append(os.path.join(path_module_contrib, 'sources'))
+        pathlist_default.append(os.path.join(path_module_contrib, 'optics'))
+
     return pathlist_default
