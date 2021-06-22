@@ -69,7 +69,7 @@ def raytrace(config):
 
     # Reset the configuration options that were unique to the individual runs.
     output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
-    output['config']['general']['random_seed'] = config['general']['output_run_suffix']
+    output['config']['general']['random_seed'] = config['general']['random_seed']
 
     if config['general']['save_images']:
         save_images(output)
