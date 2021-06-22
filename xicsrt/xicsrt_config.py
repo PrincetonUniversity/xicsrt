@@ -76,7 +76,7 @@ def update_config(config, config_user):
 
     This is helpful when updating a default config with user values.
     """
-    obj_config =  XicsrtGeneralConfig()
+    obj_config = XicsrtGeneralConfig()
     obj_config.update_config(config, strict=False, update=True)
     obj_config.update_config(config_user, strict=False, update=True)
     config_out = obj_config.get_config()
@@ -94,19 +94,31 @@ def get_pathlist_default():
     These locations will be based on the location of this module.
     """
 
-    pathlist_default = []
+    pathlist = []
+    pathlist = _add_pathlist_builtin(pathlist)
+    pathlist = _add_pathlist_contrib(pathlist)
+    return pathlist
 
+def _add_pathlist_builtin(pathlist):
     # Add paths to built-in objects.
     path_module = os.path.dirname(os.path.abspath(__file__))
-    pathlist_default.append(os.path.join(path_module, 'filters'))
-    pathlist_default.append(os.path.join(path_module, 'sources'))
-    pathlist_default.append(os.path.join(path_module, 'optics'))
+    pathlist.append(os.path.join(path_module, 'filters'))
+    pathlist.append(os.path.join(path_module, 'sources'))
+    pathlist.append(os.path.join(path_module, 'optics'))
+
+    return pathlist
+
+def _add_pathlist_contrib(pathlist):
+    try:
+        import xicsrt_contrib
+    except:
+        logging.debug('The xicrsrt_contrib package is not installed.')
 
     # Add paths to the xicsrt_contrib objects.
-    path_module_contrib = os.path.join(os.path.dirname(path_module), 'xicsrt_contrib')
-    if os.path.exists(path_module_contrib):
-        pathlist_default.append(os.path.join(path_module_contrib, 'filters'))
-        pathlist_default.append(os.path.join(path_module_contrib, 'sources'))
-        pathlist_default.append(os.path.join(path_module_contrib, 'optics'))
+    path_module = os.path.dirname(os.path.abspath(xicsrt_contrib.__file__))
+    pathlist.append(os.path.join(path_module, 'filters'))
+    pathlist.append(os.path.join(path_module, 'sources'))
+    pathlist.append(os.path.join(path_module, 'optics'))
+    logging.debug('The xicrsrt_contrib objects are available.')
 
-    return pathlist_default
+    return pathlist
