@@ -1,8 +1,26 @@
 # -*- coding: utf-8 -*-
+"""
+.. Authors
+    Novimir Pablant <npablant@pppl.gov>
+    James Kring <jdk0026@tigermail.auburn.edu>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+A set of mathematical function with jax acceleration. Many of these functions
+are exact copies or slight modification of the functions in xicsrt_math. Other
+function are specific to this module.
+
+Programming Notes
+-----------------
+
+These module was developed to support some specific modeling work by N. Pablant
+and is not used in any of the built-in xicsrt code. There is no plan to support
+jax generally within xicsrt, so I am not really sure of the best way to handle
+this module for the moment. Maybe move it into xicsrt_contrib?
+"""
 
 import jax.numpy as np
 
-def toarray(a):
+def toarray_1d(a):
     """
     Convert the input to a ndarray with at least 1 dimension.
     This is similar to the numpy function atleast_1d, but has less overhead
@@ -12,6 +30,7 @@ def toarray(a):
     if a.ndim == 0:
         a = a.reshape(1)
     return a
+
 
 def vector_angle(a, b):
     """
@@ -27,6 +46,7 @@ def vector_angle(a, b):
         raise Exception('Input must have 1 or 2 dimensions.')
     angle = np.arccos(dot)
     return angle
+
 
 def vector_rotate(a, b, theta):
     """
@@ -44,15 +64,19 @@ def vector_rotate(a, b, theta):
     c = u + v * np.cos(theta) + w * np.sin(theta)
     return c
 
+
 def sinusoidal_spiral(phi, b, r0, theta0):
     r = r0 * (np.sin(theta0 + (b-1)*phi)/np.sin(theta0))**(1/(b-1))
     return r
 
+
 def point_to_external(point_local, orientation, origin):
     return vector_to_external(point_local, orientation) + origin
 
+
 def point_to_local(point_external, orientation, origin):
     return vector_to_local(point_external - origin, orientation)
+
 
 def vector_to_external(vector, orientation):
     if vector.ndim == 2:
@@ -62,6 +86,7 @@ def vector_to_external(vector, orientation):
     else:
         raise Exception('vector.ndim must be 1 or 2')
     return vector
+
 
 def vector_to_local(vector, orientation):
     if vector.ndim == 2:
