@@ -202,6 +202,7 @@ def _add_pathlist_contrib(pathlist):
         import xicsrt_contrib
     except:
         logging.debug('The xicrsrt_contrib package is not installed.')
+        return pathlist
 
     # Add paths to the xicsrt_contrib objects.
     path_module = os.path.dirname(os.path.abspath(xicsrt_contrib.__file__))
