@@ -57,11 +57,22 @@ def vector_rotate(a, b, theta):
       v: perpendicular projection of a on b_hat.
       w: a vector perpendicular to both a and b.
     """
-    b_hat = b / np.linalg.norm(b)
-    u = b_hat * np.dot(a, b_hat)
-    v = a - u
-    w = np.cross(b_hat, v)
-    c = u + v * np.cos(theta) + w * np.sin(theta)
+
+    if a.ndim == 2:
+        b_hat = b / np.linalg.norm(b)
+        dot = np.einsum('ij,j->i', a, b_hat, optimize=True)
+        u = np.einsum('i,j->ij', dot, b_hat, optimize=True)
+        v = a - u
+        w = np.cross(b_hat, v)
+        c = u + v * np.cos(theta) + w * np.sin(theta)
+    elif a.ndim == 1:
+        b_hat = b / np.linalg.norm(b)
+        u = b_hat * np.dot(a, b_hat)
+        v = a - u
+        w = np.cross(b_hat, v)
+        c = u + v * np.cos(theta) + w * np.sin(theta)
+    else:
+        raise Exception('Input array must be 1d (vector) or 2d (array of vectors)')
     return c
 
 
