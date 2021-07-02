@@ -52,10 +52,16 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
           Warning: Only the 'isotropic' distribution is currently supported!
 
-        spread: float (pi) [radians]
+        spread: float (None) [radians]
           The angular spread for the emission cone. The spread defines the
           half-angle of the cone. See 'spread_dist' in :any:`XicsrtSourceGeneric`
           for detailed documentation.
+
+        spread_radius: float (None) [meters]
+          If specified, the spread will be calculated for each bundle such that
+          the spotsize at the target matches the given radius. This is useful
+          when working with very extended plasma sources.
+          This options is incompatible with 'spread'.
 
         use_poisson
           No documentation yet. Please help improve XICSRT!
@@ -256,12 +262,12 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
         if predicted_rays > self.param['max_rays']:
             raise ValueError(
-                f'Current settings will produce too many rays ({predicted_rays}. '
-                'Please reduce integration time.')
-        if  self.param['bundle_count'] > self.param['max_bundles']:
+                f"Current settings will produce too many rays ({predicted_rays}:0.2e). "
+                f"Please reduce integration time or adjust other parameters.")
+        if  sum(m) > self.param['max_bundles']:
             raise ValueError(
-                'Current settings will produce too many bundles. Please reduce' 
-                'the bundle volume or use the option bundle_count.')
+                f"Current settings will produce too many bundles ({self.param['bundle_count']:0.2e}). "
+                f"Please reduce the bundle volume or use the option bundle_count.")
 
         # Bundle generation loop
         for ii in range(self.param['bundle_count']):
