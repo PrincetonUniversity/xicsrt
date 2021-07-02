@@ -22,7 +22,9 @@ class XicsrtPlasmaCubic(XicsrtPlasmaGeneric):
     """
                 
     def bundle_generate(self, bundle_input):
-        
+
+        bundle_input = super().bundle_generate(bundle_input)
+
         #evaluate temperature at each point
         #plasma cube has consistent temperature throughout
         bundle_input['temperature'][:] = self.param['temperature']

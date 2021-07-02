@@ -275,6 +275,9 @@ class XicsrtOpticGeneric(GeometryObject):
         return rays
 
     def generate_normals(self, rays, X):
+        """
+        The Generic optic is flat, so the normal direction is always the zaxis.
+        """
         m = rays['mask']
         normals = np.zeros(X.shape, dtype=np.float64)
         normals[m] = self.param['zaxis']

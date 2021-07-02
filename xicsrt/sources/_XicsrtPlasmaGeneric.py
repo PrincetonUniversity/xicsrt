@@ -118,7 +118,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['zsize']          = 0.0
 
         config['spread_dist']      = 'isotropic'
-        config['spread']           = np.pi
+        config['spread']           = None
+        config['spread_radius']    = None
         config['target']           = None
         config['use_poisson']      = False
 
@@ -142,7 +143,6 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['filter_list']     = []
         return config
 
-
     def initialize(self):
         super().initialize()
         self.param['max_rays']     = int(self.param['max_rays'])
@@ -151,9 +151,6 @@ class XicsrtPlasmaGeneric(GeometryObject):
         if self.param['bundle_count'] is None:
             self.param['bundle_count'] = self.param['volume']/self.param['bundle_volume']
         self.param['bundle_count'] = int(np.round(self.param['bundle_count']))
-
-        self.param['solid_angle']  = xicsrt_dist.solid_angle(self.config['spread']/2)
-
 
     def setup_bundles(self):
         self.log.debug('Starting setup_bundles')
@@ -169,6 +166,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.float64)
         bundle_input['velocity']     = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
         bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool)
+        bundle_input['spread']       = np.zeros([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['solid_angle']  = np.zeros([self.param['bundle_count']], dtype = np.float64)
         
         # randomly spread the bundles around the plasma box
         offset = np.zeros((self.param['bundle_count'], 3))
@@ -177,6 +176,37 @@ class XicsrtPlasmaGeneric(GeometryObject):
         offset[:,2] = np.random.uniform(-1 * self.param['zsize'] /2, self.param['zsize'] /2, self.param['bundle_count'])
 
         bundle_input['origin'][:] = self.point_to_external(offset)
+
+        # Setup the bundle spread and solid angle.
+        bundle_input = self.setup_bundle_spread(bundle_input)
+
+        return bundle_input
+
+    def setup_bundle_spread(self, bundle_input):
+        """
+        Calculate the spread and solid angle for each bundle.
+
+        If the config option 'spread_radius' is provide the spread will be
+        determined for each bundle by a spotsize at the target.
+
+        Note: Even if the idea of a spread radius is added to the generic
+              source object we still need to calculate and save the results
+              here so that we can correctly calcuate the bundle intensities.
+        """
+        if self.param['spread_radius'] is not None:
+            vector = bundle_input['origin'] - self.param['target']
+            dist = np.linalg.norm(vector, axis=1)
+            spread = np.arctan(self.param['spread_radius']/dist)
+        else:
+            spread = self.param['spread']
+
+        bundle_input['spread'][:] = spread
+
+        # For the time being the fuction solid_angle is not vectorized, so a
+        # loop is necessary.
+        for ii in range(len(bundle_input['spread'])):
+            bundle_input['solid_angle'][ii] = xicsrt_dist.solid_angle(bundle_input['spread'][ii])
+
         return bundle_input
 
     def get_emissivity(self, rho):
@@ -214,19 +244,20 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.
+
         predicted_rays = int(np.sum(
             bundle_input['emissivity'][m]
             * self.param['time_resolution']
             * self.param['bundle_volume']
-            * self.param['solid_angle'] / (4 * np.pi)
+            * bundle_input['solid_angle'][m] / (4 * np.pi)
             * self.param['volume']
             / (self.param['bundle_count'] * self.param['bundle_volume'])))
 
         self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
         if predicted_rays > self.param['max_rays']:
             raise ValueError(
-                'Current settings will produce too many rays. Please reduce '
-                'integration time.')
+                f'Current settings will produce too many rays ({predicted_rays}. '
+                'Please reduce integration time.')
         if  self.param['bundle_count'] > self.param['max_bundles']:
             raise ValueError(
                 'Current settings will produce too many bundles. Please reduce' 
@@ -243,6 +274,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config['origin']      = bundle_input['origin'][ii]
             source_config['temperature'] = bundle_input['temperature'][ii]
             source_config['velocity']    = bundle_input['velocity'][ii]
+            source_config['spread']      = bundle_input['spread'][ii]
 
             # Calculate the total number of photons to launch from this bundle
             # volume. Since the source can use poisson statistics, this should
@@ -250,7 +282,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             intensity = (bundle_input['emissivity'][ii]
                          * self.param['time_resolution']
                          * self.param['bundle_volume']
-                         * self.param['solid_angle'] / (4 * np.pi))
+                         * bundle_input['solid_angle'][ii] / (4 * np.pi))
             
             # Scale the number of photons based on the number of bundles.
             #
@@ -282,7 +314,6 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config['wavelength_range'] = self.param['wavelength_range']
             source_config['linewidth']        = self.param['linewidth']
             source_config['spread_dist']      = self.param['spread_dist']
-            source_config['spread']           = self.param['spread']
             source_config['use_poisson']      = self.param['use_poisson']
                 
             #create ray bundle sources and generate bundled rays

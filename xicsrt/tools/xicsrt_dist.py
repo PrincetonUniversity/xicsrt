@@ -113,7 +113,15 @@ def solid_angle_isotropic(spread):
     """
     Calculate the solid angle for the vector_dist_isotropic distribution.
 
-    Units: [sr]
+    Parameters
+    ----------
+    spread : float [radians]
+      The half-angle of cone of vectors (axis to edge).
+
+    Returns
+    -------
+    solid_angle
+      Units: [sr]
     """
     theta = _parse_spread_single(spread)
     solid_angle = 4 * np.pi * np.sin(theta[0]/2)**2
