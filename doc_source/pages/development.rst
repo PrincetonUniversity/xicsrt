@@ -25,7 +25,10 @@ nice self-contained improvement project.
 
 Time estimates are for someone who has experience running XICSRT, has a very
 strong python/numpy programming background, but who is not familiar with the
-XICSRT code base. Time estimates include time for testing and verification.
+XICSRT code base. Time estimates include time for testing and verification. I
+expect that it will take at *least* 2-3 times longer for most students or new
+contributors who will also be learning all the various python programming and
+numerical programming concepts!
 
 
 .. admonition:: Add a cylindrical reflector object
@@ -42,6 +45,8 @@ XICSRT code base. Time estimates include time for testing and verification.
 
 .. admonition:: Add a toroidal reflector object
 
+    **In progress by S. Mishra**
+
   | Time Estimate: **1 week**
   | Create an object named `XicsrtOpticCrystalToroidal`. Object should be very
     similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal geometry.
@@ -53,6 +58,8 @@ XICSRT code base. Time estimates include time for testing and verification.
 
 
 .. admonition:: Create an Aperature Optic
+
+  **DONE!! (Thanks to Nathan Bartlett)**
 
   | Time Estimate: **2 weeks**
   | Create an object named `XicsrtOpticAperature` that can act as an aperture
