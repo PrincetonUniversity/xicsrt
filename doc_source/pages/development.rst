@@ -47,7 +47,7 @@ numerical programming concepts!
 
     **In progress by S. Mishra**
 
-  | Time Estimate: **1 week**
+  | Time Estimate: **2 weeks**
   | Create an object named `XicsrtOpticCrystalToroidal`. Object should be very
     similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal geometry.
     The object should be defined with a major and minor radius. Test against
@@ -56,6 +56,30 @@ numerical programming concepts!
 
   |     added: 2021-01-24 by Novimir
 
+.. admonition:: Add plotting routines for all aperture definitions
+
+  | Time Estimate: **2 weeks**
+  | The 2d plotter (`xicsrt_2d__matplotlib`) currently knows how to plot the
+    optics bounds defined by `xsize` and `ysize`, but cannot plot any of the
+    apertures shapes. We need to add handling to the plotter for all defined
+    apertures. My feeling is that this should all just be added to the
+    `xicsrt_2d__matplotlib` module since I don't see anyway to generalize
+    this type of plotting. Plotting of apertures should be handled by
+    creating a new function that returns a `mirplot.PlotList` that can be
+    added to the existing plot. Some significant restructuring of the
+    2d plotting library may be necessary.
+
+  I (Novimir) am planning on adding the code for the triangle aperture which
+  means that the basic structure will be be in place at some time soon. The
+  rest of the shapes should then be pretty easy to add in.
+
+  Note: I want to make sure that the plotting is totally separate from the
+  the aperture definitions since plotting is only an external addon to the
+  xicsrt base code. It may be a good idea to split the aperture plotting
+  functions to a separate `__matplotlib` functions, but I think it's best to
+  start by just putting everything in a single plotting module.
+
+  |     added: 2021-07-02 by Novimir
 
 .. admonition:: Create an Aperture Optic
 
