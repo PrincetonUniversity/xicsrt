@@ -57,7 +57,7 @@ numerical programming concepts!
   |     added: 2021-01-24 by Novimir
 
 
-.. admonition:: Create an Aperature Optic
+.. admonition:: Create an Aperture Optic
 
   **DONE!! (Thanks to Nathan Bartlett)**
 
