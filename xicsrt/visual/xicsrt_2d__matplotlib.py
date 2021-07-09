@@ -9,8 +9,11 @@ A set of tools for 2d visualization of the XICSRT results
 """
 
 import numpy as np
+import logging
+
 from xicsrt.util import mirplot
 from xicsrt.objects._Dispatcher import Dispatcher
+from xicsrt.tools import aperture
 
 def plot_intersect(
         results,
@@ -31,7 +34,8 @@ def plot_intersect(
         ybound=None,
         scale=None,
         aspect=None,
-        optic_bounds=None,
+        plot_bounds=None,
+        plot_aperture=None,
 
         plotlist=None,
         plot_to_screen=True,
@@ -46,7 +50,8 @@ def plot_intersect(
     if aspect is None: aspect = 1
     if lost_color is None: lost_color = 'royalblue'
     if found_color is None: found_color = 'red'
-    if optic_bounds is None: optic_bounds = True
+    if plot_bounds is None: plot_bounds = True
+    if plot_aperture is None: plot_aperture = True
 
     if (alpha is None) and (lost_alpha is None):
         lost_alpha = 0.1
@@ -74,6 +79,11 @@ def plot_intersect(
 
     # Get the crystal object from the dispatcher.
     obj = optics.get_object(name)
+
+    if plot_bounds:
+        plotlist.extend(_get_bounds_plotlist(obj, scale))
+    if plot_aperture:
+        plotlist.extend(_get_aperture_plotlist(obj, scale))
 
     if xbound is None:
         xbound = np.array([-1*obj.param['xsize']/2, obj.param['xsize']/2])*1.2
@@ -120,20 +130,64 @@ def plot_intersect(
                 , 'color': found_color
             })
 
-    if optic_bounds:
-        # Plot the optic extent as taken from the xsize and ysize.
-        # In the future we should also plot the aperture (if defined).
-        opt_x = obj.param['xsize']/2*scale
-        opt_y = obj.param['ysize']/2*scale
-        plotlist.append({
-            'name': '0',
-            'x': [-1*opt_x, opt_x, opt_x, -1*opt_x, -1*opt_x],
-            'y': [opt_y, opt_y, -1*opt_y, -1*opt_y, opt_y],
-            'linestyle': '--',
-            'color': 'black',
-        })
-
     if plot_to_screen:
         p = plotlist.plotToScreen()
 
+    return plotlist
+
+def _get_bounds_plotlist(obj, scale=None):
+    if scale is None: scale=1.0
+    plotlist = mirplot.PlotList()
+
+    # Plot the optic extent as taken from the xsize and ysize.
+    opt_x = obj.param['xsize']/2*scale
+    opt_y = obj.param['ysize']/2*scale
+    plotlist.append({
+        'name': '0',
+        'x': [-1*opt_x, opt_x, opt_x, -1*opt_x, -1*opt_x],
+        'y': [opt_y, opt_y, -1*opt_y, -1*opt_y, opt_y],
+        'linestyle': '--',
+        'color': 'gray',
+    })
+
+    return plotlist
+
+def _get_aperture_plotlist(obj, scale=None):
+    if scale is None: scale=1.0
+    plotlist = mirplot.PlotList()
+
+    if obj.param['aperture'] is None:
+        return []
+
+    for apt in obj.param['aperture']:
+        apt = aperture._aperture_defaults(apt)
+        shape = apt['shape']
+        if shape == 'square':
+            size = apt['size'][0]/2*scale
+            origin = apt['origin'].copy()*scale
+            x = np.array([-1, 1,  1, -1, -1])*size + origin[0]
+            y = np.array([ 1, 1, -1, -1,  1])*size + origin[1]
+
+        if shape == 'rectangle':
+            size = apt['size'].copy()/2*scale
+            origin = apt['origin'].copy()*scale
+            x = np.array([-1, 1,  1, -1, -1])*size[0] + origin[0]
+            y = np.array([ 1, 1, -1, -1,  1])*size[1] + origin[1]
+
+        if shape == 'triangle':
+            vert = apt['vertices'].copy()*scale
+            origin = apt['origin'].copy()*scale
+            x = np.array([vert[0,0], vert[1,0], vert[2,0], vert[0,0]])+origin[0]
+            y = np.array([vert[0,1], vert[1,1], vert[2,1], vert[0,1]])+origin[0]
+        else:
+            logging.warning(f'Plotting of {shape} aperture not yet implemented.')
+            return []
+
+        plotlist.append({
+            'name': '0',
+            'x': x,
+            'y': y,
+            'linestyle': '-',
+            'color': 'black',
+        })
     return plotlist
