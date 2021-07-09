@@ -156,7 +156,7 @@ def _get_aperture_plotlist(obj, scale=None):
     if scale is None: scale=1.0
     plotlist = mirplot.PlotList()
 
-    if obj.param['aperture'] is None:
+    if (not 'aperture' in obj.param) or (obj.param['aperture'] is None):
         return []
 
     for apt in obj.param['aperture']:
