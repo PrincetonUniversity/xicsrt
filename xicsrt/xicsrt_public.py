@@ -2,8 +2,6 @@
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
-    James Kring <jdk0026@tigermail.auburn.edu>
-    Yevgeniy Yakusevich <eugenethree@gmail.com>
 
 A collections of routines to simplify interactive use of XICSRT.
 """
@@ -14,7 +12,7 @@ from xicsrt.objects._Dispatcher import Dispatcher
 
 def get_element(config_user, name, section=None, initialize=True):
     """
-    Retrieves an raytracing element (source or optic) object.
+    Retrieves an raytracing element (source, optic or filter) object.
     """
     config = xicsrt_config.get_config(config_user)
     if section is None:
@@ -42,7 +40,7 @@ def _find_element_section(config, name):
     if len(out_list) == 0:
         raise Exception(f'Could not find element: {name} in any section.')
     if len(out_list) > 1:
-        raise Exception(f'Element name: {name} was found in more than one section.'
-                        f' Please provide an explicit section name.')
+        raise Warning(f'Element name: {name} was found in more than one section.'
+                      f' Please provide an explicit section name.')
 
     return out_list[0]

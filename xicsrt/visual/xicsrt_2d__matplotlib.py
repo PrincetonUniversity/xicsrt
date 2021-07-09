@@ -12,7 +12,7 @@ import numpy as np
 import logging
 
 from xicsrt.util import mirplot
-from xicsrt.objects._Dispatcher import Dispatcher
+from xicsrt import xicsrt_public
 from xicsrt.tools import aperture
 
 def plot_intersect(
@@ -42,8 +42,29 @@ def plot_intersect(
         ):
     """
     Plot the intersection of rays with the given optic.
+
+    Parameters
+    ----------
+    results
+      The restults dictionary from `raytrace()` that include the ray history.
+
+    Keywords
+    --------
+    name : string (None)
+      The name of the optic or source for which to plot intersections. The name
+      refers to the key of the entry in the config dictionary. For example
+      the name 'detector' will refer to config['optics']['detector'].
+
+    section : string (None)
+      [Optional] The name of the config section in which to search for `name`.
+      This should typically be either 'optics' or 'sources'. If no section is
+      given then then 'optics' will be searched first, then 'sources'.
+
+    Returns
+    -------
+    plotlist
+      Will return a mirplot.PlotList with the full plot definition.
     """
-    if section is None: section = 'optics'
     if name is None: name = 'detector'
     if found is None: found = True
     if lost is None: lost = True
@@ -71,14 +92,8 @@ def plot_intersect(
 
     config = results['config']
 
-    # Use the dispatcher in instantiate and initialize objects.
-    optics = Dispatcher(config, section)
-    optics.instantiate([name])
-    optics.setup()
-    optics.initialize()
-
     # Get the crystal object from the dispatcher.
-    obj = optics.get_object(name)
+    obj = xicsrt_public.get_element(config, name, section)
 
     if plot_bounds:
         plotlist.extend(_get_bounds_plotlist(obj, scale))
