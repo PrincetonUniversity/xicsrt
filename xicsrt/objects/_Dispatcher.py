@@ -29,12 +29,11 @@ class Dispatcher():
     def __init__(self, config=None, section=None):
         self.log = logging.getLogger(self.__class__.__name__)
 
-        # Todo: This needs to be renamed to something more sensible.
         self.config = config
         self.section = section
 
         pathlist = []
-        pathlist.extend(config['general'].get('pathlist_objects', []))
+        pathlist.extend(config['general'].get('pathlist', []))
         pathlist.extend(config['general'].get('pathlist_default', []))
         self.pathlist = pathlist
         
@@ -89,8 +88,8 @@ class Dispatcher():
         output = dict()
         for ii, ff in enumerate(name_list):
             output[ff] = {
-                'filepath': filepath_list[ii]
-                , 'name': name_list[ii]
+                'filepath': filepath_list[ii],
+                'name': name_list[ii]
             }
 
         return output

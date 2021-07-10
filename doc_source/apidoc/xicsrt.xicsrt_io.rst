@@ -1,8 +1,8 @@
-xicsrt\_input
-=============
-`xicsrt.xicsrt_input`
+xicsrt\_io
+==========
+`xicsrt.xicsrt_io`
 
-.. automirmodule:: xicsrt.xicsrt_input
+.. automirmodule:: xicsrt.xicsrt_io
     :members:
     :undoc-members:
     :member-order: bysource
@@ -11,7 +11,7 @@ xicsrt\_input
 Private Members
 ---------------
 
-.. automirmodule:: xicsrt.xicsrt_input
+.. automirmodule:: xicsrt.xicsrt_io
     :members:
     :private-members:
     :undoc-members:

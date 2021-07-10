@@ -13,7 +13,7 @@ import io
 
 from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_multiprocessing
-from xicsrt import xicsrt_input
+from xicsrt import xicsrt_io
 
 def _get_parser():
     parser = argparse.ArgumentParser(
@@ -79,7 +79,7 @@ def run():
 
     logging.basicConfig(level=logging.DEBUG)
 
-    config = xicsrt_input.load_config(args.config_file)
+    config = xicsrt_io.load_config(args.config_file)
 
     if args.suffix:
         config['general']['output_suffix'] = args.suffix

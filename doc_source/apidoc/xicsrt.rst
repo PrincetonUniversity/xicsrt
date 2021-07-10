@@ -17,7 +17,7 @@ modules
    xicsrt.xicsrt_raytrace
    xicsrt.xicsrt_multiprocessing
    xicsrt.xicsrt_public
-   xicsrt.xicsrt_input
+   xicsrt.xicsrt_io
    xicsrt.xicsrt_config
 
 

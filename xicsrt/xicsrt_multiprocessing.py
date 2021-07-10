@@ -14,10 +14,8 @@ def raytrace(config, processes=None):
     Each run will rebuild all objects, reset the random seed and then
     perform the requested number of iterations.
 
-    If the option 'save_run_images' is set, then images will be save
-    at the completion of each run. The saving of these run images
-    is the primary reasion to use this routine: it allows periodic
-    outputs during long computations.
+    If the option 'save_images' is set, then images will be saved
+    at the completion of each run.
 
     Also see :func:`~xicsrt.xicsrt_raytrace.raytrace` for a single process
     version of this routine.
@@ -68,12 +66,14 @@ def raytrace(config, processes=None):
     output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
     output['config']['general']['random_seed'] = config['general']['output_run_suffix']
 
+    if config['general']['save_config']:
+        xicsrt_io.save_config(output['config'])
     if config['general']['save_images']:
-        save_images(output)
+        xicsrt_io.save_images(output)
+    if config['general']['save_results']:
+        xicsrt_io.save_results(output)
     if config['general']['print_results']:
         print_raytrace(output)
-    if config['general']['save_config']:
-        xicsrt_input.save_config(output['config'])
         
     profiler.stop('raytrace_multiprocessing')
     return output

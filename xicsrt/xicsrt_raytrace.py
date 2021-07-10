@@ -18,7 +18,7 @@ from copy import deepcopy
 from xicsrt.util import profiler
 
 from xicsrt import xicsrt_config
-from xicsrt import xicsrt_input
+from xicsrt import xicsrt_io
 from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
@@ -70,11 +70,11 @@ def raytrace(config):
     output['config']['general']['random_seed'] = config['general']['random_seed']
 
     if config['general']['save_config']:
-        xicsrt_input.save_config(output['config'])
+        xicsrt_io.save_config(output['config'])
     if config['general']['save_images']:
-        xicsrt_input.save_images(output)
+        xicsrt_io.save_images(output)
     if config['general']['save_results']:
-        xicsrt_input.save_results(output)
+        xicsrt_io.save_results(output)
     if config['general']['print_results']:
         print_raytrace(output)
 
@@ -94,7 +94,7 @@ def raytrace_single(config, internal=False):
     profiler.start('raytrace')
 
     # Update the default config with the user config.
-    config = xicsrt_input.config_to_numpy(config)
+    config = xicsrt_io.config_to_numpy(config)
     config = xicsrt_config.get_config(config)
     check_config(config)
 
@@ -145,10 +145,12 @@ def raytrace_single(config, internal=False):
         if config['general']['print_results']:
             print_raytrace(output)
         if config['general']['save_config']:
-            xicsrt_input.save_config(output['config'])
+            xicsrt_io.save_config(output['config'])
+        if config['general']['save_results']:
+            xicsrt_io.save_results(output)
 
     if config['general']['save_images']:
-        xicsrt_input.save_images(output)
+        xicsrt_io.save_images(output)
 
     profiler.stop('raytrace')
     # profiler.report()

@@ -86,9 +86,9 @@ def generate_filename(config, kind=None, name=None):
     if kind is None:
         ext = ''
     elif kind == 'image':
-        ext = config['general']['image_extension']
+        ext = config['general']['image_ext']
     elif kind == 'results':
-        ext = '.hdf5'
+        ext = config['general']['results_ext']
     else:
         raise Exception(f'Data kind {kind} unknown.')
 

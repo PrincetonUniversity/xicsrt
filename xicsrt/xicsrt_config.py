@@ -40,11 +40,11 @@ class XicsrtGeneralConfig(ConfigObject):
           of XICSRT or different versions of Python. Random seed initialization
           performed using `np.random.seed()`.
 
-        pathlist_objects: list (list())
-          A list of paths that contain user defined raytracing objects (sources,
-          optics, or filters). These paths will be searched for filenames that
-          match the requested 'class_name' in the object config. User defined
-          paths are searched before the builtin or contrib paths.
+        pathlist: list (list())
+          A list of paths that contain user defined raytracing modules (sources,
+          optics, filters, apertures, etc.). These paths will be searched for
+          filenames that match the requested 'class_name' in the object config.
+          User defined paths are searched before the builtin or contrib paths.
 
         pathlist_default: list
           A list of paths to the builtin and contributed raytracing objects.
@@ -102,11 +102,11 @@ class XicsrtGeneralConfig(ConfigObject):
           `image_extension`. Control of output for individual optics can be
           set within the object specific config section.
 
-        save_meta: bool (False)
-          Not currently implemented.
-
-        save_history: bool (False)
-          Not currently implemented)
+        save_results: bool (False)
+          Controls whether or not to save the raytracing results. By default
+          results will be saved to an .hdf5 formatted file. The contents of
+          the results dictionary are controlled by `keep_meta`, `keep_images`
+          and `keep_history`.
 
         print_results: bool (True)
           Control text output to terminal of raytracing summary and optics
@@ -120,7 +120,7 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['number_of_iter'] = 1
         config['general']['number_of_runs'] = 1
         config['general']['random_seed'] = None
-        config['general']['pathlist_objects'] = []
+        config['general']['pathlist'] = []
         config['general']['pathlist_default'] = get_pathlist_default()
         config['general']['strict_config_check'] = True
 
@@ -128,7 +128,8 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['output_prefix'] = 'xicsrt'
         config['general']['output_suffix'] = None
         config['general']['output_run_suffix'] = None
-        config['general']['image_extension'] = '.tif'
+        config['general']['image_ext'] = '.tif'
+        config['general']['results_ext'] = '.hdf5'
         config['general']['make_directories'] = False
 
         config['general']['keep_meta'] = True
