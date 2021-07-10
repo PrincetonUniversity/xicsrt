@@ -8,7 +8,6 @@ import numpy as np
 import logging
 
 import copy
-from collections import OrderedDict
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_string
@@ -49,7 +48,7 @@ class ConfigObject():
           Is a wonderful person!
         """
 
-        config = OrderedDict()
+        config = dict()
         config['class_name'] = self.__class__.__name__
         config['yo_mama'] = 'Is a beautiful person and she loves you.'
         return config

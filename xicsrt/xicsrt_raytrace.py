@@ -14,7 +14,6 @@ import logging
 import os
 
 from copy import deepcopy
-from collections import OrderedDict
 
 from xicsrt.util import profiler
 
@@ -175,9 +174,9 @@ def _raytrace_iter(config, sources, optics):
     rays = optics.trace(rays, keep_history=keep_history, keep_images=keep_images)
 
     # Combine sources and optics outputs.
-    meta    = OrderedDict()
-    image   = OrderedDict()
-    history = OrderedDict()
+    meta    = dict()
+    image   = dict()
+    history = dict()
     
     if keep_meta:
         for key in sources.meta:
@@ -197,7 +196,7 @@ def _raytrace_iter(config, sources, optics):
         for key in optics.history:
             history[key] = optics.history[key]
 
-    output = OrderedDict()
+    output = dict()
     output['config'] = config
     output['meta'] = meta
     output['image'] = image
@@ -217,17 +216,17 @@ def _sort_raytrace(input, max_lost=None):
 
     profiler.start('_sort_raytrace')
 
-    output = OrderedDict()
+    output = dict()
     output['config'] = input['config']
-    output['total'] = OrderedDict()
-    output['total']['meta'] = OrderedDict()
-    output['total']['image'] = OrderedDict()
-    output['found'] = OrderedDict()
-    output['found']['meta'] = OrderedDict()
-    output['found']['history'] = OrderedDict()
-    output['lost'] = OrderedDict()
-    output['lost']['meta'] = OrderedDict()
-    output['lost']['history'] = OrderedDict()
+    output['total'] = dict()
+    output['total']['meta'] = dict()
+    output['total']['image'] = dict()
+    output['found'] = dict()
+    output['found']['meta'] = dict()
+    output['found']['history'] = dict()
+    output['lost'] = dict()
+    output['lost']['meta'] = dict()
+    output['lost']['history'] = dict()
 
     output['total']['meta'] = input['meta']
     output['total']['image'] = input['image']
@@ -247,8 +246,8 @@ def _sort_raytrace(input, max_lost=None):
         w_lost = w_lost[index_lost[:max_lost]]
 
         for key_opt in key_opt_list:
-            output['found']['history'][key_opt] = OrderedDict()
-            output['lost']['history'][key_opt] = OrderedDict()
+            output['found']['history'][key_opt] = dict()
+            output['lost']['history'][key_opt] = dict()
 
             for key_ray in input['history'][key_opt]:
                 output['found']['history'][key_opt][key_ray] = input['history'][key_opt][key_ray][w_found]
@@ -265,17 +264,17 @@ def combine_raytrace(input_list):
     """
     profiler.start('combine_raytrace')
 
-    output = OrderedDict()
+    output = dict()
     output['config'] = input_list[0]['config']
-    output['total'] = OrderedDict()
-    output['total']['meta'] = OrderedDict()
-    output['total']['image'] = OrderedDict()
-    output['found'] = OrderedDict()
-    output['found']['meta'] = OrderedDict()
-    output['found']['history'] = OrderedDict()
-    output['lost'] = OrderedDict()
-    output['lost']['meta'] = OrderedDict()
-    output['lost']['history'] = OrderedDict()
+    output['total'] = dict()
+    output['total']['meta'] = dict()
+    output['total']['image'] = dict()
+    output['found'] = dict()
+    output['found']['meta'] = dict()
+    output['found']['history'] = dict()
+    output['lost'] = dict()
+    output['lost']['meta'] = dict()
+    output['lost']['history'] = dict()
 
     num_iter = len(input_list)
     key_opt_list = list(input_list[0]['total']['meta'].keys())
@@ -283,7 +282,7 @@ def combine_raytrace(input_list):
 
     # Combine the meta data.
     for key_opt in key_opt_list:
-        output['total']['meta'][key_opt] = OrderedDict()
+        output['total']['meta'][key_opt] = dict()
         key_meta_list = list(input_list[0]['total']['meta'][key_opt].keys())
         for key_meta in key_meta_list:
             output['total']['meta'][key_opt][key_meta] = 0

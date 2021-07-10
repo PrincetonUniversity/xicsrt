@@ -8,7 +8,6 @@ Authors
 import numpy as np
 import logging
 import copy
-from collections import OrderedDict
 
 class RayArray(dict):
     """

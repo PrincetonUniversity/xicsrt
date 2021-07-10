@@ -39,8 +39,8 @@ Strings
 
 Note:
   This module was written before the standardization of order preserving
-  dictionaries in python 3.6. It is likely that all of the  key order saving
-  could be now be removed.
+  dictionaries in python 3.6. It is possible that key order saving could be
+  now be removed. I am not sure how h5py handles things internally.
 
 """
 
@@ -227,7 +227,7 @@ def _addItemToHdf5(group, key, item, compression=None, compression_opts=None):
 def _addDictToHdf5(group, dick, **kwargs):
 
     keys = [key.encode() for key in dick.keys()]
-    group.attrs['_mirhdf5 python object type'] = 'OrderedDict'.encode()
+    group.attrs['_mirhdf5 python object type'] = 'dict'.encode()
     try:
         group.attrs['_mirhdf5 dictionary order'] = keys
     except TypeError:
@@ -256,8 +256,8 @@ def _addHdf5ToDict(
         ,exclude=None
         ):
 
-    if group_type != 'OrderedDict':
-        raise Exception('HDF5 parsing error. Expected a OrderedDict type, got {} instead.'.format(group.attrs['_mirhdf5 python object type']))
+    if group_type != 'dict':
+        raise Exception('HDF5 parsing error. Expected a dict type, got {} instead.'.format(group.attrs['_mirhdf5 python object type']))
 
     if '_mirhdf5 dictionary order' in attrs:
         key_list = attrs['_mirhdf5 dictionary order']
@@ -307,10 +307,10 @@ def _createNewItemFromHdf5(group, key=None, include=None, exclude=None):
             if hasattr(group_type, 'decode'):
                 group_type = group_type.decode()
         else:
-            group_type = 'OrderedDict'
+            group_type = 'dict'
 
-        if group_type == 'OrderedDict':
-            new_item = OrderedDict()
+        if group_type == 'dict':
+            new_item = dict()
             _addHdf5ToDict(data, new_item, attrs, group_type, include, exclude)
         elif group_type == 'list':
             new_item = list()

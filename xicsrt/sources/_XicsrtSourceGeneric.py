@@ -14,6 +14,7 @@ from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
+from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
 
 @dochelper
@@ -175,7 +176,7 @@ class XicsrtSourceGeneric(GeometryObject):
         self.param['intensity'] = int(self.param['intensity'])
         
     def generate_rays(self):
-        rays = dict()
+        rays = RayArray()
         profiler.start('generate_rays')
         
         profiler.start('generate_origin')
@@ -272,6 +273,8 @@ class XicsrtSourceGeneric(GeometryObject):
             #doppler shift
             c = const.physical_constants['speed of light in vacuum'][0]
             wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
+        else:
+            raise Exception(f'Wavelength distribution {wtype} unknown')
         
         return wavelength
 

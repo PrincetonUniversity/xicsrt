@@ -7,8 +7,7 @@ Authors
 """
 
 import logging
-import numpy as np   
-from collections import OrderedDict
+import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper

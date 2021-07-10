@@ -150,7 +150,6 @@ single_xticklabels (bool)
 import logging
 import matplotlib
 import numpy as np
-from collections import OrderedDict
 
 from xicsrt.util import mircolor
 
@@ -391,7 +390,7 @@ class PlotList(list):
 
         
         # Create the necessary subfigures. 
-        self.subfigs = OrderedDict()
+        self.subfigs = dict()
         for ff in self:
             if not ff['name'] in self.subfigs:
                 self.subfigs[ff['name']] = {'plots':[]

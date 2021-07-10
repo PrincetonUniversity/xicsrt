@@ -7,8 +7,7 @@ Authors
 """
 
 import logging
-import numpy as np   
-from collections import OrderedDict
+import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
@@ -20,8 +19,11 @@ class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
     """
     A cylindrical plasma oriented along the Y axis.
 
-    This class is meant only to be used as an exmple for generating 
-    more complecated classes for specific plasmas.
+    .. Warning::
+      This class is broken and out of date and needs to be updated.
+
+    This class is meant only to be used as an example for generating
+    more complicated classes for specific plasmas.
 
     plasma normal           = absolute X
     plasma x orientation    = absolute Z
@@ -41,13 +43,13 @@ class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
             + np.einsum('i,j', z_offset, self.zaxis))       
 
         #convert from cartesian coordinates to cylindrical coordinates [radius, azimuth, height]
-        radius, azimuth, height = cyl_from_car(z_offset, x_offset, y_offset)
+        radius, azimuth, height = cyl_from_car(np.array([z_offset, x_offset, y_offset]))
         
         # Let plasma temperature and emissivity fall off as a function of
         # radius.
-        bundle_input['emissivity'][step_test]  = self.emissivity / radius
-        bundle_input['temperature'][step_test] = self.temperature / radius
-        bundle_input['velocity'][step_test]  = self.velocity
+        bundle_input['emissivity'][:]  = self.emissivity / radius
+        bundle_input['temperature'][:] = self.temperature / radius
+        bundle_input['velocity'][:]  = self.velocity
         
         return bundle_input
     

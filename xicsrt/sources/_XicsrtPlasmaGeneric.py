@@ -9,8 +9,7 @@ Contains the XicsrtPlasmaGeneric class.
 """
 import logging
 
-import numpy as np   
-from collections import OrderedDict
+import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_spread
@@ -274,7 +273,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             if not bundle_input['mask'][ii]:
                 continue
             profiler.start("Ray Bundle Generation")
-            source_config = OrderedDict()
+            source_config = dict()
             
             # Specially dependent parameters
             source_config['origin']      = bundle_input['origin'][ii]

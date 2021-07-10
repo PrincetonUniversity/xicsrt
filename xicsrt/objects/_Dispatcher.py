@@ -6,7 +6,6 @@
 import numpy as np
 import logging
 
-from collections import OrderedDict
 import importlib
 import glob
 import os
@@ -39,10 +38,10 @@ class Dispatcher():
         pathlist.extend(config['general'].get('pathlist_default', []))
         self.pathlist = pathlist
         
-        self.objects = OrderedDict()
-        self.meta = OrderedDict()
-        self.image = OrderedDict()
-        self.history = OrderedDict()
+        self.objects = dict()
+        self.meta = dict()
+        self.image = dict()
+        self.history = dict()
 
     def instantiate(self, names=None):
         if names is None:
@@ -87,7 +86,7 @@ class Dispatcher():
             objectname = objectname[1:]
             name_list.append(objectname)
 
-        output = OrderedDict()
+        output = dict()
         for ii, ff in enumerate(name_list):
             output[ff] = {
                 'filepath': filepath_list[ii]
@@ -128,7 +127,7 @@ class Dispatcher():
             obj.check_param(*args, **kwargs)
 
     def get_config(self, *args, **kwargs):
-        config = OrderedDict()
+        config = dict()
         for key, obj in self.objects.items():
             config[key] = obj.get_config(*args, **kwargs)
         return config
@@ -157,7 +156,7 @@ class Dispatcher():
             rays = obj.generate_rays()
 
             if keep_meta:
-                self.meta[key] = OrderedDict()
+                self.meta[key] = dict()
                 self.meta[key]['num_out'] = np.sum(rays['mask'])
             
             if keep_history:
@@ -182,7 +181,7 @@ class Dispatcher():
             profiler.stop('Dispatcher: trace_global')
 
             if keep_meta:
-                self.meta[key] = OrderedDict()
+                self.meta[key] = dict()
                 self.meta[key]['num_out'] = np.sum(rays['mask'])
             
             if keep_history:

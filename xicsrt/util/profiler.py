@@ -14,15 +14,13 @@ Description:
 # ------------------------------------------------------------------------------
 
 
-from collections import OrderedDict
-
 import os
 import datetime
 
 import logging
 
 log = logging.getLogger('xicsrt.util.profile')
-profiler_results = OrderedDict()
+profiler_results = dict()
 flags = {}
 flags['enabled'] = False
 
@@ -46,7 +44,7 @@ def stopProfiler():
 
 def resetProfiler():
     global profiler_results
-    profiler_results = OrderedDict()
+    profiler_results = dict()
 
 def report(flush=True):
     names = list(profiler_results.keys())
