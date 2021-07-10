@@ -10,8 +10,6 @@
 import numpy as np
 import logging
 import os
-
-from xicsrt import xicsrt_input
 from xicsrt.objects._ConfigObject import ConfigObject
 
 class XicsrtGeneralConfig(ConfigObject):
@@ -141,8 +139,7 @@ class XicsrtGeneralConfig(ConfigObject):
 
         config['general']['save_config'] = False
         config['general']['save_images'] = False
-        config['general']['save_meta'] = False
-        config['general']['save_history'] = False
+        config['general']['save_results'] = False
 
         config['general']['print_results'] = True
 
@@ -152,12 +149,14 @@ class XicsrtGeneralConfig(ConfigObject):
         config['scenario'] = dict()
     
         return config
-        
+
+
 def get_config(config_user=None):
     obj_config =  XicsrtGeneralConfig()
     obj_config.update_config(config_user, strict=False, update=True)
     config = obj_config.get_config()
     return config
+
 
 def update_config(config, config_user):
     """
@@ -171,11 +170,6 @@ def update_config(config, config_user):
     config_out = obj_config.get_config()
     return config_out
 
-def config_to_numpy(config):
-    # Temporarily just call the routine from xicsrt_input.
-    # This should actually go the opposite way.
-    config = xicsrt_input.config_to_numpy(config)
-    return config
 
 def get_pathlist_default():
     """
@@ -188,6 +182,7 @@ def get_pathlist_default():
     pathlist = _add_pathlist_contrib(pathlist)
     return pathlist
 
+
 def _add_pathlist_builtin(pathlist):
     # Add paths to built-in objects.
     path_module = os.path.dirname(os.path.abspath(__file__))
@@ -196,6 +191,7 @@ def _add_pathlist_builtin(pathlist):
     pathlist.append(os.path.join(path_module, 'optics'))
 
     return pathlist
+
 
 def _add_pathlist_contrib(pathlist):
     try:

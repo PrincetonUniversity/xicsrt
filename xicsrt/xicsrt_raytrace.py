@@ -10,7 +10,6 @@ Contains the main functions that are called to perform raytracing.
 """
 
 import numpy as np
-from PIL import Image
 import logging
 import os
 
@@ -71,15 +70,18 @@ def raytrace(config):
     output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
     output['config']['general']['random_seed'] = config['general']['random_seed']
 
-    if config['general']['save_images']:
-        save_images(output)
-    if config['general']['print_results']:
-        print_raytrace(output)
     if config['general']['save_config']:
         xicsrt_input.save_config(output['config'])
-        
+    if config['general']['save_images']:
+        xicsrt_input.save_images(output)
+    if config['general']['save_results']:
+        xicsrt_input.save_results(output)
+    if config['general']['print_results']:
+        print_raytrace(output)
+
     profiler.stop('raytrace_multi')
     return output
+
 
 def raytrace_single(config, internal=False):
     """
@@ -93,8 +95,8 @@ def raytrace_single(config, internal=False):
     profiler.start('raytrace')
 
     # Update the default config with the user config.
+    config = xicsrt_input.config_to_numpy(config)
     config = xicsrt_config.get_config(config)
-    config = xicsrt_config.config_to_numpy(config)
     check_config(config)
 
     logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
@@ -147,11 +149,12 @@ def raytrace_single(config, internal=False):
             xicsrt_input.save_config(output['config'])
 
     if config['general']['save_images']:
-        save_images(output)
+        xicsrt_input.save_images(output)
 
     profiler.stop('raytrace')
     # profiler.report()
     return output
+
 
 def _raytrace_iter(config, sources, optics):
     """ 
@@ -255,6 +258,7 @@ def _sort_raytrace(input, max_lost=None):
 
     return output
 
+
 def combine_raytrace(input_list):
     """
     Produce a combined output from a list of raytrace outputs.
@@ -333,6 +337,7 @@ def combine_raytrace(input_list):
     profiler.stop('combine_raytrace')
     return output
 
+
 def check_config(config):
     """
     Check the general section of the configuration dictionary.
@@ -349,6 +354,7 @@ def check_config(config):
         if not os.path.exists(config['general']['output_path']):
             if not config['general']['make_directories']:
                 raise Exception('Output directory does not exist. Create directory or set make_directories to True.')
+
 
 def print_raytrace(results):
     """
@@ -368,33 +374,3 @@ def print_raytrace(results):
         num_detector / num_source * 100))
     print('')
 
-def save_images(results):
-    """
-    Save images from the raytracing results.
-    """
-
-    rotate = False
-
-    prefix = results['config']['general']['output_prefix']
-    suffix = results['config']['general']['output_suffix']
-    run_suffix = results['config']['general']['output_run_suffix']
-    ext = results['config']['general']['image_extension']
-
-    if results['config']['general']['make_directories']:
-        os.makedirs(results['config']['general']['output_path'], exist_ok=True)
-
-    for key_opt in results['config']['optics']:
-        if key_opt in results['total']['image']:
-            if results['total']['image'][key_opt] is not None:
-                filename = '_'.join(filter(None, (prefix, key_opt, suffix, run_suffix)))+ext
-                filepath = os.path.join(results['config']['general']['output_path'], filename)
-
-                image_temp = results['total']['image'][key_opt]
-                if rotate:
-                    image_temp = np.rot90(image_temp)
-
-                generated_image = Image.fromarray(image_temp)
-                generated_image.save(filepath)
-
-                logging.info('Saved image: {}'.format(filepath))
-        
