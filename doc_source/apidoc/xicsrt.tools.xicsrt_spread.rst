@@ -1,17 +1,16 @@
-xicsrt\_command
-===============
-`xicsrt.xicsrt_command`
+xicsrt\_spread
+==============
+`xicsrt.tools.xicsrt_spread`
 
-.. automirmodule:: xicsrt.xicsrt_command
+.. automirmodule:: xicsrt.tools.xicsrt_spread
     :members:
     :undoc-members:
     :member-order: bysource
 
-
 Private Members
----------------
+-----------------
 
-.. automirmodule:: xicsrt.xicsrt_command
+.. automirmodule:: xicsrt.tools.xicsrt_spread
     :members:
     :private-members:
     :undoc-members:

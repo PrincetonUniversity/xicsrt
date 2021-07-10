@@ -1,16 +1,17 @@
-xicsrt\_dist
-============
-`xicsrt.tools.xicsrt_dist`
+xicsrt\_public
+==============
+`xicsrt.xicsrt_public`
 
-.. automirmodule:: xicsrt.tools.xicsrt_dist
+.. automirmodule:: xicsrt.xicsrt_public
     :members:
     :undoc-members:
     :member-order: bysource
 
-Private Members
------------------
 
-.. automirmodule:: xicsrt.tools.xicsrt_dist
+Private Members
+---------------
+
+.. automirmodule:: xicsrt.xicsrt_public
     :members:
     :private-members:
     :undoc-members:

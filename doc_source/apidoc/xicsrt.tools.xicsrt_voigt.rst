@@ -1,8 +1,8 @@
-voigt
-=====
-`xicsrt.tools.voigt`
+xicsrt\_voigt
+=============
+`xicsrt.tools.xicsrt_voigt`
 
-.. automirmodule:: xicsrt.tools.voigt
+.. automirmodule:: xicsrt.tools.xicsrt_voigt
     :members:
     :undoc-members:
     :member-order: bysource
@@ -10,7 +10,7 @@ voigt
 Private Members
 -----------------
 
-.. automirmodule:: xicsrt.tools.voigt
+.. automirmodule:: xicsrt.tools.xicsrt_voigt
     :members:
     :private-members:
     :undoc-members:

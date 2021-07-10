@@ -1,8 +1,8 @@
-aperture
-========
-`xicsrt.tools.aperture`
+xicsrt\_bragg
+=============
+`xicsrt.tools.xicsrt_bragg`
 
-.. automirmodule:: xicsrt.tools.aperture
+.. automirmodule:: xicsrt.tools.xicsrt_bragg
     :members:
     :undoc-members:
     :member-order: bysource
@@ -10,7 +10,7 @@ aperture
 Private Members
 -----------------
 
-.. automirmodule:: xicsrt.tools.aperture
+.. automirmodule:: xicsrt.tools.xicsrt_bragg
     :members:
     :private-members:
     :undoc-members:

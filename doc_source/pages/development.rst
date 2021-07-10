@@ -135,7 +135,7 @@ numerical programming concepts!
   cause confusion. We don't need to check whether the right `-size` option is
   being specified by the user. However, option (a) means that `size` now has a
   variable length which is potentially confusing to the user and now requires
-  some parsing code similar to :any:`xicsrt_dist`.
+  some parsing code similar to :any:`xicsrt_spread`.
 
   |     added: 2021-01-29 by Novimir
 

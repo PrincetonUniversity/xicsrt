@@ -80,7 +80,7 @@ class XicsrtGeneralConfig(ConfigObject):
         image_extension: str ('.tif')
           The image extension controls the file format of the same images.
           Any format supported by the `pillow` package can be used, however
-          *.tif images are recommended.
+          .tif images are recommended.
 
         make_directories: bool (False)
           Controls whether the output path should be created if it does not
