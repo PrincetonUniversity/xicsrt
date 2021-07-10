@@ -60,7 +60,7 @@ def raytrace(config):
             random_seed += ii
         config_run['general']['random_seed'] = random_seed
         
-        iteration = raytrace_single(config_run, internal=True)
+        iteration = raytrace_single(config_run, _internal=True)
         output_list.append(iteration)
         
     output = combine_raytrace(output_list)
@@ -82,7 +82,7 @@ def raytrace(config):
     return output
 
 
-def raytrace_single(config, internal=False):
+def raytrace_single(config, _internal=False):
     """
     Perform a single raytrace run consisting of multiple iterations.
 
@@ -90,6 +90,13 @@ def raytrace_single(config, internal=False):
     those that are lost (found and lost). The found ray history will be
     returned in full. The lost ray history will be truncated to allow
     analysis of lost ray pattern while still limiting memory usage.
+
+    private keywords
+    ================
+    _internal : bool (False)
+      Used when calling this function from `raytrace` as part of the execution
+      of multiple runs. Controls how `history_max_lost` is handled along with
+      how `save_config` and `save_results` are interpreted.
     """
     profiler.start('raytrace')
 
@@ -103,6 +110,9 @@ def raytrace_single(config, internal=False):
 
     num_iter = config['general']['number_of_iter']
     max_lost_iter = int(config['general']['history_max_lost']/num_iter)
+
+    if _internal:
+        max_lost_iter = max_lost_iter//config['general']['number_of_runs']
 
     # Setup the dispatchers.
     if 'filters' in config:
@@ -141,7 +151,7 @@ def raytrace_single(config, internal=False):
 
     output = combine_raytrace(output_list)
 
-    if internal is False:
+    if _internal is False:
         if config['general']['print_results']:
             print_raytrace(output)
         if config['general']['save_config']:

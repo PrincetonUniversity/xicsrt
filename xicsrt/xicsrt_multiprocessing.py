@@ -47,7 +47,7 @@ def raytrace(config, processes=None):
                 random_seed += ii
             config_run['general']['random_seed'] = random_seed
                 
-            arg = (config_run,)
+            arg = (config_run, True)
             mp_result = pool.apply_async(raytrace_single, arg)
             mp_result_list.append(mp_result)
         pool.close()
