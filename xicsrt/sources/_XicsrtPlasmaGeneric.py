@@ -13,7 +13,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xicsrt.util import profiler
-from xicsrt.tools import xicsrt_dist
+from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
@@ -211,7 +211,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         # For the time being the fuction solid_angle is not vectorized, so a
         # loop is necessary.
         for ii in range(len(bundle_input['spread'])):
-            bundle_input['solid_angle'][ii] = xicsrt_dist.solid_angle(bundle_input['spread'][ii])
+            bundle_input['solid_angle'][ii] = xicsrt_spread.solid_angle(bundle_input['spread'][ii])
 
         return bundle_input
 

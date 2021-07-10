@@ -13,7 +13,7 @@ import logging
 
 from xicsrt.util import mirplot
 from xicsrt import xicsrt_public
-from xicsrt.tools import aperture
+from xicsrt.tools import xicsrt_aperture
 
 def plot_intersect(
         results,
@@ -175,7 +175,7 @@ def _get_aperture_plotlist(obj, scale=None):
         return []
 
     for apt in obj.param['aperture']:
-        apt = aperture._aperture_defaults(apt)
+        apt = xicsrt_aperture._aperture_defaults(apt)
         shape = apt['shape']
         if shape == 'square':
             size = apt['size'][0]/2*scale

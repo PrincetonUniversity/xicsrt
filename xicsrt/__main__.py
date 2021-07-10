@@ -17,13 +17,13 @@ from xicsrt import xicsrt_input
 
 def _get_parser():
     parser = argparse.ArgumentParser(
-        "\n    xicsrt_command.py"
+        "\n    xicsrt"
         ,description = """
 description:
   Perform an XICSRT raytrace from the command line.
 
   The input to this command should be an XICSRT configuration dictionary
-  in json format. (Support for pickle and hdf5 formats coming soon.)
+  in json format. (Pickle and hdf5 formats are also supported.)
 
 
 example 1:

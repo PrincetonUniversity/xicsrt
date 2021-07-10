@@ -7,7 +7,7 @@
 """
 import numpy as np
 
-from xicsrt.tools import bragg_reader
+from xicsrt.tools import xicsrt_bragg
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
@@ -102,7 +102,7 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
 
         elif "file" in self.param['rocking_type']:
 
-            data = bragg_reader.read(self.param['rocking_file'], self.param['rocking_filetype'])
+            data = xicsrt_bragg.read(self.param['rocking_file'], self.param['rocking_filetype'])
 
             units = data['units']['dtheta_in']
             if  units == 'urad':

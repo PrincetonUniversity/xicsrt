@@ -11,8 +11,8 @@ from scipy.stats import cauchy
 import scipy.constants as const
 
 from xicsrt.util import profiler
-from xicsrt.tools import voigt
-from xicsrt.tools import xicsrt_dist
+from xicsrt.tools import xicsrt_voigt
+from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
 
@@ -231,7 +231,7 @@ class XicsrtSourceGeneric(GeometryObject):
     def random_direction(self, normal):
 
         spread = self.param['spread']
-        dir_local  = xicsrt_dist.vector_distribution(
+        dir_local  = xicsrt_spread.vector_distribution(
             spread,
             self.param['intensity'],
             name=self.param['spread_dist'],
@@ -305,7 +305,7 @@ class XicsrtSourceGeneric(GeometryObject):
         sigma = (np.sqrt(self.param['temperature'] / self.param['mass_number'] / amu_kg / c**2 * ev_J)
                   * self.param['wavelength'] )
 
-        rand_wave  = voigt.voigt_random(gamma, sigma, size)
+        rand_wave  = xicsrt_voigt.voigt_random(gamma, sigma, size)
         rand_wave += self.param['wavelength']
         return rand_wave
 
