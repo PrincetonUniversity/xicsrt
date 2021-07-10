@@ -3,13 +3,22 @@
 .. Authors
      Novimir Pablant <npablant@pppl.gov>
 
-A set of tools to deal with HDF5 files.
+A set of tools to save/load python dictionaries to/from hdf5 files.
+
+hdf5 files are an attractive standard for storing scientific data as they have
+a standardized format and can be read from any language or system.
+
+This project aims to make saving/loading of python dictionaries or lists to
+the hdf5 format completely seamless for standard python and numpy data types.
+To achieve this we add extra information into the hdf5 file through the use
+of dataset attributes so that when loaded, the original dictionary can be
+fully restored.
 
 Programming Notes
 -----------------
 
 Python specific types/objects cannot in general be directly translated to
-HDF5 data types.  Generally the use of non compatible objects/types will
+HDF5 data types.  The use of non compatible objects/types while using h5py will
 produce an error.  There are however a few exceptions that have been added
 to mirHDF5 for convenience.
 
@@ -24,6 +33,14 @@ List
   Python lists are saved using HDF5 group and data entries.  Entry
   names are automatically generated, and an HDF5 attribute is set
   to allow the python list to be restored.
+
+Strings
+  Python unicode strings are identified using HDF5 attributes.
+
+Note:
+  This module was written before the standardization of order preserving
+  dictionaries in python 3.6. It is likely that all of the  key order saving
+  could be now be removed.
 
 """
 
@@ -195,6 +212,8 @@ def _addItemToHdf5(group, key, item, compression=None, compression_opts=None):
                 group.create_dataset(
                     key
                     ,data=item)
+                if isinstance(item, str):
+                    group[key].attrs['_mirhdf5 python str'] = True
             else:
                 group.create_dataset(
                     key
@@ -305,6 +324,9 @@ def _createNewItemFromHdf5(group, key=None, include=None, exclude=None):
                 new_item = None
     else:
         new_item = data[()]
+
+        if '_mirhdf5 python str' in attrs:
+            new_item = new_item.decode()
 
     return new_item
 
