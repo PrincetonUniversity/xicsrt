@@ -44,6 +44,13 @@ class XicsrtOpticGeneric(GeometryObject):
           The pixel size, used for binning rays into images.
           This is currently a single number signifying square pixels.
 
+        aperture: dict or array (None)
+          Define one or more apertures to to apply to this optic.
+          Each aperture is defined as a dictionary with the following keys:
+          shape, size, origin, logic. The origin and logic field keys are
+          optional. The interpretation of size will depend on the provided
+          shape.
+
         trace_local: bool (False)
           If true: transform rays to optic local coordinates before raytracing,
           do raytracing in local coordinates, then transform back to global
@@ -56,16 +63,9 @@ class XicsrtOpticGeneric(GeometryObject):
 
         check_size: bool (true)
           Perform a check for whether the rays intersect the optic within the
-          defined bounds (usually defined by 'xsize' an 'ysize'). If set to
+          defined bounds (usually defined by 'xsize' and 'ysize'). If set to
           `False` all rays with a defined reflection/transmission condition
           will be traced if an intersection can be determined.
-
-        aperture: dict or array (None)
-          Define one or more apertures to to apply to this optic.
-          Each aperture is defined as a dictionary with the following keys:
-          shape, size, origin, logic. The origin and logic field keys are
-          optional. The interpretation of size will depend on the provided
-          shape.
 
         check_aperture: bool (true)
           Perform a check for whether the rays intersect the optic within the

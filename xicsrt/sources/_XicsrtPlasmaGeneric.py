@@ -77,7 +77,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         linewidth : float (0.0) [1/s]
           No documentation yet. Please help improve XICSRT!
 
-        emissivity : float (0.0) [ph/m^3/sr]
+        emissivity : float (0.0) [ph/m^3]
           No documentation yet. Please help improve XICSRT!
 
         temperature : float (0.0) [eV]
@@ -140,7 +140,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         config['time_resolution'] = 1e-3
         config['bundle_type']     = 'voxel'
-        config['bundle_volume']   = 1e-3
+        config['bundle_volume']   = 1e-6
         config['bundle_count']    = None
         config['max_rays']        = int(1e7)
         config['max_bundles']     = int(1e7)
@@ -156,6 +156,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         if self.param['bundle_count'] is None:
             self.param['bundle_count'] = self.param['volume']/self.param['bundle_volume']
         self.param['bundle_count'] = int(np.round(self.param['bundle_count']))
+        if self.param['bundle_count'] < 1:
+            raise Exception(f'Bundle volume is larger than the plasma volume.')
 
     def setup_bundles(self):
         self.log.debug('Starting setup_bundles')
