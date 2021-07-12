@@ -8,6 +8,14 @@ XICSRT API Documentation
    :private-members:
 
 
+command line
+------------
+.. automodule:: xicsrt.__main__
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 modules
 -------
 

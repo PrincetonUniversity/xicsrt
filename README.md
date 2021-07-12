@@ -37,8 +37,9 @@ Alternatively it is possible to install from source using `setuptools`
 Usage
 -----
 
-XICSRT is run by supplying a config dictionary to xicsrt.raytrace(config). 
-The easiest way to run XICSRT is through a [Jupyter Notebook].
+XICSRT is run by supplying a config dictionary to ```xicsrt.raytrace(config)```. 
+The easiest way to run XICSRT is through a [Jupyter Notebook]. A command line
+interface is also available.
 
 To learn how format the input, and interpret the output, see the examples
 provided in the [documentation].

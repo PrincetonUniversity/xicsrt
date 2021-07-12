@@ -55,7 +55,7 @@ add_module_names = False
 todo_include_todos = True
 todo_link_only = True
 
-napoleon_custom_sections = ['Programming Notes']
+napoleon_custom_sections = ['Programming Notes', 'Private Keywords']
 
 # -- Options for HTML output -------------------------------------------------
 
