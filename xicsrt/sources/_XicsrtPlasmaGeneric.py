@@ -26,6 +26,15 @@ class XicsrtPlasmaGeneric(GeometryObject):
     has the properties of the plasma at one particular real-space point.
 
     Each bundle is modeled by a SourceFocused object.
+
+    .. Note::
+      If a `voxel` type bundle is used rays may be generated outside of the
+      defined plasma volume (as defined by xsize, ysize and zsize). The bundle
+      *centers* are randomly distributed throughout the plasma volume, but this
+      means that if a bundle is (randomly) placed near the edges of the plasma
+      then the bundle voxel volume may extend past the plasma boundary. This
+      behavior is expected. If it is important to have a sharp plasma boundary
+      then consider using the 'point' bundle_type instead.
     """
 
     def __init__(self, *args, **kwargs):
