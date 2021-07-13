@@ -15,10 +15,14 @@ from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_multiprocessing
 from xicsrt import xicsrt_io
 
+from xicsrt._version import __version__
+
 def _get_parser():
     parser = argparse.ArgumentParser(
-        "\n    xicsrt"
-        ,description = """
+        "\n  xicsrt"
+        ,description = f"""
+xicsrt version {__version__}
+
 description:
   Perform an XICSRT raytrace from the command line.
 
@@ -36,35 +40,64 @@ example 2:
         ,formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=79))
 
     parser.add_argument(
-        'config_file'
-        , type=str
-        , nargs='?'
-        , default='config.json'
-        , help='The path to the configuration file for this run.')
+        'config_file',
+        type=str,
+        nargs='?',
+        default='config.json',
+        help='The path to the configuration file for this run.')
 
     parser.add_argument(
-        '--suffix'
-        , type=str
-        , default=None
-        , help="A suffix to add to the output files.")
+        '--suffix',
+        type=str,
+        default=None,
+        metavar='STR',
+        help="A suffix to add to the output files.")
 
     parser.add_argument(
-        '--numruns'
-        , type=int
-        , default=None
-        , help="Number of runs.")
+        '--numruns',
+        type=int,
+        default=None,
+        metavar='N',
+        help="Number of runs.")
 
     parser.add_argument(
-        '--numiter'
-        , type=int
-        , default=None
-        , help="Number of iterations per run.")
+        '--numiter',
+        type=int,
+        default=None,
+        metavar='N',
+        help="Number of iterations per run.")
 
     parser.add_argument(
-        '--seed'
-        , type=int
-        , default=None
-        , help="The random seed to use.")
+        '--seed',
+        type=int,
+        default=None,
+        metavar='N',
+        help="The random seed to use.")
+
+    parser.add_argument(
+        '--path',
+        type=str,
+        default=None,
+        metavar='STR',
+        help="Directory in which to store output.")
+
+    parser.add_argument(
+        '--multiprocessing',
+        '--mp',
+        action='store_true',
+        help="Use multiprocessing.")
+
+    parser.add_argument(
+        '--processes',
+        type=int,
+        default=None,
+        metavar='N',
+        help="Number of processes to use for muliprocessing.")
+
+    parser.add_argument(
+        '--version',
+        action='store_true',
+        help="Show the version number.")
 
     return parser
 
@@ -77,20 +110,30 @@ def run():
     parser = _get_parser()
     args = parser.parse_args()
 
+    if args.version:
+        print(f'__version__')
+        return
+
     logging.basicConfig(level=logging.DEBUG)
 
     config = xicsrt_io.load_config(args.config_file)
 
     if args.suffix:
-        config['general']['output_suffix'] = args.suffix
+        config['general']['suffix'] = args.suffix
     if args.numruns:
         config['general']['number_of_runs'] = args.numruns
     if args.numiter:
         config['general']['number_of_iter'] = args.numiter
     if args.seed:
         config['general']['random_seed'] = args.seed
-        
-    result = xicsrt_raytrace.raytrace(config)
+    if args.output_path:
+        config['general']['output_path'] = args.path
+
+    if args.multiprocessing:
+
+        result = xicsrt_multiprocessing.raytrace(config, processes=args.processes)
+    else:
+        result = xicsrt_raytrace.raytrace(config)
 
 # Generate the module docstring from the helpstring.
 parser = _get_parser()
