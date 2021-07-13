@@ -111,7 +111,7 @@ def run():
     args = parser.parse_args()
 
     if args.version:
-        print(f'__version__')
+        print(f'{__version__}')
         return
 
     logging.basicConfig(level=logging.DEBUG)
