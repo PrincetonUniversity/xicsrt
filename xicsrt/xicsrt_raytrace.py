@@ -101,7 +101,7 @@ def raytrace_single(config, _internal=False):
     profiler.start('raytrace')
 
     # Update the default config with the user config.
-    config = xicsrt_io.config_to_numpy(config)
+    config = xicsrt_config.config_to_numpy(config)
     config = xicsrt_config.get_config(config)
     check_config(config)
 

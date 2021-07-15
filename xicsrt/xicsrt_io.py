@@ -19,19 +19,18 @@ import pathlib
 import json
 
 from xicsrt import xicsrt_config
+from xicsrt.tools import xicsrt_misc
 from xicsrt.util import profiler
 
-def load_config(filepath):
-    with open(filepath, 'r') as ff:
-        config = json.load(ff)
-    config_to_numpy(config)
+def load_config(filename):
+    config = _dict_from_file(filename)
     return config
 
 
 def save_config(config, filename=None):
     _make_output_path(config)
     if filename is None:
-        filename = os.path.join(config['general']['output_path'], 'config.json')
+        filename = generate_filename(config, kind='config')
     _file_from_dict(config, filename)
     logging.info('Config saved to {}'.format(filename))
 
@@ -89,6 +88,8 @@ def generate_filename(config, kind=None, name=None):
         ext = config['general']['image_ext']
     elif kind == 'results':
         ext = config['general']['results_ext']
+    elif kind == 'config':
+        ext = config['general']['config_ext']
     else:
         raise Exception(f'Data kind {kind} unknown.')
 
@@ -99,16 +100,6 @@ def generate_filename(config, kind=None, name=None):
     filepath = os.path.join(path, filename)
 
     return filepath
-
-
-def config_to_numpy(obj):
-    _dict_to_numpy(obj)
-    return obj
-
-
-def config_to_list(obj):
-    _dict_to_list(obj)
-    return obj
 
 
 def _dict_from_file(filename):
@@ -123,7 +114,7 @@ def _dict_from_file(filename):
         import json
         with open(filename, "r") as ff:
             data = json.load(ff)
-        data = _dict_to_numpy(data)
+        data = xicsrt_misc._dict_to_numpy(data)
 
     elif ('hdf5' in ext) or ('h5' in ext):
         from xicsrt.util import mirhdf5
@@ -143,38 +134,20 @@ def _file_from_dict(data, filename):
     elif ('json' in ext):
         import json
         data = deepcopy(data)
-        data = _dict_to_list(data)
+        data = xicsrt_misc._dict_to_list(data)
         with open(filename, "w") as ff:
             data = json.dump(data, ff, indent=2)
-        data = _dict_to_numpy(data)
+        data = xicsrt_misc._dict_to_numpy(data)
 
     elif ('hdf5' in ext) or ('h5' in ext):
         from xicsrt.util import mirhdf5
         data = mirhdf5.dictToHdf5(data, filename)
 
 
-def _dict_to_numpy(obj):
-    for key in obj:
-        if isinstance(obj[key], list):
-            # Don't convert empty lists.
-            if obj[key]:
-                new = np.array(obj[key])
-                # I don't want to convert unicode or object lists to numpy.
-                # These are better left as lists to be dealt with later.
-                if new.dtype.char != 'U' and new.dtype.char != 'O':
-                    obj[key] = new
-        elif isinstance(obj[key], dict):
-            obj[key] = _dict_to_numpy(obj[key])
-    return obj
 
 
-def _dict_to_list(obj):
-    for key in obj:
-        if isinstance(obj[key], np.ndarray):
-            obj[key] = obj[key].tolist()
-        elif isinstance(obj[key], dict):
-            obj[key] = _dict_to_list(obj[key])
-    return obj
+
+
 
 
 def _make_output_path(config):

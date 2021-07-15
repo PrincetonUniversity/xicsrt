@@ -28,7 +28,24 @@ import matplotlib
 from xicsrt import xicsrt_public
 from xicsrt.objects._Dispatcher import Dispatcher
 
+# A module level variable that contains the last defined fig object.
+# This is for convenience during interactive scripting.
 m_figure = None
+
+def plot(results, **kwargs):
+    """
+    Create a 3d plot using default options.
+
+    Any keywords provided will be passed to `add_rays`. For more control over
+    plotting options it is recommended to perform the plotting steps manually as
+    shown by the example in the `xicsrt_3d` module docstring.
+    """
+    fig = figure()
+    add_rays(results, figure=fig, **kwargs)
+    add_optics(results['config'], figure=fig)
+    add_sources(results['config'], figure=fig)
+    add_fluxsurfaces(results['config'], figure=fig)
+    show(figure=fig)
 
 
 def _thin_mask(mask, max_num):
@@ -310,6 +327,12 @@ def add_sources(config, figure=None):
         add_object(config, name, section, figure=figure)
 
 
+def add_fluxsurfaces(config, figure=None, **kwargs):
+    section = 'sources'
+    for name in config[section]:
+        _add_fluxsurf_single(config, name, section, figure=figure, **kwargs)
+
+
 def add_object(config, name, section, figure=None):
 
     # Use the dispatcher to instantiate and initialize objects.
@@ -363,7 +386,7 @@ def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
     return flx, car
 
 
-def add_fluxsurfaces(
+def _add_fluxsurf_single(
         config,
         name,
         section=None,
@@ -382,6 +405,10 @@ def add_fluxsurfaces(
     if flatshading is None: flatshading = True
 
     obj = xicsrt_public.get_element(config, name, section)
+
+    # Check to see if this object defines fluxspace.
+    if not hasattr(obj, 'car_from_flx'):
+        return
 
     norm = matplotlib.colors.Normalize(0.0, 1.0)
     cm = matplotlib.cm.ScalarMappable(norm=norm, cmap='plasma_r')

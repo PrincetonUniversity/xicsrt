@@ -12,8 +12,7 @@ import copy
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_string
 
-# I might want to some of these functions into this object as methods.
-from xicsrt import xicsrt_io
+from xicsrt.tools import xicsrt_misc
 
 @dochelper
 class ConfigObject():
@@ -32,7 +31,7 @@ class ConfigObject():
         self.check_config()
 
         self.param = copy.deepcopy(self.config)
-        self.param = xicsrt_io.config_to_numpy(self.param)
+        self.param = xicsrt_misc._dict_to_numpy(self.param)
 
         if initialize:
             self.setup()

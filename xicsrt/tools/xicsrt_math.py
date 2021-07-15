@@ -132,7 +132,12 @@ def rotation_matrix(axis, theta):
 
 def bragg_angle(wavelength, crystal_spacing):
     """
-    The Bragg angle calculation is used so often that it deserves its own funct
+    The Bragg angle calculation is used so often that it deserves its own
+    function.
+
+    .. Note::
+      The crystal_spacing here is the true spacing, not the 2d spacing that
+      is sometimes used in the literature.
     """
     bragg_angle = np.arcsin(wavelength / (2 * crystal_spacing))
     return bragg_angle

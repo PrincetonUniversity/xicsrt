@@ -4,7 +4,8 @@
     Novimir Antoniuk Pablant <npablant@pppl.gov>
 
 
-A slightly more complicated example with x-rays.
+A slightly more complicated example with an x-ray Bragg reflection from a
+spherical crystal.
 
 This configuration has a point source, a spherical crystal, and a detector.
 """

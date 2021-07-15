@@ -1,8 +1,10 @@
 example\_01
 ===========
-`examples.example_01.example_01`
 
-Please follow the source comments. (It's more readable this way compared to autodoc for now.)
+Download a Jupyter notebook with this example: :download:`example_01.ipynb <../../examples/example_01/example_01.ipynb>`.
+
+Please follow the source comments for description and instructions.
+
 
 Source Code
 -----------

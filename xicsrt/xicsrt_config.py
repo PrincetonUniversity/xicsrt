@@ -11,6 +11,7 @@ import numpy as np
 import logging
 import os
 from xicsrt.objects._ConfigObject import ConfigObject
+from xicsrt.tools import xicsrt_misc
 
 class XicsrtGeneralConfig(ConfigObject):
 
@@ -167,6 +168,7 @@ class XicsrtGeneralConfig(ConfigObject):
         config['general']['output_run_suffix'] = None
         config['general']['image_ext'] = '.tif'
         config['general']['results_ext'] = '.hdf5'
+        config['general']['config_ext'] = '.json'
         config['general']['make_directories'] = False
 
         config['general']['keep_meta'] = True
@@ -246,3 +248,13 @@ def _add_pathlist_contrib(pathlist):
     logging.debug('The xicrsrt_contrib objects are available.')
 
     return pathlist
+
+
+def config_to_numpy(obj):
+    xicsrt_misc._dict_to_numpy(obj)
+    return obj
+
+
+def config_to_list(obj):
+    xicsrt_misc._dict_to_list(obj)
+    return obj
