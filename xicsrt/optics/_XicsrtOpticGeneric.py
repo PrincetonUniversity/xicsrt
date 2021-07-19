@@ -106,22 +106,22 @@ class XicsrtOpticGeneric(GeometryObject):
             # Except for the detector there is really no reason that this would
             # always be true, so for now only make this a warning. I need to think
             # about how to handle this better.
-            pixel_width = self.param['xsize'] / self.param['pixel_size']
-            pixel_height = self.param['ysize'] / self.param['pixel_size']
+            pixel_xsize = self.param['xsize'] / self.param['pixel_size']
+            pixel_ysize = self.param['ysize'] / self.param['pixel_size']
             try:
-                np.testing.assert_almost_equal(pixel_width, np.round(pixel_width))
-                np.testing.assert_almost_equal(pixel_height, np.round(pixel_height))
+                np.testing.assert_almost_equal(pixel_xsize, np.round(pixel_xsize))
+                np.testing.assert_almost_equal(pixel_ysize, np.round(pixel_ysize))
             except AssertionError:
                 self.log.warning(f"Optic width ({self.param['xsize']:0.4f}x{self.param['ysize']:0.4f})"
                                  f"is not a multiple of the pixel_size ({self.param['pixel_size']:0.4f})."
                                  f"May lead to truncation of output image."
                                  )
 
-            self.param['pixel_width'] = int(np.round(pixel_width))
-            self.param['pixel_height'] = int(np.round(pixel_height))
-            self.log.debug(f"Pixel grid size: {self.param['pixel_width']} x {self.param['pixel_height']}")
+            self.param['pixel_xsize'] = int(np.round(pixel_xsize))
+            self.param['pixel_ysize'] = int(np.round(pixel_ysize))
+            self.log.debug(f"Pixel grid size: {self.param['pixel_xsize']} x {self.param['pixel_ysize']}")
 
-            self.image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+            self.image = np.zeros((self.param['pixel_xsize'], self.param['pixel_ysize']))
             self.param['enable_image'] = True
         else:
             self.param['enable_image'] = False
@@ -298,13 +298,13 @@ class XicsrtOpticGeneric(GeometryObject):
 
     def make_image(self, rays):
         """
-        Collect the rays that his this optic into a pixel array that can be used
-        for further analysis or visualization.
+        Collect the rays that intersect with this optic into a pixel array that
+        can be used to generate an intersection image.
 
         Programming Notes
         -----------------
 
-        It is important thas this calculation is compatible with intersect_check
+        It is important that this calculation is compatible with intersect_check
         in terms of floating point errors.  The simple way to achieve this is
         to ensure that both use the same calculation method.
         """
@@ -312,7 +312,7 @@ class XicsrtOpticGeneric(GeometryObject):
         if not self.param['enable_image']:
             return None
 
-        image = np.zeros((self.param['pixel_width'], self.param['pixel_height']))
+        image = np.zeros((self.param['pixel_xsize'], self.param['pixel_ysize']))
         X = rays['origin']
         m = rays['mask'].copy()
         
@@ -330,8 +330,8 @@ class XicsrtOpticGeneric(GeometryObject):
             # pixel. The pixel coordinate is define from the geometrical center of
             # the detector (this could be in the middle of or in between pixels).
             channel = np.zeros(pix.shape)
-            channel[:,0] = pix[:,0] + (self.param['pixel_width'] - 1)/2
-            channel[:,1] = pix[:,1] + (self.param['pixel_height'] - 1)/2
+            channel[:,0] = pix[:,0] + (self.param['pixel_xsize'] - 1)/2
+            channel[:,1] = pix[:,1] + (self.param['pixel_ysize'] - 1)/2
             
             # Bin the channels into integer values so that we can use them as
             # indexes into the image. Keep in mind that channel coordinate
@@ -342,9 +342,9 @@ class XicsrtOpticGeneric(GeometryObject):
             # These are possible due to floating point calculations.
             m = np.ones(num_lines, dtype=bool)
             m &= channel[:,0] >= 0
-            m &= channel[:,0] < self.param['pixel_width']
+            m &= channel[:,0] < self.param['pixel_xsize']
             m &= channel[:,1] >= 0
-            m &= channel[:,1] < self.param['pixel_height']
+            m &= channel[:,1] < self.param['pixel_ysize']
             num_out = np.sum(~m)
             if num_out > 0:
                 self.log.warning('Rays found outside of pixel grid ({}).'.format(num_out))
