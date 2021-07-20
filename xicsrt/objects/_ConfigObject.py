@@ -13,6 +13,7 @@ from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_string
 
 from xicsrt.tools import xicsrt_misc
+from xicsrt import xicsrt_config
 
 @dochelper
 class ConfigObject():
@@ -78,43 +79,12 @@ class ConfigObject():
         """
         pass
 
-    def update_config(self, config, strict=None, update=None):
-        config = copy.deepcopy(config)
-        self._update_config_dict(self.config, config, strict, update)
-
-    def _update_config_dict(self, config, user_config, strict=None, update=None):
+    def update_config(self, config_new, strict=None, update=None):
         """
-        Overwrite any values in the given options dict with the values in the
-        user dict.  This will be done recursively to allow nested dictionaries.
-
-        keywords:
-          strict (True)
-            If True then an error will be raised if an option is found in
-            the user dict that is not found in the default dict.
-
-          update (False)
-            If True any unmatched options that are found will be retained.
-            When False they will simply be ignored. This option has no effect
-            unless strict = False.
+        Overwrite any config values in this object with the ones given. This
+        will be done recursively for all nested dictionaries.
         """
-        if strict is None:
-            strict = True
-        if update is None:
-            update = False
+        xicsrt_config.update_config(self.config, config_new)
 
-        if user_config is None:
-            return
-
-        for key in user_config:
-            if not key in config:
-                if strict:
-                    raise Exception("User option not recognized: {}".format(key))
-                if update:
-                    config[key] = user_config[key]
-            else:
-                if isinstance(config[key], dict):
-                    self._update_config_dict(config[key], user_config[key], strict=strict, update=update)
-                else:
-                    config[key] = user_config[key]
 
 
