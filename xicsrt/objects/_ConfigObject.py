@@ -32,7 +32,7 @@ class ConfigObject():
         self.check_config()
 
         self.param = copy.deepcopy(self.config)
-        self.param = xicsrt_misc._dict_to_numpy(self.param)
+        self.param = xicsrt_misc._convert_to_numpy(self.param, inplace=True)
 
         if initialize:
             self.setup()

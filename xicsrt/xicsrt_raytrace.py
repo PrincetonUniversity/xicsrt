@@ -362,7 +362,7 @@ def check_config(config):
                 do_save = True
 
     if do_save:
-        if not os.path.exists(config['general']['output_path']):
+        if not xicsrt_io.path_exists(config['general']['output_path']):
             if not config['general']['make_directories']:
                 raise Exception('Output directory does not exist. Create directory or set make_directories to True.')
 

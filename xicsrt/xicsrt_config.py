@@ -14,6 +14,13 @@ import copy
 from xicsrt.objects._ConfigObject import ConfigObject
 from xicsrt.tools import xicsrt_misc
 
+try:
+    import xicsrt_contrib
+except:
+    logging.debug('The xicrsrt_contrib package is not installed.')
+else:
+    logging.debug('The xicrsrt_contrib package is installed.')
+
 
 def default_config():
     """
@@ -220,10 +227,9 @@ def _add_pathlist_builtin(pathlist):
 
 
 def _add_pathlist_contrib(pathlist):
-    try:
-        import xicsrt_contrib
-    except:
-        logging.debug('The xicrsrt_contrib package is not installed.')
+
+    # Check if the xicsrt_contrib module was successfully imported.
+    if not 'xicsrt_contrib' in dir():
         return pathlist
 
     # Add paths to the xicsrt_contrib objects.
@@ -231,18 +237,17 @@ def _add_pathlist_contrib(pathlist):
     pathlist.append(os.path.join(path_module, 'filters'))
     pathlist.append(os.path.join(path_module, 'sources'))
     pathlist.append(os.path.join(path_module, 'optics'))
-    logging.debug('The xicrsrt_contrib objects are available.')
 
     return pathlist
 
 
 def config_to_numpy(obj):
-    xicsrt_misc._dict_to_numpy(obj)
+    xicsrt_misc._convert_to_numpy(obj)
     return obj
 
 
-def config_to_list(obj):
-    xicsrt_misc._dict_to_list(obj)
+def config_from_numpy(obj):
+    xicsrt_misc._convert_from_numpy(obj)
     return obj
 
 
