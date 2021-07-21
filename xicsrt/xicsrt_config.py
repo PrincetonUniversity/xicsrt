@@ -227,9 +227,8 @@ def _add_pathlist_builtin(pathlist):
 
 
 def _add_pathlist_contrib(pathlist):
-
     # Check if the xicsrt_contrib module was successfully imported.
-    if not 'xicsrt_contrib' in dir():
+    if not 'xicsrt_contrib' in globals():
         return pathlist
 
     # Add paths to the xicsrt_contrib objects.

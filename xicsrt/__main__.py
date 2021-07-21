@@ -6,10 +6,12 @@
 A command line interface for the XICSRT raytracer.
 """
 
+import sys
+import logging
 import numpy as np
 import argparse
-import logging
 import io
+
 
 from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_multiprocessing
@@ -114,7 +116,7 @@ def run():
         print(f'{__version__}')
         return
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, force=True)
 
     config = xicsrt_io.load_config(args.config_file)
 
@@ -126,7 +128,7 @@ def run():
         config['general']['number_of_iter'] = args.numiter
     if args.seed:
         config['general']['random_seed'] = args.seed
-    if args.output_path:
+    if args.path:
         config['general']['output_path'] = args.path
 
     if args.multiprocessing:

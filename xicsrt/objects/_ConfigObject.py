@@ -63,9 +63,8 @@ class ConfigObject():
         """
         Perform any setup actions that are needed prior to initialization.
         """
-
-        # Simplify all config strings.
-        xicsrt_string.simplify_strings(self.param)
+        pass
+        
 
     def check_param(self):
         """
