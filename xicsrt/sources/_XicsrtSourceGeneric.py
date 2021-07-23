@@ -34,7 +34,7 @@ class XicsrtSourceGeneric(GeometryObject):
         zsize
           The size of this element along the zaxis direction.
 
-        spread_dist : string ('isotropic')
+        angular_dist : string ('isotropic')
           | The type of angular distribution to use for the emitted rays.
           | Available distributions (default is 'isotropic'):
           |
@@ -73,7 +73,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         spread : float or array (np.pi) [radians]
           The angular spread for the emission cone. The spread defines the
-          half-angle of the emission cone. See 'spread_dist' for detailed
+          half-angle of the emission cone. See 'angular_dist' for detailed
           documentation.
 
         intensity : int or float
@@ -131,7 +131,7 @@ class XicsrtSourceGeneric(GeometryObject):
         velocity
           No documentation yet. Please help improve XICSRT!
 
-        filter_list
+        filters
           No documentation yet. Please help improve XICSRT!
 
         """
@@ -143,7 +143,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         config['intensity']        = 0.0
         config['use_poisson']      = False
-        config['spread_dist']      = 'isotropic'
+        config['angular_dist']      = 'isotropic'
         config['spread']           = np.pi
 
         # Possible values: 'monochrome', 'voigt', 'uniform
@@ -161,7 +161,7 @@ class XicsrtSourceGeneric(GeometryObject):
         # Only used for wavelength_dist = 'uniform'
         config['wavelength_range'] = np.array([0.0, 0.0])
         
-        config['filter_list']    = []
+        config['filters']          = []
 
         return config
 
@@ -235,7 +235,7 @@ class XicsrtSourceGeneric(GeometryObject):
         dir_local  = xicsrt_spread.vector_distribution(
             spread,
             self.param['intensity'],
-            name=self.param['spread_dist'],
+            name=self.param['angular_dist'],
             )
 
         # Generate some basis vectors that are perpendicular

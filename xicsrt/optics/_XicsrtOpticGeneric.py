@@ -72,6 +72,9 @@ class XicsrtOpticGeneric(GeometryObject):
           defined bounds (usually defined by 'xsize' an 'ysize'). If set to
           `False` all rays with a defined reflection/transmission condition
           will be traced if an intersection can be determined.
+
+        filters
+          No documentation yet. Please help improve XICSRT!
         """
         config = super().default_config()
         
@@ -86,8 +89,11 @@ class XicsrtOpticGeneric(GeometryObject):
         config['check_size'] = True
         config['check_aperture'] = True
         
-        #aperture info
+        # Aperture list
         config['aperture'] = None
+
+        # Filters
+        config['filters'] = []
 
         return config
 

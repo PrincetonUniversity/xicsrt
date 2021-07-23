@@ -136,6 +136,7 @@ def raytrace_single(config, _internal=False):
     logging.debug("Creating optics")
     optics = Dispatcher(config, 'optics')
     optics.instantiate()
+    optics.apply_filters(filters)
     optics.setup()
     optics.initialize()
     config['optics'] = optics.get_config()

@@ -201,8 +201,12 @@ class Dispatcher():
         # 'self' should be a source or optics dispatcher object
         
         # read the filter list for each source and dispatch the matching filters
-        for key in self.objects:      
+        for key in self.objects:
+            if not 'filters' in self.objects[key].config:
+                break
+            if self.objects[key].config['filters'] is None:
+                break
             for filter_name in filters.objects:
-                if filter_name in self.objects[key].config['filter_list']:
+                if filter_name in self.objects[key].config['filters']:
                     self.objects[key].filter_objects.append(filters.objects[filter_name])
 

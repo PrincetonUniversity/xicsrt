@@ -52,7 +52,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         zsize
           The size of this element along the zaxis direction.
 
-        spread_dist : string ('isotropic')
+        angular_dist : string ('isotropic')
           The type of angular distribution to use for the emitted rays.
           Available distributions: 'isotropic', 'isotropic_xy', 'flat',
           'flat_xy', 'gaussian', and 'gaussian_flat'.
@@ -62,7 +62,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         spread: float (None) [radians]
           The angular spread for the emission cone. The spread defines the
-          half-angle of the cone. See 'spread_dist' in :any:`XicsrtSourceGeneric`
+          half-angle of the cone. See 'angular_dist' in :any:`XicsrtSourceGeneric`
           for detailed documentation.
 
         spread_radius: float (None) [meters]
@@ -112,8 +112,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
           The number of bundles to generate. If set to `None` then this number
           will be automatically determined by volume/bundle_volume. This default
           means that each bundle represents exactly the given `bundle_volume` in
-          the plasma. For raytracing studies this value should be explicitly
-          set to a value much larger than volume/bundle_volume!
+          the plasma. For high quality raytracing studies this value should
+          generally be set to a value much larger than volume/bundle_volume!
 
         max_rays : int (1e7)
           No documentation yet. Please help improve XICSRT!
@@ -121,7 +121,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         max_bundles : int (1e7)
           No documentation yet. Please help improve XICSRT!
 
-        filter_list
+        filters
           No documentation yet. Please help improve XICSRT!
 
         """
@@ -131,7 +131,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['ysize']         = 0.0
         config['zsize']          = 0.0
 
-        config['spread_dist']      = 'isotropic'
+        config['angular_dist']      = 'isotropic'
         config['spread']           = None
         config['spread_radius']    = None
         config['target']           = None
@@ -154,7 +154,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['max_rays']        = int(1e7)
         config['max_bundles']     = int(1e7)
         
-        config['filter_list']     = []
+        config['filters']         = []
         return config
 
     def initialize(self):
@@ -167,6 +167,10 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.param['bundle_count'] = int(np.round(self.param['bundle_count']))
         if self.param['bundle_count'] < 1:
             raise Exception(f'Bundle volume is larger than the plasma volume.')
+        if self.param['bundle_count'] > self.param['max_bundles']:
+            raise ValueError(
+                f"Current settings will produce too many bundles ({self.param['bundle_count']:0.2e}). "
+                f"Increase the bundle_volume, explicitly set bundle_count or increase max_bundles.")
 
     def setup_bundles(self):
         self.log.debug('Starting setup_bundles')
@@ -272,12 +276,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
         if predicted_rays > self.param['max_rays']:
             raise ValueError(
-                f"Current settings will produce too many rays ({predicted_rays}:0.2e). "
+                f"Current settings will produce too many rays ({predicted_rays:0.2e}). "
                 f"Please reduce integration time or adjust other parameters.")
-        if  sum(m) > self.param['max_bundles']:
-            raise ValueError(
-                f"Current settings will produce too many bundles ({self.param['bundle_count']:0.2e}). "
-                f"Please reduce the bundle volume or use the option bundle_count.")
 
         # Bundle generation loop
         for ii in range(self.param['bundle_count']):
@@ -329,7 +329,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config['wavelength']       = self.param['wavelength']
             source_config['wavelength_range'] = self.param['wavelength_range']
             source_config['linewidth']        = self.param['linewidth']
-            source_config['spread_dist']      = self.param['spread_dist']
+            source_config['angular_dist']      = self.param['angular_dist']
             source_config['use_poisson']      = self.param['use_poisson']
                 
             #create ray bundle sources and generate bundled rays

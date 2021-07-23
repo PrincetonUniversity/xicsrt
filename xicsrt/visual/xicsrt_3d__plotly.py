@@ -360,8 +360,8 @@ def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
     if range_m is None: range_m = (0, 2*np.pi)
     if range_n is None: range_n = (0, np.pi/4)
 
-    num_m = 51
-    num_n = 51
+    num_m = 101
+    num_n = 101
 
     num_points = num_m*num_n
     flx = np.empty((num_points, 3))

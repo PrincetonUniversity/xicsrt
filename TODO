@@ -11,3 +11,8 @@ General:
 2. xicsrt.objects._XicsrtOpticMesh:
     The docstring is out of date, and needs to be rewritten.
 
+3. xicsrt.objects._GeometryObject:
+    The vectors zaxis and xaxis should be checked for orthogonality. If not
+    orthogonal an Exception should be raised. Behavior for non-orthogonal
+    coordinate systems is not defined.
+

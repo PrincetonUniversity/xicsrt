@@ -40,15 +40,15 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
     on performance.
 
     To further improve performance this class (optionally) also makes use of
-    pre-selection with a course mesh. First the intersection with the course
+    pre-selection with a coarse mesh. First the intersection with the coarse
     mesh is found for each ray. Then only the 8 nearby faces on the full mesh
     are checked for the final intersection location. This method improves
-    the performance to (num_faces_course + 8).
+    the performance to (num_faces_coarse + 8).
 
     The current algorithm for pre-selection (mesh refinement) is not perfect
     in that the nearby faces are not always appropriately chosen leading to a
     small number of rays being 'lost'. These errors can be minimized by
-    increasing the resolution of the course mesh and ensuring that the grid
+    increasing the resolution of the coarse mesh and ensuring that the grid
     spacing is approximately equal in the x and y directions.
 
     Further performance improvement could be gained by using numba or jax.
@@ -60,12 +60,12 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
       XicsrtOpticMesh: Improve the pre-selection (mesh refinement algorithm) to
       eliminate ray losses. The current method is as follows:
 
-      1. Calculate intersection with course grid.
+      1. Calculate intersection with coarse grid.
       2. Find the point on the fine grid closest to the intersection.
       3. Test all faces on the fine grid that contain this point.
 
       The problem is that the closest point may not always be part of the face
-      that actually has the intersection. This can happen if the fine and course
+      that actually has the intersection. This can happen if the fine and coarse
       grid have very different densities, but also even in the perfect case if
       the ray hits near the edge of a face and the grid density is not even in
       the x and y directions.
@@ -148,6 +148,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
             else:
                 X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
                 num_rays_coarse = np.sum(rays['mask'])
+
                 faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'], rays['mask'])
                 X, rays, hits = self.mesh_intersect_2(
                     rays
