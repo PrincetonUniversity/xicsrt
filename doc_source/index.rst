@@ -4,38 +4,30 @@ XICSRT: Photon based raytracing in Python
 XICSRT is a general purpose, photon based, raytracing code intended
 for both optical and x-ray raytracing.
 
-**The best way to get started with XICSRT is with the :any:`examples`.**
+**The best way to get started with XICSRT is with the** :any:`examples`.
 
 | **Documentation:** `xicsrt.readthedocs.org`_
 | **Git Repository:** `bitbucket.org/amicitas/xicsrt`_
 | **Git Mirror:** `github.com/PrincetonUniversity/xicsrt`_
 
 XICSRT provides a simple, extensible, optical and x-ray raytracing capability
-in Python. Input is a single python dictionary (which can be saved as
-a `json` file), output is a python dictionary (which can be saved as `hdf5`).
+in Python. Input is a single python dictionary (which can be saved to a `json`
+file), output is a python dictionary (which can be saved to a `hdf5` file).
 
-A few simple 2D and 3D visualization utilities are included in the project.
-However, these are only meant to be used as examples. Interface, visualization,
-and analysis are expected to be handled by the user or through external
-wrapper projects. Than being said, XICSRT can be effectively used interactively
-using a `jupyter`_ notebook and some familiarity with `numpy`_, `matplotlib`_ and
-`plotly`_.
+For interactive use XICSRT can run within a `jupyter`_ notebook. Simple examples
+for 2D and 3D plotting using the `matplotlib`_ and `plotly`_ libraries are
+included. A command line interface to XICSRT is also available.
 
-XICSRT is highly vectorized, and most expensive calculations
-are performed through built-in `numpy` routines. A `multiprocessing`
-module and a command line interface are included to facilitate use
-across multiple processors. Overall though, the code has been written for
-ease of extensibility, rather than computational speed.
+XICSRT has been written with a primary goal of simplicity and ease of
+extensibility, rather than computational speed. That being said the code has
+been thoroughly vectorized and optimized, and most expensive calculations are
+performed through built-in `numpy`_ routines. Use across multiple processors can be
+achieved though the built-in `multiprocessing` capabilities.
 
 .. warning::
 
-    Documentation of XICSRT has only just begun. These docs are still very
-    incomplete, and may be out of date or incorrect in places.
-
-    If you are using XICSRT please help us improve the documentation!
-
-.. include:: ../AUTHORS
-
+    Documentation of XICSRT is still in progress. Please get involved and help
+    us improve the documentation!
 
 Installation
 ------------
@@ -52,17 +44,35 @@ Alternatively you can install from source using `setuptools`
 
     python setup.py install
 
-
 Usage
 -----
 
-XICSRT is run by supplying a `config` dictionary to `xicsrt.raytrace(config)`.
+XICSRT is run by supplying a `config` dictionary to `raytrace()`.
 
-To learn how format the input, and interpret the output, see the: :any:`examples`.
+.. code:: python
+
+    results = xicsrt.raytrace(config)
+
+To learn how format the input and interpret the output, try the :any:`examples`
+or download the `XICSRT Tutorial`_.
+
+Tutorial
+--------
+
+An `XICSRT Tutorial`_ presentation is available that introduces basic usage and
+concepts.
+
+
+Authors
+-------
+
+XICSRT development is coordinated by Novimir A. Pablant. A full list of
+contributers can be found on the :doc:`pages/authors` page.
 
 License
 -------
 .. include:: ../LICENSE
+
 
 .. toctree::
     :maxdepth: 1
@@ -71,6 +81,7 @@ License
     apidoc/xicsrt
     apidoc/examples
     pages/development
+    pages/authors
 
 Indices and tables:
 -------------------
@@ -86,3 +97,4 @@ Indices and tables:
 .. _numpy: https://numpy.org/
 .. _matplotlib: https://matplotlib.org/
 .. _plotly: https://github.com/plotly
+.. _XICSRT tutorial: https://drive.google.com/file/d/1ze1DPO_Cx8hJtj-eoli9cp2XAGZKcese/view?usp=sharing
