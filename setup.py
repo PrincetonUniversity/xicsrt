@@ -45,7 +45,7 @@ params ={
     'packages': setuptools.find_packages(exclude=['xicsrt_contrib*']),
     'entry_points': {'console_scripts':['xicsrt=xicsrt.__main__:run']},
     'classifiers': classifiers,
-    'install_requires': ['numpy', 'scipy', 'pillow'],
+    'install_requires': ['numpy', 'scipy', 'pillow', 'h5py'],
     'python_requires': '>=3.8',
     }
     
