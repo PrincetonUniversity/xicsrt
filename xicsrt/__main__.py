@@ -121,7 +121,7 @@ def run():
     config = xicsrt_io.load_config(args.config_file)
 
     if args.suffix:
-        config['general']['suffix'] = args.suffix
+        config['general']['output_suffix'] = args.suffix
     if args.numruns:
         config['general']['number_of_runs'] = args.numruns
     if args.numiter:
