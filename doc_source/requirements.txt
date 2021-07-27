@@ -1,8 +1,8 @@
 numpy
 scipy
-jaxlib
-jax
 pillow
 matplotlib
 plotly
+jaxlib
+jax
 ipyvolume

@@ -78,8 +78,9 @@ License
     :maxdepth: 1
     :caption: Contents:
 
-    apidoc/xicsrt
+    pages/user_manual
     apidoc/examples
+    apidoc/xicsrt
     pages/development
     pages/authors
 

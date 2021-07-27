@@ -83,7 +83,7 @@ def default_config():
       option `output_prefix` for more information.
 
     output_run_suffix : str (None)
-      This options is used internally and should not be set by the user.
+      This option is used internally and should not be set by the user.
 
     image_ext : str ('.tif')
       Controls the file format of the saved images. Any format supported by
