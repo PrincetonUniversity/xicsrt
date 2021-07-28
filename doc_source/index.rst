@@ -78,7 +78,7 @@ License
     :maxdepth: 1
     :caption: Contents:
 
-    pages/user_manual
+    userguide/userguide
     apidoc/examples
     apidoc/xicsrt
     pages/development

@@ -1,19 +1,14 @@
 XICSRT API Documentation
 ========================
 
-.. automodule:: xicsrt
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
 
+command
+-------
 
-command line
-------------
-.. automodule:: xicsrt.__main__
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 1
+
+   xicsrt.__main__
 
 
 modules
@@ -21,6 +16,8 @@ modules
 
 .. toctree::
    :maxdepth: 1
+
+   xicsrt.__init__
 
    xicsrt.xicsrt_raytrace
    xicsrt.xicsrt_multiprocessing

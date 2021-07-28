@@ -4,8 +4,25 @@ XICSRT on Multiple Processors
 
 XICSRT has built-in support for raytracing over multiple processors through the
 use of Python's multiprocessing library. To use this functionality one only
-needs to replace the call :code:`xicsrt.raytrace()` with
-:code:`xicsrt.raytrace_mp()`.
+needs to replace the call :any:`xicsrt.raytrace()` with
+:any:`xicsrt.raytrace_mp()`.
+
+Windows Support
+---------------
+
+Interactive use of multiprocessing on Windows requires that
+:any:`xicsrt.raytrace_mp()` is wrapped in a :code:`name == "__main__"` test. In
+a jupyter notebook on Windows this means replacing the call to
+:any:`xicsrt.raytrace()` with the following:
+
+.. code:: python
+
+   if __name__ == "__main__":
+       results = xicsrt.raytrace_mp(config)
+
+
+The :any:`Command Line Interface <command_line>` can be used without any
+modifications.
 
 Cluster Computing
 -----------------
