@@ -10,10 +10,10 @@ needs to replace the call :any:`xicsrt.raytrace()` with
 Windows Support
 ---------------
 
-Interactive use of multiprocessing on Windows requires that
-:any:`xicsrt.raytrace_mp()` is wrapped in a :code:`name == "__main__"` test. In
-a jupyter notebook on Windows this means replacing the call to
-:any:`xicsrt.raytrace()` with the following:
+Multiprocessing on Windows requires that :any:`xicsrt.raytrace_mp()` is
+wrapped in a :code:`name == "__main__"` test. In a python script or jupyter
+notebook on Windows this means replacing the call to :any:`xicsrt.raytrace()`
+with the following:
 
 .. code:: python
 

@@ -15,6 +15,8 @@ from xicsrt.util import mirplot
 from xicsrt import xicsrt_public
 from xicsrt.tools import xicsrt_aperture
 
+log = logging.getLogger(__name__)
+
 def plot_intersect(
         results,
         name=None,
@@ -195,7 +197,7 @@ def _get_aperture_plotlist(obj, scale=None):
             x = np.array([vert[0,0], vert[1,0], vert[2,0], vert[0,0]])+origin[0]
             y = np.array([vert[0,1], vert[1,1], vert[2,1], vert[0,1]])+origin[0]
         else:
-            logging.warning(f'Plotting of {shape} aperture not yet implemented.')
+            log.warning(f'Plotting of {shape} aperture not yet implemented.')
             return []
 
         plotlist.append({

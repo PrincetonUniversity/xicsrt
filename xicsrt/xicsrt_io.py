@@ -21,6 +21,8 @@ from xicsrt import xicsrt_config
 from xicsrt.tools import xicsrt_misc
 from xicsrt.util import profiler
 
+log = logging.getLogger(__name__)
+
 def load_config(filename):
     config = _dict_from_file(filename)
     return config
@@ -32,7 +34,7 @@ def save_config(config, filename=None, path=None):
     _file_from_dict(config, filename, mkdir=config['general']['make_directories'])
 
     filename = pathlib.Path(filename).expanduser().resolve()
-    logging.info('Config saved to {}'.format(filename))
+    log.info('Config saved to {}'.format(filename))
 
 
 def save_results(output, filename=None, path=None):
@@ -43,7 +45,7 @@ def save_results(output, filename=None, path=None):
     _file_from_dict(output, filename, mkdir=config['general']['make_directories'])
 
     filename = pathlib.Path(filename).expanduser().resolve()
-    logging.info('History saved to {}'.format(filename))
+    log.info('History saved to {}'.format(filename))
 
 
 def load_results(config=None, filename=None, path=None):
@@ -76,7 +78,7 @@ def save_images(output, rotate=False, path=None):
                 generated_image.save(filename)
 
                 filename = pathlib.Path(filename).expanduser().resolve()
-                logging.info('Saved image: {}'.format(filename))
+                log.info('Saved image: {}'.format(filename))
 
 
 def generate_filename(config, kind=None, name=None, path=None):
@@ -164,7 +166,7 @@ def _make_output_path(config):
         path = pathlib.Path(config['general']['output_path']).expanduser()
         if not path.exists():
             path.mkdir(parents=True, exist_ok=True)
-            logging.info(f'Made directory: {path}')
+            log.info(f'Made directory: {path}')
 
 
 def _make_path(filename):
@@ -173,7 +175,7 @@ def _make_path(filename):
         path = path.parent
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-        logging.info(f'Made directory: {path}')
+        log.info(f'Made directory: {path}')
 
 
 def path_exists(path):

@@ -19,11 +19,10 @@ import datetime
 
 import logging
 
-log = logging.getLogger('xicsrt.util.profile')
+log = logging.getLogger(__name__)
 profiler_results = dict()
 flags = {}
 flags['enabled'] = False
-
 
 def isEnabled():
     return flags['enabled']

@@ -22,6 +22,7 @@ from xicsrt import xicsrt_io
 from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
+log = logging.getLogger(__name__)
 
 def raytrace(config):
     """
@@ -51,7 +52,7 @@ def raytrace(config):
     output_list = []
     
     for ii in range(num_runs):
-        logging.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        log.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         config_run = deepcopy(config)
         config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
 
@@ -105,7 +106,7 @@ def raytrace_single(config, _internal=False):
     config = xicsrt_config.get_config(config)
     check_config(config)
 
-    logging.info('Seeding np.random with {}'.format(config['general']['random_seed']))
+    log.info('Seeding np.random with {}'.format(config['general']['random_seed']))
     np.random.seed(config['general']['random_seed'])
 
     num_iter = config['general']['number_of_iter']
@@ -116,7 +117,7 @@ def raytrace_single(config, _internal=False):
 
     # Setup the dispatchers.
     if 'filters' in config:
-        logging.debug("Creating filters")
+        log.debug("Creating filters")
         filters = Dispatcher(config, 'filters')
         filters.instantiate()
         filters.setup()
@@ -125,7 +126,7 @@ def raytrace_single(config, _internal=False):
     else:
         filters = None
 
-    logging.debug("Creating sources")
+    log.debug("Creating sources")
     sources = Dispatcher(config, 'sources')
     sources.instantiate()
     sources.apply_filters(filters)
@@ -133,7 +134,7 @@ def raytrace_single(config, _internal=False):
     sources.initialize()
     config['sources'] = sources.get_config()
 
-    logging.debug("Creating optics")
+    log.debug("Creating optics")
     optics = Dispatcher(config, 'optics')
     optics.instantiate()
     optics.apply_filters(filters)
@@ -144,7 +145,7 @@ def raytrace_single(config, _internal=False):
     # Do the actual raytracing
     output_list = []
     for ii in range(num_iter):
-        logging.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
+        log.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
 
         single = _raytrace_iter(config, sources, optics)
         sorted = _sort_raytrace(single, max_lost=max_lost_iter)
@@ -181,9 +182,9 @@ def _raytrace_iter(config, sources, optics):
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
-    logging.debug('Generating rays')
+    log.debug('Generating rays')
     rays = sources.generate_rays(keep_history=keep_history)
-    logging.debug('Raytracing optics')
+    log.debug('Raytracing optics')
     rays = optics.trace(rays, keep_history=keep_history, keep_images=keep_images)
 
     # Combine sources and optics outputs.

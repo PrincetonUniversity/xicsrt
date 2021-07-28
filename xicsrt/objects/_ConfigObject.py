@@ -25,7 +25,7 @@ class ConfigObject():
         if initialize is None: initialize = True
 
         self.name = self.__class__.__name__
-        self.log = logging.getLogger(self.name)
+        self.log = logging.getLogger('xicsrt').getChild(self.name)
 
         self.config = self.default_config()
         self.update_config(config, strict)

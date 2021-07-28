@@ -16,12 +16,14 @@ from xicsrt.tools import xicsrt_misc
 
 from xicsrt import _version
 
+log = logging.getLogger(__name__)
+
 try:
     import xicsrt_contrib
 except:
-    logging.debug('The xicrsrt_contrib package is not installed.')
+    log.debug('The xicrsrt_contrib package is not installed.')
 else:
-    logging.debug('The xicrsrt_contrib package is installed.')
+    log.debug('The xicrsrt_contrib package is installed.')
 
 
 def default_config():

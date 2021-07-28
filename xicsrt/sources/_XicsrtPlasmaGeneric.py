@@ -365,15 +365,15 @@ class XicsrtPlasmaGeneric(GeometryObject):
         if len(rays['mask']) == 0:
             raise ValueError('No rays generated. Check plasma input parameters')
 
-        logging.debug('Bundles Generated:       {:0.4e}'.format(
+        self.log.debug('Bundles Generated:       {:0.4e}'.format(
             len(m[m])))
-        logging.debug('Rays per bundle, mean:   {:0.0f}'.format(
+        self.log.debug('Rays per bundle, mean:   {:0.0f}'.format(
             np.mean(count_rays_in_bundle)))
-        logging.debug('Rays per bundle, median: {:0.0f}'.format(
+        self.log.debug('Rays per bundle, median: {:0.0f}'.format(
             np.median(count_rays_in_bundle)))
-        logging.debug('Rays per bundle, max:    {:0d}'.format(
+        self.log.debug('Rays per bundle, max:    {:0d}'.format(
             np.max(count_rays_in_bundle)))
-        logging.debug('Rays per bundle, min:    {:0d}'.format(
+        self.log.debug('Rays per bundle, min:    {:0d}'.format(
             np.min(count_rays_in_bundle)))
 
         return rays

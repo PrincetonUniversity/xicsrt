@@ -53,6 +53,8 @@ import numpy as np
 import h5py
 from collections import OrderedDict
 
+log = logging.getLogger(__name__)
+
 def dictToHdf5(dick, filename=None, driver=None, **kwargs):
     """
     Save a python dictionary as an HDF5 data file.
@@ -221,7 +223,7 @@ def _addItemToHdf5(group, key, item, compression=None, compression_opts=None):
                     ,compression=compression
                     ,compression_opts=compression_opts)
     except TypeError:
-        logging.exception('Could not add key "{}" of type {} to hdf5 file.'.format(key, type(item)))
+        log.exception('Could not add key "{}" of type {} to hdf5 file.'.format(key, type(item)))
 
 
 def _addDictToHdf5(group, dick, **kwargs):
@@ -231,7 +233,7 @@ def _addDictToHdf5(group, dick, **kwargs):
     try:
         group.attrs['_mirhdf5 dictionary order'] = keys
     except TypeError:
-        logging.error('Could not save dictionary key order. keys of unsupported data type.')
+        log.error('Could not save dictionary key order. keys of unsupported data type.')
 
 
     for key in dick:

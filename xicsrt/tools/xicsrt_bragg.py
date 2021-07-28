@@ -13,7 +13,7 @@ import numpy as np
 import os
 
 import logging
-m_log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def read(filename, filetype=None):
     """
