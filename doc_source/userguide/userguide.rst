@@ -11,4 +11,5 @@ This user manual is still incomplete. For now, please refer to the
     :maxdepth: 1
     :caption: Contents:
 
+    command_line
     multiple_processors

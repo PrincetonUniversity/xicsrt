@@ -14,6 +14,8 @@ import copy
 from xicsrt.objects._ConfigObject import ConfigObject
 from xicsrt.tools import xicsrt_misc
 
+from xicsrt import _version
+
 try:
     import xicsrt_contrib
 except:
@@ -158,9 +160,13 @@ def default_config():
       specific information. (Note: control of logging/debugging output is
       controlled through a separate option that is not yet implemented.)
 
+    version: string
+      The version number of xicsrt when this config was created.
+      This option is set internally and should not be modified by the user.
     """
     config = dict()
     config['general'] = dict()
+    config['general']['version'] = _version.__version__
     config['general']['number_of_iter'] = 1
     config['general']['number_of_runs'] = 1
     config['general']['random_seed'] = None
