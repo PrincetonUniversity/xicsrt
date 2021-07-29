@@ -10,11 +10,12 @@ Contains the main functions that are called to perform raytracing.
 """
 
 import numpy as np
-import logging
+
 import os
 
 from copy import deepcopy
 
+from xicsrt.util import mirlogging
 from xicsrt.util import profiler
 
 from xicsrt import xicsrt_config
@@ -22,7 +23,7 @@ from xicsrt import xicsrt_io
 from xicsrt.objects._Dispatcher import Dispatcher
 from xicsrt.objects._RayArray import RayArray
 
-log = logging.getLogger(__name__)
+m_log = mirlogging.getLogger(__name__)
 
 def raytrace(config):
     """
@@ -52,7 +53,7 @@ def raytrace(config):
     output_list = []
     
     for ii in range(num_runs):
-        log.info('Starting run: {} of {}'.format(ii + 1, num_runs))
+        m_log.info('Starting run: {} of {}'.format(ii + 1, num_runs))
         config_run = deepcopy(config)
         config_run['general']['output_run_suffix'] = '{:04d}'.format(ii)
 
@@ -106,7 +107,7 @@ def raytrace_single(config, _internal=False):
     config = xicsrt_config.get_config(config)
     check_config(config)
 
-    log.info('Seeding np.random with {}'.format(config['general']['random_seed']))
+    m_log.info('Seeding np.random with {}'.format(config['general']['random_seed']))
     np.random.seed(config['general']['random_seed'])
 
     num_iter = config['general']['number_of_iter']
@@ -117,7 +118,7 @@ def raytrace_single(config, _internal=False):
 
     # Setup the dispatchers.
     if 'filters' in config:
-        log.debug("Creating filters")
+        m_log.debug("Creating filters")
         filters = Dispatcher(config, 'filters')
         filters.instantiate()
         filters.setup()
@@ -126,7 +127,7 @@ def raytrace_single(config, _internal=False):
     else:
         filters = None
 
-    log.debug("Creating sources")
+    m_log.debug("Creating sources")
     sources = Dispatcher(config, 'sources')
     sources.instantiate()
     sources.apply_filters(filters)
@@ -134,7 +135,7 @@ def raytrace_single(config, _internal=False):
     sources.initialize()
     config['sources'] = sources.get_config()
 
-    log.debug("Creating optics")
+    m_log.debug("Creating optics")
     optics = Dispatcher(config, 'optics')
     optics.instantiate()
     optics.apply_filters(filters)
@@ -145,7 +146,7 @@ def raytrace_single(config, _internal=False):
     # Do the actual raytracing
     output_list = []
     for ii in range(num_iter):
-        log.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
+        m_log.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
 
         single = _raytrace_iter(config, sources, optics)
         sorted = _sort_raytrace(single, max_lost=max_lost_iter)
@@ -182,9 +183,9 @@ def _raytrace_iter(config, sources, optics):
     keep_images  = config['general']['keep_images']
     keep_history = config['general']['keep_history']
 
-    log.debug('Generating rays')
+    m_log.debug('Generating rays')
     rays = sources.generate_rays(keep_history=keep_history)
-    log.debug('Raytracing optics')
+    m_log.debug('Raytracing optics')
     rays = optics.trace(rays, keep_history=keep_history, keep_images=keep_images)
 
     # Combine sources and optics outputs.

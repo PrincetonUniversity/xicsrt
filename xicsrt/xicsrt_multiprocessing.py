@@ -7,7 +7,7 @@
 from multiprocessing import Pool
 from xicsrt.xicsrt_raytrace import *
 
-log = logging.getLogger(__name__)
+log = mirlogging.getLogger(__name__)
 
 def raytrace(config, processes=None):
     """

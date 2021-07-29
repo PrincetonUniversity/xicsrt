@@ -7,17 +7,19 @@ A command line interface for the XICSRT raytracer.
 """
 
 import sys
-import logging
 import numpy as np
 import argparse
 import io
 
+from xicsrt.util import mirlogging
 
 from xicsrt import xicsrt_raytrace
 from xicsrt import xicsrt_multiprocessing
 from xicsrt import xicsrt_io
 
 from xicsrt._version import __version__
+
+m_log = mirlogging.getLogger(__name__)
 
 def _get_parser():
     parser = argparse.ArgumentParser(
@@ -116,7 +118,7 @@ def run():
         print(f'{__version__}')
         return
 
-    logging.basicConfig(level=logging.DEBUG, force=True)
+    mirlogging.defaultConfig(level=mirlogging.INFO, force=True)
 
     config = xicsrt_io.load_config(args.config_file)
 
