@@ -104,8 +104,13 @@ def plot_intersect(
 
     if xbound is None:
         xbound = np.array([-1*obj.param['xsize']/2, obj.param['xsize']/2])*1.2
+    else:
+        xbound = np.asarray(xbound)
+
     if ybound is None:
         ybound = np.array([-1*obj.param['ysize']/2, obj.param['ysize']/2])*1.2
+    else:
+        ybound = np.asarray(ybound)
 
     if lost:
         # Lets plot the 'lost' rays.

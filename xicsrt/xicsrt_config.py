@@ -212,6 +212,39 @@ def get_config(config_user=None):
     return config
 
 
+def refresh_config(config_new):
+    """
+    When a config file is loaded from a another system or from a different user
+    it may contain default values that are not appropriate for the current
+    environment. This function will overwrite these options with new default
+    values where appropriate.
+    """
+
+    refresh = {}
+    refresh['general'] = {}
+    refresh['general']['pathlist_default'] = None
+
+    config_new = copy.deepcopy(config_new)
+    update_config(
+        config_new,
+        refresh,
+        strict=False,
+        update=True,
+        ignore_none=False,
+        )
+
+    config = default_config()
+    update_config(
+        config,
+        config_new,
+        strict=False,
+        update=True,
+        ignore_none=True,
+        )
+
+    return config
+
+
 def get_pathlist_default():
     """
     Return a list of the default sources and optics directories.
@@ -258,10 +291,17 @@ def config_from_numpy(obj):
     return obj
 
 
-def update_config(config, config_new, strict=None, update=None):
+def update_config(
+        config,
+        config_new,
+        strict=None,
+        update=None,
+        ignore_none=None,
+        ):
     """
     Overwrite any values in the given config dict with the values in the
-    user dict.  This will be done recursively to allow nested dictionaries.
+    config_new dict.  This will be done recursively to allow nested
+    dictionaries.
 
     keywords:
       strict (True)
@@ -272,12 +312,22 @@ def update_config(config, config_new, strict=None, update=None):
         If True any unmatched options that are found will be retained.
         When False they will simply be ignored. This option has no effect
         unless strict = False.
+
+      ignore_none (False)
+        If True any options found in config_new with a value of None will
+        be ignored.
+
     """
-    config_new = copy.deepcopy(config_new)
-    _update_config_dict(config, config_new, strict, update)
+    _update_config_dict(config, config_new, strict, update, ignore_none)
 
 
-def _update_config_dict(config, config_new, strict=None, update=None):
+def _update_config_dict(
+        config,
+        config_new,
+        strict=None,
+        update=None,
+        ignore_none=None,
+        ):
     """
     Recursive worker function for `update_config`.
     """
@@ -285,6 +335,8 @@ def _update_config_dict(config, config_new, strict=None, update=None):
         strict = True
     if update is None:
         update = False
+    if ignore_none is None:
+        ignore_none = False
 
     if config_new is None:
         return
@@ -297,6 +349,15 @@ def _update_config_dict(config, config_new, strict=None, update=None):
                 config[key] = config_new[key]
         else:
             if isinstance(config[key], dict):
-                _update_config_dict(config[key], config_new[key], strict=strict, update=update)
+                _update_config_dict(
+                    config[key],
+                    config_new[key],
+                    strict=strict,
+                    update=update,
+                    ignore_none=ignore_none
+                    )
             else:
-                config[key] = config_new[key]
+                if ignore_none and config_new[key] is None:
+                    pass
+                else:
+                    config[key] = config_new[key]

@@ -302,7 +302,7 @@ def _createNewItemFromHdf5(group, key=None, include=None, exclude=None):
     else:
         data = group[key]
     attrs = data.attrs
-    
+
     if isinstance(data, h5py.Group):
         if '_mirhdf5 python object type' in attrs:
             group_type = attrs['_mirhdf5 python object type']
@@ -319,11 +319,8 @@ def _createNewItemFromHdf5(group, key=None, include=None, exclude=None):
             _addHdf5ToList(data, new_item, attrs, group_type, include, exclude)
         else:
             raise Exception('Unknown group type: {}'.format(group_type))
-    elif data is False:
-        new_item = False
-        if '_mirhdf5 python None' in attrs:
-            if attrs['_mirhdf5 python None'] == True:
-                new_item = None
+    elif '_mirhdf5 python None' in attrs:
+        new_item = None
     else:
         new_item = data[()]
 
