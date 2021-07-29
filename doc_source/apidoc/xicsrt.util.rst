@@ -16,3 +16,4 @@ Libraries and Utilities
    xicsrt.util.profiler
    xicsrt.util.mircolor
    xicsrt.util.mirplot
+   xicsrt.util.mirlogging

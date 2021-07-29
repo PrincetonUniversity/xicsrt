@@ -4,6 +4,7 @@
     Novimir pablant <npablant@pppl.gov>
 
 A logging module for XICSRT.
+
 For now, the purpose of this module is simply is set default logging options for
 interactive use.
 """
