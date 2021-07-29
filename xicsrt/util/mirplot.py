@@ -1,735 +1,350 @@
 # -*- coding: utf-8 -*-
-# ------------------------------------------------------------------------------
 """
+.. Authors:
+    Novimir pablant <npablant@pppl.gov>
 
-author
-======
-  Novimir Antoniuk Pablant
-    - npablant@pppl.gov
-    - novimir.pablant@amicitas.com
+An interface to matplotlib that allows specification of complex plots
+though a list of parameter dictionaries.
 
-
-description
-===========
-An interface to matplotlib that allows specifiction of complex plots
-though parameter dictionaries.
-
-
-example
-=======
-
-There are two ways to use mirplot:
-  - quickplot function
-  - MirPlot object
-
-The real power of mirplot is in the MirPlot object, however the quickplot 
-function is convenient for quickly creating simple plots.
-
-
-quickplot
----------
-
-The input for quickplot is a dictionary, or a list of dictionaries. 
-Each dictionary contains a plot to add.
+Example
+-------
 
 The simplest example:
+
+.. code::
 
   import numpy as np
   import mirplot
 
   x = np.arange(10)
   y = x
-  mirplot.quickplot({'x':x, 'y':y})
+  plotlist = [{'x':x, 'y':y}]
+  fig = mirplot.plot_to_screen(plotlist)
 
 Any supported plot properties can be added to the plot dictionary:
 
-  mirplot.quickplot({'x':x, 'y':y, 'ybound':[0.0, 10.0], 'color':'red'})
+.. code:
 
-To plot to a pdf file add a few keywords:
+    plotlist = [{
+        'x':x,
+        'y':y,
+        'xbound':[0,1],
+        'ybound':[0,1],
+        'xtitle':'This is the x-axis',
+        'ytitle':'This is the y-axis',
+        }]
+    fig = mirplot.plot_to_screen(plotlist)
 
-  mirplot.quickplot({'x':x, 'y':y}, pdf=True, filename='temp.pdf')
+To add multiple plots to a single figure add parameter dicts ta the plotlist:
 
-To add multiple subplots to a single figure we simple add a list of plot 
-dictionaries:
+.. code:
 
-  mirplot.quickplot([{'x':x, 'y':y}, {'x':x, 'y':y**2}])
+    plotlist = [
+        {'x':x1, 'y':y1},
+        {'x':x2, 'y':y2},
+        ]
+    fig = mirplot.plot_to_screen(plotlist)
 
-To add multiple lines to a single subplot we need to include a plot name.
+If axis names are provided then plots will be added to separate subfigures
+(stacked vertically). Each unique axis name will result in a new subfigure.
 
-  mirplot.quickplot([{'name':'plot one', 'x':x, 'y':y}, {'name':'plot one', 'x':x, 'y':y**2}])
+.. code:
 
-Each unique (or empty) plot name will results in a new subplot in the figure.
+    plotlist = [
+        {'axis':'plot 1', 'x':x1, 'y':y1},
+        {'axis':'plot 2', 'x':x2, 'y':y2},
+        ]
+    fig = mirplot.plot_to_screen(plotlist)
 
+mirplot can also be used with predifined axes. For this purpose the axes must
+be placed into a dictionary and passed to `plot_to_axes`.
 
-MirPlot
--------
+.. code:
 
-The mirplot object is a list type where each element is a plot dictionary.
+    fig, axs = plt.subplots(1, 2)
 
-The simplest example:
+    axes = {
+        'plot 1':axs[0],
+        'plot 2':axs[1],
+        }
+    plotlist = [
+        {'axis':'plot 1', 'x':x1, 'y':y1},
+        {'axis':'plot 2', 'x':x2, 'y':y2},
+        ]
 
-  import numpy as np
-  import mirplot
+    fig = mirplot2.plot_to_axes(plotlist, axes)
 
-  x = np.arange(10)
-  y = x
+mirplot properties
+------------------
 
-  plotobj = mirplot.MirPlot()
-  plotobj.append({'x':x, 'y':y})
-  plotobj.plotToScreen()
+A set of unique plot and axis properties are defined by mirplot to enable
+a complete dictionary definition.
 
+type : str ('line')
+  Allowed Values: line, errorbar, scatter, fill_between, hline, vline, hspan,
+  vspan.
 
-
-
-supported plot properties
-=========================
-
-type (string)
-  Allowed Values: line, errorbar, scatter, fill_between, hline, vline, hspan, vspan
-
-xerr (array)
-yerr (array)
-
-xbound (string)
-ybound (string)
-
-xlabel (string)
-ylabel (string)
-
-label (string)
-  A label to use in the legend, if the the legend is active.
-
-legend (bool)
+legend : bool (false)
   Set to true to show the legend in this subplot.
 
-color (tuple or string)
-  The color for the given plot.
+matplotlib properties
+---------------------
 
-colorscheme (string)
-  Chose a color scheme for automatic color generation.
-colorscheme_index (string)
-  The index of the color scheme to use for the current plot.
-
-alpha
-markerfacecolor
-markeredgecolor
-facecolor
-
-supress_xticklabels (bool)
-  If true the xticklabels will be suppressed.
-
-linestyle
-  A string specifing the line style.
-
-linewidth
-  A value specifiing the line thickness.
-
-marker
-  A string specifing the marker style.
-
-aspect
-  A string or number specfiing the aspect ratio.
-  
-spported figure properties
-==========================
-
-figure_title (string)
-figure_xlabel (string)
-
-single_xlabel (bool)
-  Only place an xlabel on the bottom most plot.  Suppress all other xlabels.
-  The label will be taken from 'figure_xlabel' if given, or from the last 
-  plot otherwise.
-
-single_xticklabels (bool)
-  Only place an xticklabel on the bottommost plot.  Suppress all other xticklabels.
-  The tickmarks will be taken the last plot.
+Any matplotlib plot or axis property that can be set using a simple
+`set_prop(value)` method is supported. Certain properties requiring
+a more complex set call are also supported.
 
 """
 
 import logging
+import copy
+
 import matplotlib
 import numpy as np
 
-from xicsrt.util import mircolor
+m_log = logging.getLogger(__name__.split('.')[-1])
+m_log.setLevel(logging.INFO)
 
-def quickplot(plotinput=None, filename=None, **keywords):
-    """Quickly make a simple plot from a dictionary."""
+__version__ = '2.0.0'
 
-    if plotinput is None:
-        plotinput = [keywords]
-    elif isinstance(plotinput, dict):
-        plotinput = [plotinput]
-                  
-    mirplot = MirPlot()
+def plot_to_screen(plotlist, show=True):
+    matplotlib.pyplot.ioff()
 
-    for plotdict in plotinput:
-        mirplot.append(plotdict)
+    nameset = _autoname_plots(plotlist)
+    fig = _make_figure(nameset)
+    axes = _make_axes(nameset, fig)
+    plot_to_axes(plotlist, axes)
 
-    if not keywords.get('pdf', False):
-        mirplot.plotToScreen()
+    matplotlib.pyplot.ion()
+    if show:
+        fig.show()
+
+    return fig
+
+
+def plot_to_file(plotlist, filename):
+
+    fig = plot_to_screen(plotlist, show=False)
+    fig.savefig(filename)
+    m_log.info('Saved figure to file: {}'.format(filename))
+
+
+def plot_to_axes(plotlist, axes=None):
+
+    if axes is None:
+        raise NotImplementedError('Axes generation not yet implemented.')
+
+    for plot in plotlist:
+        axis = plot['axis']
+        
+        if isinstance(axis, str):
+            if axis in axes:
+                axis = axes[axis]
+            else:
+                raise Exception(f'Named axis {axis} not found.')
+
+        _set_plot_defaults(plot)
+        _clean_plot_prop(plot)
+
+        _apply_plot_prop(plot, axis)
+        _apply_axis_prop(plot, axis)
+        _apply_fig_prop(plot, axis)
+
+
+def _set_plot_defaults(prop):
+    prop.setdefault('type', 'line')
+    prop.setdefault('x')
+    prop.setdefault('y')
+    prop.setdefault('xerr')
+    prop.setdefault('yerr')
+
+    if prop['x'] is None:
+        prop['x'] = np.arange(len(prop['y']))
+
+    prop.setdefault('s', 15)
+    prop.setdefault('legend_fontsize', 12.0)
+    prop.setdefault('legend_framealpha', 0.7)
+
+    if not 'ybound' in prop:
+        yrange = np.array([np.nanmin(prop['y']), np.nanmax(prop['y'])])
+        prop['ybound'] = yrange + np.array([-0.1, 0.1]) * (yrange[1] - yrange[0])
+
+def _clean_plot_prop(prop):
+    """
+    Check the plot properties and cleanup or provides errors.
+    """
+
+    if 'x' in prop and prop['x'] is not None:
+        if np.isscalar(prop['x']):
+            prop['x'] = np.asarray([prop['x']])
+        else:
+            prop['x'] = np.asarray(prop['x'])
+
+    if 'y' in prop and prop['y'] is not None:
+        if np.isscalar(prop['y']):
+            prop['y'] = np.asarray([prop['y']])
+        else:
+            prop['y'] = np.asarray(prop['y'])
+
+
+def _apply_plot_prop(prop, axis):
+
+    if prop['type'] == 'line':
+        plotobj, = axis.plot(prop['x'], prop['y'])
+    elif prop['type'] == 'errorbar':
+        plotobj = axis.errorbar(
+            prop['x']
+            , prop['y']
+            , xerr=prop['xerr']
+            , yerr=prop['yerr']
+            , fmt='none'
+            , capsize=prop['capsize'])
+    elif prop['type'] == 'scatter':
+        plotobj = axis.scatter(prop['x'], prop['y'], s=prop['s'], marker=prop.get('marker', None))
+    elif prop['type'] == 'fill_between' or prop['type'] == 'fillbetween':
+        plotobj = axis.fill_between(prop['x'], prop['y'], prop['y1'])
+    elif prop['type'] == 'hline':
+        plotobj = axis.axhline(prop['y'][0])
+    elif prop['type'] == 'vline':
+        plotobj = axis.axvline(prop['x'][0])
+    elif prop['type'] == 'hspan':
+        plotobj = axis.axhspan(prop['y'][0], prop['y'][1])
+    elif prop['type'] == 'vspan':
+        plotobj = axis.axvspan(prop['x'][0], prop['x'][1])
     else:
-        mirplot.plotToPdf(filename)
+        raise Exception('Plot type unknown: {}'.format(prop['type']))
 
+    # Certain plot types actually consist of collections of line objects.
+    if prop['type'] == 'errorbar':
+        obj_list = []
+        obj_list.extend(plotobj[1])
+        obj_list.extend(plotobj[2])
+    else:
+        obj_list = [plotobj]
 
-def getSchemeColor(name, index_input, num_colors=None):
-    """
-    Return a color for the current scheme.
-
-    Return
-    ------
-
-    A 4 element tuple is returned:
-    (red, green, blue, alpha)
-
-
-    Parameters
-    ----------
-    color_scheme (string)
-      A name for the color scheme to use.
-
-    index (int)
-      The index of the color to take from the color scheme.
-
-    Keywords
-    --------
-
-    num_colors (int)
-      The number of colors needed as part of the scheme. 
-      This only affect gradient based schemes.
-
-    """
-    
-    if num_colors is None:
-        num_colors = 5
-
-    # Make the index cycle if it exceeds the number of colors.
-    index = index_input % 5
-
-    gradient = mircolor.getColorGradient(
-        mircolor.Normalize(0.0, float(num_colors-1))
-        ,name)
-
-    return gradient(float(index))
-
-class PlotList(list):
-    """
-    An interface to matplotlib that allows specifiction of complex plots
-    though parameter dictionaries.
-
-    See the module doc string for detailed documentation.
-    """
-
-    all_figure_properties = [
-        'figure_title'
-        ,'single_xticklabels'
-        ,'figure_xlabel'
-        ,'single_xlabel']
-    
-    all_subfig_properties = [
-        'xerr'
-        ,'yerr'
-        ,'title'
-        ,'xbound'
-        ,'ybound'
-        ,'xlim'
-        ,'ylim'
-        ,'xlabel'
-        ,'ylabel'
-        ,'xscale'
-        ,'yscale'
-        ,'tick_params'
-        ,'supress_xticklabels'
-        ,'legend'
-        ,'legend_location'
-        ,'legend_fontsize'
-        ,'aspect']
-
-    all_plot_properties = [
-        'linestyle'
-        ,'linewidth'
-        ,'marker'
-        ,'color'
-        ,'colorscheme'
-        ,'alpha'
-        ,'label'
-        ,'markerfacecolor'
-        ,'markeredgecolor'
-        ,'markersize'
-        ,'facecolor']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.log = logging.getLogger(self.__class__.__name__)
-                
-        self.user_properties = {}
-        self.properties = {}
-
-        self.subfig_properties = {}
-
-
-    def plotToScreen(self):
-        """
-        Plot to screen using the default backend.
-
-        This works best if run from within ipython with pylab.
-        """
-
-        from matplotlib import pyplot
-
-        self.figure = pyplot.figure(figsize=self._getFigureSize())
-        self.addPlotsToFigure()
-
-        if not 'inline' in matplotlib.get_backend():
-            self.figure.show()
-
-        return self.figure, self.subfigs
-
-
-    def plotToPdf(self, filename=None):
-        """Plot to PDF."""
-
-        if filename is None:
-            raise NotImplementedError('A output filename is currently required.')
-
-        from matplotlib.figure import Figure
-        from matplotlib.backends.backend_pdf import FigureCanvasPdf
-        
-        self.figure = Figure(figsize=self._getFigureSize())
-        self.canvas = FigureCanvasPdf(self.figure)
-
-        self.addPlotsToFigure()
-
-        self.figure.savefig(filename)
-
-        self.log.info('Saved figure to file: {}'.format(filename))
-
-
-    def _autonamePlots(self, sequential=False):
-        """
-        Automatically name any plots that were not given a name by the user.
-        """
-
-        count = 0
-        for ff in self:
-            if not 'name' in ff:
-                if sequential:
-                    num = count
+    # Loop through all objects and set the appropriate properties.
+    for key in prop:
+        for obj in obj_list:
+            obj_dir = dir(obj)
+            if key == 'markersize':
+                if prop['type'] == 'scatter':
+                    sizes = obj.get_sizes()
+                    sizes[:] = prop['markersize']
+                    obj.set_sizes(sizes)
                 else:
-                    num = 0
-                ff['name'] = '_autoname_{:02d}'.format(num)
-                count += 1
-
-
-    def _getSubfigNames(self, autoname=False):
-        """
-        Get a list of the subfigure names.
-        """
-
-        namelist = []
-
-        for ff in self:
-            if not 'name' in ff:
-                if autoname:
-                    # Autoname has not yet been called.  Call it now.
-                    self._autonamePlots()
-                else:
-                    raise Exception('Some plots are not named.  Set autoname=True or call  _autonamePlots().')
-
-            if not ff['name'] in namelist:
-                namelist.append(ff['name'])
-
-        return namelist
-
-                
-    def _countNumSubfigs(self):
-        """
-        Count the number of subfigures.
-        """
-
-        namelist = self._getSubfigNames(autoname=True)
-        return len(namelist)
-
-
-    def _getFigureSize(self):
-        """
-        Return the default figure size.
-
-        The standard width is 6 inches.  The standard height is 2 inches for every subplot.
-
-        return
-        ------
-          (width, height)
-              The figure size in inches.
-        """
-
-        num_subfigs = self._countNumSubfigs()
-
-        figure_width = 8
-        figure_height = max(6, min(num_subfigs*3, 10))
-        
-        return (figure_width, figure_height)
-        
-        
-        
-    def addPlotsToFigure(self):
-        """Add the plots to the figure."""
-
-        # Go through the plot properties and cleaup if necessary.
-        for ff in self:
-            self.cleanupPlotProperties(ff)
-            
-        # Generate names if needed.
-        self._autonamePlots()
-
-            
-        # Set default values for all of the plots.
-        for ff in self:
-            self.setPlotDefaults(ff)
-
-        
-        # Create the necessary subfigures. 
-        self.subfigs = dict()
-        for ff in self:
-            if not ff['name'] in self.subfigs:
-                self.subfigs[ff['name']] = {'plots':[]
-                                            ,'properties':{}}
-
-        num_subfigs = len(self.subfigs)
-
-        # Add each plot to the appropriate subfigure.
-        for ii, (key, subfig) in enumerate(self.subfigs.items()):
-            # Create a new subplot
-            subfig['ax'] = self.figure.add_subplot(num_subfigs, 1, ii+1)
-            
-            for ff in self:
-                if ff['name'] == key:
-                    subfig['plots'].append(ff)
-
-
-        # Extract any properties relating to the overal figure.
-        self.extractFigurePropertiesPlots()
-        self.extractFigurePropertiesUser()
-         
-        for name, subfig in self.subfigs.items():
-            self.addPlotsToSubfig(subfig)
-            self.extractSubfigPropertiesPlots(subfig)
-            self.extractSubfigPropertiesUser(name)
-            self.applySubfigProperties(subfig)
-
-        # Apply any properties relating to the overal figure.
-        # This will overide any individual settings given
-        # in the plots.
-        self.applyFigureProperties()
-
-        
-    def cleanupPlotProperties(self, plot):
-        """
-        Check the plot properties and cleanup or provides errors.
-        """
-        if not 'x' in plot: plot['x'] = None
-        if not 'y' in plot: plot['y'] = None
-        if not 'xerr' in plot: plot['xerr'] = None
-        if not 'yerr' in plot: plot['yerr'] = None
-
-        # The capsize default is currently broken in matplotlib v2.0
-        # explicityly set a default size here.
-        if not 'capsize' in plot: plot['capsize'] = 2.0
-
-        if 'x' in plot and plot['x'] is not None:
-            if np.isscalar(plot['x']):
-                plot['x'] = np.array([plot['x']])
+                    obj.set_markersize(prop['markersize'])
             else:
-                plot['x'] = np.array(plot['x'])
-                
-        if 'y' in plot and plot['y'] is not None:
-            if np.isscalar(plot['y']):
-                plot['y'] = np.array([plot['y']])
-            else:
-                plot['y'] = np.array(plot['y'])
+                # This will catch any properties can can be simply set with a
+                # plot.set_prop(value) function.
+                funcname = 'set_' + key
+                if funcname in obj_dir:
+                    getattr(obj, funcname, prop[key])
 
-        
-    def setPlotDefaults(self, plot):
-        plot.setdefault('type', 'line')
 
-        if plot['x'] is None:
-            plot['x'] =  np.arange(len(plot['y']))
+def _apply_axis_prop(prop, axis):
+    prop = copy.copy(prop)
 
-        plot.setdefault('s', 15)
+    # In some cases the order of these statements is important.
+    # (For example xscale needs to come before xbound I think.)
 
-        
-    def addPlotsToSubfig(self, subfig):
-        """
-        For a given subfigure.  Loop the though the plot dictionaries
-        and add them to the subfigure axis.
-        """
-        
-        axis = subfig['ax']
+    axis.tick_params('both'
+                     , direction='in'
+                     , which='both'
+                     , top='on'
+                     , bottom='on'
+                     , left='on'
+                     , right='on')
 
-        # Create a dictionary to keep track of the current index for each colorscheme.
-        # The idea here is that we track the index for each colorscheme separately
-        # so that we can plot different data with differnt schemes on a single plot.
-        colorscheme_indexes = {}
-        colorscheme_num_colors = {}
-        for plot in subfig['plots']:
-            if 'colorscheme' in plot:
-                if not plot['colorscheme'] in colorscheme_indexes:
-                    colorscheme_indexes[plot['colorscheme']] = 0
-                    colorscheme_num_colors[plot['colorscheme']] = 0
-                    
-                colorscheme_num_colors[plot['colorscheme']] += 1
-
-                
-        for plot in subfig['plots']:
-            if plot['type'] == 'line':
-                plotobj, = axis.plot(plot['x'], plot['y'])
-            elif plot['type'] == 'errorbar':
-                plotobj = axis.errorbar(
-                    plot['x']
-                    ,plot['y']
-                    ,xerr=plot['xerr']
-                    ,yerr=plot['yerr']
-                    ,fmt='none'
-                    ,capsize=plot['capsize'])
-            elif plot['type'] == 'scatter':
-                plotobj = axis.scatter(plot['x'], plot['y'], s=plot['s'], marker=plot.get('marker', None))
-            elif plot['type'] == 'fill_between' or plot['type'] == 'fillbetween' :
-                plotobj = axis.fill_between(plot['x'], plot['y'], plot['y1'])
-            elif plot['type'] == 'hline':
-                plotobj = axis.axhline(plot['y'][0])
-            elif plot['type'] == 'vline':
-                plotobj = axis.axvline(plot['x'][0])
-            elif plot['type'] == 'hspan':
-                plotobj = axis.axhspan(plot['y'][0], plot['y'][1])
-            elif plot['type'] == 'vspan':
-                plotobj = axis.axvspan(plot['x'][0], plot['x'][1])
-            else:
-                raise Exception('Plot type unknown: {}'.format(plot['type']))
-
-            if 'color' in plot:
-                color = plot['color']
-            elif 'colorscheme' in plot:
-                # Retrieve the next color in the color scheme, and update the
-                # colorscheme counter.
-                color = getSchemeColor(plot['colorscheme']
-                                       ,colorscheme_indexes[plot['colorscheme']]
-                                       ,colorscheme_num_colors[plot['colorscheme']])
-                colorscheme_indexes[plot['colorscheme']] += 1
-            else:
-                color = None
-
-            # Certain plot types actually consist of collections of line objects.
-            # Loop through all objects and set the appropriate properties.
-            if plot['type'] == 'errorbar':
-                line_list = []
-                line_list.extend(plotobj[1])
-                line_list.extend(plotobj[2])
-
-            else:
-                line_list = [plotobj]
-
-            for line in line_list:
-                if 'linestyle' in plot:
-                    line.set_linestyle(plot['linestyle'])
-                    
-                if 'linewidth' in plot:
-                    line.set_linewidth(plot['linewidth'])
-                    
-                if 'marker' in plot:
-                    if plot['type'] == 'scatter':
-                        pass
-                    else:
-                        line.set_marker(plot['marker'])
-
-                if color is not None:
-                    line.set_color(color)
-
-                if 'alpha' in plot:
-                    line.set_alpha(plot['alpha'])
-
-                if 'label' in plot:
-                    line.set_label(plot['label'])
-
-                if 'markerfacecolor' in plot:
-                    line.set_facecolor(plot['markerfacecolor'])
-
-                if 'markeredgecolor' in plot:
-                    line.set_edgecolor(plot['markeredgecolor'])
-
-                if 'markersize' in plot:
-   
-                    if plot['type'] == 'scatter':
-                        sizes = line.get_sizes()
-                        sizes[:] = plot['markersize']
-                        line.set_sizes(sizes)
-                    else:
-                        line.set_markersize(plot['markersize'])
-
-                if 'facecolor' in plot:
-                    line.set_facecolor(plot['facecolor'])
-
-                if 'drawstyle' in plot:
-                    line.set_drawstyle(plot['drawstyle'])
-                
-            
-    def applySubfigProperties(self, subfig):
-
-        # Choose default plot properties if needed.
-        if not 'ybound' in subfig['properties']:
-            yrange = np.array([np.nanmin(subfig['plots'][0]['y']), np.nanmax(subfig['plots'][0]['y'])])
-            # Note: I am doing this twice now for the first plot.
-            for plot in subfig['plots']:
-                yrange[0] = np.nanmin([yrange[0], np.nanmin(plot['y'])])
-                yrange[1] = np.nanmax([yrange[1], np.nanmax(plot['y'])])
-
-            subfig['properties']['ybound'] = yrange + np.array([-0.1, 0.1])*(yrange[1]-yrange[0])
-        if not 'legend_fontsize' in subfig['properties']:
-            subfig['properties']['legend_fontsize'] = 12.0
-        if not 'legend_framealpha' in subfig['properties']:
-            subfig['properties']['legend_framealpha'] = 0.7
-
-        
-        # Set the axis properties.
-        # In some cases the order of these statements is important.
-        # (For example xscale needs to come before xbound I think.)
-        axis = subfig['ax']
-        properties = subfig['properties']
-
-        axis.tick_params('both'
-                        ,direction='in'
-                        ,which='both'
-                        ,top='on'
-                        ,bottom='on'
-                        ,left='on'
-                        ,right='on')
-        
-        if 'xscale' in properties:
-            if properties['xscale'] == 'log':
+    ax_dir = dir(axis)
+    for key in prop:
+        if key == 'xscale':
+            if prop['xscale'] == 'log':
                 nonposx = 'clip'
             else:
                 nonposx = None
-            axis.set_xscale(properties['xscale'], nonposx=nonposx)
-        
-        if 'yscale' in properties:
-            if properties['yscale'] == 'log':
+            axis.set_xscale(prop['xscale'], nonposx=nonposx)
+        elif key == 'yscale':
+            if prop['yscale'] == 'log':
                 nonposy = 'clip'
             else:
                 nonposy = None
-            axis.set_yscale(properties['yscale'], nonposy=nonposy)
-        if 'title' in properties:
-            axis.set_title(properties['title'])
-        if 'xbound' in properties:
-            axis.set_xbound(properties['xbound'])
-        if 'ybound' in properties:
-            axis.set_ybound(properties['ybound'])
-        if 'xlim' in properties:
-            axis.set_xlim(properties['xlim'])
-        if 'ylim' in properties:
-            axis.set_ylim(properties['ylim'])
-        if 'xlabel' in properties:
-            axis.set_xlabel(properties['xlabel'])
-        if 'ylabel' in properties:
-            axis.set_ylabel(properties['ylabel'])
-        if 'supress_xticklabels' in properties:
-            if properties['supress_xticklabels']:
-                axis.set_xticklabels([])
-        if 'legend' in properties:
-            if properties['legend']:
-                axis.legend(loc=properties.get('legend_location')
-                            ,fontsize=properties.get('legend_fontsize')
-                            ,framealpha=properties.get('legend_framealpha')
-                           )
-        if 'aspect' in properties:
-            axis.set_aspect(properties['aspect'])
-                
-    def extractSubfigPropertiesPlots(self, subfig):
-
-        # First see if the user defined any of the plot properties.
-        for plot in subfig['plots']:
-            for key in self.all_subfig_properties:
-                if key in plot:
-                    subfig['properties'][key] = plot[key]
-
-                
-    def extractSubfigPropertiesUser(self, name):
-        subfig = self.subfigs[name]
-
-        if name in self.subfig_properties:
-            for key in self.subfig_properties[name]:
-                if key in self.all_subfig_properties:
-                    subfig['properties'][key] = self.subfig_properties[name][key]
-                else:
-                    raise Exception('Subfigure property not valid: {}'.format(key))
-
-                
-    def setPlotProperties(self, name, **properties):
-        if not name in self.subfig_properties:
-            self.subfig_properties[name] = {}
-            
-        for key in properties:
-                self.subfig_properties[name][key] = properties[key]      
-                
-
-    def extractFigurePropertiesPlots(self):
-        for plot in self:
-            for prop in self.all_figure_properties:
-                if prop in plot:
-                    self.properties[prop] = plot[prop]
-
-
-    def extractFigurePropertiesUser(self):
-        for key in self.user_properties:
-            if key in self.all_figure_properties:
-                self.properties[key] = self.user_properties[key]
-            else:
-                raise Exception('Figure property not valid: {}'.format(key))
-
-                
-    def applyFigureProperties(self):
-        
-        # NOTE: The order of parsing here is important as some properties modify
-        #       other properties.
-
-        if 'figure_title' in self.properties:
-            self.figure.suptitle(self.properties['figure_title'])
-
-        if 'single_xticklabels' in self.properties:
-            if self.properties['single_xticklabels']:
-                keys_list = list(self.subfigs.keys())
-                # Suppres the x tick labels for every subfigure except the last one.
-                for ii in range(len(self.subfigs)-1):
-                    self.subfigs[keys_list[ii]]['ax'].set_xticklabels([])
-
-        if 'figure_xlabel' in self.properties:
-            # Allows a figure wide xlabel to be applies to the plot.
-            # This will suppress all individual plot labels.
-            keys_list = list(self.subfigs.keys())
-            self.subfigs[keys_list[-1]]['ax'].set_xlabel(self.properties['figure_xlabel'])
-
-            self.properties['single_xlabel'] = True
-
-        if 'single_xlabel' in self.properties:
-            if self.properties['single_xlabel']:
-                keys_list = list(self.subfigs.keys())
-                # Suppres the x labels for every subfigure except the last one.
-                for ii in range(len(self.subfigs)-1):
-                    self.subfigs[keys_list[ii]]['ax'].set_xlabel('')
-
-
-    def setFigureProperties(self, *args, **kwargs):
-        if args:
-            properties = args[0]
+            axis.set_yscale(prop['yscale'], nonposy=nonposy)
+        elif key == 'legend':
+            axis.legend(loc=prop.get('legend_location')
+                        , fontsize=prop.get('legend_fontsize')
+                        , framealpha=prop.get('legend_framealpha')
+                        )
+        elif key == 'label_outer':
+            axis.label_outer()
         else:
-            properties = kwargs
+            # This will catch any properties can can be simply set with a
+            # axis.set_prop(value) function.
+            funcname = 'set_'+key
+            if funcname in ax_dir:
+                getattr(axis, funcname, prop[key])
 
-        for key in properties:
-                self.user_properties[key] = properties[key]          
 
-                
-    def getPlot(self, name):
-        return self.subfigs[name]
+def _apply_fig_prop(prop, ax):
+    if prop.get('figure_title'):
+        ax.figure.suptitle(prop['figure_title'])
 
-# Retain compatability with the old name.
-class MirPlot(PlotList):
-    pass
+
+def _make_figure(nameset):
+    size = _get_figure_size(len(nameset))
+    fig = matplotlib.pyplot.figure(figsize=size)
+    return fig
+
+
+def _make_axes(nameset, fig):
+
+    numaxis = len(nameset)
+    axes = {}
+    for ii, name in enumerate(nameset):
+        axes[name] = fig.add_subplot(numaxis, 1, ii + 1)
+
+    fig.axesdict = axes
+    def _get_axesdict(self):
+        return fig.axesdict
+    setattr(fig, 'get_axesdict', _get_axesdict)
+
+    return axes
+
+
+def _autoname_plots(plotlist, sequential=False):
+    """
+    Automatically name any plots that were not given a name by the user.
+    """
+    namelist = []
+
+    count = 0
+    for plot in plotlist:
+        name = plot.get('axis')
+        if name is None:
+            if sequential:
+                num = count
+            else:
+                num = 0
+            name = '_autoname_{:02d}'.format(num)
+            count += 1
+        plot['axis'] = name
+        namelist.append(name)
+    nameset = set(namelist)
+    return nameset
+
+
+def _get_figure_size(numaxis):
+    """
+    Return the default figure size.
+    Width: 8 units
+    Height: 3 units for every subplot or max 9 units
+    Return
+    ------
+
+    (width, height)
+      The figure size in inches.
+    """
+
+    figure_width = 8
+    figure_height = max(6, min(numaxis * 3, 10))
+
+    return (figure_width, figure_height)
