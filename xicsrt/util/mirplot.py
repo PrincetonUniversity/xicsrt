@@ -110,9 +110,9 @@ __version__ = '2.0.0'
 def plot_to_screen(plotlist, show=True):
     matplotlib.pyplot.ioff()
 
-    nameset = _autoname_plots(plotlist)
-    fig = _make_figure(nameset)
-    axes = _make_axes(nameset, fig)
+    namelist = _autoname_plots(plotlist)
+    fig = _make_figure(namelist)
+    axes = _make_axes(namelist, fig)
     plot_to_axes(plotlist, axes)
 
     matplotlib.pyplot.ion()
@@ -129,12 +129,17 @@ def plot_to_file(plotlist, filename):
     m_log.info('Saved figure to file: {}'.format(filename))
 
 
-def plot_to_axes(plotlist, axes=None):
-
-    if axes is None:
-        raise NotImplementedError('Axes generation not yet implemented.')
+def plot_to_axes(plotlist, axes):
 
     for plot in plotlist:
+        _set_plot_defaults(plot)
+        _clean_plot_prop(plot)
+
+        if plot.get('type') == 'figure':
+            axis = list(axes.values())[0]
+            _apply_fig_prop(plot, axis)
+            continue
+
         axis = plot['axis']
         
         if isinstance(axis, str):
@@ -143,9 +148,6 @@ def plot_to_axes(plotlist, axes=None):
             else:
                 raise Exception(f'Named axis {axis} not found.')
 
-        _set_plot_defaults(plot)
-        _clean_plot_prop(plot)
-
         _apply_plot_prop(plot, axis)
         _apply_axis_prop(plot, axis)
         _apply_fig_prop(plot, axis)
@@ -153,6 +155,12 @@ def plot_to_axes(plotlist, axes=None):
 
 def _set_plot_defaults(prop):
     prop.setdefault('type', 'line')
+
+    if prop['type'] == 'figure':
+        return
+    if prop['type'] == 'axis':
+        return
+
     prop.setdefault('x')
     prop.setdefault('y')
     prop.setdefault('xerr')
@@ -173,6 +181,10 @@ def _clean_plot_prop(prop):
     """
     Check the plot properties and cleanup or provides errors.
     """
+    if prop['type'] == 'figure':
+        return
+    if prop['type'] == 'axis':
+        return
 
     if 'x' in prop and prop['x'] is not None:
         if np.isscalar(prop['x']):
@@ -188,6 +200,10 @@ def _clean_plot_prop(prop):
 
 
 def _apply_plot_prop(prop, axis):
+    if prop['type'] == 'figure':
+        return
+    if prop['type'] == 'axis':
+        return
 
     if prop['type'] == 'line':
         plotobj, = axis.plot(prop['x'], prop['y'])
@@ -238,10 +254,14 @@ def _apply_plot_prop(prop, axis):
                 # plot.set_prop(value) function.
                 funcname = 'set_' + key
                 if funcname in obj_dir:
-                    getattr(obj, funcname, prop[key])
+                    if prop[key] is not None:
+                        getattr(obj, funcname)(prop[key])
 
 
 def _apply_axis_prop(prop, axis):
+    if prop['type'] == 'figure':
+        return
+
     prop = copy.copy(prop)
 
     # In some cases the order of these statements is important.
@@ -281,25 +301,33 @@ def _apply_axis_prop(prop, axis):
             # axis.set_prop(value) function.
             funcname = 'set_'+key
             if funcname in ax_dir:
-                getattr(axis, funcname, prop[key])
+                if prop[key] is not None:
+                    getattr(axis, funcname)(prop[key])
 
 
 def _apply_fig_prop(prop, ax):
-    if prop.get('figure_title'):
-        ax.figure.suptitle(prop['figure_title'])
+    if not prop['type'] == 'figure':
+        return
+
+    if prop.get('suptitle'):
+        x = prop.get('suptitle_x', 0.02)
+        y = prop.get('suptitle_y', 0.98)
+        ha = prop.get('suptitle_ha', 'left')
+        weight = prop.get('suptitle_weight')
+        ax.figure.suptitle(prop['suptitle'], x=x, y=y, ha=ha, weight=weight)
 
 
-def _make_figure(nameset):
-    size = _get_figure_size(len(nameset))
+def _make_figure(namelist):
+    size = _get_figure_size(len(namelist))
     fig = matplotlib.pyplot.figure(figsize=size)
     return fig
 
 
-def _make_axes(nameset, fig):
+def _make_axes(namelist, fig):
 
-    numaxis = len(nameset)
+    numaxis = len(namelist)
     axes = {}
-    for ii, name in enumerate(nameset):
+    for ii, name in enumerate(namelist):
         axes[name] = fig.add_subplot(numaxis, 1, ii + 1)
 
     fig.axesdict = axes
@@ -318,6 +346,8 @@ def _autoname_plots(plotlist, sequential=False):
 
     count = 0
     for plot in plotlist:
+        if plot.get('type') == 'figure':
+            continue
         name = plot.get('axis')
         if name is None:
             if sequential:
@@ -328,8 +358,10 @@ def _autoname_plots(plotlist, sequential=False):
             count += 1
         plot['axis'] = name
         namelist.append(name)
-    nameset = set(namelist)
-    return nameset
+
+    # Extract the unique names in order.
+    namelist = list(dict.fromkeys(namelist))
+    return namelist
 
 
 def _get_figure_size(numaxis):
