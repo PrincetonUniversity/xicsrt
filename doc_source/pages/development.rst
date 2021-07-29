@@ -12,6 +12,7 @@ This document contains a guide for development of XICSRT.
     :hidden:
 
     todo
+    ../apidoc/testing
 
 A list of needed improvements for XICSRT can be found at
 :any:`List of Todo Items`. Also see the open `issues`_ on the bitbucket git
@@ -58,86 +59,12 @@ numerical programming concepts!
 
 .. admonition:: Add plotting routines for all aperture definitions
 
-  | Time Estimate: **2 weeks**
-  | The 2d plotter (`xicsrt_2d__matplotlib`) currently knows how to plot the
-    optics bounds defined by `xsize` and `ysize`, but cannot plot any of the
-    apertures shapes. We need to add handling to the plotter for all defined
-    apertures. My feeling is that this should all just be added to the
-    `xicsrt_2d__matplotlib` module since I don't see anyway to generalize
-    this type of plotting. Plotting of apertures should be handled by
-    creating a new function that returns a `mirplot.PlotList` that can be
-    added to the existing plot. Some significant restructuring of the
-    2d plotting library may be necessary.
-
-  I (Novimir) am planning on adding the code for the triangle aperture which
-  means that the basic structure will be be in place at some time soon. The
-  rest of the shapes should then be pretty easy to add in.
-
-  Note: I want to make sure that the plotting is totally separate from the
-  the aperture definitions since plotting is only an external addon to the
-  xicsrt base code. It may be a good idea to split the aperture plotting
-  functions to a separate `__matplotlib` functions, but I think it's best to
-  start by just putting everything in a single plotting module.
+  | Time Estimate: **1 weeks**
+  | The 2d plotter knows how to plot a few aperture shapes but, not all
+    shapes have been added.  Thes addition shapes need to be added
+    to the function :any:`_get_aperture_plotlist`.
 
   |     added: 2021-07-02 by Novimir
-
-.. admonition:: Create an Aperture Optic
-
-  **DONE!! (Thanks to Nathan Bartlett)**
-
-  | Time Estimate: **2 weeks**
-  | Create an object named `XicsrtOpticAperature` that can act as an aperture
-    to filter rays.  The shape of the aperture should be implemented as a
-    configuration option. Most of the coding for this should actually be
-    implemented into :any:`XicsrtOpticGeneric` so that the code can also be
-    used to control the size of optics.  This aperture object should inherit
-    from :any:`XicsrtOpticMesh`, and will probably not have any differences
-    except for the default config options.
-
-  The options need to support at least rectangular and circular aperture
-  shapes and should be implemented in such a way that it is:
-
-  1. Easy to add additional simple shapes in the base code.
-  2. Easy for a user to extend to complex shapes by creating a subclass of
-     the object.
-
-  The mechanism used for this object should also be applicable to set the
-  size of optics objects. This brings up some additional considerations:
-
-  3. Make sure that the aperture check is done as early as possible so
-     that rays are excluded before any other calculations (such as
-     reflection, Bragg check, etc).  Of course the ray intersection
-     needs to be calculated before the aperture check.
-  4. Aperture needs to be compatible with mesh optics. Make sure to check
-     how the aperture fits in with the code in :any:`XicsrtOpticMesh`.
-  5. Implement a way to deal with the pixel grid size used for image
-     output. Currently this is based on a rectangular aperture.
-  6. Consider the possibility that some future optics types may need both an
-     entrance-aperture and an exit-aperture. This capability is not currently
-     needed, but make the code easily extensible to this idea if needed.
-
-  Finally we need to consider how to deal with the `size` specification
-  for the aperture and more generaly the optic size. Currently only a
-  rectangular optic shape is supported and the shape is defined by the
-  `xsize`, `ysize` and `zsize` config options. These names don't make sense
-  for a circular aperture. I have two ideas for how to handle this:
-
-  a. Use a single `size` option that now becomes an array. The interpretation
-     of this array will depend on on the shape specification. For example
-     a rectangular aperture would interpret `config['size'] = [0.1, 0.2]` as
-     as an `xsize` and `ysize`, while a circular aperture would interpret
-     `config['size'] = 0.1` as a radius.
-  b. Introduce new `-size` options as needed for each aperture shape. So for a
-     circular aperture introduce an `rsize` config option.
-
-  I tend to prefer option (a), but would like some feedback. Option (a) is
-  good because there are no unused `-size` specifications floating around to
-  cause confusion. We don't need to check whether the right `-size` option is
-  being specified by the user. However, option (a) means that `size` now has a
-  variable length which is potentially confusing to the user and now requires
-  some parsing code similar to :any:`xicsrt_spread`.
-
-  |     added: 2021-01-29 by Novimir
 
 
 .. admonition:: Improve algorithm for isotropic emission with x & y limits
@@ -202,7 +129,7 @@ numerical programming concepts!
 
 .. admonition:: Develop a numba accelerated version of XICSRT
 
-  | Time Estimate: **1 month**
+  | Time Estimate: **2 months**
   | Performance of XICSRT can likely be dramatically improved by using the
     the `numba`_ package. Numba provides just-in-time compilation of python
     code and is highly integrated with numpy, making it well suited for
@@ -282,6 +209,65 @@ numerical programming concepts!
     a terminal, or that terminal session will be hidden.
 
   |     added: 2021-02-04 by Novimir
+
+
+.. admonition:: Create an Aperture Optic
+
+  **DONE!! (Thanks to Nathan Bartlett)**
+
+  | Time Estimate: **2 weeks**
+  | Create an object named `XicsrtOpticAperature` that can act as an aperture
+    to filter rays.  The shape of the aperture should be implemented as a
+    configuration option. Most of the coding for this should actually be
+    implemented into :any:`XicsrtOpticGeneric` so that the code can also be
+    used to control the size of optics.  This aperture object should inherit
+    from :any:`XicsrtOpticMesh`, and will probably not have any differences
+    except for the default config options.
+
+  The options need to support at least rectangular and circular aperture
+  shapes and should be implemented in such a way that it is:
+
+  1. Easy to add additional simple shapes in the base code.
+  2. Easy for a user to extend to complex shapes by creating a subclass of
+     the object.
+
+  The mechanism used for this object should also be applicable to set the
+  size of optics objects. This brings up some additional considerations:
+
+  3. Make sure that the aperture check is done as early as possible so
+     that rays are excluded before any other calculations (such as
+     reflection, Bragg check, etc).  Of course the ray intersection
+     needs to be calculated before the aperture check.
+  4. Aperture needs to be compatible with mesh optics. Make sure to check
+     how the aperture fits in with the code in :any:`XicsrtOpticMesh`.
+  5. Implement a way to deal with the pixel grid size used for image
+     output. Currently this is based on a rectangular aperture.
+  6. Consider the possibility that some future optics types may need both an
+     entrance-aperture and an exit-aperture. This capability is not currently
+     needed, but make the code easily extensible to this idea if needed.
+
+  Finally we need to consider how to deal with the `size` specification
+  for the aperture and more generaly the optic size. Currently only a
+  rectangular optic shape is supported and the shape is defined by the
+  `xsize`, `ysize` and `zsize` config options. These names don't make sense
+  for a circular aperture. I have two ideas for how to handle this:
+
+  a. Use a single `size` option that now becomes an array. The interpretation
+     of this array will depend on on the shape specification. For example
+     a rectangular aperture would interpret `config['size'] = [0.1, 0.2]` as
+     as an `xsize` and `ysize`, while a circular aperture would interpret
+     `config['size'] = 0.1` as a radius.
+  b. Introduce new `-size` options as needed for each aperture shape. So for a
+     circular aperture introduce an `rsize` config option.
+
+  I tend to prefer option (a), but would like some feedback. Option (a) is
+  good because there are no unused `-size` specifications floating around to
+  cause confusion. We don't need to check whether the right `-size` option is
+  being specified by the user. However, option (a) means that `size` now has a
+  variable length which is potentially confusing to the user and now requires
+  some parsing code similar to :any:`xicsrt_spread`.
+
+  |     added: 2021-01-29 by Novimir
 
 
 .. _issues: https://bitbucket.org/amicitas/xicsrt/issues
