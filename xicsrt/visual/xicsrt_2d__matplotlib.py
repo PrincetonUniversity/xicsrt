@@ -16,6 +16,8 @@ from xicsrt.util import mirplot
 from xicsrt import xicsrt_public
 from xicsrt.tools import xicsrt_aperture
 
+from xicsrt.visual import detview
+
 log = logging.getLogger(__name__)
 
 def plot_example(results, name):
@@ -415,186 +417,22 @@ def plot_image(
     Plot an intersection image along with column and row summation plots.
     """
 
-    if options is None:
-        opt = {}
-    else:
-        opt = options
-    opt.update(kwargs)
+    if options is None: options = {}
+    options.update(kwargs)
+    opt = options
 
     opt.setdefault('name', name)
-    opt.setdefault('aspect', 'equal')
-    opt.setdefault('coord', 'pixel')
-    opt.setdefault('scale', 1.0)
-    opt.setdefault('units', None)
-    opt.setdefault('cmap', 'turbo')
-
-    if not opt.get('xlabel'):
-        opt['xlabel'] = f'x'
-        if opt.get('units'):
-            opt['xlabel'] += f" [{opt['units']}]"
-
-    if not opt.get('ylabel'):
-        opt['ylabel'] = f'y'
-        if opt.get('units'):
-            opt['ylabel'] += f" [{opt['units']}]"
 
     config = results['config']
     name = opt['name']
 
     # Get the crystal object from the dispatcher.
     obj = xicsrt_public.get_element(config, name, section)
-
-    gs = {
-        'width_ratios':[3, 1],
-        'height_ratios':[1, 3],
-        'wspace':0.05,
-        'hspace':0.05,
-    }
-    fig, axs = pyplot.subplots(2, 2, gridspec_kw=gs, figsize=(8,8))
-    fig.subplots_adjust(top=0.95, bottom=0.15, left=0.15, right=0.95)
-    axs[0, 1].set_axis_off()
-
-    axesdict = {
-        'image':axs[1, 0],
-        'xsum':axs[0, 0],
-        'ysum':axs[1, 1],
-    }
-
-    fig.axesdict = axesdict
-
-    for ax in axesdict.values():
-        ax.label_outer()
-
-    axesdict['xsum'].sharex(axesdict['image'])
-    axesdict['ysum'].sharey(axesdict['image'])
-
     image = results['total']['image'][name]
 
-    if opt['coord'] == 'index':
-        x = np.arange(image.shape[0])
-        y = np.arange(image.shape[1])
-    elif opt['coord'] == 'pixel':
-        x = np.arange(image.shape[0])+obj.param['pixel_size']/2
-        y = np.arange(image.shape[1])+obj.param['pixel_size']/2
-    elif opt['coord'] == 'cpixel':
-        # I haven't carefully checked that I am calculating this correctly.
-        x = np.arange(image.shape[0])+obj.param['pixel_size']/2 - obj.param['xsize']/obj.param['pixel_size']/2
-        y = np.arange(image.shape[1])+obj.param['pixel_size']/2 - obj.param['ysize']/obj.param['pixel_size']/2
-    elif opt['coord'] == 'space':
-        x = np.linspace(-0.5*obj.param['xsize'], 0.5*obj.param['xsize'], image.shape[0])
-        y = np.linspace(-0.5*obj.param['ysize'], 0.5*obj.param['ysize'], image.shape[1])
-    else:
-        raise Exception(f"coord type {opt['coord']} unknown.")
+    opt['pixel_size'] = obj.param['pixel_size']
+    opt['size'] = (obj.param['xsize'], obj.param['ysize'])
 
-    x *= opt['scale']
-    y *= opt['scale']
-
-    xsum = np.sum(image, axis=1)
-    ysum = np.sum(image, axis=0)
-
-    plotlist = []
-    plotlist.append({
-        'axes':'image',
-        'type':'image',
-        'x':x,
-        'y':y,
-        'z':np.rot90(image),
-        'cmap':opt['cmap'],
-        'xlabel':opt['xlabel'],
-        'ylabel':opt['ylabel'],
-        })
-    plotlist.append({
-        'axes':'xsum',
-        'type':'hline',
-        'y':[0.0],
-        'color':'black',
-        'alpha':0.2,
-        'linestyle':'--',
-        })
-    plotlist.append({
-        'axes':'xsum',
-        'x':x,
-        'y':xsum,
-        })
-    plotlist.append({
-        'axes':'ysum',
-        'type':'vline',
-        'x':[0.0],
-        'color':'black',
-        'alpha':0.2,
-        'linestyle':'--',
-        })
-    plotlist.append({
-        'axes':'ysum',
-        'x':ysum,
-        'y':y,
-        'ybound':None,
-        })
-    mirplot.plot_to_axes(plotlist, axesdict)
-
-    if opt.get('aspect','equal') == 'equal':
-        _update_lim_aspect(axesdict['image'])
-        axesdict['image'].callbacks.connect('ylim_changed', _on_ylims_change)
-
-    return fig
-
-def add_image_controls(fig):
-    """
-    Add a set of controls for viewing the image.
-
-    Programming Notes
-    -----------------
-    Jupyter apparently won't make these controls interactive unless it can see
-    them in the local scope. As long as this function is called directly in
-    the notebook then everything appears to work ok.
-    """
-    from matplotlib.widgets import RangeSlider
-    
-    im = fig.axesdict['image'].get_images()[0]
-    image = im.get_array()
-
-    fig.subplots_adjust(top=0.95, bottom=0.125, left=0.125, right=0.95)
-
-    w = fig.axesdict['image'].get_position().width
-    box = [0.125, 0.025, w, 0.02]
-
-    # Create a background based on a count histogram.
-    ax = fig.add_axes(box)
-    ax.set_axis_off()
-    hist, bins = np.histogram(
-        image.flatten(),
-        range=[image.min() - 0.5, image.max() + 0.5],
-        bins=int(image.max() + 1),
-        )
-    bins_c = (bins[0:-1] + bins[1:]) / 2
-    hist[0] = hist[1]
-    z = np.reshape(hist, (1,len(hist)))
-    ax.imshow(z, aspect='auto', cmap='gist_heat_r')
-    ax.set_navigate(False)
-
-    # Create the slider.
-    ax = fig.add_axes(box)
-    ax.patch.set_alpha(0.0)
-    slider = RangeSlider(
-        ax,
-        '',
-        im.norm.vmin,
-        im.norm.vmax,
-        valinit=(im.norm.vmin, im.norm.vmax),
-        alpha=0.5,
-        )
-
-    def update(val):
-        # The val passed to a callback by the RangeSlider will
-        # be a tuple of (min, max)
-
-        # Update the image's colormap
-        im.norm.vmin = val[0]
-        im.norm.vmax = val[1]
-
-        # Redraw the figure to ensure it updates
-        fig.canvas.draw_idle()
-
-    slider.on_changed(update)
-
-    return slider
+    fig = detview.view(image, opt)
+    controls = detview.add_controls(fig)
+    return fig, controls
