@@ -249,7 +249,6 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
         origin_loc[mask, axis] * opt['scale'],
         bins,
         range=range_)
-
     bins_c = (bins[0:-1] + bins[1:]) / 2
 
     if opt['hist_norm']:
@@ -427,6 +426,7 @@ def plot_image(
     opt.setdefault('coord', 'pixel')
     opt.setdefault('scale', 1.0)
     opt.setdefault('units', None)
+    opt.setdefault('cmap', 'turbo')
 
     if not opt.get('xlabel'):
         opt['xlabel'] = f'x'
@@ -447,10 +447,11 @@ def plot_image(
     gs = {
         'width_ratios':[3, 1],
         'height_ratios':[1, 3],
-        'wspace':0.1,
-        'hspace':0.1,
+        'wspace':0.05,
+        'hspace':0.05,
     }
-    fig, axs = pyplot.subplots(2, 2, gridspec_kw=gs)
+    fig, axs = pyplot.subplots(2, 2, gridspec_kw=gs, figsize=(8,8))
+    fig.subplots_adjust(top=0.95, bottom=0.15, left=0.15, right=0.95)
     axs[0, 1].set_axis_off()
 
     axesdict = {
@@ -458,6 +459,8 @@ def plot_image(
         'xsum':axs[0, 0],
         'ysum':axs[1, 1],
     }
+
+    fig.axesdict = axesdict
 
     for ax in axesdict.values():
         ax.label_outer()
@@ -496,7 +499,7 @@ def plot_image(
         'x':x,
         'y':y,
         'z':np.rot90(image),
-        'cmap':'plasma',
+        'cmap':opt['cmap'],
         'xlabel':opt['xlabel'],
         'ylabel':opt['ylabel'],
         })
@@ -533,3 +536,65 @@ def plot_image(
         _update_lim_aspect(axesdict['image'])
         axesdict['image'].callbacks.connect('ylim_changed', _on_ylims_change)
 
+    return fig
+
+def add_image_controls(fig):
+    """
+    Add a set of controls for viewing the image.
+
+    Programming Notes
+    -----------------
+    Jupyter apparently won't make these controls interactive unless it can see
+    them in the local scope. As long as this function is called directly in
+    the notebook then everything appears to work ok.
+    """
+    from matplotlib.widgets import RangeSlider
+    
+    im = fig.axesdict['image'].get_images()[0]
+    image = im.get_array()
+
+    fig.subplots_adjust(top=0.95, bottom=0.125, left=0.125, right=0.95)
+
+    w = fig.axesdict['image'].get_position().width
+    box = [0.125, 0.025, w, 0.02]
+
+    # Create a background based on a count histogram.
+    ax = fig.add_axes(box)
+    ax.set_axis_off()
+    hist, bins = np.histogram(
+        image.flatten(),
+        range=[image.min() - 0.5, image.max() + 0.5],
+        bins=int(image.max() + 1),
+        )
+    bins_c = (bins[0:-1] + bins[1:]) / 2
+    hist[0] = hist[1]
+    z = np.reshape(hist, (1,len(hist)))
+    ax.imshow(z, aspect='auto', cmap='gist_heat_r')
+    ax.set_navigate(False)
+
+    # Create the slider.
+    ax = fig.add_axes(box)
+    ax.patch.set_alpha(0.0)
+    slider = RangeSlider(
+        ax,
+        '',
+        im.norm.vmin,
+        im.norm.vmax,
+        valinit=(im.norm.vmin, im.norm.vmax),
+        alpha=0.5,
+        )
+
+    def update(val):
+        # The val passed to a callback by the RangeSlider will
+        # be a tuple of (min, max)
+
+        # Update the image's colormap
+        im.norm.vmin = val[0]
+        im.norm.vmax = val[1]
+
+        # Redraw the figure to ensure it updates
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+
+    return slider

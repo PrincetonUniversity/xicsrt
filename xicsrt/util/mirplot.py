@@ -342,9 +342,6 @@ def _make_axes(namelist, fig):
         axesdict[name] = fig.add_subplot(numaxes, 1, ii + 1)
 
     fig.axesdict = axesdict
-    def _get_axesdict(self):
-        return fig.axesdict
-    setattr(fig, 'get_axesdict', _get_axesdict)
 
     return axesdict
 
