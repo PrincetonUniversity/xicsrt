@@ -45,14 +45,14 @@ To add multiple plots to a single figure add parameter dicts ta the plotlist:
         ]
     fig = mirplot.plot_to_screen(plotlist)
 
-If axis names are provided then plots will be added to separate subfigures
-(stacked vertically). Each unique axis name will result in a new subfigure.
+If axes names are provided then plots will be added to separate subfigures
+(stacked vertically). Each unique axes name will result in a new subfigure.
 
 .. code:
 
     plotlist = [
-        {'axis':'plot 1', 'x':x1, 'y':y1},
-        {'axis':'plot 2', 'x':x2, 'y':y2},
+        {'axes':'plot 1', 'x':x1, 'y':y1},
+        {'axes':'plot 2', 'x':x2, 'y':y2},
         ]
     fig = mirplot.plot_to_screen(plotlist)
 
@@ -63,21 +63,21 @@ be placed into a dictionary and passed to `plot_to_axes`.
 
     fig, axs = plt.subplots(1, 2)
 
-    axes = {
+    axesdict = {
         'plot 1':axs[0],
         'plot 2':axs[1],
         }
     plotlist = [
-        {'axis':'plot 1', 'x':x1, 'y':y1},
-        {'axis':'plot 2', 'x':x2, 'y':y2},
+        {'axes':'plot 1', 'x':x1, 'y':y1},
+        {'axes':'plot 2', 'x':x2, 'y':y2},
         ]
 
-    fig = mirplot2.plot_to_axes(plotlist, axes)
+    fig = mirplot2.plot_to_axes(plotlist, axesdict)
 
 mirplot properties
 ------------------
 
-A set of unique plot and axis properties are defined by mirplot to enable
+A set of unique plot and axes properties are defined by mirplot to enable
 a complete dictionary definition.
 
 type : str ('line')
@@ -90,7 +90,7 @@ legend : bool (false)
 matplotlib properties
 ---------------------
 
-Any matplotlib plot or axis property that can be set using a simple
+Any matplotlib plot or axes property that can be set using a simple
 `set_prop(value)` method is supported. Certain properties requiring
 a more complex set call are also supported.
 
@@ -112,8 +112,8 @@ def plot_to_screen(plotlist, show=True):
 
     namelist = _autoname_plots(plotlist)
     fig = _make_figure(namelist)
-    axes = _make_axes(namelist, fig)
-    plot_to_axes(plotlist, axes)
+    axesdict = _make_axes(namelist, fig)
+    plot_to_axes(plotlist, axesdict)
 
     matplotlib.pyplot.ion()
     if show:
@@ -129,28 +129,28 @@ def plot_to_file(plotlist, filename):
     m_log.info('Saved figure to file: {}'.format(filename))
 
 
-def plot_to_axes(plotlist, axes):
+def plot_to_axes(plotlist, axesdict):
 
     for plot in plotlist:
         _set_plot_defaults(plot)
         _clean_plot_prop(plot)
 
         if plot.get('type') == 'figure':
-            axis = list(axes.values())[0]
-            _apply_fig_prop(plot, axis)
+            axes = list(axesdict.values())[0]
+            _apply_fig_prop(plot, axes)
             continue
 
-        axis = plot['axis']
+        axes = plot['axes']
         
-        if isinstance(axis, str):
-            if axis in axes:
-                axis = axes[axis]
+        if isinstance(axes, str):
+            if axes in axesdict:
+                axes = axesdict[axes]
             else:
-                raise Exception(f'Named axis {axis} not found.')
+                raise Exception(f'Named axes {axes} not found.')
 
-        _apply_plot_prop(plot, axis)
-        _apply_axis_prop(plot, axis)
-        _apply_fig_prop(plot, axis)
+        _apply_plot_prop(plot, axes)
+        _apply_axes_prop(plot, axes)
+        _apply_fig_prop(plot, axes)
 
 
 def _set_plot_defaults(prop):
@@ -158,24 +158,32 @@ def _set_plot_defaults(prop):
 
     if prop['type'] == 'figure':
         return
-    if prop['type'] == 'axis':
+    if prop['type'] == 'axes':
         return
 
     prop.setdefault('x')
     prop.setdefault('y')
     prop.setdefault('xerr')
     prop.setdefault('yerr')
-
-    if prop['x'] is None:
-        prop['x'] = np.arange(len(prop['y']))
-
     prop.setdefault('s', 15)
     prop.setdefault('legend_fontsize', 12.0)
     prop.setdefault('legend_framealpha', 0.7)
 
-    if not 'ybound' in prop:
-        yrange = np.array([np.nanmin(prop['y']), np.nanmax(prop['y'])])
-        prop['ybound'] = yrange + np.array([-0.1, 0.1]) * (yrange[1] - yrange[0])
+    if prop['type'] == 'image':
+        if (prop['x'] is not None) and (prop['y'] is not None):
+            prop['extent'] = [min(prop['x']), max(prop['x']), min(prop['y']), max(prop['y'])]
+    elif prop['type'] == 'hline':
+        if prop['y'] is None:
+            prop['y'] = [0]
+    elif prop['type'] == 'vline':
+        if prop['x'] is None:
+            prop['x'] = [0]
+    else:
+        if prop['x'] is None:
+            prop['x'] = np.arange(len(prop['y']))
+        if not 'ybound' in prop:
+            yrange = np.array([np.nanmin(prop['y']), np.nanmax(prop['y'])])
+            prop['ybound'] = yrange + np.array([-0.1, 0.1]) * (yrange[1] - yrange[0])
 
 def _clean_plot_prop(prop):
     """
@@ -183,7 +191,7 @@ def _clean_plot_prop(prop):
     """
     if prop['type'] == 'figure':
         return
-    if prop['type'] == 'axis':
+    if prop['type'] == 'axes':
         return
 
     if 'x' in prop and prop['x'] is not None:
@@ -199,16 +207,16 @@ def _clean_plot_prop(prop):
             prop['y'] = np.asarray(prop['y'])
 
 
-def _apply_plot_prop(prop, axis):
+def _apply_plot_prop(prop, axes):
     if prop['type'] == 'figure':
         return
-    if prop['type'] == 'axis':
+    if prop['type'] == 'axes':
         return
 
     if prop['type'] == 'line':
-        plotobj, = axis.plot(prop['x'], prop['y'])
+        plotobj, = axes.plot(prop['x'], prop['y'])
     elif prop['type'] == 'errorbar':
-        plotobj = axis.errorbar(
+        plotobj = axes.errorbar(
             prop['x']
             , prop['y']
             , xerr=prop['xerr']
@@ -216,17 +224,20 @@ def _apply_plot_prop(prop, axis):
             , fmt='none'
             , capsize=prop['capsize'])
     elif prop['type'] == 'scatter':
-        plotobj = axis.scatter(prop['x'], prop['y'], s=prop['s'], marker=prop.get('marker', None))
+        plotobj = axes.scatter(prop['x'], prop['y'], s=prop['s'], marker=prop.get('marker', None))
     elif prop['type'] == 'fill_between' or prop['type'] == 'fillbetween':
-        plotobj = axis.fill_between(prop['x'], prop['y'], prop['y1'])
+        plotobj = axes.fill_between(prop['x'], prop['y'], prop['y1'])
     elif prop['type'] == 'hline':
-        plotobj = axis.axhline(prop['y'][0])
+        plotobj = axes.axhline(prop['y'][0])
     elif prop['type'] == 'vline':
-        plotobj = axis.axvline(prop['x'][0])
+        plotobj = axes.axvline(prop['x'][0])
     elif prop['type'] == 'hspan':
-        plotobj = axis.axhspan(prop['y'][0], prop['y'][1])
+        plotobj = axes.axhspan(prop['y'][0], prop['y'][1])
     elif prop['type'] == 'vspan':
-        plotobj = axis.axvspan(prop['x'][0], prop['x'][1])
+        plotobj = axes.axvspan(prop['x'][0], prop['x'][1])
+    elif prop['type'] == 'image':
+        # Some value (any value) must be given for the extent.
+        plotobj = axes.imshow(prop['z'], aspect='auto', extent=prop['extent'])
     else:
         raise Exception('Plot type unknown: {}'.format(prop['type']))
 
@@ -258,7 +269,7 @@ def _apply_plot_prop(prop, axis):
                         getattr(obj, funcname)(prop[key])
 
 
-def _apply_axis_prop(prop, axis):
+def _apply_axes_prop(prop, axes):
     if prop['type'] == 'figure':
         return
 
@@ -267,7 +278,7 @@ def _apply_axis_prop(prop, axis):
     # In some cases the order of these statements is important.
     # (For example xscale needs to come before xbound I think.)
 
-    axis.tick_params('both'
+    axes.tick_params('both'
                      , direction='in'
                      , which='both'
                      , top='on'
@@ -275,34 +286,34 @@ def _apply_axis_prop(prop, axis):
                      , left='on'
                      , right='on')
 
-    ax_dir = dir(axis)
+    ax_dir = dir(axes)
     for key in prop:
         if key == 'xscale':
             if prop['xscale'] == 'log':
                 nonposx = 'clip'
             else:
                 nonposx = None
-            axis.set_xscale(prop['xscale'], nonposx=nonposx)
+            axes.set_xscale(prop['xscale'], nonposx=nonposx)
         elif key == 'yscale':
             if prop['yscale'] == 'log':
                 nonposy = 'clip'
             else:
                 nonposy = None
-            axis.set_yscale(prop['yscale'], nonposy=nonposy)
+            axes.set_yscale(prop['yscale'], nonposy=nonposy)
         elif key == 'legend':
-            axis.legend(loc=prop.get('legend_location')
+            axes.legend(loc=prop.get('legend_location')
                         , fontsize=prop.get('legend_fontsize')
                         , framealpha=prop.get('legend_framealpha')
                         )
         elif key == 'label_outer':
-            axis.label_outer()
+            axes.label_outer()
         else:
             # This will catch any properties can can be simply set with a
-            # axis.set_prop(value) function.
+            # axes.set_prop(value) function.
             funcname = 'set_'+key
             if funcname in ax_dir:
                 if prop[key] is not None:
-                    getattr(axis, funcname)(prop[key])
+                    getattr(axes, funcname)(prop[key])
 
 
 def _apply_fig_prop(prop, ax):
@@ -325,17 +336,17 @@ def _make_figure(namelist):
 
 def _make_axes(namelist, fig):
 
-    numaxis = len(namelist)
-    axes = {}
+    numaxes = len(namelist)
+    axesdict = {}
     for ii, name in enumerate(namelist):
-        axes[name] = fig.add_subplot(numaxis, 1, ii + 1)
+        axesdict[name] = fig.add_subplot(numaxes, 1, ii + 1)
 
-    fig.axesdict = axes
+    fig.axesdict = axesdict
     def _get_axesdict(self):
         return fig.axesdict
     setattr(fig, 'get_axesdict', _get_axesdict)
 
-    return axes
+    return axesdict
 
 
 def _autoname_plots(plotlist, sequential=False):
@@ -348,7 +359,7 @@ def _autoname_plots(plotlist, sequential=False):
     for plot in plotlist:
         if plot.get('type') == 'figure':
             continue
-        name = plot.get('axis')
+        name = plot.get('axes')
         if name is None:
             if sequential:
                 num = count
@@ -356,7 +367,7 @@ def _autoname_plots(plotlist, sequential=False):
                 num = 0
             name = '_autoname_{:02d}'.format(num)
             count += 1
-        plot['axis'] = name
+        plot['axes'] = name
         namelist.append(name)
 
     # Extract the unique names in order.
@@ -364,7 +375,7 @@ def _autoname_plots(plotlist, sequential=False):
     return namelist
 
 
-def _get_figure_size(numaxis):
+def _get_figure_size(numaxes):
     """
     Return the default figure size.
     Width: 8 units
@@ -377,6 +388,6 @@ def _get_figure_size(numaxis):
     """
 
     figure_width = 8
-    figure_height = max(6, min(numaxis * 3, 10))
+    figure_height = max(6, min(numaxes * 3, 10))
 
     return (figure_width, figure_height)

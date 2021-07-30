@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
 """
 .. Authors
     Novimir pablant <npablant@pppl.gov>
@@ -33,9 +33,9 @@ def plot_example(results, name):
 
     # Use the mirplot utility to generate the plot.
     plotlist = [{
-        'type': 'scatter',
-        'x': origin_loc[:, 0],
-        'y': origin_loc[:, 1],
+        'type':'scatter',
+        'x':origin_loc[:, 0],
+        'y':origin_loc[:, 1],
         }]
     fig = mirplot.plot_to_screen(plotlist)
 
@@ -53,17 +53,17 @@ def plot_intersect(*args, **kwargs):
 
     Keywords
     --------
-    name : string (None)
+    name :string (None)
       The name of the optic or source for which to plot intersections. The name
       refers to the key of the entry in the config dictionary. For example
       the name 'detector' will refer to config['optics']['detector'].
 
-    section : string (None)
+    section :string (None)
       [Optional] The name of the config section in which to search for `name`.
       This should typically be either 'optics' or 'sources'. If no section is
       given then then 'optics' will be searched first, then 'sources'.
 
-    options : dict (None)
+    options :dict (None)
       [Optional] A dictionary containing plot options. All options can also be
       passed individually as keywords.
 
@@ -73,32 +73,35 @@ def plot_intersect(*args, **kwargs):
       Will return a plotlist with the full plot definition.
     """
 
-    plotlist = _get_intersect_plotlist(*args, **kwargs)
+    # Aspect is handled here, so turn it off in the plotlist.
+    plotlist = _get_intersect_plotlist(*args, **kwargs, _noaspect=True)
+
     gs = {
-        'width_ratios': [3, 1],
-        'height_ratios': [1, 3],
-        'wspace': 0.1,
-        'hspace': 0.1,
+        'width_ratios':[3, 1],
+        'height_ratios':[1, 3],
+        'wspace':0.1,
+        'hspace':0.1,
     }
     fig, axs = pyplot.subplots(2, 2, gridspec_kw=gs)
     axs[0, 1].set_axis_off()
 
-    axes = {
-        'scatter': axs[1, 0],
-        'xhist': axs[0, 0],
-        'yhist': axs[1, 1],
+    axesdict = {
+        'scatter':axs[1, 0],
+        'xhist':axs[0, 0],
+        'yhist':axs[1, 1],
     }
 
-    for ax in axes.values():
+    for ax in axesdict.values():
         ax.label_outer()
 
-    axes['xhist'].sharex(axes['scatter'])
-    axes['yhist'].sharey(axes['scatter'])
+    axesdict['xhist'].sharex(axesdict['scatter'])
+    axesdict['yhist'].sharey(axesdict['scatter'])
 
-    mirplot.plot_to_axes(plotlist, axes)
+    mirplot.plot_to_axes(plotlist, axesdict)
 
-    _update_lim_aspect(axes['scatter'])
-    axes['scatter'].callbacks.connect('ylim_changed', _on_ylims_change)
+    if kwargs.get('aspect','auto') == 'equal':
+        _update_lim_aspect(axesdict['scatter'])
+        axesdict['scatter'].callbacks.connect('ylim_changed', _on_ylims_change)
 
     return fig
 
@@ -108,6 +111,7 @@ def _get_intersect_plotlist(
         name=None,
         section=None,
         options=None,
+        _noaspect=False,
         **kwargs,
         ):
     """
@@ -125,7 +129,7 @@ def _get_intersect_plotlist(
     opt.setdefault('lost', True)
     opt.setdefault('bounds', True)
     opt.setdefault('aperture', True)
-    opt.setdefault('aspect', 1)
+    opt.setdefault('aspect', 'equal')
     opt.setdefault('scale', None)
     opt.setdefault('units', None)
     opt.setdefault('lost_color', 'royalblue')
@@ -154,7 +158,7 @@ def _get_intersect_plotlist(
     elif (opt['found_alpha'] is None):
         opt['found_alpha'] = opt['alpha']
 
-    if opt['scale'] is None: opt['scale'] = 1.0
+    if opt['scale'] is None:opt['scale'] = 1.0
 
     if not opt.get('xlabel'):
         opt['xlabel'] = f'x'
@@ -165,6 +169,9 @@ def _get_intersect_plotlist(
         opt['ylabel'] = f'y'
         if opt.get('units'):
             opt['ylabel'] += f" [{opt['units']}]"
+
+    if _noaspect:
+        opt['aspect'] = None
 
     plotlist = []
 
@@ -235,7 +242,7 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
 
     # Some logging
     binsize = (range_[1] - range_[0])/bins
-    log.info(f'Histogram bins, size: {binsize:0.6f} num: {bins:4d}')
+    log.info(f'Histogram bins, size:{binsize:0.6f} num:{bins:4d}')
 
     # Calculate the histogram.
     hist, bins = np.histogram(
@@ -259,12 +266,12 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
 
     plotlist = []
     plotlist.append({
-        'axis': name,
-        'x': x,
-        'y': y,
-        'drawstyle': opt['drawstyle'],
-        'color': 'black',
-        'linewidth': opt['linewidth'],
+        'axes':name,
+        'x':x,
+        'y':y,
+        'drawstyle':opt['drawstyle'],
+        'color':'black',
+        'linewidth':opt['linewidth'],
     })
 
     return plotlist
@@ -283,42 +290,42 @@ def _get_rays_plotlist(obj, results, opt, raytype='found'):
     plotlist = []
     if np.sum(mask) > 0:
         plotlist.append({
-            'axis': 'scatter',
-            'type': 'scatter',
-            'x': origin_loc[mask, 0] * opt['scale'],
-            'y': origin_loc[mask, 1] * opt['scale'],
-            'xbound': opt['xbound'],
-            'ybound': opt['ybound'],
-            'aspect': opt['aspect'],
-            'alpha': opt[raytype + '_alpha'],
-            'color': opt[raytype + '_color'],
-            'xlabel': opt['xlabel'],
-            'ylabel': opt['ylabel'],
+            'axes':'scatter',
+            'type':'scatter',
+            'x':origin_loc[mask, 0] * opt['scale'],
+            'y':origin_loc[mask, 1] * opt['scale'],
+            'xbound':opt['xbound'],
+            'ybound':opt['ybound'],
+            'aspect':opt['aspect'],
+            'alpha':opt[raytype + '_alpha'],
+            'color':opt[raytype + '_color'],
+            'xlabel':opt['xlabel'],
+            'ylabel':opt['ylabel'],
         })
 
     return plotlist
 
 
 def _get_bounds_plotlist(obj, scale=None):
-    if scale is None: scale = 1.0
+    if scale is None:scale = 1.0
     plotlist = []
 
     # Plot the optic extent as taken from the xsize and ysize.
     opt_x = obj.param['xsize'] / 2 * scale
     opt_y = obj.param['ysize'] / 2 * scale
     plotlist.append({
-        'axis': 'scatter',
-        'x': [-1 * opt_x, opt_x, opt_x, -1 * opt_x, -1 * opt_x],
-        'y': [opt_y, opt_y, -1 * opt_y, -1 * opt_y, opt_y],
-        'linestyle': '--',
-        'color': 'gray',
+        'axes':'scatter',
+        'x':[-1 * opt_x, opt_x, opt_x, -1 * opt_x, -1 * opt_x],
+        'y':[opt_y, opt_y, -1 * opt_y, -1 * opt_y, opt_y],
+        'linestyle':'--',
+        'color':'gray',
     })
 
     return plotlist
 
 
 def _get_aperture_plotlist(obj, scale=None):
-    if scale is None: scale = 1.0
+    if scale is None:scale = 1.0
     plotlist = []
 
     if (not 'aperture' in obj.param) or (obj.param['aperture'] is None):
@@ -349,11 +356,11 @@ def _get_aperture_plotlist(obj, scale=None):
             return []
 
         plotlist.append({
-            'axis': 'scatter',
-            'x': x,
-            'y': y,
-            'linestyle': '-',
-            'color': 'black',
+            'axes':'scatter',
+            'x':x,
+            'y':y,
+            'linestyle':'-',
+            'color':'black',
         })
     return plotlist
 
@@ -382,7 +389,7 @@ def _update_lim_aspect(ax):
 
 def _on_ylims_change(event_ax):
     """
-    An Axis callback to update the data limits after a change in the the data
+    An Axes callback to update the data limits after a change in the the data
     limits. This is primarily meant to allow retention af a fixed aspect
     after the user has zoomed into a region.
     """
@@ -396,3 +403,133 @@ def _on_ylims_change(event_ax):
     _update_lim_aspect(event_ax)
 
     event_ax.callbacks.connect('ylim_changed', _on_ylims_change)
+
+
+def plot_image(
+        results,
+        name=None,
+        section=None,
+        options=None,
+        **kwargs,
+        ):
+    """
+    Plot an intersection image along with column and row summation plots.
+    """
+
+    if options is None:
+        opt = {}
+    else:
+        opt = options
+    opt.update(kwargs)
+
+    opt.setdefault('name', name)
+    opt.setdefault('aspect', 'equal')
+    opt.setdefault('coord', 'pixel')
+    opt.setdefault('scale', 1.0)
+    opt.setdefault('units', None)
+
+    if not opt.get('xlabel'):
+        opt['xlabel'] = f'x'
+        if opt.get('units'):
+            opt['xlabel'] += f" [{opt['units']}]"
+
+    if not opt.get('ylabel'):
+        opt['ylabel'] = f'y'
+        if opt.get('units'):
+            opt['ylabel'] += f" [{opt['units']}]"
+
+    config = results['config']
+    name = opt['name']
+
+    # Get the crystal object from the dispatcher.
+    obj = xicsrt_public.get_element(config, name, section)
+
+    gs = {
+        'width_ratios':[3, 1],
+        'height_ratios':[1, 3],
+        'wspace':0.1,
+        'hspace':0.1,
+    }
+    fig, axs = pyplot.subplots(2, 2, gridspec_kw=gs)
+    axs[0, 1].set_axis_off()
+
+    axesdict = {
+        'image':axs[1, 0],
+        'xsum':axs[0, 0],
+        'ysum':axs[1, 1],
+    }
+
+    for ax in axesdict.values():
+        ax.label_outer()
+
+    axesdict['xsum'].sharex(axesdict['image'])
+    axesdict['ysum'].sharey(axesdict['image'])
+
+    image = results['total']['image'][name]
+
+    if opt['coord'] == 'index':
+        x = np.arange(image.shape[0])
+        y = np.arange(image.shape[1])
+    elif opt['coord'] == 'pixel':
+        x = np.arange(image.shape[0])+obj.param['pixel_size']/2
+        y = np.arange(image.shape[1])+obj.param['pixel_size']/2
+    elif opt['coord'] == 'cpixel':
+        # I haven't carefully checked that I am calculating this correctly.
+        x = np.arange(image.shape[0])+obj.param['pixel_size']/2 - obj.param['xsize']/obj.param['pixel_size']/2
+        y = np.arange(image.shape[1])+obj.param['pixel_size']/2 - obj.param['ysize']/obj.param['pixel_size']/2
+    elif opt['coord'] == 'space':
+        x = np.linspace(-0.5*obj.param['xsize'], 0.5*obj.param['xsize'], image.shape[0])
+        y = np.linspace(-0.5*obj.param['ysize'], 0.5*obj.param['ysize'], image.shape[1])
+    else:
+        raise Exception(f"coord type {opt['coord']} unknown.")
+
+    x *= opt['scale']
+    y *= opt['scale']
+
+    xsum = np.sum(image, axis=1)
+    ysum = np.sum(image, axis=0)
+
+    plotlist = []
+    plotlist.append({
+        'axes':'image',
+        'type':'image',
+        'x':x,
+        'y':y,
+        'z':np.rot90(image),
+        'cmap':'plasma',
+        'xlabel':opt['xlabel'],
+        'ylabel':opt['ylabel'],
+        })
+    plotlist.append({
+        'axes':'xsum',
+        'type':'hline',
+        'y':[0.0],
+        'color':'black',
+        'alpha':0.2,
+        'linestyle':'--',
+        })
+    plotlist.append({
+        'axes':'xsum',
+        'x':x,
+        'y':xsum,
+        })
+    plotlist.append({
+        'axes':'ysum',
+        'type':'vline',
+        'x':[0.0],
+        'color':'black',
+        'alpha':0.2,
+        'linestyle':'--',
+        })
+    plotlist.append({
+        'axes':'ysum',
+        'x':ysum,
+        'y':y,
+        'ybound':None,
+        })
+    mirplot.plot_to_axes(plotlist, axesdict)
+
+    if opt.get('aspect','equal') == 'equal':
+        _update_lim_aspect(axesdict['image'])
+        axesdict['image'].callbacks.connect('ylim_changed', _on_ylims_change)
+
