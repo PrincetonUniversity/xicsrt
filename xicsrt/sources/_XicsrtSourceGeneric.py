@@ -93,10 +93,10 @@ class XicsrtSourceGeneric(GeometryObject):
           The type of wavelength distribution for this source.
           Possible values are: 'voigt', 'uniform', 'monochrome'.
 
-          Note: A monchrome distribution can also be achieved by using a 'voigt'
-          distribution with zero linewidth and temperature.
+          Note: A monochrome distribution can also be achieved by using a
+          'voigt' distribution with zero linewidth and temperature.
 
-        wavelength : float [angstroms]
+        wavelength : float (1.0) [angstroms]
           Only used if `wavelength_dist = "monochrome" or "voigt"`
           Central wavelength of the distribution, in Angstroms.
 
@@ -105,12 +105,12 @@ class XicsrtSourceGeneric(GeometryObject):
           The wavelength range of the distribution, in Angstroms.
           Must be a 2 element tuple, list or array: (min, max).
 
-        linewidth : float [1/s]
+        linewidth : float (0.0) [1/s]
           Only used if `wavelength_dist = "voigt"`
           The natural width of the emission line.
-          This will control the Lorentzian contribution to the the overall
-          Voigt profile. If linewidth == 0, the resulting wavelength
-          distribution will be gaussian.
+          This will control the Lorentzian contribution to the the overall Voigt
+          profile. If linewidth == 0, the resulting wavelength distribution will
+          be gaussian.
 
           To convert from a fwhm in [eV]:
           linewidth = 2*pi*e/h*fwhm_ev
@@ -118,7 +118,12 @@ class XicsrtSourceGeneric(GeometryObject):
           To translate from linewidth to gamma in the Voigt equation:
           gamma = linewidth * wavelength**2 / (4*pi*c*1e10)
 
-        temperature : float [eV]
+        mass_number : float (1.0) [au]
+          Only used if `wavelength_dist = "voigt"`
+          The mass of the emitting atom in atomic units (au). This mass in used
+          to convert temperature into line width. See temperature option.
+
+        temperature : float (0.0) [eV]
           Only used if `wavelength_dist = "voigt"`
           The temperature of the emission line.
           This will control the Gaussian contribution to the overall Voigt

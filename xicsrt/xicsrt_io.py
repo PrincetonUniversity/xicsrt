@@ -31,7 +31,8 @@ def load_config(filename):
 def save_config(config, filename=None, path=None):
     if filename is None:
         filename = generate_filename(config, kind='config', path=path)
-    _file_from_dict(config, filename, mkdir=config['general']['make_directories'])
+    mkdir = config['general'].get('make_directories', False)
+    _file_from_dict(config, filename, mkdir=mkdir)
 
     filename = pathlib.Path(filename).expanduser().resolve()
     log.info('Config saved to {}'.format(filename))
@@ -42,7 +43,8 @@ def save_results(output, filename=None, path=None):
     _make_output_path(config)
     if filename is None:
         filename = generate_filename(config, kind='results', path=path)
-    _file_from_dict(output, filename, mkdir=config['general']['make_directories'])
+    mkdir = config['general'].get('make_directories', False)
+    _file_from_dict(output, filename, mkdir=mkdir)
 
     filename = pathlib.Path(filename).expanduser().resolve()
     log.info('History saved to {}'.format(filename))

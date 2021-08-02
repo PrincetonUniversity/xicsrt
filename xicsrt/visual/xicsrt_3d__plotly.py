@@ -179,7 +179,7 @@ def _plot_ray_history(
         figure.add_trace(data)
 
 
-def _add_trace_volume(obj, figure, name=None):
+def _add_trace_volume(obj, figure, name=None, opacity=0.5):
     global m_figure
     if figure is None: figure = m_figure
 
@@ -247,7 +247,7 @@ def _add_trace_volume(obj, figure, name=None):
         ,j=tri[:, 1]
         ,k=tri[:, 2]
         ,flatshading=True
-        ,opacity=0.50
+        ,opacity=opacity
         ,name=name)
 
     figure.add_trace(trace)
@@ -315,16 +315,16 @@ def _add_trace_mesh(obj, figure=None, name=None):
         figure.add_trace(trace)
 
 
-def add_optics(config, figure=None):
+def add_optics(config, figure=None, **kwargs):
     section = 'optics'
     for name in config[section]:
-        add_object(config, name, section, figure=figure)
+        add_object(config, name, section, figure=figure, **kwargs)
 
 
-def add_sources(config, figure=None):
+def add_sources(config, figure=None, **kwargs):
     section = 'sources'
     for name in config[section]:
-        add_object(config, name, section, figure=figure)
+        add_object(config, name, section, figure=figure, **kwargs)
 
 
 def add_fluxsurfaces(config, figure=None, **kwargs):
@@ -333,7 +333,7 @@ def add_fluxsurfaces(config, figure=None, **kwargs):
         _add_fluxsurf_single(config, name, section, figure=figure, **kwargs)
 
 
-def add_object(config, name, section, figure=None):
+def add_object(config, name, section, figure=None, **kwargs):
 
     # Use the dispatcher to instantiate and initialize objects.
     optics = Dispatcher(config, section)
@@ -347,9 +347,9 @@ def add_object(config, name, section, figure=None):
     plot_mesh = obj.param.get('use_meshgrid', False)
 
     if plot_mesh:
-        _add_trace_mesh(obj, figure, name)
+        _add_trace_mesh(obj, figure, name, **kwargs)
     else:
-        _add_trace_volume(obj, figure, name)
+        _add_trace_volume(obj, figure, name, **kwargs)
 
 
 def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):

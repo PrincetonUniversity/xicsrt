@@ -28,7 +28,7 @@ class ConfigObject():
         self.log = logging.getLogger('xicsrt').getChild(self.name)
 
         self.config = self.default_config()
-        self.update_config(config, strict)
+        self.update_config(config, strict=strict)
         self.check_config()
 
         self.param = copy.deepcopy(self.config)
@@ -78,12 +78,12 @@ class ConfigObject():
         """
         pass
 
-    def update_config(self, config_new, strict=None, update=None):
+    def update_config(self, config_new, **kwargs):
         """
         Overwrite any config values in this object with the ones given. This
         will be done recursively for all nested dictionaries.
         """
-        xicsrt_config.update_config(self.config, config_new)
+        xicsrt_config.update_config(self.config, config_new, **kwargs)
 
 
 
