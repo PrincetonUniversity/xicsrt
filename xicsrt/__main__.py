@@ -51,13 +51,6 @@ example 2:
         help='The path to the configuration file for this run.')
 
     parser.add_argument(
-        '--suffix',
-        type=str,
-        default=None,
-        metavar='STR',
-        help="A suffix to add to the output files.")
-
-    parser.add_argument(
         '--numruns',
         type=int,
         default=None,
@@ -77,6 +70,23 @@ example 2:
         default=None,
         metavar='N',
         help="The random seed to use.")
+
+    parser.add_argument(
+        '--save',
+        action='store_true',
+        help="Save the results.")
+
+    parser.add_argument(
+        '--images',
+        action='store_true',
+        help="Save intersection images.")
+    
+    parser.add_argument(
+        '--suffix',
+        type=str,
+        default=None,
+        metavar='STR',
+        help="A suffix to add to the output files.")
 
     parser.add_argument(
         '--path',
@@ -132,6 +142,10 @@ def run():
         config['general']['random_seed'] = args.seed
     if args.path:
         config['general']['output_path'] = args.path
+    if args.save:
+        config['general']['save_results'] = args.save
+    if args.images:
+        config['general']['save_images'] = args.images
 
     if args.multiprocessing:
 
