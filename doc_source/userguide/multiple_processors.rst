@@ -72,4 +72,8 @@ over 4 nodes.
 
   srun xicsrt config.json --mp --numruns 16 --processes 16 --suffix $SLURM_ARRAY_TASK_ID &> xicsrt.log
 
-To send this job the queue type :code:`sbatch job.sh` at the command line.
+To send this job to the queue type :code:`sbatch job.sh` at the command line.
+
+After the jobs are complete the saved results can be read using
+:any:`xicsrt_io:load_results()` and combined using
+:any:`xicsrt_raytrace.combine_results()`.

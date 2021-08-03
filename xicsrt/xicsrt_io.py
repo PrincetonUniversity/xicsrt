@@ -28,22 +28,24 @@ def load_config(filename):
     return config
 
 
-def save_config(config, filename=None, path=None):
+def save_config(config, filename=None, path=None, mkdir=None):
     if filename is None:
         filename = generate_filename(config, kind='config', path=path)
-    mkdir = config['general'].get('make_directories', False)
+    if mkdir is None:
+        mkdir = config['general'].get('make_directories', False)
     _file_from_dict(config, filename, mkdir=mkdir)
 
     filename = pathlib.Path(filename).expanduser().resolve()
     log.info('Config saved to {}'.format(filename))
 
 
-def save_results(output, filename=None, path=None):
+def save_results(output, filename=None, path=None, mkdir=None):
     config = output['config']
     _make_output_path(config)
     if filename is None:
         filename = generate_filename(config, kind='results', path=path)
-    mkdir = config['general'].get('make_directories', False)
+    if mkdir is None:
+        mkdir = config['general'].get('make_directories', False)
     _file_from_dict(output, filename, mkdir=mkdir)
 
     filename = pathlib.Path(filename).expanduser().resolve()
@@ -57,19 +59,21 @@ def load_results(config=None, filename=None, path=None):
     return output
 
 
-def save_images(output, rotate=False, path=None):
+def save_images(output, rotate=True, path=None, mkdir=None):
     """
     Save images from the raytracing output.
     """
     from PIL import Image
 
     config = output['config']
+    if mkdir is None:
+        mkdir = config['general'].get('make_directories', False)
 
     for key_opt in output['config']['optics']:
         if key_opt in output['total']['image']:
             if output['total']['image'][key_opt] is not None:
                 filename = generate_filename(output['config'], 'image', key_opt, path=path)
-                if config['general']['make_directories']:
+                if mkdir:
                     _make_path(filename)
 
                 image_temp = output['total']['image'][key_opt]

@@ -80,7 +80,7 @@ example 2:
         '--images',
         action='store_true',
         help="Save intersection images.")
-    
+
     parser.add_argument(
         '--suffix',
         type=str,
