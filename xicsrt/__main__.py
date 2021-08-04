@@ -113,6 +113,12 @@ example 2:
         action='store_true',
         help="Show the version number.")
 
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help="Show debugging output in the log.")
+        )
+
     return parser
 
 def run():
@@ -128,7 +134,11 @@ def run():
         print(f'{__version__}')
         return
 
-    mirlogging.defaultConfig(level=mirlogging.INFO, force=True)
+    if args.debug:
+        log_level = mirlogging.DEBUG
+    else:
+        log_level = mirlogging.INFO
+    mirlogging.defaultConfig(level=log_level, force=True)
 
     config = xicsrt_io.load_config(args.config_file)
 
