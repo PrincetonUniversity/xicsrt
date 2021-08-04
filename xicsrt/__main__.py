@@ -48,75 +48,86 @@ example 2:
         type=str,
         nargs='?',
         default='config.json',
-        help='The path to the configuration file for this run.')
+        help='The path to the configuration file for this run.',
+        )
 
     parser.add_argument(
         '--numruns',
         type=int,
         default=None,
         metavar='N',
-        help="Number of runs.")
+        help="Number of runs.",
+        )
 
     parser.add_argument(
         '--numiter',
         type=int,
         default=None,
         metavar='N',
-        help="Number of iterations per run.")
+        help="Number of iterations per run.",
+        )
 
     parser.add_argument(
         '--seed',
         type=int,
         default=None,
         metavar='N',
-        help="The random seed to use.")
+        help="The random seed to use.",
+        )
 
     parser.add_argument(
         '--save',
         action='store_true',
-        help="Save the results.")
+        help="Save the results.",
+        )
 
     parser.add_argument(
         '--images',
         action='store_true',
-        help="Save intersection images.")
+        help="Save intersection images.",
+        )
 
     parser.add_argument(
         '--suffix',
         type=str,
         default=None,
         metavar='STR',
-        help="A suffix to add to the output files.")
+        help="A suffix to add to the output files.",
+        )
 
     parser.add_argument(
         '--path',
         type=str,
         default=None,
         metavar='STR',
-        help="Directory in which to store output.")
+        help="Directory in which to store output.",
+        )
 
     parser.add_argument(
         '--multiprocessing',
         '--mp',
         action='store_true',
-        help="Use multiprocessing.")
+        help="Use multiprocessing.",
+        )
 
     parser.add_argument(
         '--processes',
         type=int,
         default=None,
         metavar='N',
-        help="Number of processes to use for muliprocessing.")
+        help="Number of processes to use for muliprocessing.",
+        )
 
     parser.add_argument(
         '--version',
         action='store_true',
-        help="Show the version number.")
+        help="Show the version number.",
+        )
 
     parser.add_argument(
         '--debug',
         action='store_true',
-        help="Show debugging output in the log.")
+        help="Show debugging output in the log.",
         )
 
     return parser
