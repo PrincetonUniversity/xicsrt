@@ -131,34 +131,42 @@ def plot_to_file(plotlist, filename):
 
 def plot_to_axes(plotlist, axesdict):
 
-    for plot in plotlist:
-        _set_plot_defaults(plot)
-        _clean_plot_prop(plot)
+    # The order of these calls is important so we need to use multiple loops
 
+    axeslist = []
+    for plot in plotlist:
         if plot.get('type') == 'figure':
             axes = list(axesdict.values())[0]
-            _apply_fig_prop(plot, axes)
-            continue
+        else:
+            axes = plot['axes']
 
-        axes = plot['axes']
-        
         if isinstance(axes, str):
             if axes in axesdict:
                 axes = axesdict[axes]
             else:
                 raise Exception(f'Named axes {axes} not found.')
+        axeslist.append(axes)
 
-        _apply_plot_prop(plot, axes)
-        _apply_axes_prop(plot, axes)
-        _apply_fig_prop(plot, axes)
+    for plot in plotlist:
+        _set_plot_defaults(plot)
+        _clean_plot_prop(plot)
+
+    for ii, plot in enumerate(plotlist):
+        _apply_plot_prop(plot, axeslist[ii])
+
+    for ii, plot in enumerate(plotlist):
+        _apply_axes_prop(plot, axeslist[ii])
+
+    for ii, plot in enumerate(plotlist):
+        _apply_fig_prop(plot, axeslist[ii])
 
 
 def _set_plot_defaults(prop):
     prop.setdefault('type', 'line')
 
-    if prop['type'] == 'figure':
+    if prop.get('type') == 'figure':
         return
-    if prop['type'] == 'axes':
+    if prop.get('type') == 'axes':
         return
 
     prop.setdefault('x')
@@ -181,17 +189,17 @@ def _set_plot_defaults(prop):
     else:
         if prop['x'] is None:
             prop['x'] = np.arange(len(prop['y']))
-        if not 'ybound' in prop:
-            yrange = np.array([np.nanmin(prop['y']), np.nanmax(prop['y'])])
-            prop['ybound'] = yrange + np.array([-0.1, 0.1]) * (yrange[1] - yrange[0])
+        #if not 'ybound' in prop:
+        #    yrange = np.array([np.nanmin(prop['y']), np.nanmax(prop['y'])])
+        #    prop['ybound'] = yrange + np.array([-0.1, 0.1]) * (yrange[1] - yrange[0])
 
 def _clean_plot_prop(prop):
     """
     Check the plot properties and cleanup or provides errors.
     """
-    if prop['type'] == 'figure':
+    if prop.get('type') == 'figure':
         return
-    if prop['type'] == 'axes':
+    if prop.get('type') == 'axes':
         return
 
     if 'x' in prop and prop['x'] is not None:
@@ -208,11 +216,12 @@ def _clean_plot_prop(prop):
 
 
 def _apply_plot_prop(prop, axes):
-    if prop['type'] == 'figure':
+    if prop.get('type') == 'figure':
         return
-    if prop['type'] == 'axes':
+    if prop.get('type') == 'axes':
         return
 
+    print(prop['type'])
     if prop['type'] == 'line':
         plotobj, = axes.plot(prop['x'], prop['y'])
     elif prop['type'] == 'errorbar':
@@ -270,7 +279,7 @@ def _apply_plot_prop(prop, axes):
 
 
 def _apply_axes_prop(prop, axes):
-    if prop['type'] == 'figure':
+    if prop.get('type') == 'figure':
         return
 
     prop = copy.copy(prop)
@@ -290,16 +299,16 @@ def _apply_axes_prop(prop, axes):
     for key in prop:
         if key == 'xscale':
             if prop['xscale'] == 'log':
-                nonposx = 'clip'
+                nonpositive = 'clip'
             else:
-                nonposx = None
-            axes.set_xscale(prop['xscale'], nonposx=nonposx)
+                nonpositive = None
+            axes.set_xscale(prop['xscale'], nonpositive=nonpositive)
         elif key == 'yscale':
             if prop['yscale'] == 'log':
-                nonposy = 'clip'
+                nonpositive = 'clip'
             else:
-                nonposy = None
-            axes.set_yscale(prop['yscale'], nonposy=nonposy)
+                nonposisitve = None
+            axes.set_yscale(prop['yscale'], nonpositive=nonpositive)
         elif key == 'legend':
             axes.legend(loc=prop.get('legend_location')
                         , fontsize=prop.get('legend_fontsize')
@@ -317,15 +326,25 @@ def _apply_axes_prop(prop, axes):
 
 
 def _apply_fig_prop(prop, ax):
-    if not prop['type'] == 'figure':
+    if not prop.get('type') == 'figure':
         return
 
-    if prop.get('suptitle'):
-        x = prop.get('suptitle_x', 0.02)
-        y = prop.get('suptitle_y', 0.98)
-        ha = prop.get('suptitle_ha', 'left')
-        weight = prop.get('suptitle_weight')
-        ax.figure.suptitle(prop['suptitle'], x=x, y=y, ha=ha, weight=weight)
+    fig = ax.figure
+    fig_dir = dir(fig)
+    for key in prop:
+        if key == 'suptitle':
+            x = prop.get('suptitle_x', 0.02)
+            y = prop.get('suptitle_y', 0.98)
+            ha = prop.get('suptitle_ha', 'left')
+            weight = prop.get('suptitle_weight')
+            fig.suptitle(prop['suptitle'], x=x, y=y, ha=ha, weight=weight)
+        else:
+            # This will catch any properties can can be simply set with a
+            # axes.set_prop(value) function.
+            funcname = 'set_' + key
+            if funcname in fig_dir:
+                if prop[key] is not None:
+                    getattr(fig, funcname)(prop[key])
 
 
 def _make_figure(namelist):
