@@ -57,6 +57,11 @@ class ConfigObject():
         return self.config
 
     def check_config(self):
+        """
+        Check the config before copying to the internal param. This is called
+        during object instantiation (`__init__`) and therefore before `setup` is
+        called.
+        """
         pass
 
     def setup(self):
@@ -64,11 +69,11 @@ class ConfigObject():
         Perform any setup actions that are needed prior to initialization.
         """
         pass
-        
 
     def check_param(self):
         """
-        Check the internal parameters prior to initialization.
+        Check the internal parameters prior to initialization. This will be
+        called after `setup` and before `initialize`.
         """
         pass
 

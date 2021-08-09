@@ -53,11 +53,11 @@ class ShapeSphere(ShapeObject):
         D = rays['direction']
         m = rays['mask']
         
-        distance = np.zeros(m.shape, dtype=np.float64)
-        d        = np.zeros(m.shape, dtype=np.float64)
-        t_hc     = np.zeros(m.shape, dtype=np.float64)
-        t_0      = np.zeros(m.shape, dtype=np.float64)
-        t_1      = np.zeros(m.shape, dtype=np.float64)
+        distance = np.full(m.shape, np.nan, dtype=np.float64)
+        d        = np.empty(m.shape, dtype=np.float64)
+        t_hc     = np.empty(m.shape, dtype=np.float64)
+        t_0      = np.empty(m.shape, dtype=np.float64)
+        t_1      = np.empty(m.shape, dtype=np.float64)
 
         # L is the destance from the ray origin to the center of the sphere.
         # t_ca is the projection of this distance along the ray direction.
@@ -84,11 +84,11 @@ class ShapeSphere(ShapeObject):
         # Distance traveled by the ray before hitting the optic
         distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
 
-        return rays, distance
+        return distance, m
 
     def intersect_normal(self, xloc, mask):
         m = mask
-        norm = np.zeros(xloc.shape, dtype=np.float64)
+        norm = np.full(xloc.shape, np.nan, dtype=np.float64)
         norm[m] = xm.normalize(self.param['center'] - xloc[m])
         return norm
 

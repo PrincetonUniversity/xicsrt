@@ -40,7 +40,7 @@ def raytrace(config):
     Also see :func:`~xicsrt.xicsrt_multiprocessing.raytrace` for a
     multiprocessing version of this routine.
     """
-    profiler.start('raytrace_multi')
+    profiler.start('raytrace')
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
@@ -80,7 +80,7 @@ def raytrace(config):
     if config['general']['print_results']:
         print_raytrace(output)
 
-    profiler.stop('raytrace_multi')
+    profiler.stop('raytrace')
     return output
 
 
@@ -100,7 +100,7 @@ def raytrace_single(config, _internal=False):
       of multiple runs. Controls how `history_max_lost` is handled along with
       how `save_config` and `save_results` are interpreted.
     """
-    profiler.start('raytrace')
+    profiler.start('raytrace_single')
 
     # Update the default config with the user config.
     config = xicsrt_config.config_to_numpy(config)
@@ -132,6 +132,7 @@ def raytrace_single(config, _internal=False):
     sources.instantiate()
     sources.apply_filters(filters)
     sources.setup()
+    sources.check_param()
     sources.initialize()
     config['sources'] = sources.get_config()
 
@@ -140,6 +141,7 @@ def raytrace_single(config, _internal=False):
     optics.instantiate()
     optics.apply_filters(filters)
     optics.setup()
+    optics.check_param()
     optics.initialize()
     config['optics'] = optics.get_config()
 
@@ -165,7 +167,7 @@ def raytrace_single(config, _internal=False):
     if config['general']['save_images']:
         xicsrt_io.save_images(output)
 
-    profiler.stop('raytrace')
+    profiler.stop('raytrace_single')
     # profiler.report()
     return output
 
@@ -175,7 +177,7 @@ def _raytrace_iter(config, sources, optics):
     Perform a single iteration of raytracing with the given sources and optics.
     The returned rays are unsorted.
     """
-    profiler.start('raytrace_single')
+    profiler.start('_raytrace_iter')
 
     # Setup local names for a few config entries.
     # This is only to make the code below more readable.
@@ -217,7 +219,7 @@ def _raytrace_iter(config, sources, optics):
     output['image'] = image
     output['history'] = history
     
-    profiler.stop('raytrace_single')
+    profiler.stop('_raytrace_iter')
     return output
 
 

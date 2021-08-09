@@ -39,11 +39,11 @@ class ShapePlane(ShapeObject):
         m = rays['mask']
 
         if self.param['trace_local']:
-            distance = np.fill(m.shape, np.nan, dtype=np.float64)
+            distance = np.full(m.shape, np.nan, dtype=np.float64)
             distance[m] = (np.dot((0 - O[m]), np.array([0., 0., 1.]))
                            / np.dot(D[m], np.array([0., 0., 1.])))
         else:
-            distance = np.fill(m.shape, np.nan, dtype=np.float64)
+            distance = np.full(m.shape, np.nan, dtype=np.float64)
             distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
                            / np.dot(D[m], self.param['zaxis']))
 
@@ -57,6 +57,6 @@ class ShapePlane(ShapeObject):
         The planar optic is flat, so the normal direction is always the zaxis.
         """
         m = mask
-        norm = np.fill(xloc.shape, np.nan, dtype=np.float64)
+        norm = np.full(xloc.shape, np.nan, dtype=np.float64)
         norm[m] = self.param['zaxis']
         return norm

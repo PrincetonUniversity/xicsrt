@@ -165,7 +165,9 @@ class TraceObject(GeometryObject):
 
         xloc, norm, mask = self.intersect(rays)
         mask = self.check_bounds(xloc, mask)
+        self.log.debug('Rays on {}: {:0.4e}'.format(self.__class__.__name__, np.sum(mask)))
         rays = self.interact(rays, xloc, norm, mask)
+        self.log.debug('Rays from {}: {:0.4e}'.format(self.__class__.__name__, np.sum(mask)))
 
         return rays
 

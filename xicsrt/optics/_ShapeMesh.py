@@ -94,7 +94,7 @@ class ShapeMesh(ShapeObject):
         config['mesh_coarse_faces'] = None
         config['mesh_coarse_normals'] = None
 
-        config['mesh_interpolate'] = True
+        config['mesh_interpolate'] = None
         config['mesh_refine'] = None
 
         return config
@@ -102,8 +102,10 @@ class ShapeMesh(ShapeObject):
     def check_param(self):
         super().check_param()
 
-        if self.param['mesh_normals'] is None:
-            if self.param['mesh_interpolate']:
+        if self.param['mesh_interpolate'] is None:
+            self.param['mesh_interpolate'] = (self.param['mesh_normals'] is not None)
+        elif self.param['mesh_interpolate']:
+            if self.param['mesh_normals'] is None:
                 raise Exception('Surface normal vectors must be defined in order to use mesh interpolation.')
 
         if self.param['mesh_refine'] is None:
@@ -113,8 +115,7 @@ class ShapeMesh(ShapeObject):
     def initialize(self):
         super().initialize()
 
-        if self.param['use_meshgrid'] is True:
-            self.mesh_initialize()
+        self.mesh_initialize()
 
     def intersect(self, rays):
         """
@@ -144,7 +145,7 @@ class ShapeMesh(ShapeObject):
         if self.param['mesh_interpolate']:
             xloc, norm = self.mesh_interpolate(xloc, self.param['mesh'], mask)
         else:
-            norm = self.mesh_norm(hits, self.param['mesh'], mask)
+            norm = self.mesh_normals(hits, self.param['mesh'], mask)
 
         return xloc, norm, mask
 

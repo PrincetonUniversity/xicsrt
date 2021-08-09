@@ -344,7 +344,7 @@ def add_object(config, name, section, figure=None, **kwargs):
     # Get the crystal object from the dispatcher.
     obj = optics.get_object(name)
 
-    plot_mesh = obj.param.get('use_meshgrid', False)
+    plot_mesh = 'mesh_points' in obj.param
 
     if plot_mesh:
         _add_trace_mesh(obj, figure, name, **kwargs)

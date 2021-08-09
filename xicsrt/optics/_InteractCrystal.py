@@ -90,14 +90,16 @@ class InteractCrystal(InteractMirror):
     def interact(self, rays, xloc, norm, mask=None):
         mask = self.angle_check(rays, norm, mask)
         rays = self.reflect_vectors(rays, xloc, norm, mask)
+        rays['mask'] = mask
         return rays
 
     def angle_check(self, rays, norm, mask=None):
-        if self.param['check_bragg'] is False:
-            return rays
-
         if mask is None:
             mask = rays['mask']
+
+        if self.param['check_bragg'] is False:
+            return mask
+
         D = rays['direction']
         W = rays['wavelength']
         m = mask

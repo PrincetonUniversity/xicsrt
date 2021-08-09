@@ -10,6 +10,8 @@ Authors
 import numpy as np
 from scipy.spatial import Delaunay
 from xicsrt.tools.xicsrt_doc import dochelper
+from xicsrt.tools import xicsrt_math as xm
+
 from xicsrt.optics._ShapeMesh import ShapeMesh
 
 @dochelper
@@ -47,16 +49,20 @@ class ShapeMeshSphere(ShapeMesh):
         super().setup()
 
         # Generate the fine mesh.
-        mesh_points, mesh_faces = self.generate_mesh(self.param['mesh_size'])
+        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_size'])
         mesh_points_ext = self.point_to_external(mesh_points)
+        mesh_normals_ext = self.vector_to_external(mesh_normals)
         self.param['mesh_faces'] = mesh_faces
         self.param['mesh_points'] = mesh_points_ext
+        self.param['mesh_normals'] = mesh_normals_ext
 
         # Generate the coarse mesh.
-        mesh_points, mesh_faces = self.generate_mesh(self.param['mesh_coarse_size'])
+        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_coarse_size'])
         mesh_points_ext = self.point_to_external(mesh_points)
+        mesh_normals_ext = self.vector_to_external(mesh_normals)
         self.param['mesh_coarse_faces'] = mesh_faces
         self.param['mesh_coarse_points'] = mesh_points_ext
+        self.param['mesh_coarse_normals'] = mesh_normals_ext
 
     def generate_mesh(self, meshsize):
         """
@@ -69,13 +75,17 @@ class ShapeMeshSphere(ShapeMesh):
         x = np.linspace(-xsize/2, xsize/2, meshsize[0])
         y = np.linspace(-ysize/2, ysize/2, meshsize[1])
 
+        # Center of the sphere in local coordinates
+        center = np.array([0.0, 0.0, self.param['radius']])
+
         # Create x,y meshgrid arrays, then calculate z coords
         xx, yy = np.meshgrid(x, y)
         zz = self.param['radius'] - np.sqrt(self.param['radius']**2 - xx**2 - yy**2)
 
         points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
+        norm = xm.normalize(center - points)
 
         tri = Delaunay(points[:, 0:2])
         faces = tri.simplices
 
-        return points, faces
+        return points, faces, norm

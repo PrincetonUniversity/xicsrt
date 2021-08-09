@@ -49,18 +49,18 @@ class InteractMosaicCrystal(InteractCrystal):
         the HOPG 'focusing' qualities as well as the expected throughput.
         """
         if mask is None: mask = rays['mask']
-        m = mask
 
         mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool)
 
         for ii in range(self.param['mosaic_depth']):
             self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
-            temp_mask = (~ mosaic_mask) & m
+            temp_mask = (~ mosaic_mask) & mask
             normals = self.mosaic_normals(norm, temp_mask)
             temp_mask = self.angle_check(rays, norm, temp_mask)
             rays = self.reflect_vectors(rays, xloc, normals, temp_mask)
             mosaic_mask[temp_mask] = True
-        m[:] &= mosaic_mask
+        mask &= mosaic_mask
+        rays['mask'] = mask
 
         return rays
 
