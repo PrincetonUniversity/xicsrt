@@ -53,8 +53,8 @@ class InteractMosaicCrystal(InteractCrystal):
         mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool)
 
         for ii in range(self.param['mosaic_depth']):
-            self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
             temp_mask = (~ mosaic_mask) & mask
+            self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
             normals = self.mosaic_normals(norm, temp_mask)
             temp_mask = self.angle_check(rays, norm, temp_mask)
             rays = self.reflect_vectors(rays, xloc, normals, temp_mask)
