@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 .. Authors:
-    Novimir pablant <npablant@pppl.gov>
+    Novimir Pablant <npablant@pppl.gov>
     Yevgeniy Yakusevich <eugenethree@gmail.com>
     James Kring <jdk0026@tigermail.auburn.edu>
 

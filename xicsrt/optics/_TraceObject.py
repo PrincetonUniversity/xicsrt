@@ -17,9 +17,10 @@ from xicsrt.objects._GeometryObject import GeometryObject
 from xicsrt.tools import xicsrt_aperture
 
 @dochelper
-class XicsrtOpticGeneric(GeometryObject):
+class TraceObject(GeometryObject):
     """
-    A generic optical element. 
+    A generic optical element and base class for raytracing objects in XICSRT.
+
     Optical elements have a position and rotation in 3D space and a finite 
     extent. Additional properties, such as as crystal spacing, rocking curve, 
     and reflectivity, should be defined in derived classes.
@@ -127,21 +128,19 @@ class XicsrtOpticGeneric(GeometryObject):
             self.param['pixel_ysize'] = int(np.round(pixel_ysize))
             self.log.debug(f"Pixel grid size: {self.param['pixel_xsize']} x {self.param['pixel_ysize']}")
 
-            self.image = np.zeros((self.param['pixel_xsize'], self.param['pixel_ysize']))
             self.param['enable_image'] = True
         else:
             self.param['enable_image'] = False
 
     def trace_global(self, rays):
         """
-        This is method that is called by the dispacher to perform
-        ray-tracing for this optic. Rays into and out of this method
-        are always in global coordinates.
+        This is method that is called by the dispacher to perform ray-tracing
+        for this optic. Rays into and out of this method are always in global
+        coordinates.
 
-        It may be convenient for some optics object to do raytracing
-        in local coordinates rather than in global coordinates. This
-        method facilitates this by implementing the 'trace_local'
-        configuration option.
+        It may be convenient for some optics object to do raytracing in local
+        coordinates rather than in global coordinates. This method facilitates
+        this by implementing the 'trace_local' configuration option.
         """
 
         if self.param['trace_local']:
@@ -159,75 +158,25 @@ class XicsrtOpticGeneric(GeometryObject):
         """
         The main method that performs raytracing for this optic.
 
-        Raytracing here may be done in global or local coordinates
-        depending on the how the optic is designed and the value
-        of the configuration option: 'trace_local'.
-
-        This method can be re-implemented by indiviual optics.
+        Raytracing here may be done in global or local coordinates depending on
+        the how the optic is designed and the value of the configuration option:
+        'trace_local'.
         """
-        m = rays['mask']
 
-        rays, X = self.intersect(rays)
-        rays = self.check_bounds(rays, X)
-
-        self.log.debug(' Rays on   {}:   {:6.4e}'.format(self.name, m[m].shape[0]))
-        normals  = self.generate_normals(rays, X)
-        rays     = self.reflect_vectors(rays, X, normals)
-        self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, m[m].shape[0]))
+        xloc, norm, mask = self.intersect(rays)
+        mask = self.check_bounds(xloc, mask)
+        rays = self.interact(rays, xloc, norm, mask)
 
         return rays
 
     def intersect(self, rays):
-        """
-        Calculate the intersection between the incoming rays and this optic.
+        raise NotImplementedError('This method should be reimplemented in a ShapeObject.')
 
-        Programming Notes
-        -----------------
+    def interact(self, rays, xloc, norm, mask):
+        raise NotImplementedError('This method should be reimplemented in a IntersectObject.')
 
-        When creating an new optic one can choose to reimplement either
-        this method or `intersect_distance`, whichever is easier.
-        """
-
-        rays, distance = self.intersect_distance(rays)
-
-        O = rays['origin']
-        D = rays['direction']
-        m = rays['mask']
-
-        # X is the 3D point where the ray intersects the optic.
-        # It may be better, from a memory perspective, to modify O in place
-        # instead of creating a new array. If this is done we need to be sure to
-        # set O to np.nan where no intersection exists.
-        X = np.full(O.shape, np.nan, dtype=np.float64)
-        X[m] = O[m] + D[m] * distance[m, np.newaxis]
-
-        return rays, X
-
-    def intersect_distance(self, rays):
-        """
-        Calculate the distance to an intersection with a plane.
-        """
-
-        O = rays['origin']
-        D = rays['direction']
-        m = rays['mask']
-        
-        if self.param['trace_local']:
-            distance = np.zeros(m.shape, dtype=np.float64)
-            distance[m] = (np.dot((0 - O[m]), np.array([ 0., 0., 1.]))
-                           / np.dot(D[m], np.array([ 0., 0., 1.])))
-        else:
-            distance = np.zeros(m.shape, dtype=np.float64)
-            distance[m] = (np.dot((self.param['origin'] - O[m]), self.param['zaxis'])
-                           / np.dot(D[m], self.param['zaxis']))
-
-        # Update the mask to only include positive distances.
-        m &= (distance >= 0)
-
-        return rays, distance
-
-    def check_bounds(self, rays, X):
-        m = rays['mask']
+    def check_bounds(self, X, mask):
+        m = mask
 
         if self.param['trace_local']:
             X_local = X
@@ -235,22 +184,22 @@ class XicsrtOpticGeneric(GeometryObject):
             X_local = np.zeros(X.shape, dtype=np.float64)
             X_local[m] = self.point_to_local(X[m])
 
-        rays = self.check_size(rays, X_local)
-        rays = self.check_aperture(rays, X_local)
+        mask = self.check_size(X_local, mask)
+        mask = self.check_aperture(X_local, mask)
 
-        return rays
+        return mask
 
-    def check_size(self, rays, X_local):
+    def check_size(self, X_local, mask):
         """
         Check if the ray intersection is within the optic bounds as set
         by the xsize, ysize and zsize config options.
 
         Note:
             This method expects to be given the ray intersections in local
-            coordinates. Generally this method should not be called directly
+            coordinates. Generally this method should not be called directly,
             instead use `check_bounds`.
         """
-        m = rays['mask']
+        m = mask
 
         if self.param['check_size']:
             if self.param['xsize'] is not None:
@@ -260,9 +209,9 @@ class XicsrtOpticGeneric(GeometryObject):
             if self.param['zsize'] is not None:
                 m[m] &= (np.abs(X_local[m,2]) < self.param['zsize'] / 2)
         
-        return rays
+        return mask
     
-    def check_aperture(self, rays, X_local):
+    def check_aperture(self, X_local, mask):
         """
         Check if the ray intersection is within the aperture as set
         by the 'aperture' config option.
@@ -272,35 +221,13 @@ class XicsrtOpticGeneric(GeometryObject):
             coordinates. Generally this method should not be called directly
             instead use `check_bounds`.
         """
-        m = rays['mask']
+        m = mask
 
         if self.param['check_aperture']:
             m_aperture = xicsrt_aperture.aperture_mask(X_local, m, self.param['aperture'])
             m[m] = m_aperture[m]
         
-        return rays
-
-    def generate_normals(self, rays, X):
-        """
-        The Generic optic is flat, so the normal direction is always the zaxis.
-        """
-        m = rays['mask']
-        normals = np.zeros(X.shape, dtype=np.float64)
-        normals[m] = self.param['zaxis']
-        return normals
-
-    def reflect_vectors(self, rays, X, normals=None, mask=None):
-        """
-        Generic optic has no reflection, rays just pass through.
-        """
-        O = rays['origin']
-
-        # The following line does two things:
-        # 1. Set the origin for rays (lost or found) with an intersection.
-        # 2. Set the rays without an intersection to nan.
-        O[:] = X[:]
-        
-        return rays
+        return mask
 
     def make_image(self, rays):
         """
@@ -362,28 +289,3 @@ class XicsrtOpticGeneric(GeometryObject):
                     image[channel[ii,0], channel[ii,1]] += 1
 
         return image
-    
-    def collect_rays(self, rays):
-        """
-        Perform ongoing collection into an internal image.
-        """
-        if not self.param['enable_image']:
-            raise Exception('Images are not enabled. Check config parameters.')
-
-        image = self.make_image(rays)
-        self.image[:,:] += image
-        
-        return self.image[:,:] 
-        
-    def save_image(self, image_name, rotate=None):
-
-        if not self.param['enable_image']:
-            raise Exception('Images are not enabled. Check config parameters.')
-
-        if rotate:
-            out_array = np.rot90(self.image)
-        else:
-            out_array = self.image
-            
-        generated_image = Image.fromarray(out_array)
-        generated_image.save(image_name)

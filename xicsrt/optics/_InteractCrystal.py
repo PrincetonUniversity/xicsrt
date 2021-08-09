@@ -4,20 +4,21 @@
     Novimir Pablant <npablant@pppl.gov>
     James Kring <jdk0026@tigermail.auburn.edu>
     Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+Define the :class:`InteractCrystal` class.
 """
 import numpy as np
 
-from xicsrt.tools import xicsrt_bragg
 from xicsrt.tools.xicsrt_doc import dochelper
+
+from xicsrt.tools import xicsrt_bragg
 from xicsrt.tools import xicsrt_math as xm
-from xicsrt.optics._XicsrtOpticMesh import XicsrtOpticMesh
+from xicsrt.optics._InteractMirror import InteractMirror
 
 @dochelper
-class XicsrtOpticCrystal(XicsrtOpticMesh):
+class InteractCrystal(InteractMirror):
     """
-    .. SourceNote
-        See documentation or use help(XicsrtOpticCrystal) for a complete list
-        of config options.
+    Model for simple Bragg reflections.
     """
 
     def default_config(self):
@@ -38,6 +39,7 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
           Switch between x-ray Bragg reflections and optical reflections for
           this optic. If True, a rocking curve will be used to determine the
           probability of reflection for rays based on their incident angle.
+          If false this optic will act as a perfect mirror.
 
         rocking_type: str ('gaussian')
           The type of shape to use for the crystal rocking curve.
@@ -84,70 +86,16 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
     def initialize(self):
         super().initialize()
         self.param['rocking_type'] = str.lower(self.param['rocking_type'])
-        
-    def rocking_curve_filter(self, incident_angle, bragg_angle):
 
-        # Generate or load a probability curve.
-        if "step" in self.param['rocking_type']:
-            # Step Function
-            p = np.where(abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'] / 2,
-                         1.0, 0.0)
-            
-        elif "gauss" in self.param['rocking_type']:
-            # Convert from FWHM to sigma.
-            sigma = self.param['rocking_fwhm'] / (2 * np.sqrt(2 * np.log(2)))
-            
-            # Gaussian Distribution
-            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
+    def interact(self, rays, xloc, norm, mask=None):
+        mask = self.angle_check(rays, norm, mask)
+        rays = self.reflect_vectors(rays, xloc, norm, mask)
+        return rays
 
-        elif "file" in self.param['rocking_type']:
+    def angle_check(self, rays, norm, mask=None):
+        if self.param['check_bragg'] is False:
+            return rays
 
-            data = xicsrt_bragg.read(self.param['rocking_file'], self.param['rocking_filetype'])
-
-            units = data['units']['dtheta_in']
-            if  units == 'urad':
-                scale_theta = 1e-6
-            elif units == 'arcset':
-                scale_theta = np.pi / (180 * 3600)
-            elif units =='rad':
-                scale_theta = 1.0
-            else:
-                raise Exception(f'Units in rocking curve data not understood: {units}')
-
-            # evaluate rocking curve reflectivity value for each incident ray
-            # This calculation is done in units of 'radians'.
-            dtheta = (incident_angle - bragg_angle)
-            sigma = np.interp(
-                dtheta
-                ,data['value']['dtheta_in']*scale_theta
-                ,data['value']['reflect_s']
-                ,left = 0.0
-                ,right = 0.0)
-            pi = np.interp(
-                dtheta
-                ,data['value']['dtheta_in']*scale_theta
-                ,data['value']['reflect_p']
-                ,left = 0.0
-                ,right = 0.0)
-            
-            p = self.param['rocking_mix'] * sigma + (1 - self.param['rocking_mix']) * pi
-            
-        else:
-            raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
-
-        p *= self.param['reflectivity']
-
-        # Rreate a random number for each ray between 0 and 1.
-        test = np.random.uniform(0.0, 1.0, len(incident_angle))
-
-        # compare that random number with the reflectivity distribution
-        # and filter out the rays that do not survive the random
-        # rocking curve filter.
-        mask = (p >= test)
-        
-        return mask
-    
-    def angle_check(self, rays, normals, mask=None):
         if mask is None:
             mask = rays['mask']
         D = rays['direction']
@@ -161,29 +109,72 @@ class XicsrtOpticCrystal(XicsrtOpticMesh):
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
-        dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * normals[m]))
+        dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * norm[m]))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / xm.magnitude(D[m]))
 
         #check which rays satisfy bragg, update mask to remove those that don't
-        if self.param['check_bragg'] is True:
-            m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
+        m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
 
-        return rays, normals
-    
-    def reflect_vectors(self, rays, X, normals, mask=None):
-        if mask is None:
-            mask = rays['mask']
-        O = rays['origin']
-        D = rays['direction']
-        m = mask
-        
-        # Check which vectors meet the Bragg condition (with rocking curve)
-        rays, normals = self.angle_check(rays, normals, m)
-        
-        # Perform reflection around normal vector, creating new rays with new
-        # origin O = X and new direction D
-        O[:]  = X[:]
-        D[m] -= 2 * (np.einsum('ij,ij->i', D[m], normals[m])[:, np.newaxis]
-                     * normals[m])
-        
-        return rays
+        return mask
+
+    def rocking_curve_filter(self, incident_angle, bragg_angle):
+
+        # Generate or load a probability curve.
+        if "step" in self.param['rocking_type']:
+            # Step Function
+            p = np.where(abs(incident_angle - bragg_angle) <= self.param['rocking_fwhm'] / 2,
+                         1.0, 0.0)
+
+        elif "gauss" in self.param['rocking_type']:
+            # Convert from FWHM to sigma.
+            sigma = self.param['rocking_fwhm'] / (2 * np.sqrt(2 * np.log(2)))
+
+            # Gaussian Distribution
+            p = np.exp(-np.power(incident_angle - bragg_angle, 2.) / (2 * sigma**2))
+
+        elif "file" in self.param['rocking_type']:
+
+            data = xicsrt_bragg.read(self.param['rocking_file'], self.param['rocking_filetype'])
+
+            units = data['units']['dtheta_in']
+            if units == 'urad':
+                scale_theta = 1e-6
+            elif units == 'arcset':
+                scale_theta = np.pi / (180 * 3600)
+            elif units == 'rad':
+                scale_theta = 1.0
+            else:
+                raise Exception(f'Units in rocking curve data not understood: {units}')
+
+            # evaluate rocking curve reflectivity value for each incident ray
+            # This calculation is done in units of 'radians'.
+            dtheta = (incident_angle - bragg_angle)
+            sigma = np.interp(
+                dtheta
+                , data['value']['dtheta_in'] * scale_theta
+                , data['value']['reflect_s']
+                , left=0.0
+                , right=0.0)
+            pi = np.interp(
+                dtheta
+                , data['value']['dtheta_in'] * scale_theta
+                , data['value']['reflect_p']
+                , left=0.0
+                , right=0.0)
+
+            p = self.param['rocking_mix'] * sigma + (1 - self.param['rocking_mix']) * pi
+
+        else:
+            raise Exception('Rocking curve type not understood: {}'.format(self.param['rocking_type']))
+
+        p *= self.param['reflectivity']
+
+        # Rreate a random number for each ray between 0 and 1.
+        test = np.random.uniform(0.0, 1.0, len(incident_angle))
+
+        # compare that random number with the reflectivity distribution
+        # and filter out the rays that do not survive the random
+        # rocking curve filter.
+        mask = (p >= test)
+
+        return mask
