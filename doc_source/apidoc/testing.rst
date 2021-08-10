@@ -13,3 +13,7 @@ Testing
 .. rubric:: `integrated_test_00` :download:`integrated_test_00.ipynb <../../testing/integrated_test_00.ipynb>`
 
 Check ray generation for plasma sources.
+
+.. rubric:: `integrated_test_01` :download:`integrated_test_01.ipynb <../../testing/integrated_test_01.ipynb>`
+
+Perform a simple raytrace using all (most) defined optics.

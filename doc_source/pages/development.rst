@@ -35,11 +35,10 @@ numerical programming concepts!
 .. admonition:: Add a cylindrical reflector object
 
   | Time Estimate: **1 week**
-  | Create an object named `XicsrtOpticCrystalCylindrical`. Object should be
-    very similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal
-    geometry. The object should be defined with a major and minor radius. Test
-    against :any:`XicsrtOpticCrystal`, :any:`XicsrtOpticCrystalSpherical` and
-    `XicsrtOpticCrystalToroidal`.
+  | Create a cylindrical shape object named `ShapeCylindrical`. Object should be
+    very similar to :any:`ShapeSphere` but with cylindrical geometry. The
+    object should be defined with a radius. Test against
+    :any:`ShapePlane`, `ShapeToroidal`.
 
   |     added: 2021-01-24 by Novimir
 
@@ -49,11 +48,11 @@ numerical programming concepts!
     **In progress by S. Mishra**
 
   | Time Estimate: **2 weeks**
-  | Create an object named `XicsrtOpticCrystalToroidal`. Object should be very
-    similar to :any:`XicsrtOpticCrystalSpherical` but with toroidal geometry.
+  | Create a toroidal shape named `ShapeToroidal`. Object should be very
+    similar to :any:`ShapeSphere` but with toroidal geometry.
     The object should be defined with a major and minor radius. Test against
-    :any:`XicsrtOpticCrystal`, :any:`XicsrtOpticCrystalSpherical` and
-    `XicsrtOpticCrystalCylindrical`.
+    :any:`ShapePlane`, :any:`ShapeSphere` and
+    `ShapeCylindrical`.
 
   |     added: 2021-01-24 by Novimir
 
@@ -62,7 +61,7 @@ numerical programming concepts!
   | Time Estimate: **1 weeks**
   | The 2d plotter knows how to plot a few aperture shapes but, not all
     shapes have been added.  Thes addition shapes need to be added
-    to the function :any:`_get_aperture_plotlist`.
+    to the function `_get_aperture_plotlist`.
 
   |     added: 2021-07-02 by Novimir
 
@@ -111,9 +110,9 @@ numerical programming concepts!
   to eliminate ray losses. This can likely be done while also improving
   performance and allowing coarser pre-selection grids.
 
-  The specific methods in :any:`XicsrtOpticMesh` that need improvement is
+  The specific methods in :any:`ShapeMesh` that need improvement is
   :any:`find_near_faces` however to achive this change will also be needed
-  in :any:`_mesh_precalc<XicsrtOpticMesh>` and :any:`mesh_intersect_2`.
+  in `_mesh_precalc` and :any:`mesh_intersect_2`.
 
   Note:
     For a very course pre-selection grid and oblique incidence some ray
@@ -219,9 +218,9 @@ numerical programming concepts!
   | Create an object named `XicsrtOpticAperature` that can act as an aperture
     to filter rays.  The shape of the aperture should be implemented as a
     configuration option. Most of the coding for this should actually be
-    implemented into :any:`XicsrtOpticGeneric` so that the code can also be
+    implemented into `XicsrtOpticGeneric` so that the code can also be
     used to control the size of optics.  This aperture object should inherit
-    from :any:`XicsrtOpticMesh`, and will probably not have any differences
+    from `XicsrtOpticMesh`, and will probably not have any differences
     except for the default config options.
 
   The options need to support at least rectangular and circular aperture
@@ -239,7 +238,7 @@ numerical programming concepts!
      reflection, Bragg check, etc).  Of course the ray intersection
      needs to be calculated before the aperture check.
   4. Aperture needs to be compatible with mesh optics. Make sure to check
-     how the aperture fits in with the code in :any:`XicsrtOpticMesh`.
+     how the aperture fits in with the code in `XicsrtOpticMesh`.
   5. Implement a way to deal with the pixel grid size used for image
      output. Currently this is based on a rectangular aperture.
   6. Consider the possibility that some future optics types may need both an

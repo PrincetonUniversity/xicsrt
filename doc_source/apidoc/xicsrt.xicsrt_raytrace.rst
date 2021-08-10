@@ -3,7 +3,7 @@ xicsrt\_raytrace
 `xicsrt.xicsrt_raytrace`
 
 .. automirmodule:: xicsrt.xicsrt_raytrace
-    :members: raytrace, raytrace_single
+    :members: raytrace, raytrace_single, combine_raytrace
     :undoc-members:
     :member-order: bysource
 

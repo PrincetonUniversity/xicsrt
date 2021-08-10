@@ -1,9 +1,9 @@
-XicsrtOpticMesh
-===============
+XicsrtOpticMeshMirror
+=====================
 
 New Members
 -----------
-.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. autoclass:: xicsrt.optics._XicsrtOpticMeshMirror.XicsrtOpticMeshMirror
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticMeshMirror.XicsrtOpticMeshMirror
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticMesh.XicsrtOpticMesh
+.. automirclass:: xicsrt.optics._XicsrtOpticMeshMirror.XicsrtOpticMeshMirror
     :inherited-members:
     :private-members:
     :special-members: __init__

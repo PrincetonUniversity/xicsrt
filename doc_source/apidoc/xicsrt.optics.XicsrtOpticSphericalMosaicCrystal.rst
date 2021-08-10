@@ -1,9 +1,9 @@
-XicsrtOpticCrystalSpherical
-===========================
+XicsrtOpticSphericalMosaicCrystal
+=================================
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticCrystalSpherical.XicsrtOpticCrystalSpherical
+.. autoclass:: xicsrt.optics._XicsrtOpticSphericalMosaicCrystal.XicsrtOpticSphericalMosaicCrystal
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSpherical.XicsrtOpticCrystalSpherical
+.. automirclass:: xicsrt.optics._XicsrtOpticSphericalMosaicCrystal.XicsrtOpticSphericalMosaicCrystal
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSpherical.XicsrtOpticCrystalSpherical
+.. automirclass:: xicsrt.optics._XicsrtOpticSphericalMosaicCrystal.XicsrtOpticSphericalMosaicCrystal
     :inherited-members:
     :private-members:
     :special-members: __init__
