@@ -40,6 +40,8 @@ class_name
   The type of source object to create.
 intensity
   The number of rays to launch in each iteration.
+wavelength
+  The nominal wavelength of the source emission.
 spread
    The angular spread of the source (in radians).
 
@@ -82,7 +84,8 @@ config['general']['save_images'] = False
 config['sources'] = {}
 config['sources']['source'] = {}
 config['sources']['source']['class_name'] = 'XicsrtSourceDirected'
-config['sources']['source']['intensity'] = 1e4
+config['sources']['source']['intensity'] = 1e3
+config['sources']['source']['wavelength'] = 3.9492
 config['sources']['source']['spread'] = np.radians(5.0)
 
 # 4.
