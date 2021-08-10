@@ -14,7 +14,7 @@ revision:
   - New release that does not break any compatibility.
 """
 
-__version__="0.7.4"
+__version__="0.8.0"
 
 from packaging import version
 from xicsrt.util import mirlogging
