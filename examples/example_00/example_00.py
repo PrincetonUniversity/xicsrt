@@ -71,6 +71,7 @@ trace history along with images at the detector.
 
 import numpy as np
 import xicsrt
+xicsrt.warn_version('0.8')
 
 # 1.
 config = {}

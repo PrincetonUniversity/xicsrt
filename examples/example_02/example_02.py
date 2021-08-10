@@ -8,6 +8,7 @@ An example showing how to define a complex aperture.
 
 import numpy as np
 import xicsrt
+xicsrt.warn_version('0.8')
 
 config = {}
 
