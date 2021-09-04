@@ -69,9 +69,24 @@ Authors
 XICSRT development is coordinated by Novimir A. Pablant. A full list of
 contributers can be found on the :doc:`pages/authors` page.
 
+
+Citation
+--------
+
+If you use XICSRT for work leading to a publication, please use the following
+citation:
+
+N. A. Pablant, A. Langenberg, J. A. Alonso, M. Bitter, S. A. Bozhenkov, O. P. Ford, K. W. Hill, J. Kring, O. Marchuck, J. Svensson, P. Traverso, T. Windisch, Y. Yakusevitch, and the W7-X Team, "Correction and verification of x-ray imaging crystal spectrometer analysis on Wendelstein 7-X through x-ray ray tracing", Review of Scientific Instruments 92, 043530 (2021) https://doi.org/10.1063/5.0043513
+
+A list of publications relating to XICSRT can be found at the
+:doc:`userguide/list_of_publications` page.
+
 License
 -------
-.. include:: ../LICENSE
+
+XICSRT is open source software released under the `MIT License`_. For
+the full text of the licence see the :doc:`pages/license` page.
+Please help improve XICSRT by contributing to the codebase.
 
 
 .. toctree::
@@ -83,6 +98,7 @@ License
     apidoc/xicsrt
     pages/development
     pages/authors
+    pages/license
 
 Indices and tables:
 -------------------
@@ -99,3 +115,4 @@ Indices and tables:
 .. _matplotlib: https://matplotlib.org/
 .. _plotly: https://github.com/plotly
 .. _XICSRT tutorial: https://drive.google.com/file/d/1ze1DPO_Cx8hJtj-eoli9cp2XAGZKcese/view?usp=sharing
+.. _MIT License: https://opensource.org/licenses/MIT
