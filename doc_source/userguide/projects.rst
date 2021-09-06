@@ -1,18 +1,6 @@
 
-Development Guide
-=================
-This document contains a guide for development of XICSRT.
-
-.. warning::
-
-    Documentation of XICSRT has only just begun. This please help us improve
-    this development guide.
-
-.. toctree::
-    :hidden:
-
-    todo
-    ../apidoc/testing
+Development Projects
+====================
 
 A list of needed improvements for XICSRT can be found at
 :any:`List of Todo Items`. Also see the open `issues`_ on the bitbucket git

@@ -96,7 +96,6 @@ Please help improve XICSRT by contributing to the codebase.
     userguide/userguide
     apidoc/examples
     apidoc/xicsrt
-    pages/development
     pages/authors
     pages/license
 
