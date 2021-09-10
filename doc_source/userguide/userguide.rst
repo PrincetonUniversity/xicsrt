@@ -14,6 +14,7 @@ This user manual is still incomplete. For now, please refer to the
     command_line
     multiple_processors
     list_of_publications
+    similar_software
     projects
 
 .. toctree::
