@@ -15,7 +15,7 @@ This user manual is still incomplete. For now, please refer to the
     multiple_processors
     list_of_publications
     similar_software
-    projects
+    development_projects
 
 .. toctree::
     :hidden:
