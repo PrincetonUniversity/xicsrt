@@ -5,7 +5,7 @@
    James Kring <jdk0026@tigermail.auburn.edu>
    Yevgeniy Yakusevich <eugenethree@gmail.com>
 
-   Define the :class:`ShapeSpherical` class.
+Define the :class:`ShapeSpherical` class.
 """
 import numpy as np
 

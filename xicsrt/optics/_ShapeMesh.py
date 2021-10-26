@@ -114,7 +114,6 @@ class ShapeMesh(ShapeObject):
 
     def initialize(self):
         super().initialize()
-
         self.mesh_initialize()
 
     def intersect(self, rays):

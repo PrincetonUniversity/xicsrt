@@ -63,7 +63,9 @@ class GeometryObject(ConfigObject):
 
         self.param['origin'] = np.array(self.param['origin'])
         self.param['zaxis'] = np.array(self.param['zaxis'])
-        if self.param['xaxis'] is not None:
+        if self.param['xaxis'] is None:
+            self.param['xaxis'] = self.get_default_xaxis(self.param['zaxis'])
+        else:
             self.param['xaxis'] = np.array(self.param['xaxis'])
 
         # Location with respect to the external coordinate system.
