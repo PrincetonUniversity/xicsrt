@@ -1,12 +1,10 @@
-
 # -*- coding: utf-8 -*-
 """
 .. Authors:
    Conor Perks <cjperks@psfc.mit.edu>
    Novimir Pablant <npablant@pppl.gov>
-   James Kring <jdk0026@tigermail.auburn.edu>
-   Yevgeniy Yakusevich <eugenethree@gmail.com>
-   Define the :class:`ShapeSpherical` class.
+
+Define the :class:`ShapeSpherical` class.
 """
 import numpy as np
 
@@ -24,7 +22,7 @@ class ShapeCylinder(ShapeObject):
     def default_config(self):
         """
         radius : float (1.0)
-          The radius of the sphere.
+          The radius of the cylinder.
         """
         config = super().default_config()
         config['radius'] = 1.0
@@ -57,7 +55,7 @@ class ShapeCylinder(ShapeObject):
 
         # Initializes arrays to store intersection variables
         distance = np.full(m.shape, np.nan, dtype=np.float64)
-        q        = np.empty(m.shape, dtype=np.float64)
+        q        = np.empty(O.shape, dtype=np.float64)
         int_cap  = np.empty(m.shape, dtype=np.float64)
         int_edge = np.empty(m.shape, dtype=np.float64)
 
@@ -89,8 +87,9 @@ class ShapeCylinder(ShapeObject):
 
             # Calculates quadratic formula coefficients for t
             dp = O-pa # Length between ray origin and cylinder center
-            dot_Dva = np.einsum('ij,ij->i', D, va)#np.dot(D, va) 
-            dot_dpva = np.einsum('ij,ij->i', dp, va)#np.dot(dp, va)
+            print(D.shape, va.shape, dp.shape)
+            dot_Dva = np.einsum('ij,j->ij', D, va)#np.dot(D, va)
+            dot_dpva = np.einsum('ij,j->ij', dp, va)#np.dot(dp, va)
             A1 = D - dot_Dva*va
             B1 = dp-dot_dpva*va
             A = np.einsum('ij,ij->i', A1, A1)#np.dot(A1,A1) # Coefficients for f(t) = A*t**2 + B*t + C = 0
@@ -104,26 +103,29 @@ class ShapeCylinder(ShapeObject):
 
             # Assumes that the object is bent such that there is only one real intersection
             # If the reflection surface is oriented towards the ray source (like it always should be)
-            t = np.maximum(t1,t2).reshape(m.shape, 1)
+            t = np.maximum(t1,t2).reshape(len(m), 1)
 
             # Calculates ray intersection point if infinite cylinder
             q[m] = O[m] + D[m]*t[m]
 
             # Checks if the intersection point is within the end caps and object edge
-            int_cap[m] = np.abs(np.einsum('ij,ij->i',va ,q[m]-pa))#np.abs(np.dot(va, q-pa)) # cap
-            int_edge[m] = np.abs(np.einsum('ij,ij->i',ha ,q[m]-pa))#np.abs(np.dot(ha, q-pa)) # edge
+            #int_cap[m] = np.abs(np.einsum('i,ij->ij',va ,q[m]-pa))#np.abs(np.dot(va, q-pa)) # cap
+            #int_edge[m] = np.abs(np.einsum('i,ij->ij',ha ,q[m]-pa))#np.abs(np.dot(ha, q-pa)) # edge
 
             # If the intersection point is larger than the cystal, the ray misses the cylinder
-            m[m] &= (int_cap[m] < xsize/2 and int_edge[m] < ysize/2)
+            #m[m] &= (int_cap[m] < xsize/2 and int_edge[m] < ysize/2)
 
             # Distance traveled by the ray before hitting the optic
-            distance[m] = t[m]
+            distance[m] = t[m,0]
 
             return distance, m
 
-    # Calculates the normal vector from the interaction with the cylinder surface
     def intersect_normal(self, xloc, mask):
-        # Initializes qunatities
+        """
+        Calculates the normal vector from the interaction with the cylinder surface
+        """
+
+        # Initializes quantities
         m = mask
         norm = np.full(xloc.shape, np.nan, dtype=np.float64)
         pa_proj = np.full(xloc.shape, np.nan, dtype=np.float64)
@@ -133,7 +135,9 @@ class ShapeCylinder(ShapeObject):
         # Note that a normal vector on a cylinder is orthogonal to the cylinder axis
         # As such, we need to project the 'center' of the cylinder onto the same
         # plane as the normal vector
-        pa_proj[m] = pa - np.einsum('ij,ij->i',va ,pa-xloc[m])*va
+        print(va.shape, pa.shape, xloc.shape)
+        dummy = np.einsum('ij,j->ij', pa-xloc[m], va)
+        pa_proj[m] = pa - dummy*va
 
         # Calculates the normal vector from intersection point to cylinder center
         norm[m] = xm.normalize(pa_proj[m] - xloc[m])
