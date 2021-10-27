@@ -4,8 +4,9 @@
 .. Authors:
    Conor Perks <cjperks@psfc.mit.edu>
    Novimir Pablant <npablant@pppl.gov>
-
-Define the :class:`ShapeCylinder` class.
+   James Kring <jdk0026@tigermail.auburn.edu>
+   Yevgeniy Yakusevich <eugenethree@gmail.com>
+   Define the :class:`ShapeSpherical` class.
 """
 import numpy as np
 
@@ -31,7 +32,7 @@ class ShapeCylinder(ShapeObject):
 
     def initialize(self):
         super().initialize()
-        # Finds center location on the surface of the cylinder
+        # Finds center location of the cylinder object wrt origin on surface
         self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
 
     def intersect(self, rays):
@@ -59,15 +60,11 @@ class ShapeCylinder(ShapeObject):
         q        = np.empty(m.shape, dtype=np.float64)
         int_cap  = np.empty(m.shape, dtype=np.float64)
         int_edge = np.empty(m.shape, dtype=np.float64)
-        #d        = np.empty(m.shape, dtype=np.float64)
-        #t_hc     = np.empty(m.shape, dtype=np.float64)
-        #t_0      = np.empty(m.shape, dtype=np.float64)
-        #t_1      = np.empty(m.shape, dtype=np.float64)
 
         # Loads quantities defining cylinder, axis parameterized pa + t*va
         pa = self.param['center'] # point on axis cylinder is centered on (global coordinates)
-        va = self.param['cylaxis'] # cylinder axis orientation
-        za = self.param['zaxis'] # normal vector of crystal surface
+        va = self.param['xaxis'] # cylinder axis orientation (wrt global coor.)
+        za = self.param['zaxis'] # normal vector of crystal surface (wrt global coor.)
         r = self.param['radius'] # radius
         xsize = self.param['xsize'] # Length of the cylinder
         ysize = self.param['ysize'] # Height of the cylinder (assumes H<2*r)
@@ -80,15 +77,15 @@ class ShapeCylinder(ShapeObject):
         # If we can proceed with calculations
         else:
             # Calculates coordinates of cylinder caps
-            p1 = pa - va*(xsize/2)
-            p2 = pa + va*(xsize/2)
+            #p1 = pa - va*(xsize/2)
+            #p2 = pa + va*(xsize/2)
 
             # Calculates location of edges of cylindrically-bent object
             ha = np.cross(va, za) # Vector in the crystal height direction
             ha = ha/np.linalg.norm(ha) # Ensures direction is normalized
-            theta = np.arcsin(ysize/2/r) # Angle between cylinder center and object edge
-            h1 = pa + ha*(ysize/2) - za*r*np.cos(theta) # Calculates edge coordinates
-            h2 = pa - ha*(ysize/2) - za*r*np.cos(theta)
+            #theta = np.arcsin(ysize/2/r) # Angle between cylinder center and object edge
+            #h1 = pa + ha*(ysize/2) - za*r*np.cos(theta) # Calculates edge coordinates
+            #h2 = pa - ha*(ysize/2) - za*r*np.cos(theta)
 
             # Calculates quadratic formula coefficients for t
             dp = O-pa # Length between ray origin and cylinder center
@@ -109,17 +106,6 @@ class ShapeCylinder(ShapeObject):
             # If the reflection surface is oriented towards the ray source (like it always should be)
             t = np.maximum(t1,t2).reshape(m.shape, 1)
 
-            #if np.dot(za, D) < 0:
-            #    t = np.max([t1,t2]) # Saves the longest intersection distance
-            # If the reflection surface is oriented away from the ray source
-            #elif np.dot(za, D) > 0:
-            #    t = np.min([t1,t2]) # Saves the shortest intersection distance
-
-            # Error check
-            #if t<0:
-            #    print('Error in intersection time')
-            #else:
-
             # Calculates ray intersection point if infinite cylinder
             q[m] = O[m] + D[m]*t[m]
 
@@ -134,47 +120,21 @@ class ShapeCylinder(ShapeObject):
             distance[m] = t[m]
 
             return distance, m
-                # If we have a valid intersection with our cylindrically-bent finite object
-                #if int_cap < xsize/2 and int_edge < ysize/2:
-                #    success = True
 
-                    # Outputs distance traveled by the ray before hitting the optic
-                #    distance = t
-
-                #else:
-                #    success = False
-                #    distance = np.nan
-
-        ############# Original spherical crystal code #############################
-        # L is the destance from the ray origin to the center of the sphere.
-        # t_ca is the projection of this distance along the ray direction.
-        #L     = self.param['center'] - O
-        #t_ca  = np.einsum('ij,ij->i', L, D)
-        
-        # If t_ca is less than zero, then there is no intersection in the
-        # the direction of the ray (there might be an intersection behind.)
-        # Use mask to only perform calculations on rays that hit the crystal
-        # m[m] &= (t_ca[m] >= 0)
-        
-        # d is the minimum distance between a ray and center of curvature.
-        #d[m] = np.sqrt(np.einsum('ij,ij->i',L[m] ,L[m]) - t_ca[m]**2)
-
-        # If d is larger than the radius, the ray misses the sphere.
-        #m[m] &= (d[m] <= self.param['radius'])
-        
-        # t_hc is the distance from d to the intersection points.
-        #t_hc[m] = np.sqrt(self.param['radius']**2 - d[m]**2)
-        
-        #t_0[m] = t_ca[m] - t_hc[m]
-        #t_1[m] = t_ca[m] + t_hc[m]
-
-        # Distance traveled by the ray before hitting the optic
-        #distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
-
-        #return distance, m
-
+    # Calculates the normal vector from the interaction with the cylinder surface
     def intersect_normal(self, xloc, mask):
+        # Initializes qunatities
         m = mask
         norm = np.full(xloc.shape, np.nan, dtype=np.float64)
-        norm[m] = xm.normalize(self.param['center'] - xloc[m])
+        pa_proj = np.full(xloc.shape, np.nan, dtype=np.float64)
+        pa = self.param['center']
+        va = self.param['xaxis']
+
+        # Note that a normal vector on a cylinder is orthogonal to the cylinder axis
+        # As such, we need to project the 'center' of the cylinder onto the same
+        # plane as the normal vector
+        pa_proj[m] = pa - np.einsum('ij,ij->i',va ,pa-xloc[m])*va
+
+        # Calculates the normal vector from intersection point to cylinder center
+        norm[m] = xm.normalize(pa_proj[m] - xloc[m])
         return norm
