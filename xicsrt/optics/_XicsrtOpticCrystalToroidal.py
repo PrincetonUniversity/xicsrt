@@ -2,25 +2,23 @@
 """
 .. Authors:
    Novimir Pablant <npablant@pppl.gov>
-   James Kring <jdk0026@tigermail.auburn.edu>
-   Yevgeniy Yakusevich <eugenethree@gmail.com>
-
-   Define the :class:`ShapeToroidal` class.
+   
+   Method-2 : Reducing the order of Polynomial from Quartic to Cubic and finally Quadratic
+              and solving it with usual discriminant method
+              
+              The conversion is done using Ferrari Method
+   
+   reference : https://nkrvavica.github.io/post/on_computing_roots/
 """
 import numpy as np
 
-from sys import float_info
+from multiQuartic import multi_quartic          # Multiple Quartic Solver with Order Reduction Method
+
 from xicsrt.tools.xicsrt_doc import dochelper
-from xicsrt.tools import xicsrt_math as xm
-from xicsrt.optics._ShapeObject import ShapeObject
-from xicsrt.optics._multiQuartic import multi_quartic          # Multiple Quartic Solver with Order Reduction Method
+from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
 
 @dochelper
-class ShapeTorus(ShapeObject):
-    """
-    A Toroidal shape.
-    This class defines intersections with a torus.
-    """
+class XicsrtOpticCrystalToroidal(XicsrtOpticCrystal):
 
     def default_config(self):
         config = super().default_config()
@@ -30,17 +28,19 @@ class ShapeTorus(ShapeObject):
                 Major Radius of the Torus
         Rminor:
                 Minor Radius of the Torus
-        index:
-                Highest intesection roots
-                0: Lower concave
-                1: Lower convex
-                2: Upper Concave
-                3: upper Convex
+        concave:
+                If True it will consider intersection of Torus concave surface with Rays only, otherwise 
+                it will consider intersection of Torus convex surface with Rays only
+        inside:
+                If True it will consider intersection of Torus which will give reflection from inside of
+                the Torus Tube otherwise it will consider intersection of Torus which will give reflection
+                from outside of the Torus Tube
         """
         
         config['Rmajor']  = 1.1
         config['Rminor']  = 0.2
-        config['index']   = 0 
+        config['concave'] = True
+        config['inside']  = False
         
         return config
 
@@ -57,32 +57,13 @@ class ShapeTorus(ShapeObject):
                 Here, Torus_X_axis = System_Z_axis
         """
         
-        self.torusZaxis = self.param['zaxis']
-        self.torusXaxis = self.param['xaxis']
-        
-        self.torusYaxis = np.cross(self.param['zaxis'], self.param['xaxis'])
-        
-        dist = 0
-        if self.param['index'] == 0:
-            dist = +self.param['Rmajor'] + self.param['Rminor']
-        elif self.param['index'] == 1:
-            dist = +self.param['Rmajor'] - self.param['Rminor']
-        elif self.param['index'] == 2:
-            dist = -self.param['Rmajor'] + self.param['Rminor']
-        elif self.param['index'] == 3:
-            dist = -self.param['Rmajor'] - self.param['Rminor']
+        self.torusXaxis = self.param['zaxis']
+        self.torusYaxis = self.param['xaxis']
+        self.torusZaxis = np.cross(syszaxis, sysxaxis)
 
-        self.param['center'] = dist * self.torusZaxis + self.param['origin']
-        #self.param['center'] = self.param['origin']
-
+        self.param['center'] = self.param['Rmajor'] * self.torusXaxis + self.param['origin']
+    
     def intersect(self, rays):
-        dist, mask = self.intersect_distance(rays)
-        xloc = self.location_from_distance(rays, dist, mask)
-        norm = self.intersect_normal(xloc, mask)
-
-        return xloc, norm, mask
-
-    def intersect_distance(self, rays):
         """
         Calulate the distance to the intersection of the rays with the
         Toroidal optic.
@@ -97,24 +78,24 @@ class ShapeTorus(ShapeObject):
         Rminor = self.param['Rminor']  
         
         # variable setup
-        distances = np.zeros(m.shape, dtype=np.float64)
+        distances = np.zeros(masks.shape, dtype=np.float64)
         
-        orig = O - self.param['center']      
+        orig = O - self.param['Center']      
 
         # Calculaing Ray Direction components in Torus coordinate system (Transforming Ray)
         d = np.zeros((len(m),3), dtype= np.float64)
-        d[:, 0] = np.dot(D, self.torusXaxis)
-        d[:, 1] = np.dot(D, self.torusYaxis)
-        d[:, 2] = np.dot(D, self.torusZaxis)
+        d[:, 0] = np.dot(D, torusXaxis)
+        d[:, 1] = np.dot(D, torusYaxis)
+        d[:, 2] = np.dot(D, torusZaxis)
 
         # Calculaing Ray Origin components in Torus coordinate system (Transforming Ray Origin)
         dOrig = np.zeros((len(m),3), dtype= np.float64)
-        dOrig[:, 0] = np.dot(orig, self.torusXaxis)
-        dOrig[:, 1] = np.dot(orig, self.torusYaxis)
-        dOrig[:, 2] = np.dot(orig, self.torusZaxis)
+        dOrig[:, 0] = np.dot(orig, torusXaxis)
+        dOrig[:, 1] = np.dot(orig, torusYaxis)
+        dOrig[:, 2] = np.dot(orig, torusZaxis)
         
         # Calculaing Magnitude of Ray Direction
-        dMag = np.sqrt(np.einsum('ij,ij->i', d, d))
+        dMag = np.sqrt(np.einsum('ij,ij->i', d, d))s
         
         # defining resusable variables
         distRayOrigin2OriginSq = np.einsum('ij,ij->i', dOrig, dOrig)
@@ -127,43 +108,45 @@ class ShapeTorus(ShapeObject):
             The form of quartic equation to be solved is,
             c0 ** t ^ 4 + c1 ** t ^ 3 + c2 ** t ^ 2 + c3 ** t + c4 = 0
         """
-        index = 1 # 0 - x-axis, 1 - y-axis, 2 - z-axis
+        
         # defining co-efficients
-        # Coefficient of t^4
-        c0 = dMag ** 4                           # ok
-        # Coefficient of t^3
-        c1 = 4 * dMag ** 2 * rayCompDirOnOrigin  # ok
-        # Coefficient of t^2
-        c2 = 4 * rayCompDirOnOrigin ** 2 + 2 * distRayOrigin2OriginSq * dMag ** 2 - 2 * R1 * dMag ** 2 + 4 * Rmajor ** 2 * d[:, index] ** 2
-        # Coefficient of t^1
-        c3 = 4 * rayCompDirOnOrigin * (distRayOrigin2OriginSq - R1) + 8 * Rmajor ** 2 * d[:, index] * dOrig[:, index]
-        # Coefficient of t^0
-        c4 = distRayOrigin2OriginSq ** 2 - 2 * R1 * distRayOrigin2OriginSq + 4 * Rmajor ** 2 * dOrig[:, index] ** 2 + (Rmajor ** 2 - Rminor ** 2) ** 2
+        c0 = dMag ** 4
+        c1 = 4 * dMag ** 2 * rayCompDirOnOrigin
+        c2 = 4 * rayCompDirOnOrigin ** 2 + 2 * distRayOrigin2OriginSq * dMag ** 2 - 2 * R1 * dMag ** 2 + 4 * Rmajor ** 2 * d[:, 2] ** 2
+        c3 = 4 * rayCompDirOnOrigin * (distRayOrigin2OriginSq - R1) + 8 * Rmajor ** 2 * d[:, 2] * dOrig[:, 2]
+        c4 = distRayOrigin2OriginSq ** 2 - 2 * R1 * distRayOrigin2OriginSq + 4 * Rmajor ** 2 * dOrig[:, 2] ** 2 + (Rmajor ** 2 - Rminor ** 2) ** 2
     
         roots_0, roots_1, roots_2, roots_3 = multi_quartic(c0, c1, c2, c3, c4)
+        # neglecting complex solution of the quartic equation    
+        roots_0[roots_0 != np.conjugate(roots_0)] = 0.0
+        roots_1[roots_1 != np.conjugate(roots_1)] = 0.0
+        roots_2[roots_2 != np.conjugate(roots_2)] = 0.0
+        roots_3[roots_3 != np.conjugate(roots_3)] = 0.0
+
+        roots1 = np.zeros((len(m),2), dtype=np.float64)
+
+        # considering user requirement of concave or convex surface intersection
+        roots1[:,0] = roots_2.real if concave else roots_0.real
+        roots1[:,1] = roots_3.real if concave else roots_1.real
+
+        # Also considering user requirement of inside reflection or outside reflection
+        distances[m] = np.where(
+            (roots1[m,0] > roots1[m,1]) if innerSurface else (roots1[m,0] < roots1[m,1]),
+             roots1[m,0], roots1[m,1])
         
-        # neglecting complex & negative solution of the quartic equation    
-        roots_0[roots_0.imag != 0] = -float_info.max
-        roots_1[roots_1.imag != 0] = -float_info.max
-        roots_2[roots_2.imag != 0] = -float_info.max
-        roots_3[roots_3.imag != 0] = -float_info.max
+        # Filtering out only positive roots
+        if len(distances[m]) == 0:
+            m &= False
+        else:
+            m &= (distances[m] > 0.0)
 
-        r1 = np.zeros((len(roots_0), 4), dtype=float)
-        r1[:,0] = roots_0.real
-        r1[:,1] = roots_1.real
-        r1[:,2] = roots_2.real
-        r1[:,3] = roots_3.real
-        r1 = np.sort(r1,axis=1)
+        return distances
 
-        distances = r1[:, 3 - self.param['index']]
-        m[m] &= distances[m] > 0.0
-
-        return distances, m
     
     # Generates normals
-    def intersect_normal(self, xloc, mask):
-        m = mask
-        normals = np.zeros(xloc.shape, dtype=np.float64)
+    def generate_normals(self, X, rays):
+        m = rays['mask']
+        normals = np.zeros(X.shape, dtype=np.float64)
         
         """
             Here, we first translates torus to the origin, then translates the circle on which 
@@ -172,7 +155,7 @@ class ShapeTorus(ShapeObject):
         """
         
         # Simulates the Translation of Torus to the Origin
-        pt = np.subtract(xloc[m], self.param['center'])
+        pt = np.subtract(X[m], self.param['center'])
         
         """
         Checks that if Ray is intersecting Torus from back-side
@@ -192,8 +175,8 @@ class ShapeTorus(ShapeObject):
             Calculates the Center of the Circle on which the point lies,
             by subtracting which the circle goes to the origin 
         """
-        pt1 = np.subtract(pt, np.einsum('i,j->ij',np.einsum('ij,j->i', pt, self.torusYaxis), self.torusYaxis))
-        pt1 = self.param['Rmajor'] * np.einsum('ij,i->ij', pt1 , 1 / np.sqrt(np.einsum('ij,ij->i', pt1, pt1)))
+        pt1 = np.subtract(pt, np.einsum('ij,j->i', pt, self.torusZaxis) * self.torusZaxis)
+        pt1 = Rmajor * pt1 / p.sqrt(np.einsum('ij,ij->i', pt1, pt1))
         
         """
         Checks that if Ray will reflect from inside or outside of the Torus tube
@@ -211,7 +194,7 @@ class ShapeTorus(ShapeObject):
         
         # Simulates the circle having the intersection point at the origin And getting radius vector
         pt1 = np.subtract(pt, pt1)
-        pt1 = np.einsum('ij,i->ij', pt1, 1 / np.sqrt(np.einsum('ij,ij->i', pt1, pt1)))
+        pt1 = pt1 / p.sqrt(np.einsum('ij,ij->i', pt1, pt1))
         
         """            
         pt1[fromback] = -pt1[fromback]      # flipping normal if ray is hitting from back-side
