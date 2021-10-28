@@ -221,7 +221,6 @@ def _apply_plot_prop(prop, axes):
     if prop.get('type') == 'axes':
         return
 
-    print(prop['type'])
     if prop['type'] == 'line':
         plotobj, = axes.plot(prop['x'], prop['y'])
     elif prop['type'] == 'errorbar':

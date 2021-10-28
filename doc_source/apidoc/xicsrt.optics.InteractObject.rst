@@ -1,9 +1,9 @@
-XicsrtOpticGeneric
-==================
+InteractObject
+==============
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticGeneric.XicsrtOpticGeneric
+.. autoclass:: xicsrt.optics._InteractObject.InteractObject
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticGeneric.XicsrtOpticGeneric
+.. automirclass:: xicsrt.optics._InteractObject.InteractObject
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticGeneric.XicsrtOpticGeneric
+.. automirclass:: xicsrt.optics._InteractObject.InteractObject
     :inherited-members:
     :private-members:
     :special-members: __init__

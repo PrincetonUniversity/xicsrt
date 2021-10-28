@@ -1,9 +1,9 @@
-XicsrtOpticCrystal
-==================
+InteractMirror
+==============
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticCrystal.XicsrtOpticCrystal
+.. autoclass:: xicsrt.optics._InteractMirror.InteractMirror
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystal.XicsrtOpticCrystal
+.. automirclass:: xicsrt.optics._InteractMirror.InteractMirror
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystal.XicsrtOpticCrystal
+.. automirclass:: xicsrt.optics._InteractMirror.InteractMirror
     :inherited-members:
     :private-members:
     :special-members: __init__

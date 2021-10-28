@@ -1,9 +1,9 @@
-XicsrtOpticCrystalSphericalMesh
-===============================
+InteractNone
+============
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
+.. autoclass:: xicsrt.optics._InteractNone.InteractNone
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
+.. automirclass:: xicsrt.optics._InteractNone.InteractNone
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCrystalSphericalMesh.XicsrtOpticCrystalSphericalMesh
+.. automirclass:: xicsrt.optics._InteractNone.InteractNone
     :inherited-members:
     :private-members:
     :special-members: __init__

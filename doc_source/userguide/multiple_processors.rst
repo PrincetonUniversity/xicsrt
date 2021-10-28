@@ -75,5 +75,5 @@ over 4 nodes.
 To send this job to the queue type :code:`sbatch job.sh` at the command line.
 
 After the jobs are complete the saved results can be read using
-:any:`xicsrt_io:load_results()` and combined using
-:any:`xicsrt_raytrace.combine_results()`.
+:any:`xicsrt_io.load_results()` and combined using
+:any:`xicsrt_raytrace.combine_raytrace()`.

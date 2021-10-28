@@ -4,17 +4,27 @@
    Novimir Pablant <npablant@pppl.gov>
    James Kring <jdk0026@tigermail.auburn.edu>
    Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+   Define the :class:`ShapeSpherical` class.
 """
 import numpy as np
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_math as xm
-from xicsrt.optics._XicsrtOpticCrystal import XicsrtOpticCrystal
+from xicsrt.optics._ShapeObject import ShapeObject
 
 @dochelper
-class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
+class ShapeSphere(ShapeObject):
+    """
+    A shperical shape.
+    This class defines intersections with a sphere.
+    """
 
     def default_config(self):
+        """
+        radius : float (1.0)
+          The radius of the sphere.
+        """
         config = super().default_config()
         config['radius'] = 1.0
         return config
@@ -22,7 +32,14 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
     def initialize(self):
         super().initialize()
         self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
-    
+
+    def intersect(self, rays):
+        dist, mask = self.intersect_distance(rays)
+        xloc = self.location_from_distance(rays, dist, mask)
+        norm = self.intersect_normal(xloc, mask)
+
+        return xloc, norm, mask
+
     def intersect_distance(self, rays):
         """
         Calulate the distance to the intersection of the rays with the
@@ -36,11 +53,11 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         D = rays['direction']
         m = rays['mask']
         
-        distance = np.zeros(m.shape, dtype=np.float64)
-        d        = np.zeros(m.shape, dtype=np.float64)
-        t_hc     = np.zeros(m.shape, dtype=np.float64)
-        t_0      = np.zeros(m.shape, dtype=np.float64)
-        t_1      = np.zeros(m.shape, dtype=np.float64)
+        distance = np.full(m.shape, np.nan, dtype=np.float64)
+        d        = np.empty(m.shape, dtype=np.float64)
+        t_hc     = np.empty(m.shape, dtype=np.float64)
+        t_0      = np.empty(m.shape, dtype=np.float64)
+        t_1      = np.empty(m.shape, dtype=np.float64)
 
         # L is the destance from the ray origin to the center of the sphere.
         # t_ca is the projection of this distance along the ray direction.
@@ -67,11 +84,11 @@ class XicsrtOpticCrystalSpherical(XicsrtOpticCrystal):
         # Distance traveled by the ray before hitting the optic
         distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
 
-        return rays, distance
+        return distance, m
 
-    def generate_normals(self, rays, X):
-        m = rays['mask']
-        normals = np.zeros(X.shape, dtype=np.float64)
-        normals[m] = xm.normalize(self.param['center'] - X[m])
-        return normals
+    def intersect_normal(self, xloc, mask):
+        m = mask
+        norm = np.full(xloc.shape, np.nan, dtype=np.float64)
+        norm[m] = xm.normalize(self.param['center'] - xloc[m])
+        return norm
 

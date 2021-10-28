@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-- Novimir A. Pablant <npblant@pppl.gov>
+.. Authors:
+    Novimir Pablant <npablant@pppl.gov>
+
+Define the :class:`GeometryObject` class.
 """
+
 import numpy as np
-import logging
 from copy import deepcopy
 
 from xicsrt.tools.xicsrt_doc import dochelper

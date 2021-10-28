@@ -9,21 +9,16 @@ import numpy as np
 
 from xicsrt.util import profiler
 from xicsrt.tools.xicsrt_doc import dochelper
-from xicsrt.optics._XicsrtOpticGeneric import XicsrtOpticGeneric
+from xicsrt.optics._ShapeObject import ShapeObject
 
 from scipy.spatial import Delaunay
 from scipy.spatial import cKDTree
 from scipy.interpolate import CloughTocher2DInterpolator as Interpolator
 
 @dochelper
-class XicsrtOpticMesh(XicsrtOpticGeneric):
+class ShapeMesh(ShapeObject):
     """
-    A optic that can (optionally) use a mesh grid instead of an analytical
-    shape.  The use of the grid is controlled by the config option
-    'use_meshgrid'.
-
-    This object can be considered to be 'generic' and it is appropriate for all
-    other optics to inherit this object instead of :any:`XicsrtOpticGeneric`.
+    A shape that uses a mesh grid instead of an analytical shape.
 
     **Programming Notes**
 
@@ -77,15 +72,6 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
     def default_config(self):
         """
-        use_meshgrid: bool (False)
-          Flag to determine whether the meshgrid definition should be enabled.
-
-          This optic is designed with this flag so that optics with complex
-          reflection behavior can subclass from this optic and then be used
-          with or without a meshgrid definition.  If this flag is set to False
-          then this optic will behave the same as a generic optic
-          (XicsrtGenericOptic).
-
         mesh_points
         mesh_faces
         mesh_normals
@@ -100,9 +86,6 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         """
         config = super().default_config()
 
-        # mesh information
-        config['use_meshgrid'] = False
-
         config['mesh_points'] = None
         config['mesh_faces'] = None
         config['mesh_normals'] = None
@@ -111,7 +94,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         config['mesh_coarse_faces'] = None
         config['mesh_coarse_normals'] = None
 
-        config['mesh_interpolate'] = True
+        config['mesh_interpolate'] = None
         config['mesh_refine'] = None
 
         return config
@@ -119,8 +102,11 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
     def check_param(self):
         super().check_param()
 
-        if self.param['mesh_normals'] is None:
-            self.param['mesh_interpolate'] = False
+        if self.param['mesh_interpolate'] is None:
+            self.param['mesh_interpolate'] = (self.param['mesh_normals'] is not None)
+        elif self.param['mesh_interpolate']:
+            if self.param['mesh_normals'] is None:
+                raise Exception('Surface normal vectors must be defined in order to use mesh interpolation.')
 
         if self.param['mesh_refine'] is None:
             if self.param['mesh_coarse_points'] is not None:
@@ -129,47 +115,39 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
     def initialize(self):
         super().initialize()
 
-        if self.param['use_meshgrid'] is True:
-            self.mesh_initialize()
+        self.mesh_initialize()
 
-    def trace(self, rays):
+    def intersect(self, rays):
         """
-        This is the main method that is called to perform ray-tracing
-        for this optic.  Different pathways are taken depending on
-        whether a meshgrid is being used.
+        Calculate ray intersections with the mesh.
         """
 
-        if self.param['use_meshgrid'] is False:
-            rays = super().trace(rays)
+        if not self.param['mesh_refine']:
+            xloc, mask, hits = self.mesh_intersect_1(rays, self.param['mesh'])
         else:
-            if not self.param['mesh_refine']:
-                X, rays, hits = self.mesh_intersect_1(rays, self.param['mesh'])
-                self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-            else:
-                X_c, rays, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
-                num_rays_coarse = np.sum(rays['mask'])
+            xloc_c, mask_c, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
+            num_rays_coarse = np.sum(mask_c)
 
-                faces_idx, faces_mask = self.find_near_faces(X_c, self.param['mesh'], rays['mask'])
-                X, rays, hits = self.mesh_intersect_2(
-                    rays
-                    ,self.param['mesh']
-                    ,faces_idx
-                    ,faces_mask)
-                num_rays_fine = np.sum(rays['mask'])
+            faces_idx, faces_mask = self.find_near_faces(xloc_c, self.param['mesh'], mask_c)
+            xloc, mask, hits = self.mesh_intersect_2(
+                rays,
+                self.param['mesh'],
+                mask_c,
+                faces_idx,
+                faces_mask,
+                )
+            num_rays_fine = np.sum(mask)
 
-                num_rays_lost = num_rays_coarse - num_rays_fine
-                if not num_rays_lost == 0:
-                    self.log.warning(f'Rays lost in mesh refinement: {num_rays_lost:0.0f} of {num_rays_coarse:6.2e}')
+            num_rays_lost = num_rays_coarse - num_rays_fine
+            if not num_rays_lost == 0:
+                self.log.warning(f'Rays lost in mesh refinement: {num_rays_lost:0.0f} of {num_rays_coarse:6.2e}')
 
-            self.log.debug(' Rays on {}:   {:6.4e}'.format(self.name, np.sum(rays['mask'])))
-            if self.param['mesh_interpolate']:
-                X, normals = self.mesh_interpolate(X, self.param['mesh'], rays['mask'])
-            else:
-                normals = self.mesh_normals(hits, self.param['mesh'], rays['mask'])
-            rays = self.reflect_vectors(rays, X, normals)
-            self.log.debug(' Rays from {}: {:6.4e}'.format(self.name, np.sum(rays['mask'])))
+        if self.param['mesh_interpolate']:
+            xloc, norm = self.mesh_interpolate(xloc, self.param['mesh'], mask)
+        else:
+            norm = self.mesh_normals(hits, self.param['mesh'], mask)
 
-        return rays
+        return xloc, norm, mask
 
     def mesh_interpolate(self, X, mesh, mask):
         profiler.start('mesh_interpolate')
@@ -288,8 +266,8 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         profiler.start('mesh_intersect_1')
         O = rays['origin']
         D = rays['direction']
-        m = rays['mask']
 
+        m = rays['mask'].copy()
         X = np.full(D.shape, np.nan, dtype=np.float64)
 
         # Copying these makes the code easier to read,
@@ -339,14 +317,16 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
         m &= m_temp_2
         profiler.stop('mesh_intersect_1')
 
-        return X, rays, hits
+        return X, m, hits
 
     def mesh_intersect_2(
-            self
-            , rays
-            , mesh
-            , faces_idx
-            , faces_mask):
+            self,
+            rays,
+            mesh,
+            mask,
+            faces_idx,
+            faces_mask,
+            ):
         """
         Check for ray intersection with a list of mesh faces.
 
@@ -365,10 +345,11 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         O = rays['origin']
         D = rays['direction']
-        m = rays['mask']
-        num_rays = len(m)
 
+        m =  mask.copy()
         X = np.full(D.shape, np.nan, dtype=np.float64)
+
+        num_rays = len(m)
         hits = np.empty(num_rays, dtype=np.int)
         epsilon = 1e-15
 
@@ -400,8 +381,9 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
                 - np.linalg.norm(np.cross((p0 - p1), (p0 - p2)), axis=2)
                 )
 
-        # For now hard code the floating point tolerance.
-        # A better way of handling floating point errors is needed.
+        # .. ToDo:
+        #    For now hard code the floating point tolerance.
+        #    A better way of handling floating point errors is needed.
         test = (diff < 1e-10) & (dist >= 0) & faces_mask
         m &= np.any(test, axis=0)
 
@@ -413,7 +395,7 @@ class XicsrtOpticMesh(XicsrtOpticGeneric):
 
         profiler.stop('mesh_intersect_2')
 
-        return X, rays, hits
+        return X, m, hits
 
     def mesh_normals(self, hits, mesh, mask):
         m = mask

@@ -1,9 +1,9 @@
-XicsrtOpticMosaicGraphite
-=========================
+XicsrtOpticMeshCrystal
+======================
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticMosaicGraphite.XicsrtOpticMosaicGraphite
+.. autoclass:: xicsrt.optics._XicsrtOpticMeshCrystal.XicsrtOpticMeshCrystal
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticMosaicGraphite.XicsrtOpticMosaicGraphite
+.. automirclass:: xicsrt.optics._XicsrtOpticMeshCrystal.XicsrtOpticMeshCrystal
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticMosaicGraphite.XicsrtOpticMosaicGraphite
+.. automirclass:: xicsrt.optics._XicsrtOpticMeshCrystal.XicsrtOpticMeshCrystal
     :inherited-members:
     :private-members:
     :special-members: __init__
