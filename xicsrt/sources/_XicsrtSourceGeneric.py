@@ -34,6 +34,20 @@ class XicsrtSourceGeneric(GeometryObject):
         zsize
           The size of this element along the zaxis direction.
 
+        spatial_dist : string ('uniform')
+          | The type of angular distribution to use for the emitted rays.
+          | Available distributions (default is 'uniform'):
+          |
+          | uniform
+          |   Uniform spatial distribution of rays within a rectangular cuboid
+          |   defined by xsize, ysize and zsize. The sizes are interpreted as
+          |   full widths.
+          |
+          | gaussian
+          |   Gaussian spatial distribution of rays with a fwhm in each
+          |   dimension defined by xsize, ysize and zsize. The sizes are
+          |   interpreted as full-width-at-half-max (fwhm).
+
         angular_dist : string ('isotropic')
           | The type of angular distribution to use for the emitted rays.
           | Available distributions (default is 'isotropic'):
@@ -146,27 +160,28 @@ class XicsrtSourceGeneric(GeometryObject):
         config['ysize'] = 0.0
         config['zsize'] = 0.0
 
-        config['intensity']        = 0.0
-        config['use_poisson']      = False
-        config['angular_dist']      = 'isotropic'
-        config['spread']           = np.pi
+        config['intensity'] = 0.0
+        config['use_poisson'] = False
+        config['spatial_dist'] = 'uniform'
+        config['angular_dist'] = 'isotropic'
+        config['spread'] = np.pi
 
         # Possible values: 'monochrome', 'voigt', 'uniform
-        config['wavelength_dist']  = 'voigt'
+        config['wavelength_dist'] = 'voigt'
 
         # Only used for wavelength_dist = 'voigt' or 'monochrome'
-        config['wavelength']       = 1.0
+        config['wavelength'] = 1.0
 
         # Only used for wavelength_dist = 'voigt'
-        config['mass_number']      = 1.0
-        config['linewidth']        = 0.0
-        config['temperature']      = 0.0
-        config['velocity']         = np.array([0.0, 0.0, 0.0])
+        config['mass_number'] = 1.0
+        config['linewidth'] = 0.0
+        config['temperature'] = 0.0
+        config['velocity'] = np.array([0.0, 0.0, 0.0])
 
         # Only used for wavelength_dist = 'uniform'
         config['wavelength_range'] = np.array([0.0, 0.0])
         
-        config['filters']          = []
+        config['filters'] = []
 
         return config
 
@@ -212,15 +227,31 @@ class XicsrtSourceGeneric(GeometryObject):
         return rays
      
     def generate_origin(self):
-        # generic origin for isotropic rays
-        x_offset = np.random.uniform(-1 * self.param['xsize']/2 ,  self.param['xsize']/2, self.param['intensity'])
-        y_offset = np.random.uniform(-1 * self.param['ysize']/2, self.param['ysize']/2, self.param['intensity'])
-        z_offset = np.random.uniform(-1 * self.param['zsize']/2 ,  self.param['zsize']/2, self.param['intensity'])
-        
+
+        if self.param['spatial_dist'] == 'uniform':
+            # Origins for a uniform distribution of rays
+            x_offset = np.random.uniform(-1 * self.param['xsize']/2, self.param['xsize']/2, self.param['intensity'])
+            y_offset = np.random.uniform(-1 * self.param['ysize']/2, self.param['ysize']/2, self.param['intensity'])
+            z_offset = np.random.uniform(-1 * self.param['zsize']/2, self.param['zsize']/2, self.param['intensity'])
+
+        elif self.param['spatial_dist'] == 'gaussian':
+            # Origins for a gaussian distribution of rays.
+            mean = [0,0,0]
+            # Define a diagnonal covariance matrix.
+            cov = [[self.param['xsize']**2, 0, 0], [0, self.param['ysize']**2, 0], [0, 0, self.param['zsize']**2]]
+            sigma_to_fwhm = 2*np.sqrt(2*np.log(2))
+            cov = np.array(cov)/sigma_to_fwhm**2
+            x_offset, y_offset, z_offset = np.random.multivariate_normal(mean, cov, self.param['intensity']).T
+
+        else:
+            raise NotImplementedError(f"spatial_dist: {self.param['spatial_dist']} not implemented.")
+
+        # Map x,y,z aligned offsets to the source origin and orientation.
         origin = (self.origin
                   + np.einsum('i,j', x_offset, self.xaxis)
                   + np.einsum('i,j', y_offset, self.yaxis)
                   + np.einsum('i,j', z_offset, self.zaxis))
+
         return origin
 
     def generate_direction(self, origin):
@@ -237,7 +268,7 @@ class XicsrtSourceGeneric(GeometryObject):
     def random_direction(self, normal):
 
         spread = self.param['spread']
-        dir_local  = xicsrt_spread.vector_distribution(
+        dir_local = xicsrt_spread.vector_distribution(
             spread,
             self.param['intensity'],
             name=self.param['angular_dist'],
