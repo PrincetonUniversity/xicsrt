@@ -56,11 +56,8 @@ class ShapeTorus(ShapeObject):
                 Torus_Center = Torus_Major_Radius * Torus_X_axis + System_Origin
                 Here, Torus_X_axis = System_Z_axis
         """
-        
-        self.torusZaxis = self.param['zaxis']
-        self.torusXaxis = self.param['xaxis']
-        
-        self.torusYaxis = np.cross(self.param['zaxis'], self.param['xaxis'])
+                
+        self.Yaxis = np.cross(self.param['zaxis'], self.param['xaxis'])
         
         dist = 0
         if self.param['index'] == 0:
@@ -72,7 +69,7 @@ class ShapeTorus(ShapeObject):
         elif self.param['index'] == 3:
             dist = -self.param['Rmajor'] - self.param['Rminor']
 
-        self.param['center'] = dist * self.torusZaxis + self.param['origin']
+        self.param['center'] = (dist - self.param['Rminor']) * self.param['zaxis'] + self.param['origin']
         #self.param['center'] = self.param['origin']
 
     def intersect(self, rays):
@@ -93,8 +90,8 @@ class ShapeTorus(ShapeObject):
         D = rays['direction']
         m = rays['mask']
 
-        Rmajor = self.param['Rmajor']
         Rminor = self.param['Rminor']  
+        Rmajor = self.param['Rmajor'] - Rminor
         
         # variable setup
         distances = np.zeros(m.shape, dtype=np.float64)
@@ -103,15 +100,15 @@ class ShapeTorus(ShapeObject):
 
         # Calculaing Ray Direction components in Torus coordinate system (Transforming Ray)
         d = np.zeros((len(m),3), dtype= np.float64)
-        d[:, 0] = np.dot(D, self.torusXaxis)
-        d[:, 1] = np.dot(D, self.torusYaxis)
-        d[:, 2] = np.dot(D, self.torusZaxis)
+        d[:, 0] = np.dot(D, self.param['xaxis'])
+        d[:, 1] = np.dot(D, self.Yaxis)
+        d[:, 2] = np.dot(D, self.param['zaxis'])
 
         # Calculaing Ray Origin components in Torus coordinate system (Transforming Ray Origin)
         dOrig = np.zeros((len(m),3), dtype= np.float64)
-        dOrig[:, 0] = np.dot(orig, self.torusXaxis)
-        dOrig[:, 1] = np.dot(orig, self.torusYaxis)
-        dOrig[:, 2] = np.dot(orig, self.torusZaxis)
+        dOrig[:, 0] = np.dot(orig, self.param['xaxis'])
+        dOrig[:, 1] = np.dot(orig, self.Yaxis)
+        dOrig[:, 2] = np.dot(orig, self.param['zaxis'])
         
         # Calculaing Magnitude of Ray Direction
         dMag = np.sqrt(np.einsum('ij,ij->i', d, d))
@@ -161,65 +158,74 @@ class ShapeTorus(ShapeObject):
         return distances, m
     
     # Generates normals
+    """
     def intersect_normal(self, xloc, mask):
         m = mask
         normals = np.zeros(xloc.shape, dtype=np.float64)
         
-        """
-            Here, we first translates torus to the origin, then translates the circle on which 
-            the point lies to the origin and then radius vector at that point will give normal
-            at that point
-        """
+    """
+    #       Here, we first translates torus to the origin, then translates the circle on which 
+    #       the point lies to the origin and then radius vector at that point will give normal
+    #       at that point
+    """
+        
+        # Simulates the Translation of Torus to the Origin
+        pt = np.subtract(xloc[m], self.param['center'])
+
+    """
+    #       Calculates the Center of the Circle on which the point lies,
+    #       by subtracting which the circle goes to the origin 
+    """
+        pt1 = np.subtract(pt, np.einsum('i,j->ij',np.einsum('ij,j->i', pt, self.Yaxis), self.Yaxis))
+        pt1 = self.param['Rmajor'] * np.einsum('ij,i->ij', pt1 , 1 / np.sqrt(np.einsum('ij,ij->i', pt1, pt1)))
+                    
+        # Simulates the circle having the intersection point at the origin And getting radius vector
+        pt2 = pt - pt1
+        pt2 = np.einsum('ij,i->ij', pt2, 1 / np.sqrt(np.einsum('ij,ij->i', pt2, pt2)))
+        
+        normals[m] = pt2
+        
+        return normals
+    """
+    """
+    def intersect_normal(self, xloc, mask):
+        m = mask
+        normals = np.zeros(xloc.shape, dtype=np.float64)       
         
         # Simulates the Translation of Torus to the Origin
         pt = np.subtract(xloc[m], self.param['center'])
         
-        """
-        Checks that if Ray is intersecting Torus from back-side
-        
-        If ray is from back-side, ray-direction will give (+ve) component along the vector 
-        from the Center of torus to the given point, otherwise, it should give (-ve) component.
-        
-        And, If ray is intersecting from back-side then the normal at intersection point should be flipped
-        
-            fromback = np.einsum('ij,j->i', pt, rays['direction']) > 0
-            
-        NOTE:
-            In order to match with the sphere case, this calculation is not performed
-        """
-    
-        """
-            Calculates the Center of the Circle on which the point lies,
-            by subtracting which the circle goes to the origin 
-        """
-        pt1 = np.subtract(pt, np.einsum('i,j->ij',np.einsum('ij,j->i', pt, self.torusYaxis), self.torusYaxis))
-        pt1 = self.param['Rmajor'] * np.einsum('ij,i->ij', pt1 , 1 / np.sqrt(np.einsum('ij,ij->i', pt1, pt1)))
-        
-        """
-        Checks that if Ray will reflect from inside or outside of the Torus tube
-        
-        If ray is from inside, ray-direction will give (+ve) component along the vector 
-        from the Center of circle to the given point, otherwise, it should give (-ve) component.
-        
-        And, If ray is intersecting from inside then the normal at intersection point should be flipped
-        
-            inside = np.einsum('ij,j->i', pt, pt - pt1) < 0
-        
-        NOTE:
-            In order to match with the sphere case, this calculation is not performed
-        """        
-        
-        # Simulates the circle having the intersection point at the origin And getting radius vector
-        pt1 = np.subtract(pt, pt1)
+        px = np.einsum('ij,j->i', pt, self.param['xaxis'])
+        py = np.einsum('ij,j->i', pt, self.Yaxis)
+        pz = np.einsum('ij,j->i', pt, self.param['zaxis'])
+
+        pt1 = 4 * np.einsum('i,ij->ij', px * px + py * py + pz * pz - self.param['Rmajor'] ** 2 - self.param['Rminor'] ** 2, pt) + 8 * self.param['Rmajor'] ** 2 * np.einsum('i,j->ij', pz, self.param['zaxis'])
+
         pt1 = np.einsum('ij,i->ij', pt1, 1 / np.sqrt(np.einsum('ij,ij->i', pt1, pt1)))
         
-        """            
-        pt1[fromback] = -pt1[fromback]      # flipping normal if ray is hitting from back-side
-        pt1[inside] = -pt1[inside]          # flipping normal if point is on the inside ring of torus
-                
-        NOTE:
-            In order to match with the spherical case, this calculation is not performed
-        """
         normals[m] = pt1
         
         return normals
+    """
+    def intersect_normal(self, xloc, mask):
+        m = mask
+        normals = np.zeros(xloc.shape, dtype=float)
+   
+        C = self.param['center']
+        C0_zaxis  = self.param['zaxis']
+        C0_xaxis  = self.param['xaxis']
+        maj_r     = self.param['Rmajor']
+        min_r     = self.param['Rminor']
+        
+        pt = xloc[m] - C
+        pt = pt - np.einsum('i,j->ij', np.einsum('ij,j->i', pt, self.Yaxis), self.Yaxis)
+
+        C_norm = np.einsum('i,ij->ij', 1 / np.sqrt(np.einsum('ij,ij->i',pt, pt)), pt)                  # Projection of point on xz plane
+        Q = C + (maj_r - min_r) * C_norm
+
+        X_norm = (xloc[m] - Q)
+        X_norm = np.einsum('i,ij->ij', 1 / np.sqrt(np.einsum('ij,ij->i',X_norm, X_norm)), X_norm) 
+
+        normals[m] = X_norm
+        
+        return normals 

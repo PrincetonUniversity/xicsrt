@@ -14,12 +14,12 @@ from sys import float_info
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._ShapeObject import ShapeObject
-from xicsrt.optics._multiQuartic import multi_quadratic         # Multiple Quartic Solver with Order Reduction Method
+from xicsrt.optics._multiQuartic import multi_quartic          # Multiple Quartic Solver with Order Reduction Method
 
 @dochelper
-class ShapeEllipsoidCylinder(ShapeObject):
+class ShapeCylinder(ShapeObject):
     """
-    A Elliptical shape.
+    A Cylindrical shape.
     This class defines intersections with a ellipse
     """
 
@@ -29,19 +29,20 @@ class ShapeEllipsoidCylinder(ShapeObject):
         
         """
         Rmajor:
-                Major Radius of the Ellipse Mirror
+                Major Radius of the Cylinder
         Rminor:
-                Minor Radius of the Ellipse Mirror
-        Length:
-                Length of the Ellipse Mirror
+                Minor Radius of the Cylinder
         concave:
-                If True it will consider intersection of Ellipse Mirror concave surface with Rays only, otherwise 
-                it will consider intersection of Ellipse Mirror convex surface with Rays only
+                If True it will consider intersection of Cylinder concave surface with Rays only, otherwise 
+                it will consider intersection of Cylinder convex surface with Rays only
+        inside:
+                If True it will consider intersection of Cylinder which will give reflection from inside of
+                the Cylinder Tube otherwise it will consider intersection of Cylinder which will give reflection
+                from outside of the Cylinder Tube
         """
         
-        config['Rmajor']  = 0.5
-        config['Rminor']  = 0.2
-        config['length'] = 1.0
+        config['radius']  = 0.2
+        config['length']  = 1.1
         config['concave'] = True
         
         return config
@@ -50,16 +51,23 @@ class ShapeEllipsoidCylinder(ShapeObject):
         super().initialize()
         
         """
-            Here, we considered Ellipse Mirror to be buit around y-axis, so we construct ellipse Mirror axis from
-            system axes given such as ellipse Mirror z-axis goes in yaxis of the system.
-            And system z-axis & x-axis goes to ellipse Mirror x-axis and y-axis respectively
+            Here, we considered Cylinder to be buit around y-axis, so we construct cylinder axis from
+            system axes given such as cylinder z-axis goes in yaxis of the system.
+            And system z-axis & x-axis goes to cylinder x-axis and y-axis respectively
             
-            Ellipse Mirror center is defined as,
-                Ellipse_Mirror_Center = Ellipse_Mirror_Major_Radius * Ellipse_Mirror_Z_axis + System_Origin
-        """ 
+            Cylinder center is defined as,
+                Cylinder_Center = Cylinder_Major_Radius * Cylinder_Z_axis + System_Origin
+        """
+        
         self.Yaxis = np.cross(self.param['zaxis'], self.param['xaxis'])
+        
+        # Making Y-axis and Z-axis orthogonal by altering Y-axis
+        dot = np.dot(self.Yaxis, self.param['zaxis'])
+        if dot > 0.0:
+            self.Yaxis -= dot * self.param['zaxis']
+        self.Yaxis /= np.linalg.norm(self.Yaxis)
 
-        self.param['center'] = self.param['Rmajor'] * self.param['zaxis'] + self.param['origin']
+        self.param['center'] = self.param['origin'] + self.param['zaxis'] * self.param['radius']
 
     def intersect(self, rays):
         dist, mask = self.intersect_distance(rays)
@@ -76,64 +84,53 @@ class ShapeEllipsoidCylinder(ShapeObject):
         """
         
         # setup
-        # setup
         O = rays['origin']
         D = rays['direction']
         m = rays['mask']
-        
-        Rmajor = self.param['Rmajor']
-        Rminor = self.param['Rminor']
-        Length = self.param['length']
-        
+
+        Radius = self.param['radius']   
+        Length = self.param['length']        
+
         distances = np.zeros(m.shape, dtype=np.float64)
-        dMod = np.zeros((len(m),3))
-        Omod = np.zeros((len(m),3))
-        
+        L1        = np.zeros((len(m), 3), dtype=np.float64)
+        t         = np.zeros(m.shape, dtype=np.float64)
+        d         = np.zeros(m.shape, dtype=np.float64)
+        h         = np.zeros(m.shape, dtype=np.float64)
         t1        = np.zeros(m.shape, dtype=np.float64)
         t2        = np.zeros(m.shape, dtype=np.float64)
         y1        = np.zeros(m.shape, dtype=np.float64)
         y2        = np.zeros(m.shape, dtype=np.float64)
-        y0        = np.zeros(m.shape, dtype=np.float64)
-        m1        = np.zeros(m.shape, dtype=np.float64)
-        a         = np.zeros(m.shape, dtype=np.float64)
-        b         = np.zeros(m.shape, dtype=np.float64)
-        c         = np.zeros(m.shape, dtype=np.float64)
-        Roxy2     = np.zeros(m.shape, dtype=np.float64)
         
         orig = O - self.param['center']
         sign = np.einsum('ij,ij->i', D, -orig)
-
         m[m] &= sign[m] > 0.0
-
-        sin  = np.sqrt(1 - np.einsum('ij,j->i', D, self.Yaxis) ** 2)
+        
+        cos  = np.einsum('ij,j->i', D, self.Yaxis)
+        sin  = np.sqrt(1 - cos**2)
+        cos2 = np.einsum('ij,j->i', orig, self.Yaxis)
         
         dMod = D - np.einsum('i,j->ij', np.einsum('ij,j->i', D, self.Yaxis), self.Yaxis)
-        
-        
         m[m] &= np.einsum('ij,ij->i', dMod[m], dMod[m]) > 0.0
         
-        Omod  = orig - np.einsum('i,j->ij', np.einsum('ij,j->i', orig, self.Yaxis), self.Yaxis)
+        Omod = orig - np.einsum('i,j->ij', np.einsum('ij,j->i', orig, self.Yaxis), self.Yaxis)
         
-        dMod[m]  = np.einsum('ij,i->ij', dMod[m], 1/ np.sqrt(np.einsum('ij,ij->i',dMod[m],dMod[m])))
-        Roxy2[m] = np.einsum('ij,j->i', Omod[m], self.param['zaxis']) ** 2 * Rminor ** 2 + np.einsum('ij,j->i', Omod[m], self.param['xaxis']) ** 2 * Rmajor ** 2
-        Ocompd   = np.einsum('ij,j->i', Omod, self.param['zaxis']) * np.einsum('ij,j->i', dMod, self.param['zaxis']) * Rminor ** 2 + np.einsum('ij,j->i', Omod, self.param['xaxis']) * np.einsum('ij,j->i', dMod, self.param['xaxis']) * Rmajor ** 2
+        Roxy = np.sqrt(np.einsum('ij,ij->i', Omod, Omod))
+        
+        dMod[m] = np.einsum('ij,i->ij', dMod[m], 1 / np.sqrt(np.einsum('ij,ij->i', dMod[m], dMod[m])))
+        
+        L1[m] = -Omod[m]
+        t[m] = np.einsum('ij,ij->i', dMod[m], Omod[m])
+        d[m] = np.sqrt(np.einsum('ij,ij->i', Omod[m], Omod[m]) - t[m] ** 2)
+        
+        m[m] &= d[m] <= Radius
+        h[m] = np.sqrt(Radius ** 2 - d[m] ** 2)
+                
+        t1[m] = (Roxy[m] - h[m]) / sin[m]
+        t2[m] = (Roxy[m] + h[m]) / sin[m]
 
-        a[m] = Rminor ** 2 * np.einsum('ij,j->i', dMod[m], self.param['zaxis']) ** 2 
-        a[m]+= Rmajor ** 2 * np.einsum('ij,j->i', dMod[m], self.param['xaxis']) ** 2
-        b[m] = 2 * Ocompd[m]
-        c[m] = Roxy2[m] - Rminor ** 2 * Rmajor ** 2
-
-        t1[m], t2[m] = multi_quadratic(a[m], b[m], c[m])
-        #print(t1,t2)
-        t1[m] /= sin[m]
-        t2[m] /= sin[m]
-
-        y0[m] = np.einsum('ij,j->i', orig[m], self.Yaxis)
-        m1[m] = np.einsum('ij,j->i', D[m], self.Yaxis)
-
-        y1[m] = y0[m] + m1[m] * t1[m]
-        y2[m] = y0[m] + m1[m] * t2[m]
-    
+        y1[m] = orig[m,1] + D[m,1] * t1[m]
+        y2[m] = orig[m,1] + D[m,1] * t2[m]
+        
         t1[np.abs(y1) > Length / 2] = -sys.float_info.max
         t2[np.abs(y2) > Length / 2] = sys.float_info.max
         
@@ -145,13 +142,11 @@ class ShapeEllipsoidCylinder(ShapeObject):
     
     # Generates normals
     def intersect_normal(self, xloc, mask):
-        m = mask
         normals = np.zeros(xloc.shape, dtype=np.float64)
         
-        pt = np.subtract(xloc[m], self.param['center'])
-        pt -= np.einsum('i,j->ij',np.einsum('ij,j->i',pt, self.Yaxis), self.Yaxis)
+        pt = xloc[mask] - self.param['center']
+        pt -= np.einsum('i,j->ij', np.einsum('ij,j->i', pt, self.Yaxis), self.Yaxis)
         pt = np.einsum('ij,i->ij', pt, 1 / np.sqrt(np.einsum('ij,ij->i', pt, pt)))
-        normals[m] = pt
         
         normals[mask] = pt
         

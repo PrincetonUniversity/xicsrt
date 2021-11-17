@@ -108,6 +108,15 @@ def multi_cubic(a0, b0, c0, d0, all_roots=True):
 # Quartic solver
 def multi_quartic(a0, b0, c0, d0, e0):
     # Quartic coefficients
+    a = np.zeros(a0.shape, dtype= float)
+    b = np.zeros(a0.shape, dtype= float)
+    c = np.zeros(a0.shape, dtype= float)
+    d = np.zeros(a0.shape, dtype= float)
+    
+    p = np.zeros(a0.shape, dtype= float)
+    q = np.zeros(a0.shape, dtype= float)
+    r = np.zeros(a0.shape, dtype= float)
+
     a, b, c, d = b0/a0, c0/a0, d0/a0, e0/a0
 
     # Some repeating variables
@@ -118,9 +127,12 @@ def multi_quartic(a0, b0, c0, d0, e0):
     p = 3*a02 - 0.5*b
     q = a*a02 - b*a0 + 0.5*c
     r = 3*a02*a02 - b*a02 + c*a0 - d
-
+    
+    A = np.ones(len(p), dtype=float)
+    D = p * r 
+    D -= 0.5 * q * q
     # One root of the cubic equation
-    z0 = multi_cubic(1, p, r, p*r - 0.5*q*q, all_roots=False)
+    z0 = multi_cubic(A, p, r, D, all_roots=False)
 
     # Additional variables
     s = np.sqrt(2*p + 2*z0.real)

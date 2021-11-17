@@ -13,7 +13,7 @@ from xicsrt.optics._InteractCrystal import InteractCrystal
 from xicsrt.optics._ShapeCylinder import ShapeCylinder
 
 @dochelper
-class XicsrtOpticCrystalCylinder(InteractCrystal, ShapeCylinder):
+class XicsrtOpticCylindricalCrystal(InteractCrystal, ShapeCylinder):
     """
     A elliptical crystal optic.
     """
