@@ -65,16 +65,12 @@ class DocHelper:
         if cls.__doc__ == None:
             cls.__doc__ = ''
 
-        cls.__doc__ += '\n'
-        cls.__doc__ += 'Configuration Options:\n\n'
-
         sections = {}
         mro = list(inspect.getmro(cls))
         # The order here is important. As written, this will always keep
         # the section from the outermost class, while also adding sections
         # from outermost to innermost.
         for ancestor in mro:
-            print(ancestor.__name__)
             if hasattr(ancestor, 'default_config'):
                 doc = ancestor.default_config.__doc__
                 if doc is not None:
@@ -83,9 +79,10 @@ class DocHelper:
 
                     # I can't use update() because I don't want to overwrite values.
                     for key in new:
-                        if not key in sections:
+                        if key not in sections:
                             sections[key] = new[key]
 
+        # Build up the new config docs from the section dictionary
         new_doc = ''
         key_list = list(sections.keys())
         if flag_sort_alpha:
@@ -98,9 +95,15 @@ class DocHelper:
             new_doc += sections[key]['body']
             new_doc += '\n'
 
+        cls.__doc__ += '\n'
+        cls.__doc__ += 'Configuration Options:\n\n'
         cls.__doc__ += new_doc
 
     def _parse_config_doc(self, doc):
+        """
+        Parse configuration documentation into sections. This assumes that
+        the config docs are well formatted.
+        """
         section_dict = {}
         name = None
         lines = doc.splitlines()
