@@ -23,6 +23,7 @@ Todo:
 """
 
 import inspect
+import re
 
 
 def dochelper(cls):
@@ -53,20 +54,67 @@ class DocHelper:
         return self.cls
 
     def update_class_docstring(self, cls):
-        #print(cls.__name__, cls.__qualname__)
+        """
+        Update the class docstring. This method does the following:
+        1. Creates a new section 'Configuration Options' which contains
+           combined documentation for all config options defined in any
+           ancestor.
+        """
+        flag_sort_alpha = False
+
         if cls.__doc__ == None:
             cls.__doc__ = ''
 
         cls.__doc__ += '\n'
         cls.__doc__ += 'Configuration Options:\n\n'
-        #cls.__doc__ += '----------------------\n\n'
 
-        for ancestor in inspect.getmro(cls):
+        sections = {}
+        mro = list(inspect.getmro(cls))
+        # The order here is important. As written, this will always keep
+        # the section from the outermost class, while also adding sections
+        # from outermost to innermost.
+        for ancestor in mro:
+            print(ancestor.__name__)
             if hasattr(ancestor, 'default_config'):
                 doc = ancestor.default_config.__doc__
                 if doc is not None:
-                    cls.__doc__ += inspect.getdoc(ancestor.default_config)
-                    cls.__doc__ += '\n\n'
-        return cls
+                    doc = inspect.getdoc(ancestor.default_config)
+                    new = self._parse_config_doc(doc)
 
+                    # I can't use update() because I don't want to overwrite values.
+                    for key in new:
+                        if not key in sections:
+                            sections[key] = new[key]
 
+        new_doc = ''
+        key_list = list(sections.keys())
+        if flag_sort_alpha:
+            key_list.sort()
+        for key in key_list:
+            new_doc += sections[key]['name']
+            if sections[key]['sig']:
+                new_doc += ' : ' + sections[key]['sig']
+            new_doc += '\n'
+            new_doc += sections[key]['body']
+            new_doc += '\n'
+
+        cls.__doc__ += new_doc
+
+    def _parse_config_doc(self, doc):
+        section_dict = {}
+        name = None
+        lines = doc.splitlines()
+        for line in lines:
+            m = re.match(r'^([\w]+)\s*:?\s*(.*)', line)
+            if m:
+                name = m.group(1)
+                section_dict[name] = {}
+                section_dict[name]['name'] = m.group(1)
+                section_dict[name]['sig'] = m.group(2)
+                section_dict[name]['body'] = ''
+            else:
+                if name:
+                    if line.strip():
+                        section_dict[name]['body'] += line + '\n'
+
+        return section_dict
