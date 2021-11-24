@@ -277,7 +277,13 @@ def _sort_raytrace(input, max_lost=None):
 
 def combine_raytrace(input_list):
     """
-    Produce a combined output from a list of raytrace outputs.
+    Produce a combined results dictionary from a list of raytrace results.
+
+    Example
+    -------
+    results_1 = xicsrt.raytrace(config_1)
+    results_2 = xicsrt.raytrace(config_2)
+    results = xicsrt_raytrace.combine_raytrace([results_1, results_2])
     """
     profiler.start('combine_raytrace')
 

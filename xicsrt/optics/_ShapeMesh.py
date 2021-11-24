@@ -286,7 +286,7 @@ class ShapeMesh(ShapeObject):
             m_temp[:] = m
             edge1 = p1[ii, :] - p0[ii, :]
             edge2 = p2[ii, :] - p0[ii, :]
-            h = np.cross(D[m_temp], edge2)
+            h = np.cross(D, edge2)
             f = np.einsum('i,ji->j', edge1, h, optimize=True)
             m_temp &= ~((f > -epsilon) & (f < epsilon))
             if not np.any(m_temp):

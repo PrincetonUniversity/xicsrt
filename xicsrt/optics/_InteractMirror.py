@@ -23,7 +23,7 @@ class InteractMirror(InteractObject):
     def interact(self, rays, xloc, norm, mask=None):
         rays = self.reflect_vectors(rays, xloc, norm, mask)
         if mask is not None:
-            rays['mask'] = mask
+            rays['mask'][:] = mask
         return rays
 
     def reflect_vectors(self, rays, xloc, normals, mask=None):
