@@ -124,7 +124,10 @@ class ShapeMesh(ShapeObject):
         if not self.param['mesh_refine']:
             xloc, mask, hits = self.mesh_intersect_1(rays, self.param['mesh'])
         else:
-            xloc_c, mask_c, hits_c = self.mesh_intersect_1(rays, self.param['mesh_coarse'])
+            xloc_c, mask_c, hits_c = self.mesh_intersect_1(
+                rays,
+                self.param['mesh_coarse'],
+                )
             num_rays_coarse = np.sum(mask_c)
 
             faces_idx, faces_mask = self.find_near_faces(xloc_c, self.param['mesh'], mask_c)

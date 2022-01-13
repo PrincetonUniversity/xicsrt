@@ -40,8 +40,8 @@ class ShapeMeshSphere(ShapeMesh):
         """
         config = super().default_config()
         config['radius'] = 1.0
-        config['mesh_size'] = (11,11)
-        config['mesh_coarse_size'] = (5,5)
+        config['mesh_size'] = (11, 11)
+        config['mesh_coarse_size'] = (5, 5)
 
         return config
 
