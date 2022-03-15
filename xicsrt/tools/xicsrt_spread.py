@@ -293,15 +293,15 @@ def vector_dist_flat_xy(spread, number):
 
     return output
 
-def vector_dist_gaussian(spread, number):
-    """
-    Create distribution of vectors with a Gaussian distribution of angles
-    around the z-axis.
 
-    .. Note::
-        The Gaussian distribution here is of the angles. This means that when
-        projected onto an x-y plane the distribution will not be Gaussian
-        (except approximately for small angles).
+def vector_dist_flat_gaussian(spread, num_samples):
+    """
+    Create distribution of vectors with a Gaussian distribution on a flat
+    plane. The ray code is aligned with the z-axis, so the distribution is
+    Gaussian in the x-y directions.
+
+    For small angles this distribution will approximate the Kent distribution
+    and will be approximately gaussian in angle.
 
     Parameters
     ----------
@@ -317,21 +317,27 @@ def vector_dist_gaussian(spread, number):
     theta = _parse_spread_single(spread)
 
     # Convert the angluar hwhm to sigma.
-    sigma = theta / (2 * np.sqrt(2 * np.log(2)))
-    # convert the angular sigma into a linear-displacement-from-vertical
-    sigma_z = 1 - np.cos(sigma)
-    # create the half-normal distribution of vertical displacement.
-    dist = abs(np.random.normal(0, sigma_z, number))
-    z = 1.0 - dist
+    sigma = theta / (np.sqrt(2 * np.log(2)))
 
-    phi = np.random.uniform(0, 2 * np.pi, number)
+    # Calculate the equivilant width in x & y on a plane with z=1.
+    xsigma = np.sin(sigma)
+    ysigma = np.sin(sigma)
 
-    output = np.empty((number, 3))
-    output[:, 0] = np.sqrt(1 - z**2) * np.cos(phi)
-    output[:, 1] = np.sqrt(1 - z**2) * np.sin(phi)
-    output[:, 2] = z
+    # Origins for a gaussian distribution of rays.
+    mean = [0, 0]
 
-    return output
+    # Define a diagnonal covariance matrix.
+    cov = [[xsigma**2, 0], [0, ysigma**2]]
+
+    x, y = np.random.multivariate_normal(mean, cov, num_samples).T
+    z = np.full(num_samples, 1.0)
+
+    out = np.vstack((x, y, z)).T
+    out_mod = np.linalg.norm(out, axis=1)
+    out = np.einsum('ij,i->ij', out, 1 / np.linalg.norm(out, axis=1), optimize=True)
+
+    return out
+
 
 def _to_ndarray(spread):
     """

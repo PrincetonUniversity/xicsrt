@@ -9,6 +9,8 @@ Define the :class:`InteractMosaicCrystal` class.
 
 import numpy as np
 
+from xicsrt.util import profiler
+
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.optics._InteractCrystal import InteractCrystal
@@ -55,16 +57,16 @@ class InteractMosaicCrystal(InteractCrystal):
         for ii in range(self.param['mosaic_depth']):
             temp_mask = (~ mosaic_mask) & mask
             self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, sum(temp_mask)))
-            normals = self.mosaic_normals(norm, temp_mask)
-            temp_mask = self.angle_check(rays, norm, temp_mask)
-            rays = self.reflect_vectors(rays, xloc, normals, temp_mask)
+            norm_mosaic = self.mosaic_normals(norm, temp_mask)
+            temp_mask = self.angle_check(rays, norm_mosaic, temp_mask)
+            rays = self.reflect_vectors(rays, xloc, norm_mosaic, temp_mask)
             mosaic_mask[temp_mask] = True
         mask &= mosaic_mask
         rays['mask'] = mask
 
         return rays
 
-    def mosaic_normals(self, normals, mask):
+    def mosaic_normals(self, normals, mask, copy=True):
         """
         Add mosaic spread to the normals.
         Generates a list of crystallite normal vectors in a Gaussian
@@ -72,8 +74,11 @@ class InteractMosaicCrystal(InteractCrystal):
         """
         m = mask
 
-        rad_spread = self.param['mosaic_spread']
-        dir_local = xicsrt_spread.vector_dist_gaussian(rad_spread, np.sum(m))
+        rad_hwhm = self.param['mosaic_spread']/2.0
+
+        profiler.start('mosaic: vector_dist_flat_gaussian')
+        dir_local = xicsrt_spread.vector_dist_flat_gaussian(rad_hwhm, np.sum(m))
+        profiler.stop('mosaic: vector_dist_flat_gaussian')
 
         R = np.empty((np.sum(m), 3, 3,), dtype=np.float64)
 
@@ -85,7 +90,12 @@ class InteractMosaicCrystal(InteractCrystal):
         R[:, 1, :] /= np.linalg.norm(R[:, 1, :], axis=1)[:, np.newaxis]
         R[:, 2, :] = normals[m]
 
-        normals[m] = np.einsum('ij,ijk->ik', dir_local, R)
-        return normals
+        if copy:
+            norm_out = normals.copy()
+        else:
+            norm_out = normals
+
+        norm_out[m] = np.einsum('ij,ijk->ik', dir_local, R)
+        return norm_out
 
 

@@ -107,7 +107,7 @@ class InteractCrystal(InteractMirror):
         bragg_angle = np.zeros(m.shape, dtype=np.float64)
         dot = np.zeros(m.shape, dtype=np.float64)
         incident_angle = np.zeros(m.shape, dtype=np.float64)
-        
+
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
@@ -116,6 +116,10 @@ class InteractCrystal(InteractMirror):
 
         #check which rays satisfy bragg, update mask to remove those that don't
         m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
+
+        #print(bragg_angle[0:10])
+        #print(incident_angle[0:10])
+        #print(mask[0:10])
 
         return mask
 

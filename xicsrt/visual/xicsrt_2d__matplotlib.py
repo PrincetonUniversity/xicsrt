@@ -146,6 +146,8 @@ def _get_intersect_plotlist(
     opt.setdefault('hist_norm', False)
     opt.setdefault('drawstyle', 'steps-mid')
     opt.setdefault('linewidth', None)
+    opt.setdefault('found_max', None)
+    opt.setdefault('lost_max', None)
 
     if opt['name'] is None:
         opt['name'] = 'detector'
@@ -286,6 +288,8 @@ def _get_rays_plotlist(obj, results, opt, raytype='found'):
     origin_loc = obj.point_to_local(origin_ext)
     mask = np.all(~ np.isnan(origin_ext[:, :]), axis=1)
 
+    mask = _truncate_mask(mask, opt[raytype+'_max'])
+
     log.debug(f'{raytype:5.5s} {name:10.10s} {sum(mask)}')
 
     plotlist = []
@@ -404,6 +408,18 @@ def _on_ylims_change(event_ax):
     _update_lim_aspect(event_ax)
 
     event_ax.callbacks.connect('ylim_changed', _on_ylims_change)
+
+
+def _truncate_mask(mask, max_num):
+    if max_num is not None:
+        max_num = int(max_num)
+        num_mask = np.sum(mask)
+        if num_mask > max_num:
+            w = np.flatnonzero(mask)
+            np.random.shuffle(w)
+            mask[w[max_num:]] = False
+
+    return mask
 
 
 def plot_image(

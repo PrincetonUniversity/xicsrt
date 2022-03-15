@@ -36,11 +36,14 @@ def vector_angle(a, b):
     """
     Find the angle between two vectors.
     """
-    a_mod = np.linalg.norm(a)
-    b_mod = np.linalg.norm(b)
+
     if a.ndim == 2 & b.ndim == 2:
-        dot = np.einsum('ij,ik->i', a/a_mod, b/b_mod, optimize=True)
+        a_mod = np.linalg.norm(a, axis=1)
+        b_mod = np.linalg.norm(b, axis=1)
+        dot = np.einsum('ij,i,ij,i->i', a, 1/a_mod, b, 1/b_mod, optimize=True)
     elif a.ndim == 1 & b.ndim == 1:
+        a_mod = np.linalg.norm(a)
+        b_mod = np.linalg.norm(b)
         dot = np.dot(a/a_mod, b/b_mod)
     else:
         raise Exception('Input must have 1 or 2 dimensions.')
@@ -57,6 +60,8 @@ def vector_rotate(a, b, theta):
       v: perpendicular projection of a on b_hat.
       w: a vector perpendicular to both a and b.
     """
+    a = np.asarray(a)
+    b = np.asarray(b)
 
     if a.ndim == 2:
         b_hat = b / np.linalg.norm(b)

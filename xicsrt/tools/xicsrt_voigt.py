@@ -71,7 +71,7 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     bounds = bounds*base**np.abs(bounds/value*10)
     cdf_x = (bounds[:-1]+bounds[1:])/2
         
-    # We must used a properly normalized voigt here (intensity=1.0)
+    # We must use a properly normalized voigt here (intensity=1.0)
     cdf_y = voigt(
         cdf_x
         ,intensity=1.0
