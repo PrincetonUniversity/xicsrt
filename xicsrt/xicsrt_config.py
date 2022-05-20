@@ -319,6 +319,7 @@ def update_config(
 
     """
     _update_config_dict(config, config_new, strict, update, ignore_none)
+    return config
 
 
 def _update_config_dict(

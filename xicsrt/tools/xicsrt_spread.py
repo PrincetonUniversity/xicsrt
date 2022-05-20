@@ -317,7 +317,7 @@ def vector_dist_flat_gaussian(spread, num_samples):
     theta = _parse_spread_single(spread)
 
     # Convert the angluar hwhm to sigma.
-    sigma = theta / (np.sqrt(2 * np.log(2)))
+    sigma = theta[0] / (np.sqrt(2 * np.log(2)))
 
     # Calculate the equivilant width in x & y on a plane with z=1.
     xsigma = np.sin(sigma)

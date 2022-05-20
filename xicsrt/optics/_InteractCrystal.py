@@ -93,17 +93,14 @@ class InteractCrystal(InteractMirror):
         rays['mask'] = mask
         return rays
 
-    def angle_check(self, rays, norm, mask=None):
+    def angle_calc(self, rays , norm, mask=None):
         if mask is None:
             mask = rays['mask']
-
-        if self.param['check_bragg'] is False:
-            return mask
 
         D = rays['direction']
         W = rays['wavelength']
         m = mask
-        
+
         bragg_angle = np.zeros(m.shape, dtype=np.float64)
         dot = np.zeros(m.shape, dtype=np.float64)
         incident_angle = np.zeros(m.shape, dtype=np.float64)
@@ -111,8 +108,21 @@ class InteractCrystal(InteractMirror):
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
         bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
-        dot[m] = np.abs(np.einsum('ij,ij->i',D[m], -1 * norm[m]))
+        dot[m] = np.abs(np.einsum('ij,ij->i', D[m], -1 * norm[m], optimize=True))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / xm.magnitude(D[m]))
+
+        return bragg_angle, incident_angle
+
+    def angle_check(self, rays, norm, mask=None):
+        if mask is None:
+            mask = rays['mask']
+
+        if self.param['check_bragg'] is False:
+            return mask
+
+        m = mask
+
+        bragg_angle, incident_angle = self.angle_calc(rays, norm, mask)
 
         #check which rays satisfy bragg, update mask to remove those that don't
         m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
