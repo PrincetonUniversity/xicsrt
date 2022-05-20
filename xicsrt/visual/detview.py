@@ -2,10 +2,8 @@
 """
 .. Authors
     Novimir pablant <npablant@pppl.gov>
-    Yevgeniy Yakusevich <eugenethree@gmail.com>
-    James Kring <jdk0026@tigermail.auburn.edu>
 
-A set of tools for 2d visualization of the XICSRT results
+A simple image viewer for use with pixelated detectors.
 """
 import numpy as np
 import logging
@@ -24,12 +22,14 @@ def view(image, options=None, **kwargs):
 
 
     opt.setdefault('size', None)
-    opt.setdefault('pixel_size', None)
+    opt.setdefault('pixel_size', 0.1)
     opt.setdefault('aspect', 'equal')
-    opt.setdefault('coord', 'pixel')
+    opt.setdefault('coord', 'index')
     opt.setdefault('scale', 1.0)
     opt.setdefault('units', None)
     opt.setdefault('cmap', 'turbo')
+    opt.setdefault('xbound', None)
+    opt.setdefault('ybound', None)
 
     if not opt.get('xlabel'):
         opt['xlabel'] = f'x'
@@ -66,21 +66,41 @@ def view(image, options=None, **kwargs):
     axesdict['ysum'].sharey(axesdict['image'])
 
     if opt['coord'] == 'index':
-        x = np.arange(image.shape[0])
-        y = np.arange(image.shape[1])
+        # Index coordinates.
+        # Coordinate system is defined by the bottom left corner of the image.
+        # Pixels location defined by bottom left corner.
+        x = np.arange(image.shape[0], dtype=np.float)
+        y = np.arange(image.shape[1], dtype=np.float)
+        extent = (0, image.shape[0], 0, image.shape[1])
+    elif opt['coord'] == 'cindex':
+        # Index coordinates.
+        # Coordinate system is defined by the center of the image.
+        # Pixels location defined by bottom left corner.
+        raise NotImplementedError()
     elif opt['coord'] == 'pixel':
-        x = np.arange(image.shape[0])+opt['pixel_size']/2
-        y = np.arange(image.shape[1])+opt['pixel_size']/2
+        # Pixel coordinates.
+        # Coordinate system is defined by the bottom left corner of the image.
+        # Pixels location defined by center.
+        x = np.arange(image.shape[0], dtype=np.float)+0.5
+        y = np.arange(image.shape[1], dtype=np.float)+0.5
+        extent = np.array((-0.5, image.shape[0]-0.5, 0.5, image.shape[1]-0.5))
     elif opt['coord'] == 'cpixel':
-        # I haven't carefully checked that I am calculating this correctly.
-        x = np.arange(image.shape[0])+opt['pixel_size']/2 - opt['xsize']/opt['pixel_size']/2
-        y = np.arange(image.shape[1])+opt['pixel_size']/2 - opt['ysize']/opt['pixel_size']/2
+        # Centered Pixel coordinates.
+        # Coordinate system is defined by the center of the image.
+        # Pixels location defined by center.
+        raise NotImplementedError()
     elif opt['coord'] == 'space':
+        # Realspace coordinates.
+        # Coordinate system is defined by the center of the image.
+        # Pixels location defined by center.
         x = np.linspace(-0.5*opt['size'][0], 0.5*opt['size'][0], image.shape[0])
         y = np.linspace(-0.5*opt['size'][1], 0.5*opt['size'][1], image.shape[1])
+        extent = (-0.5*opt['size'][0], 0.5*opt['size'][0], -0.5*opt['size'][1], 0.5*opt['size'][1])
     else:
         raise Exception(f"coord type {opt['coord']} unknown.")
 
+    extent = np.asarray(extent, dtype=float)
+    extent *= opt['scale']
     x *= opt['scale']
     y *= opt['scale']
 
@@ -91,12 +111,13 @@ def view(image, options=None, **kwargs):
     plotlist.append({
         'axes':'image',
         'type':'image',
-        'x':x,
-        'y':y,
         'z':np.rot90(image),
+        'extent':extent,
         'cmap':opt['cmap'],
         'xlabel':opt['xlabel'],
         'ylabel':opt['ylabel'],
+        'xbound':opt['xbound'],
+        'ybound':opt['ybound'],
         })
     plotlist.append({
         'axes':'xsum',

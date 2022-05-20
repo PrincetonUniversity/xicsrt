@@ -148,6 +148,8 @@ def _get_intersect_plotlist(
     opt.setdefault('linewidth', None)
     opt.setdefault('found_max', None)
     opt.setdefault('lost_max', None)
+    opt.setdefault('found_mask', None)
+    opt.setdefault('lost_mask', None)
 
     if opt['name'] is None:
         opt['name'] = 'detector'
@@ -226,6 +228,10 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
     origin_loc = obj.point_to_local(origin_ext)
     mask = np.all(~ np.isnan(origin_ext[:, :]), axis=1)
 
+    mask_user = opt[prefix+'mask']
+    if mask_user is not None:
+        mask &= mask_user
+
     if axis == 0:
         range_ = opt['xbound']
         name = 'xhist'
@@ -288,7 +294,11 @@ def _get_rays_plotlist(obj, results, opt, raytype='found'):
     origin_loc = obj.point_to_local(origin_ext)
     mask = np.all(~ np.isnan(origin_ext[:, :]), axis=1)
 
-    mask = _truncate_mask(mask, opt[raytype+'_max'])
+    mask_user = opt[prefix+'mask']
+    if mask_user is not None:
+        mask &= mask_user
+
+    mask = _truncate_mask(mask, opt[prefix+'max'])
 
     log.debug(f'{raytype:5.5s} {name:10.10s} {sum(mask)}')
 

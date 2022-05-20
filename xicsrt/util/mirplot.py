@@ -178,8 +178,12 @@ def _set_plot_defaults(prop):
     prop.setdefault('legend_framealpha', 0.7)
 
     if prop['type'] == 'image':
-        if (prop['x'] is not None) and (prop['y'] is not None):
-            prop['extent'] = [min(prop['x']), max(prop['x']), min(prop['y']), max(prop['y'])]
+        if 'extent' not in prop:
+            if (prop['x'] is not None) and (prop['y'] is not None):
+                pass
+                # This needs work. If I assume that x and y define the pixel center
+                # then I could automatically calculate an extent here.
+                # prop['extent'] = [min(prop['x']), max(prop['x']), min(prop['y']), max(prop['y'])]
     elif prop['type'] == 'hline':
         if prop['y'] is None:
             prop['y'] = [0]
