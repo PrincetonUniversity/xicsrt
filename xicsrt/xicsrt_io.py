@@ -31,6 +31,9 @@ def load_config(filename):
 def save_config(config, filename=None, path=None, mkdir=None):
     if filename is None:
         filename = generate_filename(config, kind='config', path=path)
+    elif path is not None:
+        filename = os.path.join(path, filename)
+
     if mkdir is None:
         mkdir = config['general'].get('make_directories', False)
     _file_from_dict(config, filename, mkdir=mkdir)
@@ -41,9 +44,11 @@ def save_config(config, filename=None, path=None, mkdir=None):
 
 def save_results(output, filename=None, path=None, mkdir=None):
     config = output['config']
-    _make_output_path(config)
     if filename is None:
         filename = generate_filename(config, kind='results', path=path)
+    elif path is not None:
+        filename = os.path.join(path, filename)
+
     if mkdir is None:
         mkdir = config['general'].get('make_directories', False)
     _file_from_dict(output, filename, mkdir=mkdir)
@@ -52,9 +57,31 @@ def save_results(output, filename=None, path=None, mkdir=None):
     log.info('History saved to {}'.format(filename))
 
 
-def load_results(config=None, filename=None, path=None):
+def load_results(filename=None, path=None, config=None):
+    """
+    Load an XICSRT results file.
+
+    Keywords
+      filename
+        The name of the file to load.
+        filename can be a full path; otherwise if path is given it will be
+        prepended to the filename.
+        If filename is not provided and a config is given, then a filename
+        will be auto generated based on the config.
+      path
+        If provided the path will be prepended to the filename.
+      config
+        If provided (and filename is not), then the filename will be auto
+        generated using the config settings.
+    """
+    print(path, filename)
     if filename is None:
         filename = generate_filename(config, kind='results', path=path)
+    elif path is not None:
+        filename = os.path.join(path, filename)
+
+    print(filename)
+
     output = _dict_from_file(filename)
     return output
 

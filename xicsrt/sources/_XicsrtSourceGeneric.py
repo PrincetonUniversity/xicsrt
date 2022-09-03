@@ -127,7 +127,7 @@ class XicsrtSourceGeneric(GeometryObject):
           be gaussian.
 
           To convert from a fwhm in [eV]:
-          linewidth = 2*pi*e/h*fwhm_ev
+          linewidth = 2*pi*e/(h*fwhm_ev)
 
           To translate from linewidth to gamma in the Voigt equation:
           gamma = linewidth * wavelength**2 / (4*pi*c*1e10)
@@ -274,16 +274,19 @@ class XicsrtSourceGeneric(GeometryObject):
             name=self.param['angular_dist'],
             )
 
-        # Generate some basis vectors that are perpendicular
-        # to the normal. The orientation does not matter here.
-        o_1  = np.cross(normal, np.array([0,0,1])) + np.cross(normal, np.array([0,1,0]))
+        # Generate some basis vectors that are perpendicular to the normal.
+        # For an isotropic distribution the direction does not matter.
+        # for the xy distributions, the direction does matter.  This will
+        # provide the correct behavior for a generic source with the normal
+        # directed along the zaxis.
+        o_1 = np.cross(normal, self.param['xaxis']) + np.cross(normal, self.param['zaxis'])
         o_1 /=  np.linalg.norm(o_1, axis=1)[:, np.newaxis]
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
 
         R        = np.empty((self.param['intensity'], 3, 3))
-        R[:,0,:] = o_1
-        R[:,1,:] = o_2
+        R[:,0,:] = o_2
+        R[:,1,:] = o_1
         R[:,2,:] = normal
         
         direction = np.einsum('ij,ijk->ik', dir_local, R)

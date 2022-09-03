@@ -12,12 +12,30 @@ import numpy as np
 
 
 def distance_point_to_line(origin, normal, point):
+    """
+    Find the closest distnace between a point and a line in 3D.
+    """
     o = origin
     n = normal
     p = point
     t = np.dot(p - o, n) / np.dot(n, n)
     d = np.linalg.norm(np.outer(t, n) + o - p, axis=1)
     return d
+
+
+def intersect_ray_plane(ray, plane):
+    """
+    Find the intersection between a ray and a plane in 3D.
+    """
+
+    if ray['origin'].ndim == 1:
+        distance = (np.dot((plane['origin'] - ray['origin']), plane['zaxis'])
+                       / np.dot(ray['direction'], plane['zaxis']))
+        intersect = ray['origin'] + ray['direction'] * distance
+    else:
+        raise NotImplementedError('Only a single ray is currently supported.')
+
+    return intersect
 
 
 def toarray_1d(a):

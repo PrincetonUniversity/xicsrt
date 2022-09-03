@@ -116,6 +116,9 @@ def raytrace_single(config, _internal=False):
     if _internal:
         max_lost_iter = max_lost_iter//config['general']['number_of_runs']
 
+    # Save at least one lost ray even if this exceeds history_max_lost.
+    max_lost_iter = max(int(max_lost_iter), 1)
+
     # Setup the dispatchers.
     if 'filters' in config:
         m_log.debug("Creating filters")
