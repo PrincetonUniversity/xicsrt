@@ -28,7 +28,7 @@ def load_config(filename):
     return config
 
 
-def save_config(config, filename=None, path=None, mkdir=None):
+def save_config(config, filename=None, path=None, mkdir=None, overwrite=None):
     if filename is None:
         filename = generate_filename(config, kind='config', path=path)
     elif path is not None:
@@ -36,13 +36,13 @@ def save_config(config, filename=None, path=None, mkdir=None):
 
     if mkdir is None:
         mkdir = config['general'].get('make_directories', False)
-    _file_from_dict(config, filename, mkdir=mkdir)
+    _file_from_dict(config, filename, mkdir=mkdir, overwrite=overwrite)
 
     filename = pathlib.Path(filename).expanduser().resolve()
     log.info('Config saved to {}'.format(filename))
 
 
-def save_results(output, filename=None, path=None, mkdir=None):
+def save_results(output, filename=None, path=None, mkdir=None, overwrite=None):
     config = output['config']
     if filename is None:
         filename = generate_filename(config, kind='results', path=path)
@@ -51,7 +51,7 @@ def save_results(output, filename=None, path=None, mkdir=None):
 
     if mkdir is None:
         mkdir = config['general'].get('make_directories', False)
-    _file_from_dict(output, filename, mkdir=mkdir)
+    _file_from_dict(output, filename, mkdir=mkdir, overwrite=overwrite)
 
     filename = pathlib.Path(filename).expanduser().resolve()
     log.info('History saved to {}'.format(filename))
@@ -167,11 +167,14 @@ def _dict_from_file(filename):
     return data
 
 
-def _file_from_dict(data, filename, mkdir=False):
+def _file_from_dict(data, filename, mkdir=False, overwrite=False):
     if mkdir:
         _make_path(filename)
 
     filename = pathlib.Path(filename).expanduser()
+    if not overwrite and filename.exists():
+        raise FileExistsError("File exists. Use overwrite=True to overwrite.")
+
     ext = filename.suffix
 
     if ('pickle' in ext) or ('pkl' in ext):
