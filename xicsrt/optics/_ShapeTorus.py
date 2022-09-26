@@ -60,17 +60,19 @@ class ShapeTorus(ShapeObject):
         self.Yaxis = np.cross(self.param['zaxis'], self.param['xaxis'])
         
         dist = 0
-        if self.param['index'] == 0:
-            dist = +self.param['Rmajor'] + self.param['Rminor']
-        elif self.param['index'] == 1:
-            dist = +self.param['Rmajor'] - self.param['Rminor']
-        elif self.param['index'] == 2:
-            dist = -self.param['Rmajor'] + self.param['Rminor']
-        elif self.param['index'] == 3:
-            dist = -self.param['Rmajor'] - self.param['Rminor']
+        min_r = self.param['Rminor']
+        maj_r = self.param['Rmajor']
 
-        self.param['center'] = (dist - self.param['Rminor']) * self.param['zaxis'] + self.param['origin']
-        #self.param['center'] = self.param['origin']
+        if self.param['index'] == 0:
+            dist = +maj_r + min_r
+        elif self.param['index'] == 1:
+            dist = +maj_r - min_r
+        elif self.param['index'] == 2:
+            dist = -maj_r + min_r
+        elif self.param['index'] == 3:
+            dist = -maj_r - min_r
+
+        self.param['center'] = dist * self.param['zaxis'] + self.param['origin']
 
     def intersect(self, rays):
         dist, mask = self.intersect_distance(rays)
@@ -91,7 +93,7 @@ class ShapeTorus(ShapeObject):
         m = rays['mask']
 
         Rminor = self.param['Rminor']  
-        Rmajor = self.param['Rmajor'] - Rminor
+        Rmajor = self.param['Rmajor']
         
         # variable setup
         distances = np.zeros(m.shape, dtype=np.float64)
@@ -221,7 +223,7 @@ class ShapeTorus(ShapeObject):
         pt = pt - np.einsum('i,j->ij', np.einsum('ij,j->i', pt, self.Yaxis), self.Yaxis)
 
         C_norm = np.einsum('i,ij->ij', 1 / np.sqrt(np.einsum('ij,ij->i',pt, pt)), pt)                  # Projection of point on xz plane
-        Q = C + (maj_r - min_r) * C_norm
+        Q = C + maj_r * C_norm
 
         X_norm = (xloc[m] - Q)
         X_norm = np.einsum('i,ij->ij', 1 / np.sqrt(np.einsum('ij,ij->i',X_norm, X_norm)), X_norm) 

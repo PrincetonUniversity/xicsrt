@@ -10,11 +10,10 @@
 import sys
 import numpy as np
 
-from sys import float_info
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._ShapeObject import ShapeObject
-from xicsrt.optics._multiQuartic import multi_quartic          # Multiple Quartic Solver with Order Reduction Method
+from xicsrt.optics._multiQuartic import multi_quadratic          # Multiple Quartic Solver with Order Reduction Method
 
 @dochelper
 class ShapeCylinder(ShapeObject):
@@ -42,7 +41,6 @@ class ShapeCylinder(ShapeObject):
         """
         
         config['radius']  = 0.2
-        config['length']  = 1.1
         config['concave'] = True
         
         return config
@@ -67,9 +65,14 @@ class ShapeCylinder(ShapeObject):
             self.Yaxis -= dot * self.param['zaxis']
         self.Yaxis /= np.linalg.norm(self.Yaxis)
 
-        self.param['center'] = self.param['origin'] + self.param['zaxis'] * self.param['radius']
+        dist = self.param['radius']
+
+        if not self.param['concave']: dist = -dist
+
+        self.param['center'] = self.param['origin'] + self.param['zaxis'] * dist
 
     def intersect(self, rays):
+
         dist, mask = self.intersect_distance(rays)
         xloc = self.location_from_distance(rays, dist, mask)
         norm = self.intersect_normal(xloc, mask)
@@ -87,56 +90,61 @@ class ShapeCylinder(ShapeObject):
         O = rays['origin']
         D = rays['direction']
         m = rays['mask']
-
-        Radius = self.param['radius']   
-        Length = self.param['length']        
-
+        
+        Radius = self.param['radius']
+        
         distances = np.zeros(m.shape, dtype=np.float64)
-        L1        = np.zeros((len(m), 3), dtype=np.float64)
-        t         = np.zeros(m.shape, dtype=np.float64)
-        d         = np.zeros(m.shape, dtype=np.float64)
-        h         = np.zeros(m.shape, dtype=np.float64)
+        dMod = np.zeros((len(m),3))
+        Omod = np.zeros((len(m),3))
+        
         t1        = np.zeros(m.shape, dtype=np.float64)
         t2        = np.zeros(m.shape, dtype=np.float64)
         y1        = np.zeros(m.shape, dtype=np.float64)
         y2        = np.zeros(m.shape, dtype=np.float64)
+        y0        = np.zeros(m.shape, dtype=np.float64)
+        m1        = np.zeros(m.shape, dtype=np.float64)
+        a         = np.zeros(m.shape, dtype=np.float64)
+        b         = np.zeros(m.shape, dtype=np.float64)
+        c         = np.zeros(m.shape, dtype=np.float64)
+        Roxy2     = np.zeros(m.shape, dtype=np.float64)
         
         orig = O - self.param['center']
-        sign = np.einsum('ij,ij->i', D, -orig)
-        m[m] &= sign[m] > 0.0
-        
-        cos  = np.einsum('ij,j->i', D, self.Yaxis)
-        sin  = np.sqrt(1 - cos**2)
-        cos2 = np.einsum('ij,j->i', orig, self.Yaxis)
+#         sign = np.einsum('ij,ij->i', D, -orig)
+
+#         m[m] &= sign[m] > 0.0
+
+        sin  = np.sqrt(1 - np.einsum('ij,j->i', D, self.Yaxis) ** 2)
         
         dMod = D - np.einsum('i,j->ij', np.einsum('ij,j->i', D, self.Yaxis), self.Yaxis)
+        
+        
         m[m] &= np.einsum('ij,ij->i', dMod[m], dMod[m]) > 0.0
         
-        Omod = orig - np.einsum('i,j->ij', np.einsum('ij,j->i', orig, self.Yaxis), self.Yaxis)
+        Omod  = orig - np.einsum('i,j->ij', np.einsum('ij,j->i', orig, self.Yaxis), self.Yaxis)
         
-        Roxy = np.sqrt(np.einsum('ij,ij->i', Omod, Omod))
+        dMod[m]  = np.einsum('ij,i->ij', dMod[m], 1/ np.sqrt(np.einsum('ij,ij->i',dMod[m],dMod[m])))
+        Roxy2[m] = np.einsum('ij,ij->i', Omod[m], Omod[m])
+        Ocompd   = np.einsum('ij,j->i', Omod, self.param['zaxis']) * np.einsum('ij,j->i', dMod, self.param['zaxis']) + np.einsum('ij,j->i', Omod, self.param['xaxis']) * np.einsum('ij,j->i', dMod, self.param['xaxis'])
         
-        dMod[m] = np.einsum('ij,i->ij', dMod[m], 1 / np.sqrt(np.einsum('ij,ij->i', dMod[m], dMod[m])))
-        
-        L1[m] = -Omod[m]
-        t[m] = np.einsum('ij,ij->i', dMod[m], Omod[m])
-        d[m] = np.sqrt(np.einsum('ij,ij->i', Omod[m], Omod[m]) - t[m] ** 2)
-        
-        m[m] &= d[m] <= Radius
-        h[m] = np.sqrt(Radius ** 2 - d[m] ** 2)
-                
-        t1[m] = (Roxy[m] - h[m]) / sin[m]
-        t2[m] = (Roxy[m] + h[m]) / sin[m]
+        # TODO : this code will be replaced with geometrical method
+        a[m] = np.einsum('ij,j->i', dMod[m], self.param['zaxis']) ** 2 
+        a[m]+= np.einsum('ij,j->i', dMod[m], self.param['xaxis']) ** 2
+        b[m] = 2 * Ocompd[m]
+        c[m] = Roxy2[m] - Radius ** 2
 
-        y1[m] = orig[m,1] + D[m,1] * t1[m]
-        y2[m] = orig[m,1] + D[m,1] * t2[m]
-        
-        t1[np.abs(y1) > Length / 2] = -sys.float_info.max
-        t2[np.abs(y2) > Length / 2] = sys.float_info.max
+        t1[m], t2[m] = multi_quadratic(a[m], b[m], c[m])
+#         di2 = Roxy2[m]
+#         t02 = Ocompd[m]
+#         t0 = np.sqrt(t02)
+#         h  = np.sqrt(Radius ** 2 + t02 - di2)
+#         t1[m] = t0 - h
+#         t2[m] = t0 + h
+        #print(t1,t2)
+        t1[m] /= sin[m]
+        t2[m] /= sin[m]
         
         distances[m] = np.where((t1[m] > t2[m]) if self.param['concave'] else (t1[m] < t2[m]), t1[m], t2[m])    
         m[m] &= distances[m] > 0.0
-        m[m] &= distances[m] < sys.float_info.max
 
         return distances, m
     

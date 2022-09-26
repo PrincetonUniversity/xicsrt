@@ -226,6 +226,7 @@ class TraceObject(GeometryObject):
         m = mask
 
         if self.param['check_aperture']:
+            
             m_aperture = xicsrt_aperture.aperture_mask(X_local, m, self.param['aperture'])
             m[m] = m_aperture[m]
         

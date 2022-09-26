@@ -78,7 +78,7 @@ class ShapeMeshTorus(ShapeMesh):
         min_r     = self.param['radius_minor']
 
         C0_yaxis = np.cross(C0_xaxis, C0_zaxis)
-        O = C0 + maj_r * C0_zaxis
+        O = C0 + maj_r * C0_zaxis # it is center
 
         C_norm = xm.vector_rotate(C0_zaxis, C0_yaxis, a)
         C = O - maj_r * C_norm
