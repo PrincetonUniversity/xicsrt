@@ -76,7 +76,7 @@ class InteractMosaicCrystal(InteractCrystal):
 
         # Check if any rays were within the cutoff.
         if np.sum(m) > 0:
-            mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool)
+            mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool_)
 
             # Check for mosaic reflections up to the given 'depth'.
             profiler.start('mosaic: loop')

@@ -185,7 +185,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         bundle_input['temperature']  = np.ones([self.param['bundle_count']], dtype = np.float64)
         bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.float64)
         bundle_input['velocity']     = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
-        bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool)
+        bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool_)
         bundle_input['spread']       = np.zeros([self.param['bundle_count']], dtype = np.float64)
         bundle_input['solid_angle']  = np.zeros([self.param['bundle_count']], dtype = np.float64)
         
@@ -350,7 +350,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         rays['direction']   = np.zeros((total_rays,3), dtype=np.float64)
         rays['wavelength']  = np.zeros((total_rays), dtype=np.float64)
         rays['weight']      = np.zeros((total_rays), dtype=np.float64)
-        rays['mask']        = np.ones((total_rays), dtype=np.bool)
+        rays['mask']        = np.ones((total_rays), dtype=np.bool_)
 
         index = 0
         for ii, num_rays in enumerate(count_rays_in_bundle):

@@ -423,10 +423,10 @@ class ShapeMesh(ShapeObject):
         """
         profiler.start('find_point_faces')
         if mask is None:
-            mask = np.ones(p_idx.shape, dtype=np.bool)
+            mask = np.ones(p_idx.shape, dtype=np.bool_)
         m = mask
         p_faces_idx = np.zeros((8, len(m)), dtype=np.int)
-        p_faces_mask = np.zeros((8, len(m)), dtype=np.bool)
+        p_faces_mask = np.zeros((8, len(m)), dtype=np.bool_)
         for ii_p in p_idx:
             ii_f = np.nonzero(np.equal(faces, p_idx[ii_p]))[0]
             faces_num = len(ii_f)
@@ -441,7 +441,7 @@ class ShapeMesh(ShapeObject):
         idx = mesh['points_tree'].query(X[m])[1]
 
         faces_idx = np.zeros((8, len(m)), dtype=np.int)
-        faces_mask = np.zeros((8, len(m)), dtype=np.bool)
+        faces_mask = np.zeros((8, len(m)), dtype=np.bool_)
 
         faces_idx[:, m] = mesh['p_faces_idx'][:, idx]
         faces_mask[:, m] = mesh['p_faces_mask'][:, idx]

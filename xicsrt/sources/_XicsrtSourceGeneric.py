@@ -385,7 +385,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return w
     
     def generate_mask(self):
-        m = np.ones((self.param['intensity']), dtype=np.bool)
+        m = np.ones((self.param['intensity']), dtype=np.bool_)
         return m
     
     def ray_filter(self, rays):
