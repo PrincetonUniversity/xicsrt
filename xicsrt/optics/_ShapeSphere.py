@@ -24,14 +24,23 @@ class ShapeSphere(ShapeObject):
         """
         radius : float (1.0)
           The radius of the sphere.
+
+        convex : bool (False)
+          If True the optic will have a convex curvature, if False the surface
+          will have a concave curvature (the default).
         """
         config = super().default_config()
         config['radius'] = 1.0
+        config['convex'] = False
         return config
 
     def initialize(self):
         super().initialize()
-        self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
+        if self.param['convex']:
+            sign = -1
+        else:
+            sign = 1
+        self.param['center'] = sign*self.param['radius'] * self.param['zaxis'] + self.param['origin']
 
     def intersect(self, rays):
         dist, mask = self.intersect_distance(rays)
@@ -81,8 +90,12 @@ class ShapeSphere(ShapeObject):
         t_0[m] = t_ca[m] - t_hc[m]
         t_1[m] = t_ca[m] + t_hc[m]
 
-        # Distance traveled by the ray before hitting the optic
-        distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
+        # Distance traveled by the ray before hitting the optic surface with
+        # the chosen curvature.
+        if self.param['convex']:
+            distance[m] = np.where(t_0[m] < t_1[m], t_0[m], t_1[m])
+        else:
+            distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
 
         return distance, m
 
