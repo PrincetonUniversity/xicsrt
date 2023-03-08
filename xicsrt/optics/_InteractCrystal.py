@@ -23,7 +23,7 @@ class InteractCrystal(InteractMirror):
 
     def default_config(self):
         """
-        crystal_spacing
+        crystal_spacing: float [angstroms]
           The spacing between crystal planes.
 
           .. Note::

@@ -122,9 +122,9 @@ class InteractMosaicCrystal(InteractCrystal):
 
         R = np.empty((np.sum(m), 3, 3,), dtype=np.float64)
 
-        # Create two vectors perpendicular to the surface normal,
+        # Create two vectors perpendicular to the surface normal and each other,
         # it doesn't matter how they are oriented otherwise.
-        R[:, 0, :]  = np.cross(normals[m], [0,0,1])
+        R[:, 0, :]  = np.cross(normals[m], [1,0,0]) + np.cross(normals[m], [0,0,1])
         R[:, 0, :] /= np.linalg.norm(R[:, 0, :], axis=1)[:, np.newaxis]
         R[:, 1, :]  = np.cross(normals[m], R[:, 0, :])
         R[:, 1, :] /= np.linalg.norm(R[:, 1, :], axis=1)[:, np.newaxis]
