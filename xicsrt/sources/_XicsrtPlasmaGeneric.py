@@ -344,7 +344,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         profiler.start('Ray Bundle Collection')
         # append bundled rays together to form a single ray dictionary.    
         # create the final ray dictionary
-        total_rays = np.int(np.sum(count_rays_in_bundle))
+        total_rays = int(np.sum(count_rays_in_bundle))
         rays                = dict()
         rays['origin']      = np.zeros((total_rays,3), dtype=np.float64)
         rays['direction']   = np.zeros((total_rays,3), dtype=np.float64)

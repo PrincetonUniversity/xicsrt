@@ -281,7 +281,7 @@ class ShapeMesh(ShapeObject):
         epsilon = 1e-15
 
         num_rays = len(m)
-        hits = np.empty(num_rays, dtype=np.int)
+        hits = np.empty(num_rays, dtype=np.int64)
         m_temp = np.empty(num_rays, dtype=bool)
         m_temp_2 = np.zeros(num_rays, dtype=bool)
 
@@ -352,7 +352,7 @@ class ShapeMesh(ShapeObject):
         X = np.full(D.shape, np.nan, dtype=np.float64)
 
         num_rays = len(m)
-        hits = np.empty(num_rays, dtype=np.int)
+        hits = np.empty(num_rays, dtype=np.int64)
         epsilon = 1e-15
 
         # Copying these makes the code easier to read,
@@ -410,7 +410,7 @@ class ShapeMesh(ShapeObject):
         Match faces to face indexes, with a loop over faces.
         """
         profiler.start('mesh_get_index')
-        idx_hits = np.empty(hits.shape[0], dtype=np.int)
+        idx_hits = np.empty(hits.shape[0], dtype=np.int32)
         for ii, ff in enumerate(faces):
             m_temp = np.all(np.equal(ff, hits), axis=1)
             idx_hits[m_temp] = ii
@@ -425,7 +425,7 @@ class ShapeMesh(ShapeObject):
         if mask is None:
             mask = np.ones(p_idx.shape, dtype=np.bool_)
         m = mask
-        p_faces_idx = np.zeros((8, len(m)), dtype=np.int)
+        p_faces_idx = np.zeros((8, len(m)), dtype=np.int32)
         p_faces_mask = np.zeros((8, len(m)), dtype=np.bool_)
         for ii_p in p_idx:
             ii_f = np.nonzero(np.equal(faces, p_idx[ii_p]))[0]
@@ -440,7 +440,7 @@ class ShapeMesh(ShapeObject):
         profiler.start('find_near_faces')
         idx = mesh['points_tree'].query(X[m])[1]
 
-        faces_idx = np.zeros((8, len(m)), dtype=np.int)
+        faces_idx = np.zeros((8, len(m)), dtype=np.int32)
         faces_mask = np.zeros((8, len(m)), dtype=np.bool_)
 
         faces_idx[:, m] = mesh['p_faces_idx'][:, idx]
