@@ -48,6 +48,7 @@ class InteractMosaicCrystal(InteractCrystal):
         config['mosaic_spread'] = 0.0
         config['mosaic_depth'] = 15
         config['mosaic_cutoff'] = None
+        config['mosaic_absorption'] = 0.0
         return config
 
     def interact(self, rays, xloc, norm, mask=None):
@@ -77,16 +78,23 @@ class InteractMosaicCrystal(InteractCrystal):
         # Check if any rays were within the cutoff.
         if np.sum(m) > 0:
             mosaic_mask = np.zeros(rays['mask'].shape, dtype=np.bool_)
+            absorption_mask = np.zeros(rays['mask'].shape, dtype=np.bool_)
 
             # Check for mosaic reflections up to the given 'depth'.
             profiler.start('mosaic: loop')
             for ii in range(self.param['mosaic_depth']):
-                temp_mask = (~ mosaic_mask) & mask
+                temp_mask = ((~ mosaic_mask) & mask) & (~ absorption_mask)
                 num_temp = np.sum(temp_mask)
+                num_absorbed = np.sum(absorption_mask)
                 if num_temp == 0:
                     break
 
-                self.log.debug('  Mosaic iteration: {} rays: {}'.format(ii, num_temp))
+                self.log.debug('  Mosaic iteration: {} rays: {} absorbed: {}'.format(ii, num_temp, num_absorbed))
+
+                profiler.start('mosaic: absorption')
+                absorption_mask[self.mosaic_absorption(temp_mask)] = True
+                temp_mask[temp_mask] &= (~ absorption_mask[temp_mask])
+                profiler.stop('mosaic: absorption')
 
                 profiler.start('mosaic: mosaic_normals')
                 norm_mosaic = self.mosaic_normals(norm, temp_mask)
@@ -139,3 +147,7 @@ class InteractMosaicCrystal(InteractCrystal):
         return norm_out
 
 
+    def mosaic_absorption(self, mask):
+        absorption_mask = mask.copy() # Only the photons that entered this layer are taken into consideration
+        absorption_mask[mask] &= np.random.random_sample(mask.shape)[mask] < self.param['mosaic_absorption'] # True for the newly absorbed photons
+        return absorption_mask
