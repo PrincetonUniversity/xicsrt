@@ -278,9 +278,22 @@ def _sort_raytrace(input, max_lost=None):
     return output
 
 
-def combine_raytrace(input_list):
+def combine_raytrace(input_list,
+                     keep_images=True,
+                     components=None):
     """
     Produce a combined results dictionary from a list of raytrace results.
+
+    Keywords
+    --------
+
+    keep_images: bool (True)
+        Control whether to combine images.
+        Useful when combining outputs which use different optics sizes.
+
+    components: list (None)
+        A list of specific components to combine.
+        Useful when not all components are needed in the final output.
 
     Example
     -------
@@ -303,7 +316,12 @@ def combine_raytrace(input_list):
     output['lost']['history'] = dict()
 
     num_iter = len(input_list)
-    key_opt_list = list(input_list[0]['total']['meta'].keys())
+
+    if components is None:
+        key_opt_list = list(input_list[0]['total']['meta'].keys())
+    else:
+        key_opt_list = components
+
     key_opt_last = key_opt_list[-1]
 
     # Combine the meta data.
@@ -316,14 +334,26 @@ def combine_raytrace(input_list):
                 output['total']['meta'][key_opt][key_meta] += input_list[ii_iter]['total']['meta'][key_opt][key_meta]
 
     # Combine the images.
-    for key_opt in key_opt_list:
-        if key_opt in input_list[0]['total']['image']:
-            if input_list[0]['total']['image'][key_opt] is not None:
-                output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
-                for ii_iter in range(num_iter):
-                    output['total']['image'][key_opt] += input_list[ii_iter]['total']['image'][key_opt]
-            else:
-                output['total']['image'][key_opt] = None
+    if keep_images:
+        for key_opt in key_opt_list:
+            if key_opt in input_list[0]['total']['image']:
+                if input_list[0]['total']['image'][key_opt] is not None:
+                    # Check shape compatibility
+                    shape = input_list[0]['total']['image'][key_opt].shape
+                    shape_match = True
+                    for ii_iter in range(num_iter):
+                        if not input_list[ii_iter]['total']['image'][key_opt].shape == shape:
+                            shape_match = False
+                    if shape_match:
+                        # Shapes match, combine images
+                        output['total']['image'][key_opt] = np.zeros(input_list[0]['total']['image'][key_opt].shape)
+                        for ii_iter in range(num_iter):
+                            output['total']['image'][key_opt] += input_list[ii_iter]['total']['image'][key_opt]
+                    else:
+                        m_log.warning('Image dimensions do not match. Cannot combine images.')
+                        output['total']['image'][key_opt] = None
+                else:
+                    output['total']['image'][key_opt] = None
 
     # Combine all the histories.
     if len(input_list[0]['found']['history']) > 0:

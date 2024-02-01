@@ -106,6 +106,7 @@ m_log = logging.getLogger(__name__.split('.')[-1])
 m_log.setLevel(logging.INFO)
 
 __version__ = '2.0.0'
+__version_date__ = '2022-05-20'
 
 def plot_to_screen(plotlist, show=True):
     matplotlib.pyplot.ioff()

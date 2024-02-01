@@ -98,13 +98,19 @@ def show(figure=None):
 
     figure.show()
 
-def add_rays(results, **kwargs):
-    _plot_ray_history(results['lost']['history'], lost=True, **kwargs)
-    _plot_ray_history(results['found']['history'], lost=False, **kwargs)
+def add_rays(
+        results,
+        lost=True,
+        found=True,
+        **kwargs):
+    if lost:
+        _plot_ray_history(results['lost']['history'], _lost=True, **kwargs)
+    if found:
+        _plot_ray_history(results['found']['history'], _lost=False, **kwargs)
 
 def _plot_ray_history(
         history,
-        lost=None,
+        _lost=None,
         figure=None,
         color=None,
         lost_color=None,
@@ -119,13 +125,13 @@ def _plot_ray_history(
 
     #print(lost_color, found_color)
 
-    if lost is False:
+    if _lost is False:
         if color is None:
             color = 'rgba(255, 0, 0, 0.01)'
         if found_color is not None:
             color = found_color
         name = 'found'
-    elif lost is True:
+    elif _lost is True:
         if color is None:
             color = 'rgba(0, 0, 255, 0.01)'
         if lost_color is not None:
@@ -328,6 +334,10 @@ def add_sources(config, figure=None, **kwargs):
 
 
 def add_fluxsurfaces(config, figure=None, **kwargs):
+    """
+    Plot the 3D flux surfaces of a plasma source.
+    This should work for any source object that has a 'car_from_flx' method.
+    """
     section = 'sources'
     for name in config[section]:
         _add_fluxsurf_single(config, name, section, figure=figure, **kwargs)
@@ -406,7 +416,7 @@ def _add_fluxsurf_single(
 
     obj = xicsrt_public.get_element(config, name, section)
 
-    # Check to see if this object defines fluxspace.
+    # Check to see if this object defines fluxspace through a car_from_flux method.
     if not hasattr(obj, 'car_from_flx'):
         return
 
