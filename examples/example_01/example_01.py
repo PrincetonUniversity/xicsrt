@@ -36,7 +36,7 @@ config['sources']['source']['zsize'] = 0.00
 # 4.
 config['optics'] = {}
 config['optics']['crystal'] = {}
-config['optics']['crystal']['class_name'] = 'XicsrtOpticCrystalSpherical'
+config['optics']['crystal']['class_name'] = 'XicsrtOpticSphericalCrystal'
 config['optics']['crystal']['check_size'] = True
 config['optics']['crystal']['origin'] = [0.0, 0.0,         0.80374151]
 config['optics']['crystal']['zaxis']  = [0.0, 0.59497864, -0.80374151]
