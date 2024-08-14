@@ -58,6 +58,19 @@ class GeometryObject(ConfigObject):
 
         return config
 
+    def check_config(self):
+
+        # I should add a check that zaxis and xaxis are normalized.
+        # The other option is just quietly normalize, but that has a risk
+        # of confusion to the user.
+
+        # Check here that xaxis and zaxis are orthogonal.
+        if self.config['xaxis'] is not None:
+            zaxis = np.array(self.config['zaxis'])
+            xaxis = np.array(self.config['xaxis'])
+            if not np.isclose(np.dot(zaxis, xaxis), 0.0):
+                raise ValueError('zaxis and xaxis are not orthogonal.')
+
     def setup(self):
         super().setup()
 

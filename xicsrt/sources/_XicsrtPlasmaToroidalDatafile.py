@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir A. Pablant <nablant@pppl.gov>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
+.. Authors
+    Novimir A. Pablant <nablant@pppl.gov>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
 
 Description
 -----------
-A plasma source based on a VMEC equilibrium.
+
+A plasma object with toroidal geometry and a circular cross-section.
+Here the plasma profiles are read from a text files.
 """
 
 import numpy as np

@@ -159,7 +159,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
     def initialize(self):
         super().initialize()
-        self.param['max_rays']     = int(self.param['max_rays'])
+        if self.param['max_rays'] is not None:
+            self.param['max_rays']     = int(self.param['max_rays'])
         self.param['volume']       = self.config['xsize'] * self.config['ysize'] * self.config['zsize']
 
         if self.param['bundle_count'] is None:
@@ -274,10 +275,12 @@ class XicsrtPlasmaGeneric(GeometryObject):
             / (self.param['bundle_count'] * self.param['bundle_volume'])))
 
         self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
-        if predicted_rays > self.param['max_rays']:
-            raise ValueError(
-                f"Current settings will produce too many rays ({predicted_rays:0.2e}). "
-                f"Please reduce integration time or adjust other parameters.")
+
+        if self.param['max_rays']:
+            if predicted_rays > self.param['max_rays']:
+                raise ValueError(
+                    f"Current settings will produce too many rays ({predicted_rays:0.2e}). "
+                    f"Please reduce integration time or adjust other parameters.")
 
         # Bundle generation loop
         for ii in range(self.param['bundle_count']):

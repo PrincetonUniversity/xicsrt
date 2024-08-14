@@ -16,7 +16,7 @@ def defaultConfig(level=None, long=False, force=False):
     if long:
         fmt = fmt.replace('6.6s', '12.12s')
     if level is None:
-        level = DEBUG
+        level = INFO
     basicConfig(format=fmt, style='{', force=force)
     getLogger('xicsrt').setLevel(level)
 

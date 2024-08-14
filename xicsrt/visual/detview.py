@@ -69,8 +69,8 @@ def view(image, options=None, **kwargs):
         # Index coordinates.
         # Coordinate system is defined by the bottom left corner of the image.
         # Pixels location defined by bottom left corner.
-        x = np.arange(image.shape[0], dtype=np.float)
-        y = np.arange(image.shape[1], dtype=np.float)
+        x = np.arange(image.shape[0], dtype=np.float64)
+        y = np.arange(image.shape[1], dtype=np.float64)
         extent = (0, image.shape[0], 0, image.shape[1])
     elif opt['coord'] == 'cindex':
         # Index coordinates.
@@ -81,8 +81,8 @@ def view(image, options=None, **kwargs):
         # Pixel coordinates.
         # Coordinate system is defined by the bottom left corner of the image.
         # Pixels location defined by center.
-        x = np.arange(image.shape[0], dtype=np.float)+0.5
-        y = np.arange(image.shape[1], dtype=np.float)+0.5
+        x = np.arange(image.shape[0], dtype=np.float64)+0.5
+        y = np.arange(image.shape[1], dtype=np.float64)+0.5
         extent = np.array((-0.5, image.shape[0]-0.5, 0.5, image.shape[1]-0.5))
     elif opt['coord'] == 'cpixel':
         # Centered Pixel coordinates.

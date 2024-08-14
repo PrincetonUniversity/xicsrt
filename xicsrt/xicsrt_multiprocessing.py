@@ -7,7 +7,7 @@
 from multiprocessing import Pool
 from xicsrt.xicsrt_raytrace import *
 
-log = mirlogging.getLogger(__name__)
+m_log = mirlogging.getLogger(__name__)
 
 def raytrace(config, processes=None):
     """
@@ -38,7 +38,7 @@ def raytrace(config, processes=None):
         # loop through each configuration in the configuration input file
         # and add a new run into the pool.
         for ii in range(num_runs):
-            log.info('Adding run to pool: {} of {}'.format(ii + 1, num_runs))
+            m_log.info('Adding run to pool: {} of {}'.format(ii + 1, num_runs))
 
             # Make a copy of the configuration.              
             config_run = deepcopy(config)         

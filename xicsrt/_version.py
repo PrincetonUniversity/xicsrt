@@ -14,6 +14,6 @@ revision:
   - New release that does not break any compatibility.
 """
 
-__version__="0.8.9"
-__version_date__ = "2023-02-01"
+__version__="0.8.10"
+__version_date__ = "2024-08-13"
 

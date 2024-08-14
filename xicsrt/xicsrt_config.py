@@ -349,7 +349,7 @@ def _update_config_dict(
             if update:
                 config[key] = config_new[key]
         else:
-            if isinstance(config[key], dict):
+            if isinstance(config[key], dict) and isinstance(config_new[key], dict):
                 _update_config_dict(
                     config[key],
                     config_new[key],

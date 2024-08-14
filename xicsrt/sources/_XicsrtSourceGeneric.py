@@ -284,7 +284,7 @@ class XicsrtSourceGeneric(GeometryObject):
         o_2  = np.cross(normal, o_1)
         o_2 /=  np.linalg.norm(o_2, axis=1)[:, np.newaxis]
 
-        R        = np.empty((self.param['intensity'], 3, 3))
+        R = np.empty((self.param['intensity'], 3, 3))
         R[:,0,:] = o_2
         R[:,1,:] = o_1
         R[:,2,:] = normal
@@ -308,13 +308,14 @@ class XicsrtSourceGeneric(GeometryObject):
             #random_wavelength = self.random_wavelength_cauchy
             random_wavelength = self.random_wavelength_voigt
             wavelength = random_wavelength(self.param['intensity'])
-            
-            #doppler shift
-            c = const.physical_constants['speed of light in vacuum'][0]
-            wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
-        
+
+        if not np.all((self.param['velocity'] == 0.0)):
+            # Doppler shift for each ray.
+            c = const.physical_constants['speed of light in vacuum'][0]
+            wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
+
         return wavelength
 
     def random_wavelength_voigt(self, size=None):
@@ -323,18 +324,19 @@ class XicsrtSourceGeneric(GeometryObject):
         # Check for the trivial case.
         if (self.param['linewidth']  == 0.0 and self.param['temperature'] == 0.0):
             return np.ones(size)*self.param['wavelength']
-        # Check for the Lorentzian case.
+
+        # Check for the Gaussian case.
+        if (self.param['linewidth']  == 0.0):
+            return self.random_wavelength_normal(size)
+
+        # Check for zero temperature Voigt (Lorentzian case)
         if (self.param['temperature'] == 0.0):
             # I need to update the cauchy routine first.
             #raise NotImplementedError('Random Lorentzian distribution not implemented.')
 
             # TEMPORARY:
-            # The raytracer cannot currently accept a zero temperature, so just add 1eV for now.
+            # The voigt distribution generator cannot handle a zero temperature, so just add 1eV for now.
             self.param['temperature'] += 1.0
-             
-        # Check for the Gaussian case.
-        if (self.param['linewidth']  == 0.0):
-            return self.random_wavelength_normal(size)
 
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
