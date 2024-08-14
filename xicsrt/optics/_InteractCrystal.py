@@ -79,7 +79,10 @@ class InteractCrystal(InteractMirror):
         config['rocking_fwhm']       = None
         config['rocking_file']       = None
         config['rocking_filetype']   = None
-        config['rocking_mix']        = 0.5 
+        config['rocking_mix']        = 0.5
+
+        config['rocking_material']   = None
+        config['rocking_miller']    = None
 
         return config
     
@@ -125,7 +128,7 @@ class InteractCrystal(InteractMirror):
         bragg_angle, incident_angle = self.angle_calc(rays, norm, mask)
 
         #check which rays satisfy bragg, update mask to remove those that don't
-        m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m])
+        m[m] &= self.rocking_curve_filter(incident_angle[m], bragg_angle[m], rays['wavelength'][m])
 
         #print(bragg_angle[0:10])
         #print(incident_angle[0:10])
@@ -133,7 +136,7 @@ class InteractCrystal(InteractMirror):
 
         return mask
 
-    def rocking_curve_filter(self, incident_angle, bragg_angle):
+    def rocking_curve_filter(self, incident_angle, bragg_angle, wavelength):
 
         # Generate or load a probability curve.
         if "step" in self.param['rocking_type']:
@@ -177,6 +180,62 @@ class InteractCrystal(InteractMirror):
                 , data['value']['reflect_p']
                 , left=0.0
                 , right=0.0)
+
+            p = self.param['rocking_mix'] * sigma + (1 - self.param['rocking_mix']) * pi
+
+        # If user wishes to use the rocking curve calculation in the ToFu python module
+        # https://github.com/ToFuProject/tofu
+        elif "tofu" in self.param['rocking_type']:
+            # Modules
+            import tofu.spectro._rockingcurve as rc
+
+
+            print(np.mean(wavelength))
+            # Crystal dictionary
+            dcry = {
+                'material': self.param['rocking_material'],
+                'name': 'tmp',
+                'symbol': 'tmp',
+                'miller': self.param['rocking_miller'],
+                'target': {
+                    'ion': 'tmp',
+                    'lamb': np.mean(wavelength), # e-10
+                    'units': 'AA',
+                    },
+                #'d_hkl': 1.1549,
+                }
+
+            # Computes rocking curve
+            dout = rc.compute_rockingcurve(
+                crystal = dcry['name'], 
+                din=dcry, 
+                lamb = dcry['target']['lamb'], 
+                plot_power_ratio = False
+                )
+
+            # evaluate rocking curve reflectivity value for each incident ray
+            # This calculation is done in units of 'radians'.
+            dtheta = (incident_angle - bragg_angle) # [rad]
+            sigma = np.interp(
+                dtheta,
+                (
+                    dout['Glancing angles'][0,0,0,:] 
+                    - dout['Bragg angle of reference (rad)']
+                    ),
+                dout['Power ratio'][0,0,0,:],
+                left=0.0,
+                right=0.0
+                )
+            pi = np.interp(
+                dtheta,
+                (
+                    dout['Glancing angles'][1,0,0,:] 
+                    - dout['Bragg angle of reference (rad)']
+                    ),
+                dout['Power ratio'][1,0,0,:],
+                left=0.0,
+                right=0.0
+                )
 
             p = self.param['rocking_mix'] * sigma + (1 - self.param['rocking_mix']) * pi
 
