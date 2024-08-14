@@ -4,7 +4,7 @@
    Conor Perks <cjperks@psfc.mit.edu>
    Novimir Pablant <npablant@pppl.gov>
 
-Define the :class:`ShapeSpherical` class.
+Define the :class:`ShapeCylinder` class.
 """
 import numpy as np
 
@@ -23,18 +23,26 @@ class ShapeCylinder(ShapeObject):
         """
         radius : float (1.0)
           The radius of the cylinder.
+
+        convex : bool (False)
+          If True the optic will have a convex curvature, if False the surface
+          will have a concave curvature (the default).
         """
         config = super().default_config()
         config['radius'] = 1.0
+        config['convex'] = False
         return config
 
     def initialize(self):
         super().initialize()
-        # Finds center location of the cylinder object wrt origin on surface
-        self.param['center'] = self.param['radius'] * self.param['zaxis'] + self.param['origin']
+        # Finds center location of the cylinder geometry (in global coordinates).
+        if self.param['convex']:
+            sign = -1
+        else:
+            sign = 1
+        self.param['center'] = sign*self.param['radius'] * self.param['zaxis'] + self.param['origin']
 
     def intersect(self, rays):
-        # Loads ray information
         dist, mask = self.intersect_distance(rays)
         xloc = self.location_from_distance(rays, dist, mask)
         norm = self.intersect_normal(xloc, mask)
@@ -45,96 +53,79 @@ class ShapeCylinder(ShapeObject):
         """
         Calulate the distance to the intersection of the rays with the
         cylindrical optic.
+
         This calculation is copied from:
         https://mrl.cs.nyu.edu/~dzorin/rend05/lecture2.pdf
         """
-        #setup variables
-        O = rays['origin'] # dim(nrays,3)
-        D = rays['direction'] # dim(nrays,3)
-        m = rays['mask'] # dim(nrays,)
+
+        # Create short variable names for readability.
+        O = rays['origin']
+        D = rays['direction']
+        m = rays['mask']
 
         # Initializes arrays to store intersection variables
-        distance = np.full(m.shape, np.nan, dtype=np.float64) #dim(nrays,)
-        #q        = np.empty(O.shape, dtype=np.float64) # dim(nrays,3)
-        #int_cap  = np.empty(m.shape, dtype=np.float64) # dim(nrays,)
-        #int_edge = np.empty(m.shape, dtype=np.float64) # dim(nrays,)
+        distance = np.full(m.shape, np.nan, dtype=np.float64)
 
-        # Loads quantities defining cylinder, axis parameterized pa + t*va
-        pa = self.param['center'] # dim(3,); point on axis cylinder is centered on (global coordinates)
-        va = self.param['xaxis'] # dim(3,); cylinder axis orientation (wrt global coor.)
-        za = self.param['zaxis'] # dim(3,); normal vector of crystal surface (wrt global coor.)
-        r = self.param['radius'] # dim(1,); radius
-        #xsize = self.param['xsize'] # dim(1,); Length of the cylinder
-        #ysize = self.param['ysize'] # dim(1,); Height of the cylinder (assumes H<2*r)
+        # Create short variable names for readability.
+        pa = self.param['center']
+        va = self.param['xaxis']
+        r = self.param['radius']
 
-        # Checks orthogonality of input axes
-        if np.dot(va,za) != 0:
-            print('Cylinder axes are not orthogonally defined')
+        # Calculate quadratic formula coefficients for t
+        #
+        # The cylinter axis parameterized as pa + t_axis*va
+        # Below einsum is used to calculate dot products.
 
-        # If we can proceed with calculations
+        # Length between ray origin and cylinder center
+        dp = O-pa
+        dot_Dva = np.einsum('ij,j->ij', D, va)
+        dot_dpva = np.einsum('ij,j->ij', dp, va)
+        A1 = D - dot_Dva*va
+        B1 = dp-dot_dpva*va
+        # Coefficients for f(t) = A*t**2 + B*t + C = 0
+        A = np.einsum('ij,ij->i', A1, A1)
+        B = 2*np.einsum('ij,ij->i', A1, B1)
+        C = np.einsum('ij,ij->i', B1, B1)-r**2
+
+        # Solves the quadratic formula for t
+        dis = B**2-4*A*C
+
+        # Update the mask to exclude rays that don't hit the cylinder.
+        m[m] &= (dis[m] >= 0)
+
+        t_0      = np.empty(m.shape, dtype=np.float64)
+        t_1      = np.empty(m.shape, dtype=np.float64)
+        t_0[m] = (-B[m] - np.sqrt(dis[m]))/(2*A[m])
+        t_1[m] = (-B[m] + np.sqrt(dis[m]))/(2*A[m])
+
+        # Distance traveled by the ray before hitting the optic surface with
+        # the chosen curvature.
+        if self.param['convex']:
+            distance[m] = np.where(t_0[m] < t_1[m], t_0[m], t_1[m])
         else:
-            # Calculates coordinates of cylinder caps
-            #p1 = pa - va*(xsize/2)
-            #p2 = pa + va*(xsize/2)
+            distance[m] = np.where(t_0[m] > t_1[m], t_0[m], t_1[m])
 
-            # Calculates location of edges of cylindrically-bent object
-            #ha = np.cross(va, za) # dim(3,); Vector in the crystal height direction
-            #ha = ha/np.linalg.norm(ha) # Ensures direction is normalized
-            #theta = np.arcsin(ysize/2/r) # Angle between cylinder center and object edge
-            #h1 = pa + ha*(ysize/2) - za*r*np.cos(theta) # Calculates edge coordinates
-            #h2 = pa - ha*(ysize/2) - za*r*np.cos(theta)
-
-            # Calculates quadratic formula coefficients for t
-            dp = O-pa # dim(nrays,3); Length between ray origin and cylinder center
-            dot_Dva = np.einsum('ij,j->ij', D, va)#np.dot(D, va) # dim(nrays,3)
-            dot_dpva = np.einsum('ij,j->ij', dp, va)#np.dot(dp, va) # dim(nrays,3)
-            A1 = D - dot_Dva*va # dim(nrays,3)
-            B1 = dp-dot_dpva*va # dim(nrays,3)
-            A = np.einsum('ij,ij->i', A1, A1)#np.dot(A1,A1) # Coefficients for f(t) = A*t**2 + B*t + C = 0 # dim(nrays,)
-            B = 2*np.einsum('ij,ij->i', A1, B1)#np.dot(A1,B1) # dim(nrays,)
-            C = np.einsum('ij,ij->i', B1, B1)-r**2#np.dot(B1,B1)-r**2 # dim(nrays,)
-
-            # Solves the quadratic formula for t
-            dis = B**2-4*A*C # dim(nrays,)
-            t1 = (-B - np.sqrt(dis))/(2*A) # dim(nrays,)
-            t2 = (-B + np.sqrt(dis))/(2*A) # dim(nrays,)
-
-            # Assumes that the object is bent such that there is only one real intersection
-            # If the reflection surface is oriented towards the ray source (like it always should be)
-            t = np.maximum(t1,t2).reshape(len(m), 1) # dim(nrays,)
-
-            # Calculates ray intersection point if infinite cylinder
-            #q[m] = O[m] + D[m]*t[m]
-
-            # Checks if the intersection point is within the end caps and object edge
-            #int_cap[m] = np.abs(np.einsum('i,ij->ij',va ,q[m]-pa))#np.abs(np.dot(va, q-pa)) # cap
-            #int_edge[m] = np.abs(np.einsum('i,ij->ij',ha ,q[m]-pa))#np.abs(np.dot(ha, q-pa)) # edge
-
-            # If the intersection point is larger than the cystal, the ray misses the cylinder
-            #m[m] &= (int_cap[m] < xsize/2 and int_edge[m] < ysize/2)
-
-            # Distance traveled by the ray before hitting the optic
-            distance[m] = t[m,0]
-
-            return distance, m
+        return distance, m
 
     def intersect_normal(self, xloc, mask):
         """
-        Calculates the normal vector from the interaction with the cylinder surface
+        Calculates the normal vector from the intersection with the cylinder surface
         """
 
+        # Create short variable names for readability.
+        m = mask
+        pa = self.param['center']
+        va = self.param['xaxis']
+
         # Initializes quantities
-        m = mask # dim(nrays,)
-        norm = np.full(xloc.shape, np.nan, dtype=np.float64) # dim(nrays,3)
-        pa_proj = np.full(xloc.shape, np.nan, dtype=np.float64) # dim(nrays,3)
-        pa = self.param['center'] # dim(3,)
-        va = self.param['xaxis'] # dim(3,)
+        norm = np.full(xloc.shape, np.nan, dtype=np.float64)
+        pa_proj = np.full(xloc.shape, np.nan, dtype=np.float64)
 
         # Note that a normal vector on a cylinder is orthogonal to the cylinder axis
         # As such, we need to project the 'center' of the cylinder onto the same
         # plane as the normal vector
-        dummy = np.einsum('ij,j->ij', pa-xloc[m], va) # dim(nrays,3)
-        pa_proj[m] = pa - dummy*va # dim(nrays,3)
+        dummy = np.einsum('ij,j->ij', pa-xloc[m], va)
+        pa_proj[m] = pa - dummy*va
 
         # Calculates the normal vector from intersection point to cylinder center
         norm[m] = xm.normalize(pa_proj[m] - xloc[m])

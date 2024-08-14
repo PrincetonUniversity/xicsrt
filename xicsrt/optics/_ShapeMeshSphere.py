@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Authors
--------
-  - Novimir Pablant <npablant@pppl.gov>
-  - James Kring <jdk0026@tigermail.auburn.edu>
-  - Yevgeniy Yakusevich <eugenethree@gmail.com>
-  - Matthew Slominski <mattisaacslominski@yahoo.com>
+.. Authors:
+    Novimir Pablant <npablant@pppl.gov>
+    James Kring <jdk0026@tigermail.auburn.edu>
+    Yevgeniy Yakusevich <eugenethree@gmail.com>
+    Matthew Slominski <mattisaacslominski@yahoo.com>
 """
 import numpy as np
 from scipy.spatial import Delaunay
