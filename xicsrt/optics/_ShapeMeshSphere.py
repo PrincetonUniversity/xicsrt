@@ -24,6 +24,15 @@ class ShapeMeshSphere(ShapeMesh):
 
     The analytical :class:`ShapeSphere` object should be used for all normal
     raytracing purposes.
+
+    **Programming Notes**
+
+    This optic is built in local coordinates with the mesh surface normal
+    generally in the local z = [0, 0, 1] direction and with
+    config['trace_local'] = True. This is recommended because the mesh
+    implementation performs triangulation and interpolation in the local
+    x-y plane.
+
     """
 
     def default_config(self):
@@ -42,32 +51,30 @@ class ShapeMeshSphere(ShapeMesh):
         config['mesh_size'] = (11, 11)
         config['mesh_coarse_size'] = (5, 5)
 
+        # The meshgrid is defined in local coordinates.
+        config['trace_local'] = True
+
         return config
 
     def setup(self):
         super().setup()
 
         # Generate the fine mesh.
-        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_size'])
-        mesh_points_ext = self.point_to_external(mesh_points)
-        mesh_normals_ext = self.vector_to_external(mesh_normals)
+        mesh_points, mesh_normals, mesh_faces = self.generate_mesh(self.param['mesh_size'])
+        self.param['mesh_points'] = mesh_points
+        self.param['mesh_normals'] = mesh_normals
         self.param['mesh_faces'] = mesh_faces
-        self.param['mesh_points'] = mesh_points_ext
-        self.param['mesh_normals'] = mesh_normals_ext
 
         # Generate the coarse mesh.
-        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_coarse_size'])
-        mesh_points_ext = self.point_to_external(mesh_points)
-        mesh_normals_ext = self.vector_to_external(mesh_normals)
+        mesh_points, mesh_normals, mesh_faces = self.generate_mesh(self.param['mesh_coarse_size'])
+        self.param['mesh_coarse_points'] = mesh_points
+        self.param['mesh_coarse_normals'] = mesh_normals
         self.param['mesh_coarse_faces'] = mesh_faces
-        self.param['mesh_coarse_points'] = mesh_points_ext
-        self.param['mesh_coarse_normals'] = mesh_normals_ext
 
     def generate_mesh(self, meshsize):
         """
         Create a spherical meshgrid in local coordinates.
         """
-
         xsize = self.param['xsize']
         ysize = self.param['ysize']
 
@@ -84,7 +91,7 @@ class ShapeMeshSphere(ShapeMesh):
         points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
         norm = xm.normalize(center - points)
 
-        tri = Delaunay(points[:, 0:2])
-        faces = tri.simplices
+        delaunay = Delaunay(points[:, 0:2])
+        faces = delaunay.simplices
 
-        return points, faces, norm
+        return points, norm, faces

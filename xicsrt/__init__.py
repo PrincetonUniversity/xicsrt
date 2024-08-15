@@ -6,6 +6,7 @@
 
 # Import top level user functions.
 from xicsrt.xicsrt_raytrace import raytrace
+from xicsrt.xicsrt_public import *
 from xicsrt._version import __version__
 from xicsrt.util.version import warn_version
 

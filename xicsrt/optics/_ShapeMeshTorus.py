@@ -18,29 +18,65 @@ class ShapeMeshTorus(ShapeMesh):
     """
     A toroidal crystal implemented using a mesh-grid.
 
-    This class meant to be used for two reasons:
+    This class meant to be used for three reasons:
+    - A toroidal optic shape usable with large radii of curvature
     - As an example and template for how to implement a mesh-grid optic.
     - As a verification of the mesh-grid implementation.
 
-    The analytical :class:`ShapeTorus` object should be used for all normal
-    raytracing purposes.
+    The analytical :class:`ShapeTorus` object will be much faster.
+
+    **Programming Notes**
+
+    This optic is built in local coordinates with the mesh surface normal
+    generally in the local z = [0, 0, 1] direction and with
+    config['trace_local'] = True. This is recommended because the mesh
+    implementation performs triangulation and interpolation in the local
+    x-y plane.
+
     """
 
     def default_config(self):
-        config = super().default_config()
-        config['use_meshgrid'] = True
-        config['mesh_refine'] = True
-        config['mesh_size'] = (21,11)
-        config['mesh_coarse_size'] = (11,5)
-        config['angle_major'] = [-0.01, 0.01]
-        config['angle_minor']  = [-0.05, 0.05]
+        """
+        radius_major: float (1.0)
+            The radius of curvature of the crystal in the toroidal (xaxis)
+            direction. This is not the same as the geometric major radius of the
+            axis of a toroid, which in our case would be r_major-r_minor.
 
-        # Parameters needed to define geometry.
+        radius_minor: float (0.1)
+            The radius of the curvature of the crystal in the poloidal (yaxis)
+            direction. This is the same as the geometric minor radius of a
+            toroid.
+
+        normal_method: str ('analytic')
+            Specify how to calculate the normal vectors at each of the grid
+            points.  Supported values are 'analytic' and 'fd'.
+
+            When set to 'fd' a finite difference method will be used. This is
+            primarily here as an example for cases in which the surface position
+            is easy to calculate but where surface normals are difficult. A
+            better option in these cases however is to use auto-differentiation
+            to calculate analytical derivatives (for example using jax).
+
+        mesh_size : (float, float) ((11,11))
+          The number of mesh points in the x and y directions.
+
+        mesh_coarse_size : (float, float) ((5,5))
+          The number of mesh points in the x and y directions.
+        """
+        config = super().default_config()
+        config['mesh_refine'] = True
+        config['mesh_size'] = (11,11)
+        config['mesh_coarse_size'] = (5,5)
+        config['mesh_xsize'] = None
+        config['mesh_ysize'] = None
+
         config['radius_major'] = 1.0
         config['radius_minor'] = 0.1
 
-        # Calculation options.
         config['normal_method'] = 'analytic'
+
+        # The meshgrid is defined in local coordinates.
+        config['trace_local'] = True
 
         return config
 
@@ -48,32 +84,46 @@ class ShapeMeshTorus(ShapeMesh):
         super().setup()
         self.log.debug('Yo mama was here.')
 
+        # Calculate the angles that define the physical mesh size
+        if (xsize := self.param['mesh_xsize']) is None:
+            xsize = self.param['xsize']
+        if (ysize := self.param['mesh_ysize']) is None:
+            ysize = self.param['ysize']
+        half_major = np.arcsin(xsize/2/(self.param['radius_major']))
+        half_minor = np.arcsin(ysize/2/self.param['radius_minor'])
+        self.param['angle_major'] = [-1*half_major, half_major]
+        self.param['angle_minor'] = [-1*half_minor, half_minor]
+
         # Generate the fine mesh.
-        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_size'])
-        self.param['mesh_faces'] = mesh_faces
+        mesh_points, mesh_normals, mesh_faces = self.generate_mesh(self.param['mesh_size'])
         self.param['mesh_points'] = mesh_points
         self.param['mesh_normals'] = mesh_normals
+        self.param['mesh_faces'] = mesh_faces
 
         # Generate the coarse mesh.
-        mesh_points, mesh_faces, mesh_normals = self.generate_mesh(self.param['mesh_coarse_size'])
-        self.param['mesh_coarse_faces'] = mesh_faces
+        mesh_points, mesh_normals, mesh_faces = self.generate_mesh(self.param['mesh_coarse_size'])
         self.param['mesh_coarse_points'] = mesh_points
         self.param['mesh_coarse_normals'] = mesh_normals
+        self.param['mesh_coarse_faces'] = mesh_faces
 
         # Calculate width and height of the optic.
-        self.param['xsize'] = np.max(
-            self.param['mesh_points'][:,0])-np.min(self.param['mesh_points'][:,0])
-        self.param['ysize'] = np.max(
-            self.param['mesh_points'][:,1])-np.min(self.param['mesh_points'][:,1])
-        self.log.debug(f"WxH: {self.param['xsize']:0.3f}x{self.param['ysize']:0.3f}")
+        # This needs to be done in local coordinates
+        mesh_local = self.param['mesh_points']
+        mesh_xsize = np.max(mesh_local[:,0])-np.min(mesh_local[:,0])
+        mesh_ysize = np.max(mesh_local[:,1])-np.min(mesh_local[:,1])
+
+        self.log.debug(f"Mesh xsize x ysize: {mesh_xsize:0.3f}x{mesh_ysize:0.3f}")
 
     def torus(self, a, b):
         """
         Return a 3D surface coordinate given a set of two angles.
         """
-        C0 = self.param['origin']
-        C0_zaxis  = self.param['zaxis']
-        C0_xaxis  = self.param['xaxis']
+        #C0 = self.param['origin']
+        #C0_zaxis  = self.param['zaxis']
+        #C0_xaxis  = self.param['xaxis']
+        C0 = np.array([0.0, 0.0, 0.0])
+        C0_zaxis  = np.array([0.0, 0.0, 1.0])
+        C0_xaxis  = np.array([1.0, 0.0, 0.0])
         maj_r     = self.param['radius_major']
         min_r     = self.param['radius_minor']
 
@@ -181,19 +231,20 @@ class ShapeMeshTorus(ShapeMesh):
 
         aa, bb = np.meshgrid(a, b, indexing='ij')
         angles_2d = np.stack((aa.flatten(), bb.flatten()), axis=0).T
-        tri = Delaunay(angles_2d)
-
-        # It's also possible to triangulate using the x,y coordinates.
-        # This is not recommended unless there is some specific need.
-        #
-        # points_2d = np.stack((xx.flatten(), yy.flatten()), axis=0).T
-        # tri = Delaunay(points_2d)
 
         points = np.stack((xx.flatten(), yy.flatten(), zz.flatten())).T
         normals = np.stack((normal_xx.flatten(), normal_yy.flatten(), normal_zz.flatten())).T
 
-        faces = tri.simplices
+        delaunay = Delaunay(angles_2d)
+        faces = delaunay.simplices
+
+        # It's also possible to triangulate using the x,y coordinates.
+        # This is not recommended unless there is some specific need.
+        #
+        # delaunay = Delaunay(points[:, 0:2])
+        # faces = delaunay.simplices
+
 
         profiler.stop('generate_mesh')
-        return points, faces, normals
+        return points, normals, faces
 

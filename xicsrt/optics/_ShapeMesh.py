@@ -20,19 +20,28 @@ class ShapeMesh(ShapeObject):
     """
     A shape that uses a mesh grid instead of an analytical shape.
 
+    This implementation assumes that the mesh surface normal is generally in the
+    local z = [0, 0, 1] direction; both triangulation and interpolation are
+    done in the x-y plane and are therefore best behaved when this assumption
+    holds. It is recommended to build optics in local coordinates with this
+    assumption and set config['trace_local'] = True.
+
+    Supplying a well behaved Delaunay Triangulation via config['mesh_delaunay']
+    can help to make the mesh work while raytracing in global coordinates,
+    but problems will still be encountered if the surface normal is more aligned
+    with the x or y directions.
+
     **Programming Notes**
 
     Raytracing of mesh optics is fundamentally slow, because of the need to
     find which mesh face is intersected by each ray.  For the simplest
     implementations this requires testing each ray against each mesh face
     leading to the speed scaling as the number of mesh faces
-    (or equivilently mesh_density^2).
+    (or equivalently num_faces^2).
 
     Some optimization of the basic calculation been completed. The
     mesh_intersect_1 method implements the Möller–Trumbore algorithm and is
-    the fastest pure python algorithm found so far. Other variations that have
-    been tried are saved in the archive folder, along with some documentation
-    on performance.
+    the fastest pure python algorithm found so far.
 
     To further improve performance this class (optionally) also makes use of
     pre-selection with a coarse mesh. First the intersection with the coarse
@@ -73,12 +82,12 @@ class ShapeMesh(ShapeObject):
     def default_config(self):
         """
         mesh_points
-        mesh_faces
         mesh_normals
+        mesh_faces
 
         mesh_coarse_points
-        mesh_coarse_faces
         mesh_coarse_normals
+        mesh_coarse_faces
 
         mesh_interpolate
         mesh_refine
@@ -87,12 +96,12 @@ class ShapeMesh(ShapeObject):
         config = super().default_config()
 
         config['mesh_points'] = None
-        config['mesh_faces'] = None
         config['mesh_normals'] = None
+        config['mesh_faces'] = None
 
         config['mesh_coarse_points'] = None
-        config['mesh_coarse_faces'] = None
         config['mesh_coarse_normals'] = None
+        config['mesh_coarse_faces'] = None
 
         config['mesh_interpolate'] = None
         config['mesh_refine'] = None
@@ -112,6 +121,13 @@ class ShapeMesh(ShapeObject):
             if self.param['mesh_coarse_points'] is not None:
                 self.param['mesh_refine'] = True
 
+        spread_x = np.max(self.param['mesh_points'][:, 0]) - np.min(self.param['mesh_points'][:, 0])
+        spread_y = np.max(self.param['mesh_points'][:, 1]) - np.min(self.param['mesh_points'][:, 1])
+        spread_z = np.max(self.param['mesh_points'][:, 2]) - np.min(self.param['mesh_points'][:, 2])
+        if (spread_z > spread_x) or (spread_z > spread_y):
+            self.log.warning('Mesh is not oriented with the surface normals near the local z direction.\n'
+                             'This may lead to unexpected and incorrect results.')
+
     def initialize(self):
         super().initialize()
         self.mesh_initialize()
@@ -120,6 +136,7 @@ class ShapeMesh(ShapeObject):
         """
         Calculate ray intersections with the mesh.
         """
+        profiler.start('mesh_intersect')
 
         if not self.param['mesh_refine']:
             xloc, mask, hits = self.mesh_intersect_1(rays, self.param['mesh'])
@@ -149,10 +166,17 @@ class ShapeMesh(ShapeObject):
         else:
             norm = self.mesh_normals(hits, self.param['mesh'], mask)
 
+        profiler.stop('mesh_intersect')
         return xloc, norm, mask
 
     def mesh_interpolate(self, X, mesh, mask):
         profiler.start('mesh_interpolate')
+
+        # Interpolate the z-coordinate of the intersection.
+        # Here I assume that the surface normal is generally aligned in the
+        # z direction. In that case the x and y intersections will be quite
+        # accurate, and a correction in the z intersection will help correct
+        # for the flatness of each triangle in the triangulation.
         X[:, 2] = mesh['interp']['z'](X[:, 0], X[:, 1])
 
         normals = np.empty(X.shape)
@@ -175,32 +199,34 @@ class ShapeMesh(ShapeObject):
         profiler.start('_mesh_precalc')
 
         output = {}
-        output['faces'] = faces
         output['points'] = points
         output['normals'] = normals
+        output['faces'] = faces
 
+        # Perform 2D Delaunay triangulation using the x and y locations.
+        # This will work fine in most cases, but may cause problems if the
+        # optic is oriented so that the normal is in the x or y direction.
+        #
+        # It is recommended that mesh optics be built using a local
+        # coordinate system that makes the x and y coordinates sensible for
+        # 2d interpolation.
+        delaunay = Delaunay(points[:, 0:2])
+
+        # If pre-triangulated faces were provided, use those for the ray
+        # intersection Calculations
         if faces is None:
-            tri = Delaunay(points[:, 0:2])
-            faces = tri.simplices
+            faces = delaunay.simplices
             output['faces'] = faces
 
         if self.param['mesh_interpolate']:
             # Create a set of interpolators.
-            # For now create these in 2D using the x and y locations.
-            # This will not make sense for all geometries. In principal
-            # the interpolation could be done in 3D, but this needs more
-            # investigation and will ultimately be less accurate.
-            #
-            # It is recommended that mesh optics be built using a local
-            # coordinate system that makes the x and y coordinates sensible
-            # for 2d interpolation.
             profiler.start('Create Interpolators')
             interp = {}
             output['interp'] = interp
-            interp['z'] = Interpolator(points[:, 0:2], points[:, 2].flatten())
-            interp['normal_x'] = Interpolator(points[:, 0:2], normals[:, 0].flatten())
-            interp['normal_y'] = Interpolator(points[:, 0:2], normals[:, 1].flatten())
-            interp['normal_z'] = Interpolator(points[:, 0:2], normals[:, 2].flatten())
+            interp['z'] = Interpolator(delaunay, points[:, 2].flatten())
+            interp['normal_x'] = Interpolator(delaunay, normals[:, 0].flatten())
+            interp['normal_y'] = Interpolator(delaunay, normals[:, 1].flatten())
+            interp['normal_z'] = Interpolator(delaunay, normals[:, 2].flatten())
             profiler.stop('Create Interpolators')
 
         # Copying these makes the code easier to read,
@@ -338,7 +364,7 @@ class ShapeMesh(ShapeObject):
         dimensions than in mesh_intersect_1, and need a different
         vectorization.
 
-        At the moment I am using an less efficient mesh intersection
+        At the moment I am using a less efficient mesh intersection
         method. This should be updated to use the same method as
         mesh_intersect_1, but with the proper vectorization.
         """

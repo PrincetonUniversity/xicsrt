@@ -268,6 +268,9 @@ def _add_trace_mesh(obj, figure=None, name=None):
     faces = obj.param['mesh_faces']
     points = obj.param['mesh_points']
 
+    if obj.param['trace_local']:
+        points = obj.point_to_external(points)
+
     if True:
         # Plot gridlines
         lines = []
