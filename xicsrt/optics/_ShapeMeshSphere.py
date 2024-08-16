@@ -18,7 +18,8 @@ class ShapeMeshSphere(ShapeMesh):
     """
     A spherical crystal implemented using a mesh-grid.
 
-    This class meant to be used for two reasons:
+    This class meant to be used for three reasons:
+    - A spherical optic shape usable with large radii of curvature
     - As an example and template for how to implement a mesh-grid optic.
     - As a verification of the mesh-grid implementation.
 

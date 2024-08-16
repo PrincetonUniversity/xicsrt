@@ -15,13 +15,10 @@ from xicsrt.optics._ShapeMeshTorus import ShapeMeshTorus
 @dochelper
 class XicsrtOpticMeshToroidalCrystal(InteractCrystal, ShapeMeshTorus):
     """
-    A meshgrid toroidal crystal optic.
-    This Optic is only meant to be used as an example of how to implement
-    geometry using a meshgrid. The analytical Optic :class:`ShapeTorus` should
-    be used for all normal raytracing purposes.
+    A Toroidal crystal optic implemented using a mesh.
 
-    Programming Notes
-    -----------------
+    **Programming Notes**
+
     The geometry of toroidal mesh was implemented as a separate Shape object
     (:class:`ShapeMeshTorus`) to allow mix-and-match with various Interactions.
     It would have also been possible to simply inherit

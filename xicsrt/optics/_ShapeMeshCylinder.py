@@ -3,7 +3,7 @@
 .. Authors:
    Novimir Pablant <npablant@pppl.gov>
 
-Define the :class:`ShapeMeshTorus` class.
+Define the :class:`ShapeMeshcylinder` class.
 """
 import numpy as np
 from scipy.spatial import Delaunay
@@ -14,7 +14,7 @@ from xicsrt.tools import xicsrt_math as xm
 from xicsrt.optics._ShapeMesh import ShapeMesh
 
 @dochelper
-class ShapeMeshTorus(ShapeMesh):
+class ShapeMeshCylinder(ShapeMesh):
     """
     A toroidal crystal implemented using a mesh-grid.
 
@@ -23,7 +23,7 @@ class ShapeMeshTorus(ShapeMesh):
     - As an example and template for how to implement a mesh-grid optic.
     - As a verification of the mesh-grid implementation.
 
-    The analytical :class:`ShapeTorus` object will be much faster.
+    The analytical :class:`Shapecylinder` object will be much faster.
 
     **Programming Notes**
 
@@ -37,25 +37,8 @@ class ShapeMeshTorus(ShapeMesh):
 
     def default_config(self):
         """
-        radius_major: float (1.0)
-            The radius of curvature of the crystal in the toroidal (xaxis)
-            direction. This is not the same as the geometric major radius of the
-            axis of a toroid, which in our case would be r_major-r_minor.
-
-        radius_minor: float (0.1)
-            The radius of the curvature of the crystal in the poloidal (yaxis)
-            direction. This is the same as the geometric minor radius of a
-            toroid.
-
-        normal_method: str ('analytic')
-            Specify how to calculate the normal vectors at each of the grid
-            points.  Supported values are 'analytic' and 'fd'.
-
-            When set to 'fd' a finite difference method will be used. This is
-            primarily here as an example for cases in which the surface position
-            is easy to calculate but where surface normals are difficult. A
-            better option in these cases however is to use auto-differentiation
-            to calculate analytical derivatives (for example using jax).
+        radius: float (1.0)
+            The radius of curvature of the crystal.
 
         mesh_size : (float, float) ((11,11))
           The number of mesh points in the x and y directions.
@@ -70,12 +53,9 @@ class ShapeMeshTorus(ShapeMesh):
         config['mesh_xsize'] = None
         config['mesh_ysize'] = None
 
-        config['radius_major'] = 1.0
-        config['radius_minor'] = 0.1
+        config['radius'] = 1.0
 
-        config['normal_method'] = 'analytic'
-
-        # The meshgrid is defined in local coordinates.
+        # It's good practice to always define meshes in local coordinates.
         config['trace_local'] = True
 
         return config
@@ -89,10 +69,9 @@ class ShapeMeshTorus(ShapeMesh):
             xsize = self.param['xsize']
         if (ysize := self.param['mesh_ysize']) is None:
             ysize = self.param['ysize']
-        half_major = np.arcsin(xsize/2/(self.param['radius_major']))
-        half_minor = np.arcsin(ysize/2/self.param['radius_minor'])
-        self.param['angle_major'] = [-1*half_major, half_major]
-        self.param['angle_minor'] = [-1*half_minor, half_minor]
+        self.param['x_range'] = [-1*xsize/2, xsize/2]
+        half_angle = np.arcsin(ysize/2/(self.param['radius']))
+        self.param['angle_range'] = [-1*half_angle, half_angle]
 
         # Generate the fine mesh.
         mesh_points, mesh_normals, mesh_faces = self.generate_mesh(self.param['mesh_size'])
@@ -106,55 +85,32 @@ class ShapeMeshTorus(ShapeMesh):
         self.param['mesh_coarse_normals'] = mesh_normals
         self.param['mesh_coarse_faces'] = mesh_faces
 
-        # Calculate final width and height of the optic for debugging.
+        # Calculate the final width and height of the optic.
         mesh_local = self.param['mesh_points']
         mesh_xsize = np.max(mesh_local[:,0])-np.min(mesh_local[:,0])
         mesh_ysize = np.max(mesh_local[:,1])-np.min(mesh_local[:,1])
         self.log.debug(f"Mesh xsize x ysize: {mesh_xsize:0.3f}x{mesh_ysize:0.3f}")
 
-    def torus(self, a, b):
+    def cylinder(self, x, angle):
         """
-        Return a 3D surface coordinate given a set of two angles.
+        Return a 3D surface coordinate given a distance and angle.
         """
         C0 = np.array([0.0, 0.0, 0.0])
         C0_zaxis  = np.array([0.0, 0.0, 1.0])
         C0_xaxis  = np.array([1.0, 0.0, 0.0])
-        maj_r     = self.param['radius_major']
-        min_r     = self.param['radius_minor']
+        radius     = self.param['radius']
 
-        C0_yaxis = np.cross(C0_xaxis, C0_zaxis)
-        O = C0 + maj_r * C0_zaxis
+        x_vec = np.array([x, 0.0, 0.0])
 
-        C_norm = xm.vector_rotate(C0_zaxis, C0_yaxis, a)
-        C = O - maj_r * C_norm
-        Q = C + C_norm * min_r
+        O = C0 + radius * C0_zaxis + x_vec
 
-        axis = np.cross(C_norm, C0_yaxis)
-        X_norm = xm.vector_rotate(C_norm, axis, b)
-        X = Q - X_norm * min_r
+        X_norm = xm.vector_rotate(C0_zaxis, C0_xaxis, angle)
+        X = O - radius * X_norm
 
         return X, X_norm
 
     def shape(self, a, b):
-        return self.torus(a, b)
-
-    def shape_fd(self, a, b, delta=None):
-        profiler.start('finite difference')
-        if delta is None: delta = 1e-8
-
-        xyz, _ = self.torus(a, b)
-        xyz1, _ = self.torus(a + delta, b)
-        xyz2, _ = self.torus(a, b + delta)
-
-        vec1 = xyz1 - xyz
-        vec2 = xyz2 - xyz
-        norm_fd = np.cross(vec1, vec2)
-        norm_fd /= np.linalg.norm(norm_fd)
-        profiler.stop('finite difference')
-        return xyz, norm_fd
-
-    def shape_jax(self, a, b):
-        raise NotImplementedError()
+        return self.cylinder(a, b)
 
     def calculate_mesh(self, a, b):
         profiler.start('calculate_mesh')
@@ -180,15 +136,7 @@ class ShapeMeshTorus(ShapeMesh):
                 a = aa[ii_a, ii_b]
                 b = bb[ii_a, ii_b]
 
-                # Temporary for development.
-                if self.param['normal_method'] == 'analytic':
-                    xyz, norm = self.shape(a, b)
-                elif self.param['normal_method'] == 'fd':
-                    xyz, norm = self.shape_fd(a, b)
-                elif self.param['normal_method'] == 'jax':
-                    xyz, norm = self.shape_jax(a, b)
-                else:
-                    raise Exception(f"normal_method {self.param['normal_method']} unknown.")
+                xyz, norm = self.shape(a, b)
 
                 xx[ii_a, ii_b] = xyz[0]
                 yy[ii_a, ii_b] = xyz[1]
@@ -210,8 +158,8 @@ class ShapeMeshTorus(ShapeMesh):
         # --------------------------------
         # Setup the basic grid parameters.
 
-        a_range = self.param['angle_major']
-        b_range = self.param['angle_minor']
+        a_range = self.param['x_range']
+        b_range = self.param['angle_range']
 
         num_a = mesh_size[0]
         num_b = mesh_size[1]
@@ -234,7 +182,7 @@ class ShapeMeshTorus(ShapeMesh):
         faces = delaunay.simplices
 
         # It's also possible to triangulate using the x,y coordinates.
-        # This does not work well for the toroidal shape.
+        # This is not recommended unless there is some specific need.
         #
         # delaunay = Delaunay(points[:, 0:2])
         # faces = delaunay.simplices

@@ -68,7 +68,7 @@ class ShapeSphere(ShapeObject):
         t_0      = np.empty(m.shape, dtype=np.float64)
         t_1      = np.empty(m.shape, dtype=np.float64)
 
-        # L is the destance from the ray origin to the center of the sphere.
+        # L is the distance from the ray origin to the center of the sphere.
         # t_ca is the projection of this distance along the ray direction.
         L     = self.param['center'] - O
         t_ca  = np.einsum('ij,ij->i', L, D)
