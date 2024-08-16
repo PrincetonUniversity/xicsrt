@@ -78,10 +78,11 @@ class ShapeCylinder(ShapeObject):
 
         # Length between ray origin and cylinder center
         dp = O-pa
-        dot_Dva = np.einsum('ij,j->ij', D, va)
-        dot_dpva = np.einsum('ij,j->ij', dp, va)
-        A1 = D - dot_Dva*va
-        B1 = dp-dot_dpva*va
+        dot_Dva = np.einsum('ij,j->i', D, va)
+        dot_dpva = np.einsum('ij,j->i', dp, va)
+        A1 = D - dot_Dva[:,None]*va[None,:]
+        B1 = dp - dot_dpva[:,None]*va[None,:]
+
         # Coefficients for f(t) = A*t**2 + B*t + C = 0
         A = np.einsum('ij,ij->i', A1, A1)
         B = 2*np.einsum('ij,ij->i', A1, B1)
@@ -121,11 +122,11 @@ class ShapeCylinder(ShapeObject):
         norm = np.full(xloc.shape, np.nan, dtype=np.float64)
         pa_proj = np.full(xloc.shape, np.nan, dtype=np.float64)
 
-        # Note that a normal vector on a cylinder is orthogonal to the cylinder axis
+        # A normal vector on a cylinder is orthogonal to the cylinder axis
         # As such, we need to project the 'center' of the cylinder onto the same
         # plane as the normal vector
-        dummy = np.einsum('ij,j->ij', pa-xloc[m], va)
-        pa_proj[m] = pa - dummy*va
+        dummy = np.einsum('ij,j->i', pa-xloc[m], va)
+        pa_proj[m] = pa - dummy[:,None]*va[None,:]
 
         # Calculates the normal vector from intersection point to cylinder center
         norm[m] = xm.normalize(pa_proj[m] - xloc[m])
