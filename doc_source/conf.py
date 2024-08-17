@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'XICSRT'
-copyright = '2020, Novimir A. Pablant'
+copyright = '2024, Novimir A. Pablant'
 author = 'Novimir A. Pablant'
 
 # The full version, including alpha/beta/rc tags
