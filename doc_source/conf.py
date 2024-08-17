@@ -1,5 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 #
+# To build the xicsrt documentation use the command:
+#   sphinx-build -M html doc_source doc_build
+#
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html

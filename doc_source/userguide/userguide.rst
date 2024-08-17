@@ -16,10 +16,11 @@ This user manual is still incomplete. For now, please refer to the
     list_of_publications
     similar_software
     development_projects
+    ../apidoc/testing
 
 .. toctree::
     :hidden:
 
     ../pages/todo
-    ../apidoc/testing
+
 
