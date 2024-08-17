@@ -5,6 +5,12 @@
 # Required
 version: 2
 
+# Set the OS, Python version and other tools you might need
+build:
+  os: ubuntu-lts-latest
+  tools:
+    python: latest
+
 # Build documentation in the doc_source/ directory with Sphinx
 sphinx:
   configuration: doc_source/conf.py
@@ -15,6 +21,5 @@ formats:
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
-  version: 3.8
   install:
     - requirements: doc_source/requirements.txt
