@@ -15,5 +15,3 @@ Visualization Modules
 
    xicsrt.visual.xicsrt_2d__matplotlib
    xicsrt.visual.xicsrt_3d__plotly
-   xicsrt.visual.xicsrt_3d__ipyvolume
-
