@@ -3,7 +3,7 @@
 .. Authors:
     Novimir Pablant <npablant@pppl.gov>
 
-Define the :class:`ShapeToroidal` class.
+Define the :class:`ShapeTorus` class.
 """
 import numpy as np
 
