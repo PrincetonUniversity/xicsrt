@@ -71,7 +71,8 @@ class ShapeMeshTorus(ShapeMesh):
         config['mesh_ysize'] = None
 
         config['radius_major'] = 1.0
-        config['radius_minor'] = 0.1
+        config['radius_minor'] = 0.2
+        config['convex'] = [False, False]
 
         config['normal_method'] = 'analytic'
 
@@ -83,6 +84,22 @@ class ShapeMeshTorus(ShapeMesh):
     def setup(self):
         super().setup()
         self.log.debug('Yo mama was here.')
+
+        if np.all(self.param['convex'] == [False, False]):
+            self.param['torus_sign_major'] = 1
+            self.param['torus_sign_minor'] = 1
+        elif np.all(self.param['convex'] == [False, True]):
+            self.param['torus_sign_major'] = 1
+            self.param['torus_sign_minor'] = -1
+        elif np.all(self.param['convex'] == [True, False]):
+            self.param['torus_sign_major'] = -1
+            self.param['torus_sign_minor'] = 1
+        elif np.all(self.param['convex'] == [True, True]):
+            self.param['torus_sign_major'] = -1
+            self.param['torus_sign_minor'] = -1
+        else:
+            raise Exception(f"Cannot be parse convex config option: {self.param['convex']}")
+
 
         # Calculate the angles that define the physical mesh size
         if (xsize := self.param['mesh_xsize']) is None:
@@ -116,22 +133,29 @@ class ShapeMeshTorus(ShapeMesh):
         """
         Return a 3D surface coordinate given a set of two angles.
         """
-        C0 = np.array([0.0, 0.0, 0.0])
-        C0_zaxis  = np.array([0.0, 0.0, 1.0])
-        C0_xaxis  = np.array([1.0, 0.0, 0.0])
-        maj_r     = self.param['radius_major']
-        min_r     = self.param['radius_minor']
+        C0_zaxis = np.asarray([0.0, 0.0, 1.0])
+        C0_xaxis = np.asarray([1.0, 0.0, 0.0])
+        s_maj  = self.param['torus_sign_major']
+        s_min  = self.param['torus_sign_minor']
+        r_maj = self.param['radius_major']
+        r_min = self.param['radius_minor']
 
-        C0_yaxis = np.cross(C0_xaxis, C0_zaxis)
-        O = C0 + maj_r * C0_zaxis
+        C0_yaxis = np.cross(C0_zaxis, C0_xaxis)
 
+        # r_maj is the radius of curvature of the surface, so the torus
+        # center is always defined only by this value.
+        center = r_maj*C0_zaxis*s_maj
+
+        # This is the projection of point in the x-z plane.
         C_norm = xm.vector_rotate(C0_zaxis, C0_yaxis, a)
-        C = O - maj_r * C_norm
-        Q = C + C_norm * min_r
+        C = center - r_maj * C_norm * s_maj
 
-        axis = np.cross(C_norm, C0_yaxis)
-        X_norm = xm.vector_rotate(C_norm, axis, b)
-        X = Q - X_norm * min_r
+        # Find the associated point on the torus axis
+        Q = C + r_min*C_norm*s_min
+
+        axis = np.cross(C_norm * s_min, C0_yaxis)
+        X_norm = xm.vector_rotate(C_norm * s_min, axis, b)
+        X = Q - X_norm * r_min
 
         return X, X_norm
 

@@ -7,7 +7,9 @@ Define the :class:`GeometryObject` class.
 """
 
 import numpy as np
-from copy import deepcopy
+
+# I need to reserve the name 'copy' for keywords.
+import copy as m_copy
 
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._ConfigObject import ConfigObject
@@ -114,7 +116,7 @@ class GeometryObject(ConfigObject):
             # Programming Note:
             #   If XICSRT is ever updated to always use ray objects then the
             #   copy method should be used instead of deepcopy for speed.
-            ray_external = deepcopy(ray_local)
+            ray_external = m_copy.deepcopy(ray_local)
         else:
             ray_external = ray_local
 
@@ -124,7 +126,7 @@ class GeometryObject(ConfigObject):
 
     def ray_to_local(self, ray_external, copy=False):
         if copy:
-            ray_local = deepcopy(ray_external)
+            ray_local = m_copy.deepcopy(ray_external)
         else:
             ray_local = ray_external
 
@@ -132,13 +134,16 @@ class GeometryObject(ConfigObject):
         ray_local['direction'] = self.vector_to_local(ray_local['direction'])
         return ray_local
 
-    def point_to_external(self, point_local):
-        return self.vector_to_external(point_local) + self.origin
+    def point_to_external(self, point_local, copy=False):
+        return self.vector_to_external(point_local, copy=copy) + self.origin
 
-    def point_to_local(self, point_external):
-        return self.vector_to_local(point_external - self.origin)
+    def point_to_local(self, point_external, copy=False):
+        return self.vector_to_local(point_external - self.origin, copy=copy)
 
-    def vector_to_external(self, vector):
+    def vector_to_external(self, vector, copy=False):
+        if copy:
+            vector = m_copy.copy(vector)
+
         vector = self.to_ndarray(vector)
         if vector.ndim == 2:
             vector[:] = np.einsum('ij,ki->kj', self.orientation, vector)
@@ -149,7 +154,10 @@ class GeometryObject(ConfigObject):
 
         return vector
 
-    def vector_to_local(self, vector):
+    def vector_to_local(self, vector, copy=False):
+        if copy:
+            vector = m_copy.copy(vector)
+
         vector = self.to_ndarray(vector)
         if vector.ndim == 2:
             vector[:] = np.einsum('ji,ki->kj', self.orientation, vector)
