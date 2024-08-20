@@ -22,6 +22,7 @@ Built-in Optics Objects
    xicsrt.optics.XicsrtOpticSphericalCrystal
    xicsrt.optics.XicsrtOpticSphericalMosaicCrystal
    xicsrt.optics.XicsrtOpticCylindricalCrystal
+   xicsrt.optics.XicsrtOpticToroidalCrystal
    xicsrt.optics.XicsrtOpticMeshCrystal
    xicsrt.optics.XicsrtOpticMeshMirror
    xicsrt.optics.XicsrtOpticMeshMosaicCrystal
@@ -50,6 +51,7 @@ Shape Objects
    xicsrt.optics.ShapePlane
    xicsrt.optics.ShapeSphere
    xicsrt.optics.ShapeCylinder
+   xicsrt.optics.ShapeTorus
    xicsrt.optics.ShapeMesh
    xicsrt.optics.ShapeMeshSphere
    xicsrt.optics.ShapeMeshCylinder

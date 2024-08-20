@@ -1,9 +1,9 @@
-XicsrtOpticCylindricalCrystal
-=============================
+ShapeTorus
+==========
 
 New Members
 -----------
-.. autoclass:: xicsrt.optics._XicsrtOpticCylindricalCrystal.XicsrtOpticCylindricalCrystal
+.. autoclass:: xicsrt.optics._ShapeTorus.ShapeTorus
     :members:
     :special-members: __init__
     :undoc-members:
@@ -12,7 +12,7 @@ New Members
 
 New Private Members
 -------------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCylindricalCrystal.XicsrtOpticCylindricalCrystal
+.. automirclass:: xicsrt.optics._ShapeTorus.ShapeTorus
     :members:
     :private-members:
     :special-members: __init__
@@ -24,7 +24,7 @@ New Private Members
 
 Inherited Members
 -----------------
-.. automirclass:: xicsrt.optics._XicsrtOpticCylindricalCrystal.XicsrtOpticCylindricalCrystal
+.. automirclass:: xicsrt.optics._ShapeTorus.ShapeTorus
     :inherited-members:
     :private-members:
     :special-members: __init__

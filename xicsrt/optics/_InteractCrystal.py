@@ -28,8 +28,8 @@ class InteractCrystal(InteractMirror):
 
           .. Note::
 
-                This is the nominal 'd' crystal spacing, not the '2d' spacing
-                often used in the literature.
+            This is the nominal 'd' crystal spacing, not the '2d' spacing
+            often used in the literature.
 
         reflectivity: float (1.0)
           A reflectivity factor for this optic. The reflectivity will modify
@@ -59,7 +59,7 @@ class InteractCrystal(InteractMirror):
 
           .. Note::
 
-                Actually at this point only 'xop' is supported. np 2020-10-13
+            Actually at this point only 'xop' is supported. np 2020-10-13
 
         rocking_mix: float
           A mixing factor to combine the sigma and pi reflectivities.
