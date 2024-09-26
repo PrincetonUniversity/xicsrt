@@ -21,8 +21,6 @@ class ShapeTorus(ShapeObject):
     """
 
     def default_config(self):
-        config = super().default_config()
-        
         """
         radius_major: float (1.0)
             The radius of curvature of the crystal in the toroidal (xaxis)
@@ -45,7 +43,8 @@ class ShapeTorus(ShapeObject):
               3 -> [False, False]
               4 -> [False, False]
         """
-        
+
+        config = super().default_config()
         config['radius_major']  = 1.0
         config['radius_minor']  = 0.2
         config['convex'] = [False, False]
