@@ -28,6 +28,8 @@ import matplotlib
 from xicsrt import xicsrt_public
 from xicsrt.objects._Dispatcher import Dispatcher
 
+from copy import copy, deepcopy
+
 # A module level variable that contains the last defined fig object.
 # This is for convenience during interactive scripting.
 m_figure = None
@@ -115,6 +117,8 @@ def _plot_ray_history(
         color=None,
         lost_color=None,
         found_color=None,
+        lost_max=None,
+        found_max=None,
         #alpha=None,
         #lost_alpha=None,
         #found_alpha=None,
@@ -131,16 +135,22 @@ def _plot_ray_history(
         if found_color is not None:
             color = found_color
         name = 'found'
+        num_max = found_max
     elif _lost is True:
         if color is None:
             color = 'rgba(0, 0, 255, 0.01)'
         if lost_color is not None:
             color = lost_color
         name = 'lost'
+        num_max = lost_max
     else:
         if color is None:
             color = 'rgba(0, 0, 0, 0.1)'
         name = 'other'
+        num_max = None
+
+    # Set some sensible limit for maximum number of rays to plot
+    if num_max is None: num_max = 10000
 
     color_plotly = _make_plotly_color(color, alpha=None)
 
@@ -150,10 +160,13 @@ def _plot_ray_history(
     for ii in range(num_elem-1):
 
         # All rays leaving this optic element.
-        mask = history[key_list[ii]]['mask']
+        mask = copy(history[key_list[ii]]['mask'])
 
         # Filter rays for which there is no intersection at the next optic.
         mask &= np.all(history[key_list[ii+1]]['origin'][:, :] != np.nan, axis=1)
+
+        # Truncate number of rays to not overwhelm the plotter.
+        mask = _truncate_mask(mask, num_max)
 
         num_mask = np.sum(mask)
 
@@ -365,7 +378,7 @@ def add_object(config, name, section, figure=None, **kwargs):
         _add_trace_volume(obj, figure, name, **kwargs)
 
 
-def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
+def _gen_fluxsurface_mesh(obj, rho, range_m=None, range_n=None):
     """
     Generate points on a flux surface.
     The given input object must have a method 'car_from_flx'.
@@ -386,15 +399,14 @@ def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
     flx = np.empty((num_points, 3))
 
     val_mm, val_nn = np.meshgrid(val_m, val_n, indexing='ij')
-    flx[:, 0] = s
+    flx[:, 0] = rho
     flx[:, 1] = val_mm.flatten()
     flx[:, 2] = val_nn.flatten()
 
     # This should be callable without a loop, but for now leave this as is
     # to support the VMEC stelltools module.
     car = np.empty(flx.shape)
-    for ii in range(flx.shape[0]):
-        car[ii, :] = obj.car_from_flx(flx[ii, :])
+    car[:] = obj.car_from_flx(flx)
 
     return flx, car
 
@@ -403,6 +415,7 @@ def _add_fluxsurf_single(
         config,
         name,
         section=None,
+        object=None,
         figure=None,
         alpha=None,
         flatshading=None,
@@ -417,7 +430,10 @@ def _add_fluxsurf_single(
     if alpha is None: alpha = 0.5
     if flatshading is None: flatshading = True
 
-    obj = xicsrt_public.get_element(config, name, section)
+    if object is None:
+        obj = xicsrt_public.get_element(config, name, section)
+    else:
+        obj = object
 
     # Check to see if this object defines fluxspace through a car_from_flux method.
     if not hasattr(obj, 'car_from_flx'):
@@ -428,7 +444,7 @@ def _add_fluxsurf_single(
 
     rho_array = np.linspace(0.0, 1.0, 10, endpoint=True)
     for ii, rho in enumerate(reversed(rho_array)):
-        flx, car = _gen_fluxsurface_mesh(obj, rho**2, **kwargs)
+        flx, car = _gen_fluxsurface_mesh(obj, rho, **kwargs)
 
         # Triangulation only needs to be done once since all the meshes
         # are generated using the same point ordering.
@@ -456,6 +472,17 @@ def _add_fluxsurf_single(
         figure.add_trace(trace)
 
 
+def _truncate_mask(mask, max_num):
+    if max_num is not None:
+        max_num = int(max_num)
+        num_mask = np.sum(mask)
+        if num_mask > max_num:
+            w = np.flatnonzero(mask)
+            np.random.shuffle(w)
+            mask[w[max_num:]] = False
+    return mask
+
+
 def _make_plotly_color(color, alpha=None):
     if isinstance(color, str):
         color_str = color
@@ -463,3 +490,25 @@ def _make_plotly_color(color, alpha=None):
         raise Exception('Only plotly color strings are currently supported.')
 
     return color_str
+
+def _plotly_rgb_to_rgba(rgb_value, alpha):
+    """
+    Adds the alpha channel to an RGB Value and returns it as an RGBA Value
+
+    parameters
+    ----------
+
+    rgb_value: string
+      Input RGB Value String
+
+    alpha: float (1.0)
+      Alpha Value to add  in range [0,1]
+
+    Returns
+    --------
+
+    rba_string: string
+      RGBA Value string in plotly format.
+    """
+
+    return f"rgba{rgb_value[3:-1]}, {alpha})"

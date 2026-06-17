@@ -46,7 +46,7 @@ class TraceObject(GeometryObject):
           This is currently a single number signifying square pixels.
 
         aperture: dict or array (None)
-          Define one or more apertures to to apply to this optic.
+          Define one or more apertures to apply to this optic.
           Each aperture is defined as a dictionary with the following keys:
           shape, size, origin, logic. The origin and logic field keys are
           optional. The interpretation of size will depend on the provided

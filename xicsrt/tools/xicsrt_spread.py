@@ -212,8 +212,8 @@ def solid_angle_isotropic_xy(spread):
 
 def vector_dist_flat(spread, number):
     """
-    Return unit vectors from an flat (uniform planar) distribution that
-    fall within an angular spread.
+    Return unit vectors from a flat (uniform planar) distribution that
+    falls within an angular spread.
 
     The ray cone is aligned along the z-axis.
 

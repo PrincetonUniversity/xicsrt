@@ -20,3 +20,9 @@ def wavelength_from_energy(energy):
     wave = const.h * const.c / energy / const.e * 1e10
     return wave
 
+def bragg_angle(wavelength, spacing, order=1):
+    bragg = np.arcsin(order*wavelength/2/spacing)
+    return bragg
+
+
+

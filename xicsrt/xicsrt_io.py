@@ -35,7 +35,10 @@ def save_config(config, filename=None, path=None, mkdir=None, overwrite=None):
         filename = os.path.join(path, filename)
 
     if mkdir is None:
-        mkdir = config['general'].get('make_directories', False)
+        if 'general' in config:
+            mkdir = config['general'].get('make_directories', False)
+        else:
+            mkdir = False
     _file_from_dict(config, filename, mkdir=mkdir, overwrite=overwrite)
 
     filename = pathlib.Path(filename).expanduser().resolve()

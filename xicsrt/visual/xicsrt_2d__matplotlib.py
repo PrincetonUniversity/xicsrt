@@ -6,6 +6,25 @@
     James Kring <jdk0026@tigermail.auburn.edu>
 
 A set of tools for 2d visualization of the XICSRT results
+
+For most common needs use the following functions:
+  plot_intersect
+  plot_image
+
+For an example of how to build your own plotting routine:
+  plot_example
+
+Examples
+========
+
+# Example 1: Plot ray interections on detector surface
+import xicsrt.visual.xicsrt_2d__matplotlib as xicsrt_2d
+fig = xicsrt_2d.plot_intersect(results, 'detector')
+
+# Example 2: Plot synthetic detector image
+import xicsrt.visual.xicsrt_2d__matplotlib as xicsrt_2d
+fig = xicsrt_2d.plot_image(results, 'detector')
+
 """
 import numpy as np
 import logging
@@ -75,6 +94,9 @@ def plot_intersect(*args, **kwargs):
       Will return a plotlist with the full plot definition.
     """
 
+    # The aspect options needs to be set here instead of in _get_intersect_plotlist
+    kwargs.setdefault('aspect', 'equal')
+
     # Aspect is handled here, so turn it off in the plotlist.
     plotlist = _get_intersect_plotlist(*args, **kwargs, _noaspect=True)
 
@@ -107,31 +129,21 @@ def plot_intersect(*args, **kwargs):
 
     return fig
 
-
-def _get_intersect_plotlist(
-        results,
-        name=None,
-        section=None,
+def _get_options_default(
         options=None,
-        _noaspect=False,
         **kwargs,
         ):
-    """
-    Return a plotlist for :func:`plot_intersect`.
-    """
-
     if options is None:
         opt = {}
     else:
         opt = options
     opt.update(kwargs)
 
-    opt.setdefault('name', name)
+    opt.setdefault('name', 'detector')
     opt.setdefault('found', True)
     opt.setdefault('lost', True)
     opt.setdefault('bounds', True)
     opt.setdefault('aperture', True)
-    opt.setdefault('aspect', 'equal')
     opt.setdefault('scale', None)
     opt.setdefault('units', None)
     opt.setdefault('lost_color', 'royalblue')
@@ -150,9 +162,6 @@ def _get_intersect_plotlist(
     opt.setdefault('lost_max', None)
     opt.setdefault('found_mask', None)
     opt.setdefault('lost_mask', None)
-
-    if opt['name'] is None:
-        opt['name'] = 'detector'
 
     if (opt['alpha'] is None) and (opt['lost_alpha'] is None):
         opt['lost_alpha'] = 0.1
@@ -176,6 +185,24 @@ def _get_intersect_plotlist(
         if opt.get('units'):
             opt['ylabel'] += f" [{opt['units']}]"
 
+    return opt
+
+def _get_intersect_plotlist(
+        results,
+        name=None,
+        section=None,
+        options=None,
+        _noaspect=False,
+        **kwargs,
+        ):
+    """
+    Return a plotlist for :func:`plot_intersect`.
+    """
+
+    opt = _get_options_default(options, **kwargs)
+
+    if name:
+        opt['name'] = name
     if _noaspect:
         opt['aspect'] = None
 
@@ -220,7 +247,7 @@ def _get_intersect_plotlist(
     return plotlist
 
 
-def _get_hist(obj, results, opt, raytype='found', axis=0):
+def _get_hist(obj, results, opt, raytype='found', axis=0, transpose=True):
     prefix = raytype + '_'
     name = opt['name']
 
@@ -238,6 +265,10 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
     else:
         range_ = opt['ybound']
         name = 'yhist'
+
+    if range_ is None:
+        range_ = np.asarray([min(origin_loc[mask, axis] * opt['scale']), max(origin_loc[mask, axis] * opt['scale'])])
+        range_ = range_ + np.asarray([-1, 1])*(range_[1] - range_[0])*0.2
 
     if opt.get('hist_size'):
         binsize = opt['hist_size'] * opt['scale']
@@ -266,7 +297,7 @@ def _get_hist(obj, results, opt, raytype='found', axis=0):
     else:
         norm_scale = 1.0
 
-    if axis == 0:
+    if axis == 0 or transpose == False:
         x = bins_c
         y = hist * norm_scale
     else:

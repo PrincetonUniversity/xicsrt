@@ -105,8 +105,8 @@ import numpy as np
 m_log = logging.getLogger(__name__.split('.')[-1])
 m_log.setLevel(logging.INFO)
 
-__version__ = '2.0.0'
-__version_date__ = '2022-05-20'
+__version__ = '2.0.1'
+__version_date__ = '2026-03-05'
 
 def plot_to_screen(plotlist, show=True):
     matplotlib.pyplot.ioff()
@@ -238,6 +238,13 @@ def _apply_plot_prop(prop, axes):
             , capsize=prop['capsize'])
     elif prop['type'] == 'scatter':
         plotobj = axes.scatter(prop['x'], prop['y'], s=prop['s'], marker=prop.get('marker', None))
+    elif prop['type'] == 'fill':
+        plotobj = axes.fill(
+            prop['x'],
+            prop['y'],
+            color=prop.get('color', None),
+            alpha=prop.get('alpha', None),
+            )
     elif prop['type'] == 'fill_between' or prop['type'] == 'fillbetween':
         plotobj = axes.fill_between(prop['x'], prop['y'], prop['y1'])
     elif prop['type'] == 'hline':
