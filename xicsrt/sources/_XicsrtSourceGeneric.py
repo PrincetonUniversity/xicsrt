@@ -4,6 +4,9 @@
     Novimir Pablant <npablant@pppl.gov>
     James Kring <jdk0026@tigermail.auburn.edu>
     Yevgeniy Yakusevich <eugenethree@gmail.com>
+
+.. Editors
+    Leila Alston <leilaalston07@gmail.com>
 """
 
 import numpy as np   
@@ -16,6 +19,8 @@ from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
+
+from xicsrt_multiline_voigt import voigt, multiline_voigt, multiline_voigt_cdf_tab, multiline_voigt_random
 
 @dochelper
 class XicsrtSourceGeneric(GeometryObject):
@@ -105,7 +110,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         wavelength_dist : str ('voigt')
           The type of wavelength distribution for this source.
-          Possible values are: 'voigt', 'uniform', 'monochrome'.
+          Possible values are: 'voigt', 'uniform', 'monochrome', and 'multiline_voigt'
 
           Note: A monochrome distribution can also be achieved by using a
           'voigt' distribution with zero linewidth and temperature.
@@ -166,8 +171,16 @@ class XicsrtSourceGeneric(GeometryObject):
         config['angular_dist'] = 'isotropic'
         config['spread'] = np.pi
 
-        # Possible values: 'monochrome', 'voigt', 'uniform
+        # Possible values: 'monochrome', 'voigt', 'uniform', 'multiline_voigt'
         config['wavelength_dist'] = 'voigt'
+
+        # Only used for wavelength_dist = 'multiline_voigt'
+        config['line_locations'] = np.array([1.0])
+        config['line_intensities'] = np.array([1.0])
+        config['line_sigmas'] = np.array([0.0])
+        config['line_gammas'] = np.array([0.0])
+        config['multiline_gridsize'] = None
+        config['multiline_cutoff'] = None
 
         # Only used for wavelength_dist = 'voigt' or 'monochrome'
         config['wavelength'] = 1.0
@@ -308,6 +321,8 @@ class XicsrtSourceGeneric(GeometryObject):
             #random_wavelength = self.random_wavelength_cauchy
             random_wavelength = self.random_wavelength_voigt
             wavelength = random_wavelength(self.param['intensity'])
+        elif wtype == 'multiline_voigt':
+           wavelength = self.random_wavelength_multiline_voigt(self.param['intensity'])
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
 
@@ -353,6 +368,31 @@ class XicsrtSourceGeneric(GeometryObject):
         rand_wave += self.param['wavelength']
         return rand_wave
 
+    def random_wavelength_multiline_voigt(self, size=None):
+        """
+        Draw random wavelength samples from a multiline Voigt spectrum.
+        
+        Parameters: 
+            size : int
+                Number of wavelength samples to draw.
+
+        Returns: 
+            wavelength : ndarray
+                Random wavelength samples drawn from the multiline Voigt distribution.
+        """
+
+        wavelength = multiline_voigt_random(
+            self.param['line_locations'], 
+            self.param['line_intensities'],
+            self.param['line_sigmas'],
+            self.param['line_gammas'],
+            size = size, 
+            gridsize = self.param['multiline_gridsize'],
+            cutoff = self.param['multiline_cutoff'],
+        )
+
+        return wavelength
+    
     def random_wavelength_normal(self, size=None):
         #Units: wavelength (angstroms), temperature (eV)
         c       = const.physical_constants['speed of light in vacuum'][0]
