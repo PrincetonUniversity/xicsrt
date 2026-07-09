@@ -19,8 +19,13 @@ from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
+# from xicsrt.tools import xicsrt_multi_voigt
 
-from xicsrt_multiline_voigt import voigt, multiline_voigt, multiline_voigt_cdf_tab, multiline_voigt_random
+import sys
+sys.path.append(r"C:\Users\leila\Documents\Visual Studio\pppl_xics_2026\mirxics_jax")
+import xics_jax
+
+from xicsrt_multi_voigt import voigt, multi_voigt, multi_voigt_cdf_tab, multi_voigt_random
 
 @dochelper
 class XicsrtSourceGeneric(GeometryObject):
@@ -110,7 +115,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         wavelength_dist : str ('voigt')
           The type of wavelength distribution for this source.
-          Possible values are: 'voigt', 'uniform', 'monochrome', and 'multiline_voigt'
+          Possible values are: 'voigt', 'uniform', 'monochrome', 'multi_voigt', and 'ar16_voigt'
 
           Note: A monochrome distribution can also be achieved by using a
           'voigt' distribution with zero linewidth and temperature.
@@ -171,16 +176,23 @@ class XicsrtSourceGeneric(GeometryObject):
         config['angular_dist'] = 'isotropic'
         config['spread'] = np.pi
 
-        # Possible values: 'monochrome', 'voigt', 'uniform', 'multiline_voigt'
+        # Possible values: 'monochrome', 'voigt', 'uniform', 'multi_voigt', 'ar16_voigt'
         config['wavelength_dist'] = 'voigt'
 
-        # Only used for wavelength_dist = 'multiline_voigt'
+        # Only used for wavelength_dist = 'multi_voigt'
         config['line_locations'] = np.array([1.0])
         config['line_intensities'] = np.array([1.0])
         config['line_sigmas'] = np.array([0.0])
         config['line_gammas'] = np.array([0.0])
-        config['multiline_gridsize'] = None
-        config['multiline_cutoff'] = None
+
+        # Only used for wavelength_dist = 'ar16_voigt'
+        config['ar16_ti'] = 2.0
+        config['ar16_te'] = 3.0
+        config['ar16_scale_factor'] = 1.0
+        
+        # Used for wavelength_dist = 'multi_voigt' and 'ar16_voigt'
+        config['multi_gridsize'] = None
+        config['multi_cutoff'] = 1e-4
 
         # Only used for wavelength_dist = 'voigt' or 'monochrome'
         config['wavelength'] = 1.0
@@ -321,8 +333,12 @@ class XicsrtSourceGeneric(GeometryObject):
             #random_wavelength = self.random_wavelength_cauchy
             random_wavelength = self.random_wavelength_voigt
             wavelength = random_wavelength(self.param['intensity'])
-        elif wtype == 'multiline_voigt':
-           wavelength = self.random_wavelength_multiline_voigt(self.param['intensity'])
+        elif wtype == 'multi_voigt':
+            random_wavelength = self.random_wavelength_multi_voigt
+            wavelength = random_wavelength(self.param['intensity'])
+        elif wtype == 'ar16_voigt':
+            random_wavelength = self.random_wavelength_ar16_voigt
+            wavelength = random_wavelength(self.param['intensity'])
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
 
@@ -368,7 +384,8 @@ class XicsrtSourceGeneric(GeometryObject):
         rand_wave += self.param['wavelength']
         return rand_wave
 
-    def random_wavelength_multiline_voigt(self, size=None):
+    
+    def random_wavelength_multi_voigt(self, size=None):
         """
         Draw random wavelength samples from a multiline Voigt spectrum.
         
@@ -381,17 +398,59 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        wavelength = multiline_voigt_random(
+        wavelength = multi_voigt_random(
             self.param['line_locations'], 
             self.param['line_intensities'],
             self.param['line_sigmas'],
             self.param['line_gammas'],
             size = size, 
-            gridsize = self.param['multiline_gridsize'],
-            cutoff = self.param['multiline_cutoff'],
+            gridsize = self.param['multi_gridsize'],
+            cutoff = self.param['multi_cutoff'],
         )
 
         return wavelength
+
+    
+    def random_wavelength_ar16_voigt(self, size=None):
+        """
+        Gets the Ar16+ line parameters from xics_jax.
+        Then passes those line parameters into multi_voigt_random().
+        """
+        # Build the Ar16+ spectrum configuration
+        spectrum_config = xics_jax.load_spectrum_config('ar16', use_te=True)
+
+        # Build the plasma parameters
+        params = xics_jax.ModelParams.from_dict(
+            {
+                'ti': 2.0,           # ion temperature (keV) -> Doppler width
+                'te': 3.0,           # electron temperature (keV) -> use_te intensities
+                'scale_factor': 1.0,
+            },
+            spectrum_config,
+        )
+
+        # Get all Voigt line parameters (line locations, line intensities, sigmas, and gammas)
+        lines = xics_jax.evaluate_lines(params, spectrum_config)
+        
+        # Extract arrays
+        line_locations = lines["location"].values
+        line_intensities = lines["intensity"].values
+        sigmas = lines["sigma"].values
+        gammas = lines["gamma"].values
+
+        # Sample wavelengths
+        wavelengths = multi_voigt_random(
+            line_locations, 
+            line_intensities, 
+            sigmas, 
+            gammas, 
+            size = size, 
+            gridsize = self.param.get("gridsize"),
+            cutoff = self.param.get("cutoff", 1e-4),
+        )
+        
+        return wavelengths
+
     
     def random_wavelength_normal(self, size=None):
         #Units: wavelength (angstroms), temperature (eV)
