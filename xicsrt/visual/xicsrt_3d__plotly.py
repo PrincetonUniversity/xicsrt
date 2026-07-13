@@ -390,11 +390,7 @@ def _gen_fluxsurface_mesh(obj, s, range_m=None, range_n=None):
     flx[:, 1] = val_mm.flatten()
     flx[:, 2] = val_nn.flatten()
 
-    # This should be callable without a loop, but for now leave this as is
-    # to support the VMEC stelltools module.
-    car = np.empty(flx.shape)
-    for ii in range(flx.shape[0]):
-        car[ii, :] = obj.car_from_flx(flx[ii, :])
+    car = obj.car_from_flx(flx)
 
     return flx, car
 

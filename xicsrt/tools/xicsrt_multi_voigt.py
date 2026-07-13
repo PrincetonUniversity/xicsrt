@@ -7,11 +7,8 @@
 
 
 import numpy as np
+import warnings
 from scipy.special import wofz
-
-# Setup the module path.
-import sys
-sys.path.append(r"C:\Users\leila\Documents\Visual Studio\pppl_xics_2026\xicsrt")
 
 def voigt(x, intensity=None, location=None, sigma=None, gamma=None):
     """
@@ -132,7 +129,7 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
         gridsize = max(gridsize_min, int(np.ceil(domain_width / min_spacing)))
         # adding a sanity check to see if the computed gridsize is too large
         if gridsize > 1_000_000:
-            print(f"Warning: Computed gridsize ({gridsize}) is very large.")
+            warnings.warn(f"Warning: Computed gridsize ({gridsize}) is very large.")
 
     bounds = np.linspace(wave_min, wave_max, gridsize + 1)
 
@@ -140,7 +137,6 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     cdf_x = (bounds[:-1] + bounds[1:]) / 2
 
     # Evaluating the summed multiline Voigt spectrum
-    pdf = np.zeros_like(cdf_x)
     pdf = multi_voigt(cdf_x, line_locations, line_intensities, sigmas, gammas,)
 
     # Approximating the area in each wavelength bin.
@@ -185,7 +181,7 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, g
         Keep in mind that linear interpolation is faster, but quadratic may behave better/worse and slower
     """
 
-    cdf_x, cdf, spectrum = multi_voigt_cdf_tab(
+    cdf_x, cdf, pdf = multi_voigt_cdf_tab(
         line_locations,
         line_intensities,
         sigmas,

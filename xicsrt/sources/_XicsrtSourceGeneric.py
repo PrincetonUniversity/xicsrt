@@ -15,17 +15,18 @@ import scipy.constants as const
 
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
+from xicsrt.tools import xicsrt_multi_voigt
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
-# from xicsrt.tools import xicsrt_multi_voigt
 
-import sys
-sys.path.append(r"C:\Users\leila\Documents\Visual Studio\pppl_xics_2026\mirxics_jax")
+
+# This is only for the ar16_voigt code wavelength distribution used for
+# modeling the W7-X XICS diagnostic. This dependency and related code should
+# not be committed to the public branches.
 import xics_jax
 
-from xicsrt_multi_voigt import voigt, multi_voigt, multi_voigt_cdf_tab, multi_voigt_random
 
 @dochelper
 class XicsrtSourceGeneric(GeometryObject):
@@ -349,7 +350,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         return wavelength
 
-    def random_wavelength_voigt(self, size=None):
+    def random_wavelength_voigt(self, size):
         #Units: wavelength (angstroms), natural_linewith (1/s), temperature (eV)
         
         # Check for the trivial case.
@@ -385,7 +386,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return rand_wave
 
     
-    def random_wavelength_multi_voigt(self, size=None):
+    def random_wavelength_multi_voigt(self, size):
         """
         Draw random wavelength samples from a multiline Voigt spectrum.
         
@@ -398,7 +399,7 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        wavelength = multi_voigt_random(
+        wavelength = xicsrt_multi_voigt.multi_voigt_random(
             self.param['line_locations'], 
             self.param['line_intensities'],
             self.param['line_sigmas'],
@@ -411,7 +412,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return wavelength
 
     
-    def random_wavelength_ar16_voigt(self, size=None):
+    def random_wavelength_ar16_voigt(self, size):
         """
         Gets the Ar16+ line parameters from xics_jax.
         Then passes those line parameters into multi_voigt_random().
@@ -439,7 +440,7 @@ class XicsrtSourceGeneric(GeometryObject):
         gammas = lines["gamma"].values
 
         # Sample wavelengths
-        wavelengths = multi_voigt_random(
+        wavelengths = xicsrt_multi_voigt.multi_voigt_random(
             line_locations, 
             line_intensities, 
             sigmas, 
@@ -452,7 +453,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return wavelengths
 
     
-    def random_wavelength_normal(self, size=None):
+    def random_wavelength_normal(self, size):
         #Units: wavelength (angstroms), temperature (eV)
         c       = const.physical_constants['speed of light in vacuum'][0]
         amu_kg  = const.physical_constants['atomic mass unit-kilogram relationship'][0]
@@ -465,7 +466,7 @@ class XicsrtSourceGeneric(GeometryObject):
         rand_wave = np.random.normal(self.param['wavelength'], sigma, size)
         return rand_wave
     
-    def random_wavelength_cauchy(self, size=None):
+    def random_wavelength_cauchy(self, size):
         # This function needs to be updated to use the same definitions
         # as random_wavelength_voigt.
         #
