@@ -39,3 +39,6 @@ __pycache__
 
 ## IDEs
 .idea
+
+# Local Anaconda project files
+anaconda_projects/

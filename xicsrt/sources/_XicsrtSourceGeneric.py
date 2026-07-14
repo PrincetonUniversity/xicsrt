@@ -19,13 +19,11 @@ from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
-# from xicsrt.tools import xicsrt_multi_voigt
+from xicsrt.tools import xicsrt_multi_voigt
 
 import sys
 sys.path.append(r"C:\Users\leila\Documents\Visual Studio\pppl_xics_2026\mirxics_jax")
 import xics_jax
-
-from xicsrt_multi_voigt import voigt, multi_voigt, multi_voigt_cdf_tab, multi_voigt_random
 
 @dochelper
 class XicsrtSourceGeneric(GeometryObject):
@@ -398,7 +396,7 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        wavelength = multi_voigt_random(
+        wavelength = xicsrt_multi_voigt.multi_voigt_random(
             self.param['line_locations'], 
             self.param['line_intensities'],
             self.param['line_sigmas'],
@@ -439,7 +437,7 @@ class XicsrtSourceGeneric(GeometryObject):
         gammas = lines["gamma"].values
 
         # Sample wavelengths
-        wavelengths = multi_voigt_random(
+        wavelengths = xicsrt_multi_voigt.multi_voigt_random(
             line_locations, 
             line_intensities, 
             sigmas, 
