@@ -28,21 +28,22 @@ def voigt(
 
 
 def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
+    """
+    This is a numerical method to calculate the cumulative distribution fuction
+    for a voigt profile.  This works reasonably well, but is limited both by
+    the sampling resolution, and the chosen bounds.
 
-    # This is a numerical method to calculate the cumulative distribution fuction
-    # for a voigt profile.  This works reasonably well, but is limited both by
-    # the sampling resolution, and the chosen bounds.
-    # 
-    # In this case the CDF is calculated with a variable grid density to help
-    # mitigate those effects.
-    #
-    # There are a couple of possibilities to speed this up:
-    #  1. It may be possible to optimize the grid spacing by using
-    #     a fuction that increases faster away from zero.
-    #  2. The CDF is symetric so only calculation up to x=0 is needed.
-    #  3. For some applicaiton I might be able to use a psudo-voigt
-    #     calculation that may be faster than the wofz implementation
-    #     (at the expense of accuracy.)
+    In this case the CDF is calculated with a variable grid density to help
+    mitigate those effects.
+
+    There are a couple of possibilities to speed this up:
+      1. It may be possible to optimize the grid spacing by using
+         a function that increases faster away from zero.
+      2. The CDF is symmetric so only calculation up to x=0 is needed.
+      3. For some applicaitons I might be able to use a psudo-voigt
+         calculation that may be faster than the wofz implementation
+         (at the expense of accuracy.)
+    """
     
 
     if gridsize is None: gridsize = 1000
@@ -72,18 +73,19 @@ def voigt_cdf_tab(gamma, sigma, gridsize=None, cutoff=None):
     cdf_x = (bounds[:-1]+bounds[1:])/2
         
     # We must use a properly normalized voigt here (intensity=1.0)
-    cdf_y = voigt(
+    pdf_y = voigt(
         cdf_x
         ,intensity=1.0
         ,location=0.0
         ,sigma=sigma
         ,gamma=gamma)
 
-    cdf_ydx = (cdf_y*(bounds[1:]-bounds[:-1]))
-    cdf = np.cumsum(cdf_ydx)
+    # Use a simple retangular integration for the area of each bin.
+    pdf_ydx = (pdf_y*(bounds[1:]-bounds[:-1]))
+    cdf = np.cumsum(pdf_ydx)
 
-    # These checks are only useful if the user changes the number
-    # of calculated points.
+    # Provide another chcek that we have enough grid resolution.
+    # This only works for single Voigt profiles.
     if (np.sum((cdf > 0.25) & (cdf < 0.75)) < 3):
         raise Exception('Voight CDF calculation does not have enough resolution.')
     if (np.max(cdf) < 0.99):
@@ -122,7 +124,7 @@ def voigt_random(gamma, sigma, size, **kwargs):
     
     The tails of the distribution will be clipped;
     the clipping level can be adjusted with the cutoff keyword.
-    The default values is 1e-5.
+    The default cutoff value is 1e-5.
     """
     cdf_x, cdf = voigt_cdf_tab(gamma, sigma, **kwargs)
     random_y = np.random.uniform(np.min(cdf), np.max(cdf), size)

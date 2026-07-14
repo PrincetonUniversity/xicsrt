@@ -15,15 +15,18 @@ import scipy.constants as const
 
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
+from xicsrt.tools import xicsrt_multi_voigt
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
-from xicsrt.tools import xicsrt_multi_voigt
 
-import sys
-sys.path.append(r"C:\Users\leila\Documents\Visual Studio\pppl_xics_2026\mirxics_jax")
+
+# This is only for the ar16_voigt code wavelength distribution used for
+# modeling the W7-X XICS diagnostic. This dependency and related code should
+# not be committed to the public branches.
 import xics_jax
+
 
 @dochelper
 class XicsrtSourceGeneric(GeometryObject):
@@ -184,9 +187,7 @@ class XicsrtSourceGeneric(GeometryObject):
         config['line_gammas'] = np.array([0.0])
 
         # Only used for wavelength_dist = 'ar16_voigt'
-        config['ar16_ti'] = 2.0
-        config['ar16_te'] = 3.0
-        config['ar16_scale_factor'] = 1.0
+        # config['ar16_scale_factor'] = 1.0
         
         # Used for wavelength_dist = 'multi_voigt' and 'ar16_voigt'
         config['multi_gridsize'] = None
@@ -199,6 +200,7 @@ class XicsrtSourceGeneric(GeometryObject):
         config['mass_number'] = 1.0
         config['linewidth'] = 0.0
         config['temperature'] = 0.0
+        config['temperature_e'] = 0.0
         config['velocity'] = np.array([0.0, 0.0, 0.0])
 
         # Only used for wavelength_dist = 'uniform'
@@ -347,7 +349,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         return wavelength
 
-    def random_wavelength_voigt(self, size=None):
+    def random_wavelength_voigt(self, size):
         #Units: wavelength (angstroms), natural_linewith (1/s), temperature (eV)
         
         # Check for the trivial case.
@@ -383,7 +385,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return rand_wave
 
     
-    def random_wavelength_multi_voigt(self, size=None):
+    def random_wavelength_multi_voigt(self, size):
         """
         Draw random wavelength samples from a multiline Voigt spectrum.
         
@@ -409,7 +411,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return wavelength
 
     
-    def random_wavelength_ar16_voigt(self, size=None):
+    def random_wavelength_ar16_voigt(self, size):
         """
         Gets the Ar16+ line parameters from xics_jax.
         Then passes those line parameters into multi_voigt_random().
@@ -417,11 +419,27 @@ class XicsrtSourceGeneric(GeometryObject):
         # Build the Ar16+ spectrum configuration
         spectrum_config = xics_jax.load_spectrum_config('ar16', use_te=True)
 
-        # Build the plasma parameters
+        ti = self.param['temperature']/1e3
+        te = self.param['temperature_e']/1e3
+
+        # The atomic physics model within xics_jax is not well-behaved
+        # for Te < 10 eV.  There are several reasons: a) actual physics,
+        # b) available data tables, c) floating point numerics.  We don't
+        # epect any emission at such low values of Te anyway sinrce there
+        # will not be any ions in the Ar16+ charge state.
+        #
+        # For now, just clamp Te to a minimum values of 10 eV.
+        te = max(te, 0.01)
+
+        # Build the plasma parameters.
+        # xics_jax expects temperatures in Kev, instead of eV
+        #
+        # ion temperature (keV) -> Doppler width
+        # electron temperature (keV) -> use_te intensities
         params = xics_jax.ModelParams.from_dict(
             {
-                'ti': 2.0,           # ion temperature (keV) -> Doppler width
-                'te': 3.0,           # electron temperature (keV) -> use_te intensities
+                'ti': ti,
+                'te': te,
                 'scale_factor': 1.0,
             },
             spectrum_config,
@@ -450,7 +468,7 @@ class XicsrtSourceGeneric(GeometryObject):
         return wavelengths
 
     
-    def random_wavelength_normal(self, size=None):
+    def random_wavelength_normal(self, size):
         #Units: wavelength (angstroms), temperature (eV)
         c       = const.physical_constants['speed of light in vacuum'][0]
         amu_kg  = const.physical_constants['atomic mass unit-kilogram relationship'][0]
@@ -463,7 +481,7 @@ class XicsrtSourceGeneric(GeometryObject):
         rand_wave = np.random.normal(self.param['wavelength'], sigma, size)
         return rand_wave
     
-    def random_wavelength_cauchy(self, size=None):
+    def random_wavelength_cauchy(self, size):
         # This function needs to be updated to use the same definitions
         # as random_wavelength_voigt.
         #
