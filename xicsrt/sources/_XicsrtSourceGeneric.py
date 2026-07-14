@@ -429,7 +429,7 @@ class XicsrtSourceGeneric(GeometryObject):
         # will not be any ions in the Ar16+ charge state.
         #
         # For now, just clamp Te to a minimum values of 10 eV.
-        te = max(te, 10)
+        te = max(te, 0.01)
 
         # Build the plasma parameters.
         # xics_jax expects temperatures in Kev, instead of eV
