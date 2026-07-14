@@ -213,6 +213,11 @@ def add_controls(fig):
 
     slider.on_changed(update)
 
+    # Keep references alive so the GC doesn't kill interactivity.
+    if not hasattr(fig, '_widgets'):
+        fig._widgets = []
+    fig._widgets.append(slider)
+
     return slider
 
 
