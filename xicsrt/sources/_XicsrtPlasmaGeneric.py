@@ -90,7 +90,10 @@ class XicsrtPlasmaGeneric(GeometryObject):
           No documentation yet. Please help improve XICSRT!
 
         temperature : float (0.0) [eV]
-          No documentation yet. Please help improve XICSRT!
+          Ion temperature. Will be used to calculate the doppler broadening.
+
+        temperature_e : float (0.0) [eV]
+          Electron temperature. May be used by some models to determine line emissivities.
 
         velocity : float (0.0) [m/s]
           No documentation yet. Please help improve XICSRT!
@@ -145,6 +148,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         config['emissivity']      = 0.0
         config['temperature']     = 0.0
+        config['temperature_e']   = 0.0
         config['velocity']        = 0.0
 
         config['time_resolution'] = 1e-3
@@ -182,13 +186,14 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         # These values should be overwritten in a derived class.
         bundle_input = {}
-        bundle_input['origin']       = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
-        bundle_input['temperature']  = np.ones([self.param['bundle_count']], dtype = np.float64)
-        bundle_input['emissivity']   = np.ones([self.param['bundle_count']], dtype = np.float64)
-        bundle_input['velocity']     = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
-        bundle_input['mask']         = np.ones([self.param['bundle_count']], dtype = np.bool_)
-        bundle_input['spread']       = np.zeros([self.param['bundle_count']], dtype = np.float64)
-        bundle_input['solid_angle']  = np.zeros([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['origin']         = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
+        bundle_input['temperature']    = np.ones([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['temperature_e']  = np.ones([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['emissivity']     = np.ones([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['velocity']       = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
+        bundle_input['mask']           = np.ones([self.param['bundle_count']], dtype = np.bool_)
+        bundle_input['spread']         = np.zeros([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['solid_angle']    = np.zeros([self.param['bundle_count']], dtype = np.float64)
         
         # randomly spread the bundles around the plasma box
         offset = np.zeros((self.param['bundle_count'], 3))
@@ -235,6 +240,9 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
     def get_temperature(self, rho):
         return self.param['temperature']
+
+    def get_temperature_e(self, rho):
+        return self.param['temperature_e']
 
     def get_velocity(self, rho):
         return self.param['velocity']
@@ -290,10 +298,11 @@ class XicsrtPlasmaGeneric(GeometryObject):
             source_config = dict()
             
             # Specially dependent parameters
-            source_config['origin']      = bundle_input['origin'][ii]
-            source_config['temperature'] = bundle_input['temperature'][ii]
-            source_config['velocity']    = bundle_input['velocity'][ii]
-            source_config['spread']      = bundle_input['spread'][ii]
+            source_config['origin']        = bundle_input['origin'][ii]
+            source_config['temperature']   = bundle_input['temperature'][ii]
+            source_config['temperature_e'] = bundle_input['temperature_e'][ii]
+            source_config['velocity']      = bundle_input['velocity'][ii]
+            source_config['spread']        = bundle_input['spread'][ii]
 
             # Calculate the total number of photons to launch from this bundle
             # volume. Since the source can use poisson statistics, this should

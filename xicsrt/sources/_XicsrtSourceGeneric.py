@@ -187,9 +187,7 @@ class XicsrtSourceGeneric(GeometryObject):
         config['line_gammas'] = np.array([0.0])
 
         # Only used for wavelength_dist = 'ar16_voigt'
-        config['ar16_ti'] = 2.0
-        config['ar16_te'] = 3.0
-        config['ar16_scale_factor'] = 1.0
+        # config['ar16_scale_factor'] = 1.0
         
         # Used for wavelength_dist = 'multi_voigt' and 'ar16_voigt'
         config['multi_gridsize'] = None
@@ -202,6 +200,7 @@ class XicsrtSourceGeneric(GeometryObject):
         config['mass_number'] = 1.0
         config['linewidth'] = 0.0
         config['temperature'] = 0.0
+        config['temperature_e'] = 0.0
         config['velocity'] = np.array([0.0, 0.0, 0.0])
 
         # Only used for wavelength_dist = 'uniform'
@@ -420,11 +419,27 @@ class XicsrtSourceGeneric(GeometryObject):
         # Build the Ar16+ spectrum configuration
         spectrum_config = xics_jax.load_spectrum_config('ar16', use_te=True)
 
-        # Build the plasma parameters
+        ti = self.param['temperature']/1e3
+        te = self.param['temperature_e']/1e3
+
+        # The atomic physics model within xics_jax is not well-behaved
+        # for Te < 10 eV.  There are several reasons: a) actual physics,
+        # b) available data tables, c) floating point numerics.  We don't
+        # epect any emission at such low values of Te anyway sinrce there
+        # will not be any ions in the Ar16+ charge state.
+        #
+        # For now, just clamp Te to a minimum values of 10 eV.
+        te = max(te, 10)
+
+        # Build the plasma parameters.
+        # xics_jax expects temperatures in Kev, instead of eV
+        #
+        # ion temperature (keV) -> Doppler width
+        # electron temperature (keV) -> use_te intensities
         params = xics_jax.ModelParams.from_dict(
             {
-                'ti': 2.0,           # ion temperature (keV) -> Doppler width
-                'te': 3.0,           # electron temperature (keV) -> use_te intensities
+                'ti': ti,
+                'te': te,
                 'scale_factor': 1.0,
             },
             spectrum_config,
