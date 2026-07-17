@@ -1,0 +1,32 @@
+================================================================================
+2026-07-17 — Set up AGENTS.md and tidy .gitignore for OpenCode onboarding.
+
+Files modified:
+- AGENTS.md (created, then reformatted)
+- .gitignore
+- devel/devel_ai_log.txt (created)
+
+Key changes:
+- Created AGENTS.md documenting run/verify (no test suite; run examples), config-dict
+  execution model, _Xicsrt*.py plugin discovery, Interact*/Shape* mixin composition,
+  module layout, and release workflow.
+- Standardized AGENTS.md formatting: unified '-' bullets, plain (non-bold) mandate
+  lead-ins, consistent headings/whitespace.
+- Reconciled devel_ai/ -> devel/ path references; removed xarray mention.
+- .gitignore: added *.h5, *.pkl, *.pickle (result output formats) and .vscode.
+
+Key findings / gotchas:
+- No unit tests / CI; verify via `python examples/example_00/example_00.py`.
+- strict_config_check defaults True: unknown config keys raise; new options must go in
+  the element's default_config().
+- Plugin files MUST be named _Xicsrt<Name>.py with class Xicsrt<Name> or dispatcher
+  won't find them.
+- devel/ did not exist; created this session on first use.
+- 6 tracked + 2 untracked *_testing2.ipynb notebooks; AGENTS.md requires output-stripping
+  before commit — verify before staging.
+
+Key prompts:
+- "Create or update AGENTS.md for this repository" (compact, high-signal onboarding).
+- "I've added some sections to AGENTS.md. Please suggest improvements and standardize
+  formatting across the whole file for enhanced human readability."
+- "Can you check my .gitignore and make sure it's appropriate for this project?"
