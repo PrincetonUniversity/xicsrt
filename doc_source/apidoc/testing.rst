@@ -1,6 +1,22 @@
 Testing
 ========
 
+Unit tests
+----------
+
+XICSRT includes a ``pytest`` unit test suite under ``tests/``
+
+.. code:: bash
+
+    pip install pytest
+    pytest tests/
+
+Integrated tests
+----------------
+
+The ``testing/`` directory separately contains integrated-test Jupyter
+notebooks (``integrated_test_*.ipynb``), which are not pytest tests.
+
 .. automodule:: testing
     :members:
     :undoc-members:

@@ -24,6 +24,8 @@ Mathematical Tools
     :maxdepth: 1
 
     xicsrt.tools.xicsrt_voigt
+    xicsrt.tools.xicsrt_multi_voigt
+    xicsrt.tools.xicsrt_faddeeva
     xicsrt.tools.xicsrt_math
     xicsrt.tools.xicsrt_math_jax
 

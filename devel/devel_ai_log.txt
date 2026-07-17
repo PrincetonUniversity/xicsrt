@@ -30,3 +30,39 @@ Key prompts:
 - "I've added some sections to AGENTS.md. Please suggest improvements and standardize
   formatting across the whole file for enhanced human readability."
 - "Can you check my .gitignore and make sure it's appropriate for this project?"
+
+================================================================================
+2026-07-17 — F001: jax-friendly Voigt kernel + tests + docs.
+
+Files modified:
+- xicsrt/tools/xicsrt_faddeeva.py (created: shared kernel)
+- xicsrt/tools/xicsrt_voigt.py
+- xicsrt/tools/xicsrt_multi_voigt.py
+- tests/test_voigt.py, tests/__init__.py (created)
+- setup.py
+- README.md, AGENTS.md
+- doc_source/apidoc/{testing,xicsrt.tools}.rst
+- doc_source/apidoc/xicsrt.tools.xicsrt_{faddeeva,multi_voigt}.rst (created)
+- devel/features_request.md (F001 -> In Progress)
+
+Key changes:
+- Replaced scipy.special.wofz with pure-numpy Weideman rational Faddeeva approx
+  (default N=16, tunable kwarg) in new shared xicsrt_faddeeva.voigt_profile.
+- xicsrt_voigt.voigt now wraps the kernel; original wofz kept (unused) as voigt_wofz.
+- multi_voigt vectorized (broadcast over line axis, no Python loop); N threaded through.
+- Added pytest suite (11 tests): accuracy vs wofz, voigt==voigt_wofz, multi==sum,
+  CDF props, sampler histogram-vs-PDF. Documented running tests in README/docs/AGENTS.
+
+Key findings / gotchas:
+- wofz is compiled C -> not jax-traceable; Weideman is the enabler for future jax.
+- N=16 max abs err ~3e-7 vs wofz; CPU speedup only ~1.1-1.7x (grows w/ line count).
+- Voigt std != sigma (Lorentzian tails); test shape via histogram, not std.
+- NumPy 2.0 env: np.trapz removed -> use np.trapezoid.
+
+Key prompts:
+- "give me some options for improving performance for the wofz bottleneck ...
+  compatible with future jax acceleration would be preferred."
+- "Option D ... default at N=16 ... refactor both and share the new kernal ...
+  create a new tests folder and generate one or more pytests ... accuracy
+  comparison against wofz."
+- "don't remove the wofz based function ... just rename to voigt_wofz."

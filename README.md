@@ -44,6 +44,16 @@ interface is also available.
 To learn how format the input, and interpret the output, see the examples
 provided in the [documentation].
 
+Testing
+-------
+
+XICSRT includes a `pytest` unit test suite under `tests/`
+
+    pip install pytest
+    pytest tests/
+
+The `testing/` directory contains separate integrated-test Jupyter notebooks.
+
 
 [![Image][idocs] ][docs]
 

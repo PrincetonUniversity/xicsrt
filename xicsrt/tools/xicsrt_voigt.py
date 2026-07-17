@@ -4,13 +4,53 @@
     Novimir Pablant <npablant@pppl.gov>
 
 A set of routines for related to Voigt distributions.
+
+This file includes AI generated code using Claude (Opus 4.8).
 """
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import wofz
 
+from xicsrt.tools import xicsrt_faddeeva
+
+
 def voigt(
+        x
+        ,intensity=None
+        ,location=None
+        ,sigma=None
+        ,gamma=None
+        ,N=xicsrt_faddeeva.DEFAULT_N):
+    """
+    Evaluate a Voigt profile using the jax-friendly Weideman kernel.
+
+    This is a thin wrapper over
+    :func:`xicsrt.tools.xicsrt_faddeeva.voigt_profile`.  It replaces the
+    ``scipy.special.wofz`` based implementation (still available as
+    :func:`voigt_wofz`) with a pure-arithmetic approximation so that the
+    calculation is compatible with future JAX acceleration.
+
+    Parameters
+    ----------
+    x : array_like
+        Wavelength grid.
+    intensity : float
+        Area (strength) scaling of the line.
+    location : float
+        Center of the line.
+    sigma : float
+        Gaussian width.
+    gamma : float
+        Lorentzian width.
+    N : int, optional
+        Number of terms in the Weideman approximation.
+    """
+    return xicsrt_faddeeva.voigt_profile(
+        x, location, intensity, sigma, gamma, N=N)
+
+
+def voigt_wofz(
         x
         ,intensity=None
         ,location=None
@@ -20,6 +60,11 @@ def voigt(
     The Voigt function is also the real part of  w(z) = exp(-z^2) erfc(iz), 
     the complex probability function, which is also known as the Faddeeva 
     function. Scipy has implemented this function under the name wofz()
+
+    .. note::
+        This is the original ``scipy.special.wofz`` based implementation.  It
+        is retained as a reference but is no longer used; :func:`voigt` now
+        uses the jax-friendly Weideman approximation instead.
     """
     
     z = (x - location + 1j*gamma)/np.sqrt(2)/sigma

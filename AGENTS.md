@@ -5,9 +5,14 @@ Runtime deps: `numpy`, `scipy`, `pillow`, `h5py`. Requires Python >= 3.8.
 
 ## Running / verifying
 
-There is **no unit test suite and no CI**. `testing/` contains Jupyter notebooks
-(`integrated_test_*.ipynb`), not pytest tests. To verify changes, run an example
-script end-to-end:
+A `pytest` unit test suite lives in `tests/` (there is still **no CI**):
+
+    pip install pytest
+    pytest tests/
+
+`testing/` separately contains integrated-test Jupyter notebooks
+(`integrated_test_*.ipynb`), which are not pytest tests. To verify broader
+changes, also run an example script end-to-end:
 
     python examples/example_00/example_00.py   # point source + detector, no output files
 

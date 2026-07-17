@@ -1,40 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# This 'multi_voigt' code uses the foundation of 'xicsrt_voigt' and extends the functions to be used on multiple lines.
-# 
-# We cannot directly use those functions from 'xicsrt_voigt' because it is based on the assumption that there is only one Voigt profile, which is centered at zero. We rewrite the functions to be compatible with multiple Voigt profiles/lines.
+# This 'multi_voigt' code extends the single-line Voigt evaluation to a sum of
+# multiple Voigt profiles at arbitrary line centers.
+#
+# Both this module and 'xicsrt_voigt' now share a single, jax-friendly Voigt
+# kernel defined in 'xicsrt_faddeeva.voigt_profile'.  That kernel is fully
+# broadcastable, so the multi-line spectrum is evaluated as a single vectorized
+# operation (no per-line Python loop).
+#
+# This file includes AI generated code using Claude (Opus 4.8).
 
 
 import numpy as np
 import warnings
-from scipy.special import wofz
 
-def voigt(x, intensity=None, location=None, sigma=None, gamma=None):
+from xicsrt.tools import xicsrt_faddeeva
+
+
+def multi_voigt(x, line_locations, line_intensities, sigmas, gammas,
+                N=xicsrt_faddeeva.DEFAULT_N):
     """
-    Evaluates one Voigt profile. 
+    Evaluates the summed spectrum from multiple Voigt profiles.
 
-    Parameters:
-        x : wavelength grid
-        intensity : strength/area scaling of the line
-        location : center of the wavelength line
-        sigma : Gaussian width
-        gamma : Lorentzian width
-
-    Returns: 
-        y: intensity of this one Voigt line at every x value
-    """
-
-    z = (x - location + 1j*gamma)/np.sqrt(2)/sigma
-    y = wofz(z).real/np.sqrt(2*np.pi)/sigma * intensity
-
-    return y
-
-
-
-def multi_voigt(x, line_locations, line_intensities, sigmas, gammas):
-    """
-    Evaluates the summed spectrum from multiple Voigt profiles. 
+    This is evaluated as a single vectorized (broadcast) call into the shared
+    :func:`xicsrt.tools.xicsrt_faddeeva.voigt_profile` kernel, then summed over
+    the line axis.
 
     Parameters: 
         x : wavelength grid
@@ -42,33 +33,36 @@ def multi_voigt(x, line_locations, line_intensities, sigmas, gammas):
         line_intensities : intensity (area) of each spectral line
         sigmas : Gaussian width of each spectral line
         gammas : Lorentzian width of each spectral line
+        N : number of terms in the Weideman approximation
 
     Returns: 
         y : sum of all Voigt profiles evaluated on the wavelength gird
 
     """
 
-    x = np.asarray(x)
-    y = np.zeros_like(x, dtype = float)
+    x = np.asarray(x, dtype=float)
+    line_locations = np.asarray(line_locations, dtype=float)
+    line_intensities = np.asarray(line_intensities, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    gammas = np.asarray(gammas, dtype=float)
 
-    for location, intensity, sigma, gamma, in zip(
-            line_locations, 
-            line_intensities, 
-            sigmas, 
-            gammas):
-        y += voigt(
-            x, 
-            intensity = intensity, 
-            location = location, 
-            sigma = sigma, 
-            gamma = gamma,
-        )
+    # Broadcast the (n_lines,) line parameters against the (n_grid,) grid to
+    # form a (n_lines, n_grid) array, then sum over the line axis.
+    profiles = xicsrt_faddeeva.voigt_profile(
+        x[None, :],
+        line_locations[:, None],
+        line_intensities[:, None],
+        sigmas[:, None],
+        gammas[:, None],
+        N=N,
+    )
+    y = profiles.sum(axis=0)
 
     return y
 
 
 
-def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsize=None, cutoff=None):
+def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsize=None, cutoff=None, N=xicsrt_faddeeva.DEFAULT_N):
     """
     Numerical CDF table for a spectrum made from multiple Voight profiles.
     This follows the structure of 'voigt_cdf_tab()': 
@@ -137,7 +131,7 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     cdf_x = (bounds[:-1] + bounds[1:]) / 2
 
     # Evaluating the summed multiline Voigt spectrum
-    pdf = multi_voigt(cdf_x, line_locations, line_intensities, sigmas, gammas,)
+    pdf = multi_voigt(cdf_x, line_locations, line_intensities, sigmas, gammas, N=N)
 
     # Approximating the area in each wavelength bin.
     # Matches original function for rectangle-style CDF construction.
@@ -159,7 +153,7 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     return bounds[1:], cdf, pdf
 
 
-def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, gridsize=None, cutoff=None):
+def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, gridsize=None, cutoff=None, N=xicsrt_faddeeva.DEFAULT_N):
     """
     Draw random wavelength samples from a multiline Voigt spectrum.
 
@@ -171,6 +165,7 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, g
         size : number of random wavelength samples to generate
         gridsize : number of wavelength grid points used to build the CDF
         cutoff : relative intensity cutoff used to determine the wavelength domain of CDF
+        N : number of terms in the Weideman approximation
 
     Returns:
         random_x : randomly sampled wavelengths drawn from the multiline Voigt spectrum
@@ -188,6 +183,7 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, g
         gammas,
         gridsize=gridsize,
         cutoff=cutoff,
+        N=N,
     )
 
     # Generate uniformly distributed random probability values
