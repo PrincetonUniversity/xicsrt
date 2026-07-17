@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 4.6)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -13,6 +14,24 @@ A set of algorithms to generate vector distributions.
     gaussian distributed probability distribution of angles. This type of
     distribution is available, but for generality and consistency 'spread'
     will be used throughout.
+
+.. Note:: Kent / FB8 family of directional distributions
+    The mathematically correct objects for anisotropic or elliptical angular
+    emission on the unit sphere are the FB8 family of distributions. The
+    hierarchy is: FB8 (8-parameter) ⊃ FB6 ⊃ FB5 / Kent (5-parameter) ⊃
+    von Mises–Fisher (rotationally symmetric). The Kent distribution in
+    particular is the natural spherical analogue of the bivariate normal and
+    can represent elliptical divergence profiles with correct solid-angle
+    normalization for arbitrary cone widths.
+
+    The current :func:`vector_dist_flat_gaussian` only approximates the Kent
+    distribution in the small-angle limit (as noted in its docstring).
+    A proper implementation of this family is tracked as feature request F002.
+
+    Reference implementation: ``fb8`` v1.2.2 (MIT, Tianlu Yuan)
+
+    - https://pypi.org/project/fb8/
+    - https://github.com/tianluyuan/sphere
 """
 
 import numpy as np

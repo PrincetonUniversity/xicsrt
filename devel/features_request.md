@@ -1,5 +1,38 @@
 # XICSRT Feature Requests
 
+## F002 - Kent / FB8 directional distribution for angular spread
+Started: 2026-07-17
+Status: Pending
+
+Goal: Implement the Kent (FB5) and/or FB8 family of directional distributions
+as a proper angular-spread option in `xicsrt/tools/xicsrt_spread.py`, replacing
+the small-angle Gaussian approximation for anisotropic emission. This should
+include at minimum a sampler (analogous to existing `vector_dist_*` functions)
+and a corresponding `solid_angle` calculation.
+
+The FB8 family is the mathematically correct set of distributions for
+anisotropic/elliptical angular emission on the unit sphere:
+FB8 (8-param) ⊃ FB6 ⊃ FB5 / Kent (5-param) ⊃ von Mises–Fisher.
+The Kent distribution is the natural spherical analogue of the bivariate normal.
+
+Reference implementation (`fb8` v1.2.2, MIT, Tianlu Yuan):
+- https://pypi.org/project/fb8/
+- https://github.com/tianluyuan/sphere
+
+Findings / notes (from code review, 2026-07-17):
+- Only sampling and pdf evaluation are likely needed (not MLE, gradient, or
+  contour functionality from the reference package).
+- The reference `rvs` implementation is rejection-based and may be inefficient
+  for high concentration parameter κ (i.e. narrow beams), which is a common
+  XICSRT use case.
+- The reference package emits noisy warnings/logging that conflict with the
+  XICSRT `mirlogging` conventions and uses its own RNG separate from the rest
+  of XICSRT.
+- Open question: whether Kent (FB5, elliptical symmetric) alone is sufficient
+  or whether the full FB8 asymmetry is needed.
+
+---
+
 ## F001 - Performance enhancement for tools/xicsrt_voigt_multi.py
 Started: 2026-07-17
 Status: In Progress (2026-07-17: implemented jax-friendly Weideman kernel)
