@@ -110,7 +110,7 @@ def voigt_profile(x, location, intensity, sigma, gamma, N=DEFAULT_N):
 
     The Voigt profile is the real part of the Faddeeva function.  This single
     kernel is shared by both the single-line (:mod:`xicsrt.tools.xicsrt_voigt`)
-    and multi-line (:mod:`xicsrt.tools.xicsrt_multi_voigt`) code paths.  All
+    and multi-line (:mod:`xicsrt.tools.xicsrt_voigt_multi`) code paths.  All
     parameters broadcast against one another following the usual numpy rules,
     so multiple lines can be evaluated at once by supplying arrays that
     broadcast against ``x``.

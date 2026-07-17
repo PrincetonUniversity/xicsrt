@@ -1,6 +1,6 @@
 # XICSRT Feature Requests
 
-## F001 - Performance enhancement for tools/xicsrt_multi_voigt.py
+## F001 - Performance enhancement for tools/xicsrt_voigt_multi.py
 Started: 2026-07-17
 Status: In Progress (2026-07-17: implemented jax-friendly Weideman kernel)
 
@@ -14,7 +14,7 @@ Implementation (2026-07-17):
   cached _weideman_coeffs). Pure array arithmetic -> future jax swap is trivial.
 - xicsrt_voigt.voigt now wraps voigt_profile; original wofz version retained
   (unused) as voigt_wofz per request.
-- xicsrt_multi_voigt.multi_voigt vectorized (broadcast over line axis, no
+- xicsrt_voigt_multi.multi_voigt vectorized (broadcast over line axis, no
   per-line Python loop); N passthrough added to cdf_tab / random.
 - Added tests/ (pytest): accuracy vs wofz (N=16/24/32), voigt==voigt_wofz,
   multi==sum-of-singles, CDF properties, sampler histogram-vs-PDF. 11 pass.

@@ -19,7 +19,7 @@ from scipy.special import wofz
 
 from xicsrt.tools import xicsrt_faddeeva
 from xicsrt.tools import xicsrt_voigt
-from xicsrt.tools import xicsrt_multi_voigt
+from xicsrt.tools import xicsrt_voigt_multi
 
 
 # Maximum absolute error in w(z) for each number of terms N.  These are
@@ -84,7 +84,7 @@ def test_multi_voigt_equals_sum_of_singles():
             x, intensity=inten[ii], location=loc[ii],
             sigma=sig[ii], gamma=gam[ii])
 
-    multi = xicsrt_multi_voigt.multi_voigt(x, loc, inten, sig, gam)
+    multi = xicsrt_voigt_multi.multi_voigt(x, loc, inten, sig, gam)
 
     assert np.allclose(multi, summed, atol=1e-12)
 
@@ -96,7 +96,7 @@ def test_multi_voigt_cdf_properties():
     sig = np.array([0.25, 0.2])
     gam = np.array([0.1, 0.15])
 
-    cdf_x, cdf, pdf = xicsrt_multi_voigt.multi_voigt_cdf_tab(
+    cdf_x, cdf, pdf = xicsrt_voigt_multi.multi_voigt_cdf_tab(
         loc, inten, sig, gam)
 
     assert np.all(np.diff(cdf) >= 0), "CDF must be non-decreasing"
@@ -121,7 +121,7 @@ def test_multi_voigt_random_statistics():
     rng_state = np.random.get_state()
     try:
         np.random.seed(42)
-        samples = xicsrt_multi_voigt.multi_voigt_random(
+        samples = xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, size=400000, gridsize=4000)
     finally:
         np.random.set_state(rng_state)
@@ -134,7 +134,7 @@ def test_multi_voigt_random_statistics():
     centers = 0.5 * (edges[:-1] + edges[1:])
     hist, _ = np.histogram(samples, bins=edges, density=True)
 
-    pdf = xicsrt_multi_voigt.multi_voigt(centers, loc, inten, sig, gam)
+    pdf = xicsrt_voigt_multi.multi_voigt(centers, loc, inten, sig, gam)
     pdf = pdf / np.trapezoid(pdf, centers)
 
     # Compare where the PDF is appreciable to avoid noisy empty-tail bins.

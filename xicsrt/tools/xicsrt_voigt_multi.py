@@ -9,7 +9,7 @@
 # broadcastable, so the multi-line spectrum is evaluated as a single vectorized
 # operation (no per-line Python loop).
 #
-# This file includes AI generated code using Claude (Opus 4.8).
+# This file includes AI generated code using Claude (Opus 4.8, Sonnet 4.6).
 
 
 import numpy as np

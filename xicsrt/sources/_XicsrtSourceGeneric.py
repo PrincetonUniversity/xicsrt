@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 4.6)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -15,7 +16,7 @@ import scipy.constants as const
 
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
-from xicsrt.tools import xicsrt_multi_voigt
+from xicsrt.tools import xicsrt_voigt_multi
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
@@ -398,7 +399,7 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        wavelength = xicsrt_multi_voigt.multi_voigt_random(
+        wavelength = xicsrt_voigt_multi.multi_voigt_random(
             self.param['line_locations'], 
             self.param['line_intensities'],
             self.param['line_sigmas'],
@@ -455,7 +456,7 @@ class XicsrtSourceGeneric(GeometryObject):
         gammas = lines["gamma"].values
 
         # Sample wavelengths
-        wavelengths = xicsrt_multi_voigt.multi_voigt_random(
+        wavelengths = xicsrt_voigt_multi.multi_voigt_random(
             line_locations, 
             line_intensities, 
             sigmas, 

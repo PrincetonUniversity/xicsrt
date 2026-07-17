@@ -1,8 +1,8 @@
-xicsrt\_multi\_voigt
+xicsrt\_voigt\_multi
 ====================
-`xicsrt.tools.xicsrt_multi_voigt`
+`xicsrt.tools.xicsrt_voigt_multi`
 
-.. automirmodule:: xicsrt.tools.xicsrt_multi_voigt
+.. automirmodule:: xicsrt.tools.xicsrt_voigt_multi
     :members:
     :undoc-members:
     :member-order: bysource
@@ -10,7 +10,7 @@ xicsrt\_multi\_voigt
 Private Members
 -----------------
 
-.. automirmodule:: xicsrt.tools.xicsrt_multi_voigt
+.. automirmodule:: xicsrt.tools.xicsrt_voigt_multi
     :members:
     :private-members:
     :undoc-members:

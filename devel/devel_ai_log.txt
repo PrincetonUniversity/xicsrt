@@ -37,12 +37,12 @@ Key prompts:
 Files modified:
 - xicsrt/tools/xicsrt_faddeeva.py (created: shared kernel)
 - xicsrt/tools/xicsrt_voigt.py
-- xicsrt/tools/xicsrt_multi_voigt.py
+- xicsrt/tools/xicsrt_voigt_multi.py (renamed from xicsrt_multi_voigt.py)
 - tests/test_voigt.py, tests/__init__.py (created)
 - setup.py
 - README.md, AGENTS.md
 - doc_source/apidoc/{testing,xicsrt.tools}.rst
-- doc_source/apidoc/xicsrt.tools.xicsrt_{faddeeva,multi_voigt}.rst (created)
+- doc_source/apidoc/xicsrt.tools.xicsrt_{faddeeva,voigt_multi}.rst (created)
 - devel/features_request.md (F001 -> In Progress)
 
 Key changes:
@@ -66,3 +66,22 @@ Key prompts:
   create a new tests folder and generate one or more pytests ... accuracy
   comparison against wofz."
 - "don't remove the wofz based function ... just rename to voigt_wofz."
+
+================================================================================
+2026-07-17 — Rename xicsrt_multi_voigt -> xicsrt_voigt_multi.
+
+Files modified:
+- xicsrt/tools/xicsrt_multi_voigt.py -> xicsrt/tools/xicsrt_voigt_multi.py (git mv)
+- doc_source/apidoc/xicsrt.tools.xicsrt_multi_voigt.rst -> xicsrt.tools.xicsrt_voigt_multi.rst (git mv)
+- xicsrt/sources/_XicsrtSourceGeneric.py (import + 2 call sites)
+- xicsrt/tools/xicsrt_faddeeva.py (:mod: cross-reference in docstring)
+- tests/test_voigt.py (import + 4 call sites)
+- doc_source/apidoc/xicsrt.tools.rst (toctree entry)
+- devel/features_request.md (F001 title + body)
+- devel/devel_ai_log.txt
+
+Key changes:
+- Pure rename; no logic changes. All 11 pytest tests pass post-rename.
+
+Key prompts:
+- "Please rename tools/xicsrt_multi_voigt to tools/xicsrt_voigt_multi and propagate the name change as needed."
