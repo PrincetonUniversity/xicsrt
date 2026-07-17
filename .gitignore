@@ -8,6 +8,7 @@ dist
 build
 doc_build
 xicsrt_contrib
+tutorial
 
 ## Data files
 *.nc
