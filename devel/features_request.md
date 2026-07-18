@@ -1,5 +1,35 @@
 # XICSRT Feature Requests
 
+## F003 - JAX-accelerated raytracing engine (xicsrt.jaxrt)
+Started: 2026-07-17
+Status: Pending
+
+Goal: A parallel JAX-based engine in a new subpackage `xicsrt/jaxrt/`, enabling
+jit/vmap acceleration on CPU now and GPU (Princeton Stellar cluster, A100s)
+later. The numpy engine remains completely untouched; `jax` is an optional
+dependency. Priorities, in order: (1) readability for doctorate-level physics
+researchers without CS background, (2) exact photon statistics at every
+element (core XICSRT tenet, no exceptions), (3) acceleration.
+
+Full approved plan: devel/plan_jaxrt.md
+
+Key decisions (approved 2026-07-17):
+- Parallel subpackage `xicsrt/jaxrt/`, pure functions + config dicts (no
+  mutable mixin classes); same JSON configs as the numpy engine.
+- float64 everywhere (jax x64 mode enabled on import).
+- Explicit jax.random key threading; statistically equivalent to the numpy
+  engine, not bit-identical (approved).
+- Poisson ray counts via capacity + mask: exact Poisson draw N, fixed
+  capacity = mean + 10 sigma, rays beyond N masked from birth; error on
+  overflow (~1e-23 probability). Photon statistics exactly preserved.
+- Phase 1 scope: Generic/Directed/Focused sources; Plane/Sphere/Cylinder/
+  Torus shapes; None/Mirror/Crystal/MosaicCrystal interactions; rocking
+  curves step/gaussian/file. Sequential runs, single process, single device.
+- Deferred: plasma sources, mesh optics, filters, multi-GPU pmap/sharding,
+  any multiprocessing interplay (intentionally excluded).
+
+---
+
 ## F002 - Kent / FB8 directional distribution for angular spread
 Started: 2026-07-17
 Status: Pending

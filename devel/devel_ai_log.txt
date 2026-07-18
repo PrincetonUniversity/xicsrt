@@ -85,3 +85,44 @@ Key changes:
 
 Key prompts:
 - "Please rename tools/xicsrt_multi_voigt to tools/xicsrt_voigt_multi and propagate the name change as needed."
+
+================================================================================
+2026-07-17 — F003 planning: JAX-accelerated engine (xicsrt.jaxrt). Plan only, no code.
+
+Files modified:
+- devel/plan_jaxrt.md (created: full approved plan + codebase research notes)
+- devel/features_request.md (added F003, Pending)
+- AGENTS.md (added photon-statistics Core Mandate)
+
+Key changes:
+- Approved design: parallel subpackage xicsrt/jaxrt/, pure functions + config
+  dicts, float64 (x64 mode), same JSON configs, jax as optional extra.
+- Poisson under jit: capacity + mask (exact Poisson N, capacity = mean + 10
+  sigma, error on overflow) — preserves exact photon statistics.
+- Phase 1: Generic/Directed/Focused sources; Plane/Sphere/Cylinder/Torus;
+  None/Mirror/Crystal/MosaicCrystal; sequential runs, single device.
+- Deferred: plasma sources, mesh optics, filters, multi-GPU sharding, --mp.
+
+Key findings / gotchas:
+- Rays are never compacted during tracing (fixed N) — good for jit; main
+  hazards are global np.random, in-place masked writes, rejection sampler in
+  xicsrt_spread.py:198, mosaic break loop, per-ray image loop.
+- InteractCrystal re-reads rocking file every iteration — fix in jaxrt setup.
+- Existing jax footholds: tools/xicsrt_math_jax.py, tools/xicsrt_faddeeva.py.
+- Multiprocessing + JAX intentionally excluded (recompile per fork, GPU
+  memory contention); cross-node scaling via SLURM arrays + seeds.
+
+Suggested follow-ups:
+- Start implementation from devel/plan_jaxrt.md, order: housekeeping done ->
+  _rays/plane/detector -> sources -> curved shapes/crystal -> mosaic -> tests.
+
+Key prompts:
+- "I want to create a new feature ... accelerate this code using jax so that
+  it is more computationally efficient and can also be accelerated on a gpu
+  ... The highest priority is to maintain readability of the code for myself
+  and future physics researchers (doctorate level) ... I will want to make
+  the jax accelerated branch of xicsrt separate from the numpy only branch."
+- "The core tenant and conception of XICSRT is that the photon statistics are
+  absolutely correct at every element, under the basic assumptions. This must
+  be true in the jax version. Please also add this as a directive for
+  AGENTS.md."
