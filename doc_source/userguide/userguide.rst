@@ -13,6 +13,7 @@ This user manual is still incomplete. For now, please refer to the
 
     command_line
     multiple_processors
+    jax_acceleration
     list_of_publications
     similar_software
     development_projects

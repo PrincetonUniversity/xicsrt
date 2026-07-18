@@ -2,7 +2,7 @@
 
 ## F003 - JAX-accelerated raytracing engine (xicsrt.jaxrt)
 Started: 2026-07-17
-Status: Pending
+Status: In Progress (2026-07-17: phase 1 implemented, pending user verification)
 
 Goal: A parallel JAX-based engine in a new subpackage `xicsrt/jaxrt/`, enabling
 jit/vmap acceleration on CPU now and GPU (Princeton Stellar cluster, A100s)

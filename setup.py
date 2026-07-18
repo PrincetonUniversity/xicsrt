@@ -46,7 +46,7 @@ params ={
     'entry_points': {'console_scripts':['xicsrt=xicsrt.__main__:run']},
     'classifiers': classifiers,
     'install_requires': ['numpy', 'scipy', 'pillow', 'h5py'],
-    'extras_require': {'test': ['pytest']},
+    'extras_require': {'test': ['pytest'], 'jax': ['jax']},
     'python_requires': '>=3.8',
     }
     
