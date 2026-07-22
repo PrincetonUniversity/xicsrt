@@ -126,3 +126,99 @@ Key prompts:
   absolutely correct at every element, under the basic assumptions. This must
   be true in the jax version. Please also add this as a directive for
   AGENTS.md."
+
+================================================================================
+2026-07-21 — F004: exploratory tools_jax for multi_voigt_random. Not working.
+
+Files modified:
+- xicsrt/tools_jax/{__init__,xicsrt_faddeeva,xicsrt_voigt_multi,xicsrt_voigt}.py (created)
+- tests/test_voigt_jax.py (created)
+- devel/features_request.md (F004 added, then marked In Development - Not Working)
+
+Key changes:
+- New mirror subpackage (not xp-injection into xicsrt/tools/) so the numpy
+  engine and xicsrt.jaxrt stay untouched; not added to setup.py/extras_require.
+- jit boundary: data-dependent grid/domain sizing stays host-side numpy
+  (mirrors xicsrt.tools logic, duplicated); grid eval + cumsum/normalize +
+  (for _random) sampling are fused into one jax.jit call.
+- _random functions use jax.random.PRNGKey auto-seeded from OS entropy
+  (secrets.randbits) per call, not np.random — deliberate, documented
+  deviation; not reproducible via np.random.seed.
+
+Key findings / gotchas:
+- np.polyval does not trace under jax.jit (TracerArrayConversionError);
+  must use jnp.polyval — confirmed by direct test.
+- NOT WORKING: in the user's real (more complex) raytracing analysis that
+  calls this module repeatedly, runtime is so long the run can't complete.
+  Isolated unit tests (tests/test_voigt_jax.py, 9 tests) and example_00 pass
+  fine, so the failure is specific to repeated/real-scale usage. Suspect
+  per-call jit re-tracing/compilation overhead (multi_voigt_random recomputes
+  the grid and re-enters jit fresh every call) rather than a correctness bug.
+  Not diagnosed further this session.
+
+Suggested follow-ups:
+- New session: profile where time is actually going (compilation vs
+  execution) in the real analysis; check whether array shapes (line count,
+  gridsize) are actually stable call-to-call as assumed in F004's design
+  notes, since jax.jit recompiles on any shape change.
+
+Key prompts:
+- "I would like to use jax to accelerate the code in
+  xicsrt_voigt_multi.multi_voigt_random when running a 'normal' object
+  oriented (OO) python+numpy code ... I don't want to break my current
+  separation ... I just want a way to temporarily test out some targeted
+  jax accelerations."
+- "Lets go for the mirror directory" (over xp=numpy parameter injection).
+- Follow-up answers: jax.random for sampling (auto-seeded from OS entropy,
+  no key parameter), jit fused across CDF-build + sampling, port
+  xicsrt_voigt.py too, no benchmark script, no setup.py changes.
+- "In my more complex raytracing analysis, which relies on this module, the
+  computation time is so long that I can't let it complete. This will need
+  to be resolved, but I would like to start a new session to explore this."
+
+================================================================================
+2026-07-21 — F004 follow-up: diagnosed the tools_jax hang, abandoned it.
+
+Files modified:
+- xicsrt/sources/_XicsrtSourceGeneric.py (reverted uncommitted import swap
+  back to xicsrt.tools)
+- xicsrt/tools_jax/ and tests/test_voigt_jax.py (deleted)
+- devel/features_request.md (F004 marked Abandoned, root cause + benchmarks
+  recorded)
+
+Key changes:
+- Root cause confirmed: the working-tree edit to _XicsrtSourceGeneric.py
+  had wired tools_jax into XicsrtPlasmaGeneric's per-bundle Python loop
+  (bundle_count ~1e4 in production configs); per-bundle-varying gridsize/
+  size shapes forced jax.jit to recompile almost every call.
+- Benchmarked (CPU, ~15-line Ar16+ spectrum, bundle_count=1e4): plain numpy
+  ~5.3s; jit with bucketed fixed shapes ~7.5s; full jax.vmap batch ~12.6s
+  warm. Plain numpy wins at this scale on CPU regardless of retracing fix.
+- Reverted the import and deleted tools_jax/test_voigt_jax.py rather than
+  leaving it unwired, since no viable speedup path was found.
+
+Key findings / gotchas:
+- pytest passing does not catch this class of bug: tests only ever called
+  the sampler with fixed/repeated shapes, always hitting the jit cache.
+- JAX per-call dispatch/compile overhead is not recovered by small
+  per-bundle workloads (few lines, single/double-digit ray counts) on CPU;
+  crossover point for GPU or much larger line lists not evaluated.
+
+Suggested follow-ups:
+- If revisiting jax acceleration for this source, benchmark on the actual
+  GPU target (Princeton Stellar A100s) and/or much larger line lists before
+  reintroducing tools_jax.
+
+Key prompts:
+- "In the last session you helped me build a jax accelerated version...
+  when I tried my actual case study, it took so long to run that I could
+  not see the output ... find the issue."
+- "Lets proceed with [fixing the jax retracing], if there is a solution
+  that can speed up this code and doesn't require a new version of
+  XicsrtPlasmaGeneric that would be ideal, but if that is not possible
+  then suggest changes to XicsrtPlasmaGeneric to address this issue and
+  allow efficient jax acceleration."
+- "Revert to plain numpy now."
+- "add relevant information to F004 for future sessions and delete
+  tests/test_voigt_jax.py and xicsrt/tools_jax/ and revert
+  _XicsrtSourceGeneric.py."
