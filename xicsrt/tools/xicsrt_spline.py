@@ -168,7 +168,7 @@ def generate_random_emissivity(n_knots=5, min_spacing=0.05, zero_deriv_core=True
 # ---------------------------------------------------------------
 
 def generate_random_temp(
-    n_knots=6, 
+    n_knots=5, 
     y_min=0.2,       # minimum y-value is 0.2 keV for electron and ion temp
     y_max=5.0,       # maximum y-value is 10.0 keV for electron and 5.0 keV for ion temp
     decreasing=True, 
@@ -295,6 +295,10 @@ def generate_random_ion_temp(n_knots=5, min_spacing=0.05, seed=None):
 
 # -------------------------------------------------------------------
 # Generating Random Perpendicular Velocity Spline
+#
+# Note: this function does not create cases where there is no ion root (pure electron root) 
+#       or when there is no electron root (no ion root)
+#
 # -------------------------------------------------------------------
 
 def generate_random_perpendicular_velocity(n_knots=5, min_spacing=0.05, seed=None):
