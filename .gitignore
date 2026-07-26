@@ -44,3 +44,6 @@ __pycache__
 ## IDEs
 .idea
 .vscode
+
+# Local Anaconda project files
+anaconda_projects/
