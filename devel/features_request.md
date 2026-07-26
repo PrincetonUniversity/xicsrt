@@ -1,5 +1,39 @@
 # XICSRT Feature Requests
 
+## F005 - Allow XicsrtPlasmaVmec to load either VMEC or saved DESC equilibria
+Started: 2026-07-26
+Status: Done (2026-07-26)
+
+Implementation: `XicsrtPlasmaVmec.initialize_vmec` (in
+`xicsrt_contrib/xicsrt_contrib/sources/_XicsrtPlasmaVmec.py`) now picks the
+loader from the `wout_file` extension: `.nc` -> `VMECIO.load`, `.h5` ->
+`desc.io.load`; any other extension raises `ValueError`. No other methods
+needed changes since they only call `self.eq.map_coordinates(...)`, which is
+identical for both equilibrium types. Verified with a standalone script
+loading both `wout.nc` and `wout_desc_solved.h5` and checking
+flux/Cartesian round-trip error (~1e-6 m or better for both); also ran the
+full `pytest tests/` suite (36 passed) and `examples/example_00/example_00.py`
+end-to-end. Updated the SULI Part 5 logbook notebook to point
+`wout_file` at `/u/npablant/data/w7x/vmec/w7x_ref_172/wout_desc_solved.h5`.
+
+Request: update the W7-X SULI Part 5 logbook notebook to use a pre-solved DESC
+equilibrium file (`wout_desc_solved.h5`, produced by a separate converter
+notebook via `VMECIO.load` + `solve_continuation_automatic` + `eq.save`)
+instead of the original VMEC `wout.nc`. `desc.io.load` on a native DESC `.h5`
+skips the VMEC spectral re-fit and is much faster to load than `VMECIO.load`
+on a `wout.nc` (see the "Desc Coordinate Transform Performance Minimal
+Example" notebooks). `XicsrtPlasmaVmec.initialize_vmec` currently only
+supports `VMECIO.load` (`.nc`), so both VMEC and DESC equilibrium inputs
+need to be valid.
+
+Decision (user-approved plan): keep the `wout_file` config key name and the
+`XicsrtPlasmaVmec` class name unchanged; detect the equilibrium format from
+the file extension (`.nc` -> `VMECIO.load`, `.h5` -> `desc.io.load`) inside
+`initialize_vmec`. No jaxrt sync needed (plasma sources are out of scope per
+`devel/jaxrt_sync.md`). Scope limited to the canonical
+`xicsrt_contrib/xicsrt_contrib/sources/_XicsrtPlasmaVmec.py` (the separate
+`suli/suli2026_alston/xicsrt_contrib` clone is left untouched).
+
 ## F004 - Exploratory JAX-accelerated tools_jax for the numpy OO engine
 Started: 2026-07-21
 Status: Complete (2026-07-25). No clear advantage for CPU-based computation.
