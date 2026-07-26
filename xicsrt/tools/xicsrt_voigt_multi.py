@@ -77,9 +77,12 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     if cutoff is None: 
         cutoff = 1e-4
 
-    # The 'voigt_cdf_tab()' function scheme worked will with a minimum of 100 points.
-    # With that function it was possible to go as low as 50 points, but accuracy was not great.
-    gridsize_min = 100
+    # Set min and max gridsize.
+    # The min is set based on a single voigt, and also to match the jax version.
+    # The max will limit the ability to accurately model very narrow peaks.
+    # Currently set to 2^13 = 8192
+    gridsize_min = 128
+    gridsize_max = int(2**13)
 
     # Converts inputs to Numpy arrays 
     line_locations = np.asarray(line_locations)

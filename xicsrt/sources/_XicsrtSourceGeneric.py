@@ -17,6 +17,7 @@ import scipy.constants as const
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
 from xicsrt.tools import xicsrt_voigt_multi
+from xicsrt.tools import xicsrt_voigt_multi_jax
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
@@ -27,6 +28,16 @@ from xicsrt.objects._GeometryObject import GeometryObject
 # modeling the W7-X XICS diagnostic. This dependency and related code should
 # not be committed to the public branches.
 import xics_jax
+
+
+# Exploratory, opt-in JAX acceleration for the multiline Voigt sampling used
+# by 'multi_voigt' and 'ar16_voigt' wavelength distributions (see
+# xicsrt_voigt_multi_jax for details and caveats, and F004 in
+# devel/features_request.md for the benchmark history). This is a hard-coded
+# local toggle, not a config option: flip to True to benchmark the JAX path.
+# Only worthwhile for large line lists (e.g. the ~184-line Ar16+ spectrum);
+# plain numpy remains faster for small hand-specified line lists.
+_USE_JAX_VOIGT_MULTI = False
 
 
 @dochelper
@@ -399,7 +410,8 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        wavelength = xicsrt_voigt_multi.multi_voigt_random(
+        voigt_multi = xicsrt_voigt_multi_jax if _USE_JAX_VOIGT_MULTI else xicsrt_voigt_multi
+        wavelength = voigt_multi.multi_voigt_random(
             self.param['line_locations'], 
             self.param['line_intensities'],
             self.param['line_sigmas'],
@@ -456,14 +468,15 @@ class XicsrtSourceGeneric(GeometryObject):
         gammas = lines["gamma"].values
 
         # Sample wavelengths
-        wavelengths = xicsrt_voigt_multi.multi_voigt_random(
+        voigt_multi = xicsrt_voigt_multi_jax if _USE_JAX_VOIGT_MULTI else xicsrt_voigt_multi
+        wavelengths = voigt_multi.multi_voigt_random(
             line_locations, 
             line_intensities, 
             sigmas, 
             gammas, 
             size = size, 
-            gridsize = self.param.get("gridsize"),
-            cutoff = self.param.get("cutoff", 1e-4),
+            gridsize = self.param['multi_gridsize'],
+            cutoff = self.param['multi_cutoff'],
         )
         
         return wavelengths

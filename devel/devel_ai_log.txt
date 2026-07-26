@@ -222,3 +222,90 @@ Key prompts:
 - "add relevant information to F004 for future sessions and delete
   tests/test_voigt_jax.py and xicsrt/tools_jax/ and revert
   _XicsrtSourceGeneric.py."
+
+================================================================================
+2026-07-21 — F004 revisited: opt-in JAX voigt-multi acceleration, working.
+
+Files modified:
+- xicsrt/tools/xicsrt_faddeeva_jax.py, xicsrt/tools/xicsrt_voigt_multi_jax.py
+  (new; JAX drop-ins for xicsrt_faddeeva.py/xicsrt_voigt_multi.py)
+- xicsrt/sources/_XicsrtSourceGeneric.py (added _USE_JAX_VOIGT_MULTI toggle;
+  fixed pre-existing bug: ar16_voigt read self.param.get("gridsize"/"cutoff")
+  instead of self.param['multi_gridsize'/'multi_cutoff'])
+- tests/test_voigt_multi_jax.py (new, 15 tests)
+- devel/features_request.md (F004 marked Done, second-follow-up recorded)
+
+Key changes:
+- Re-benchmarked the abandoned F004 approach at the true production scale
+  (184-line Ar16+ table, not the 15-line toy) and got the opposite result:
+  JAX is faster there. Root cause of the earlier failure (retracing per
+  bundle) fixed two ways: gridsize is bucketed to the next power-of-two
+  before hitting jax.jit static_argnames (bounds compiles to a handful per
+  run); size/sampling (uniform draw + np.interp) stays plain numpy on the
+  host, never entering the jit trace, so numpy.random.seed reproducibility
+  is preserved (no RNG deviation).
+- New modules live directly in xicsrt/tools/ (not a tools_jax/ mirror
+  package) since xics_jax already makes jax a mandatory import of
+  _XicsrtSourceGeneric.py.
+- Toggle is a hard-coded module constant (_USE_JAX_VOIGT_MULTI, default
+  False), not a config option, per explicit request; both
+  random_wavelength_multi_voigt and random_wavelength_ar16_voigt share it.
+
+Key findings / gotchas:
+- Line-count is the deciding factor for whether JAX helps here: only
+  beneficial for large line lists (validated at 184); small hand-specified
+  multi_voigt lists likely still favor plain numpy (matches original F004).
+- Measured on a real W7-X ar16_voigt raytrace (same random_seed,
+  bundle_count~1000): generate_wavelength 12.34s -> 5.92s (~2.1x), full
+  raytrace 26.1s -> 19.8s (~1.3x); Rays Generated identical (same seed),
+  efficiency differs by 1 detected ray out of ~30 (bucketed grid changes
+  CDF resolution slightly -- statistically equivalent, not bit-identical).
+- Full suite (36 tests) and example_00.py pass with the flag left False
+  (default, no behavior change).
+
+Key prompts:
+- "I would like to start a new feature to try to accelerate plasma bundle
+  generation with tools/xicsrt_voigt_multi. For this feature I want to
+  accelerate the Object Oriented python+numpy code; not move fully to the
+  jaxrt code ... Please look at F004 for some context on failed
+  strategies ... I want to keep as much as possible the basic object
+  oriented structure, and be able to turn on and off jax acceleration
+  (which can be hard-coded changes such as commented in and out code).
+  Readability is the number 1 priority ... acceleration [is] number 3."
+- "Go ahead." (plan approval after benchmarking confirmed a real speedup
+  at production scale, contradicting the original F004 conclusion.)
+
+================================================================================
+2026-07-25 — F004 closed out: no CPU advantage under realistic mp usage.
+
+Files modified:
+- devel/features_request.md (F004 status -> Complete, added final
+  multiprocessing benchmark disposition)
+- devel/devel_ai_log.txt (this entry)
+- Committed the prior session's uncommitted work as part of this closeout:
+  xicsrt/tools/xicsrt_faddeeva_jax.py, xicsrt/tools/xicsrt_voigt_multi_jax.py,
+  tests/test_voigt_multi_jax.py, xicsrt/sources/_XicsrtSourceGeneric.py,
+  xicsrt/tools/xicsrt_voigt_multi.py
+
+Key changes:
+- No code changes this session; closed out F004 based on the user's manual
+  benchmarking (M1 MacBook, CPU only) using raytrace_multiprocessing rather
+  than single-process raytrace.
+
+Key findings / gotchas:
+- The single-process JAX speedup (~1.3-2x, recorded in the 2026-07-21
+  entries) does not survive once raytrace_multiprocessing is already
+  saturating all CPU cores: plain numpy and the JAX opt-in path came out
+  statistically identical (~5m33s vs ~5m37s for matched configs).
+- Further gridsize-bucketing tuning (fixed 1024, fixed 4096, smaller
+  max-gridsize) gave no additional improvement over the existing
+  power-of-two/8192-max scheme.
+- _USE_JAX_VOIGT_MULTI is left in the code, default False, as a documented
+  dead end for CPU; a future GPU benchmark (per F003) would be the only
+  reason to revisit.
+
+Key prompts:
+- "I'd like to commit changes and close out F004 with something like
+  'Complete, no clear advantage for CPU based computation'. You can look
+  here for manual benchmarking which might help with the close out of this
+  feature: [Google Doc link]."

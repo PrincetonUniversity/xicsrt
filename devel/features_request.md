@@ -2,12 +2,100 @@
 
 ## F004 - Exploratory JAX-accelerated tools_jax for the numpy OO engine
 Started: 2026-07-21
-Status: Abandoned (2026-07-21). Root cause of the hang diagnosed and
-confirmed by benchmark; `tools_jax/` and its test removed, and the
-`_XicsrtSourceGeneric.py` import reverted to `xicsrt.tools`. See
-"Root cause and benchmarks" below before attempting this again.
+Status: Complete (2026-07-25). No clear advantage for CPU-based computation.
+Manual benchmarking under realistic `raytrace_multiprocessing` usage (the
+actual way production W7-X jobs are run) showed no net speedup from the
+opt-in JAX path once multiprocessing already saturates the CPU; see "Final
+disposition: manual multiprocessing benchmark" below. The single-process-only
+benchmark from the 2026-07-21 session (below) is superseded by this finding.
+The opt-in code (`_USE_JAX_VOIGT_MULTI`, default `False`) is left in place,
+disabled by default, in case a future GPU target changes the conclusion.
 
-Root cause and benchmarks (2026-07-21 follow-up session):
+Final disposition: manual multiprocessing benchmark (2026-07-25):
+- The 2026-07-21 sessions below only benchmarked single-process
+  (`raytrace`/`raytrace_single`) runs, where the JAX path showed a real
+  ~1.3-2x speedup on the 184-line Ar16+ workload. That is not how production
+  jobs are actually run.
+- Manual benchmarking (M1 MacBook, CPU only) comparing plain numpy under
+  `raytrace_multiprocessing` (10 runs, all cores) against the JAX opt-in path
+  run with an equivalent multiprocess/iteration split found the two
+  statistically indistinguishable (~5m33s vs ~5m37s for matched configs,
+  efficiency/ray counts consistent within statistics). Once multiprocessing
+  already parallelizes across all CPU cores, the single-process JAX
+  speedup is not additive and provides no net benefit.
+- Follow-up tuning of the gridsize-bucketing strategy (fixed gridsize 1024,
+  fixed 4096, and a smaller-bucket/lower-max-gridsize variant) was also
+  tried and gave no further improvement over the power-of-two/8192-max
+  scheme already implemented; performance returned to baseline in each case.
+- Conclusion: on CPU, for this workload and at this problem scale, there is
+  no configuration of the JAX opt-in path that outperforms plain numpy once
+  multiprocessing is used as it is in practice. The code is retained
+  (disabled by default) rather than removed, since a GPU target (not tested
+  here) remains a plausible future path per F003's Princeton Stellar A100
+  reference; any future revisit should start from a GPU benchmark rather
+  than further CPU tuning.
+
+Second follow-up: revisited at production scale (2026-07-21):
+- Prompted by: "I would like to start a new feature to try to accelerate
+  plasma bundle generation with tools/xicsrt_voigt_multi... For this feature
+  I want to accelerate the Object Oriented python+numpy code; not move fully
+  to the jaxrt code... I want to be able to turn on and off jax acceleration
+  (hard-coded changes such as commented in and out code)."
+- The original abandonment (below) benchmarked a toy ~15-line spectrum.
+  Re-benchmarking at the true production scale (184-line Ar16+ table, the
+  actual `ar16_voigt` line count) gave the opposite conclusion: JIT dispatch
+  overhead is no longer dominant once the per-call Faddeeva work is large
+  enough, and a JAX path is faster than plain numpy for this workload
+  (measured ~2x on `generate_wavelength` wall-clock, ~1.3x on full
+  `raytrace`, in a real W7-X `ar16_voigt` run with `bundle_count` reduced to
+  ~1000 for fast iteration).
+- Two retracing hazards from the original attempt were both fixed
+  differently this time:
+  - `gridsize` (auto-computed per bundle from local sigma/gamma, so it
+    varies continuously bundle-to-bundle): now rounded up to the next
+    power-of-two "bucket" (floor 128) before being passed as a
+    `static_argnames` argument to `jax.jit`, bounding the number of distinct
+    compiled shapes across a whole run to a handful instead of ~1 per bundle.
+  - `size` (the Poisson-derived ray count per bundle, also varying
+    bundle-to-bundle): this is no longer a jit argument at all. The final
+    uniform draw + inverse-CDF `numpy.interp` sampling step happens in plain
+    numpy on the host (as it always did in the numpy engine), so `size`
+    never touches the jit trace signature. This also means results stay
+    reproducible via `numpy.random.seed` (no RNG deviation from the numpy
+    engine, unlike the mirror-directory design considered in the original
+    session).
+- Implementation: two new modules, `xicsrt/tools/xicsrt_faddeeva_jax.py` and
+  `xicsrt/tools/xicsrt_voigt_multi_jax.py`, API-compatible drop-ins for
+  `xicsrt_faddeeva.py`/`xicsrt_voigt_multi.py` (not a `tools_jax/`
+  subpackage this time; they live directly in `xicsrt/tools/` since `jax`
+  via `xics_jax` is already a mandatory import of
+  `_XicsrtSourceGeneric.py`). A single hard-coded module-level flag,
+  `_USE_JAX_VOIGT_MULTI` in `_XicsrtSourceGeneric.py` (default `False`),
+  switches `random_wavelength_multi_voigt` and `random_wavelength_ar16_voigt`
+  between the two backends; there is no config option and no runtime
+  detection/fallback, per the "readability first, hard-coded toggle" request.
+- Also fixed in the same session (pre-existing, unrelated bug):
+  `random_wavelength_ar16_voigt` was reading `self.param.get("gridsize")` /
+  `self.param.get("cutoff", 1e-4)` instead of the actual config keys
+  `self.param['multi_gridsize']` / `self.param['multi_cutoff']`, silently
+  ignoring those two config options for `ar16_voigt` (they happened to
+  default correctly by luck: `None`/`1e-4`). Now reads the correct keys,
+  matching `random_wavelength_multi_voigt`.
+- Tests: `tests/test_voigt_multi_jax.py` (`pytest.importorskip('jax')`),
+  covering Faddeeva/Voigt numeric agreement with the plain-numpy kernel,
+  CDF/PDF agreement at a matching gridsize, gridsize-bucketing correctness
+  (including that two different requested gridsizes landing in the same
+  bucket give bit-identical CDF tables), sampling histogram-vs-PDF
+  statistics, and `numpy.random.seed` reproducibility. Full suite (36 tests)
+  and `examples/example_00/example_00.py` pass with the (default) flag left
+  `False`.
+- Caveat (documented in the new module's docstring): this is a workload-
+  dependent opt-in, not a strict upgrade. It is only faster for large line
+  lists (validated at 184 lines); for small hand-specified `multi_voigt`
+  line lists (the original F004 toy-benchmark regime) plain numpy is still
+  expected to be faster, matching the original conclusion below.
+
+Original session, root cause and benchmarks (2026-07-21 follow-up session):
 - Root cause of the hang: the (uncommitted) edit wiring
   `xicsrt/sources/_XicsrtSourceGeneric.py` to import `xicsrt.tools_jax`
   instead of `xicsrt.tools` exposed the plain numpy engine's per-bundle
