@@ -124,9 +124,9 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     if gridsize is None: 
         domain_width = wave_max - wave_min
         gridsize = max(gridsize_min, int(np.ceil(domain_width / min_spacing)))
-        # adding a sanity check to see if the computed gridsize is too large
-        if gridsize > 1_000_000:
-            warnings.warn(f"Warning: Computed gridsize ({gridsize}) is very large.")
+        if gridsize > gridsize_max:
+            gridsize = gridsize_max
+            warnings.warn(f"Warning: Computed gridsize is larger than the maximum ({gridsize_max}), truncating.")
 
     bounds = np.linspace(wave_min, wave_max, gridsize + 1)
 
