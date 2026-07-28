@@ -309,3 +309,62 @@ Key prompts:
   'Complete, no clear advantage for CPU based computation'. You can look
   here for manual benchmarking which might help with the close out of this
   feature: [Google Doc link]."
+
+================================================================================
+2026-07-28 — F006 planning: diagnosed the large-run memory/tail problem.
+
+Files modified:
+- devel/plan_raytrace_memory.md (new, approved plan)
+- devel/features_request.md (F006 added, Pending)
+
+Key changes:
+- Analysis/planning session only; no source files touched.
+
+Key findings / gotchas:
+- User's hypothesis (combine_raytrace is the bottleneck) is wrong: ~195 MB
+  combined history at 1e6 detected rays, and with keep_history=False both
+  _sort_raytrace and combine_raytrace history blocks are skipped entirely by
+  their guards (xicsrt_raytrace.py:254 and :359). Neither ran in that run.
+- The reported low-CPU/rising-memory tail is swap: 12 workers x ~6 GB vs
+  32 GB physical. Not an XICSRT bug; will not occur on Stellar at 768 GB.
+- Memory is not the 1e9-ray constraint: 195 B/ray history (65 B/ray x 3
+  elements) + ~110 B/ray temporaries + ~2x transient => ~26 GB at 12 workers.
+  number_of_iter=19 reaches 1e9 rays with no code change and no memory
+  increase; raising time_resolution instead would multiply the peak.
+- np.einsum does NOT use threaded BLAS: zero speedup 1->8 threads on the
+  entire hot path ('ij,ij->i', 'ij,ijk->ik'), while a 2000^3 gemm scaled
+  62->33.5 ms. 12 runs x 8 threads uses ~12 of 96 cores. User kept 12 runs.
+- np.random.shuffle perturbs the global RNG stream N-dependently, so a naive
+  1:1 regression test would fail on iteration 2+ after any _sort_raytrace
+  change. A dedicated np.random.Generator avoids this (verified), keeping
+  found rays bit-identical. Hence the Tier A (exact) / Tier B (statistical)
+  harness split, and number_of_iter=3 as the divergence detector.
+- Rejected the 610x rejection sampler for _sort_raytrace in favor of the 21x
+  Generator.choice+flatnonzero: at 0.013% of an iteration the extra speed is
+  unmeasurable and not worth the retry loop / np.unique bug surface.
+- Pre-existing defects found: combine_raytrace drops 'weight' (resolves the
+  jaxrt_sync.md:164 quirk when fixed); worker profiler_results are never
+  returned to the parent; 'mp: gathering' times .get() on already-finished
+  results and measures nothing.
+
+Suggested follow-ups:
+- Implement F006 per devel/plan_raytrace_memory.md (harness first).
+- Out of scope, worth its own entry: per-element history compaction would cut
+  history 195 -> ~65 B/ray and raise the in-flight ceiling ~3x.
+
+Key prompts:
+- "I'm trying to run a raytrace with a large number of rays run using
+  number_of_runs = 12 ... I think that my issue is inefficiency of the
+  combine_raytrace function, rather than the ability to handle the number of
+  rays. Given a memory limit of say 256GB, can you estimate the number of
+  rays that I should be able to handle given what is stored in the history?"
+- "Before we start, I would like to make sure that the changes, especially
+  the effects of _sort_raytrace changes are tested for identical behavior.
+  Given this set of changes is it possible to do a temporary 1-1 ray test
+  with a fixed seed?"
+- "I only need bit-identical reproducability for the found rays, I don't care
+  if the lost-rays are sampled differently in a new implementation as they
+  are used only for visualizaiton not for anything meaningful."
+- "On stellar I am going to use 96 cores, but distribute them to 12 runs, so
+  each run has 8 processesors that numpy will use for linear algebra
+  operations. I can allocate 768GB."

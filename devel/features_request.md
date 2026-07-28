@@ -1,5 +1,65 @@
 # XICSRT Feature Requests
 
+## F006 - Raytrace memory and multiprocessing instrumentation
+Started: 2026-07-28
+Status: Pending
+
+Full approved plan: devel/plan_raytrace_memory.md
+Baseline commit: e89a3bd
+
+Goal: enable ~1e9 generated / ~1e6 detected ray runs on the Princeton Stellar
+cluster (768 GB, 96 cores), scaling up from a working 5.295e7 / 1.272e4 run.
+Originally motivated by a suspicion that `combine_raytrace` was the
+bottleneck; that hypothesis was disproved by measurement (see below). The
+remaining work stands on its own merits: one correctness bug, one real memory
+win, and two speedups.
+
+Findings (all measured, details and tables in the plan):
+- `combine_raytrace` is not the bottleneck. ~195 MB combined history at 1e6
+  detected rays, and with `keep_history=False` its history block is skipped
+  entirely by the guard at `xicsrt_raytrace.py:359` (same for
+  `_sort_raytrace` at line 254).
+- Memory is not the constraint. Measured 195 B/ray of history (65 B/ray x 3
+  elements) + ~110 B/ray temporaries + a ~2x transient => ~26 GB at 12
+  workers x 4.4e6 rays/iter with history on; ~30x headroom at 768 GB.
+- `np.einsum` does NOT use threaded BLAS: measured zero speedup from 1 to 8
+  threads on `'ij,ij->i'` and `'ij,ijk->ik'` (the entire hot path), while a
+  2000^3 gemm scaled 62 -> 33.5 ms. A 12-runs x 8-threads layout therefore
+  uses ~12 of 96 cores. Retained by user decision; documented, not changed.
+- `_sort_raytrace` shuffles millions of indices to keep ~833 lost rays:
+  0.0734 s vs 0.0035 s for `Generator.choice(replace=False)` (21x), with
+  uniformity verified (chi2=9961.9, dof=9970, p=0.52).
+- `np.random.shuffle` perturbs the *global* RNG stream in an N-dependent way;
+  a dedicated `np.random.Generator` avoids this (verified), keeping found
+  rays bit-identical while only lost-ray selection changes.
+
+Pre-existing defects found:
+- `combine_raytrace` silently drops the `weight` array from combined
+  histories (`RayArray.zeros` omits it; the copy loop iterates output keys).
+  This is the "known benign quirk" at `devel/jaxrt_sync.md:164-166`; fixing
+  it resolves that entry for both engines.
+- Worker profiling is invisible: `profiler_results` is a per-process global
+  that is never returned, so `profiler.report()` shows only parent timings.
+- `mp: gathering` (`xicsrt_multiprocessing.py:58`) times `.get()` on
+  already-completed results and measures nothing; the real cost is inside the
+  untimed `pool.join()`.
+- `raytrace_single` holds ~2x history (previous iteration stays live while
+  the next allocates).
+
+Planned work: build a two-tier regression harness first (Tier A bit-identical
+for found rays / images / meta over `number_of_iter=3`; Tier B statistical
+for lost rays), then add multiprocessing + worker-profiler instrumentation,
+then four fixes: `_sort_raytrace` sampling, `make_image` vectorization,
+history release in `raytrace_single`, and the `combine_raytrace` rewrite.
+
+Out of scope: per-element history compaction (~3x further ceiling gain, needs
+its own feature entry); worker/thread layout changes.
+
+Note: fix 7 changes the output dict structure (histories gain `weight`),
+warranting a minor version bump at release time.
+
+---
+
 ## F005 - Allow XicsrtPlasmaVmec to load either VMEC or saved DESC equilibria
 Started: 2026-07-26
 Status: Done (2026-07-26)
