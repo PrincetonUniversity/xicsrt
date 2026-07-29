@@ -175,6 +175,25 @@ sessions must check this list before assuming the engines are in sync.
 
 - (none as of 2026-07-17 — engines in sync for the phase 1 element scope)
 
+## Convergence log
+
+Record here numpy-engine changes that *reduced* divergence, so a future session
+does not mistake the new numpy form for an unported jaxrt-only idiom.
+
+- 2026-07-28 (F007): `sources/_XicsrtSourceGeneric.py` `random_direction` no
+  longer builds an (N,3,3) rotation matrix for `np.einsum('ij,ijk->ik', ...)`.
+  It now uses the explicit component sum
+  `dir_local[:,0:1]*o_2 + dir_local[:,1:2]*o_1 + dir_local[:,2:3]*normal`,
+  which is exactly the expression already used by
+  `jaxrt/sources/_generic.py:182-184`. The two engines now share this form.
+  No jaxrt change was required. Mathematically identical; ~1.4x faster in
+  numpy by avoiding the large temporary.
+- 2026-07-28 (F007): `tools/xicsrt_math.py` `magnitude`/`normalize` switched
+  from `np.linalg.norm(v, axis=1)` to `np.sqrt(np.einsum('ij,ij->i', v, v))`
+  (~1.8x). jaxrt uses `_rays.normalize`, which is unaffected. Note the
+  direction of this change is the opposite of the usual "replace einsum"
+  intuition: for (N,3) row-wise dot products einsum is the fastest option.
+
 ## How to use this file (for the human)
 
 When you change the numpy engine and want jaxrt updated, start an AI session

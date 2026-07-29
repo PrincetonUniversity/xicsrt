@@ -1,5 +1,136 @@
 # XICSRT Feature Requests
 
+## F008 - Raytrace not reproducible on the first run of a process (seed 0)
+Started: 2026-07-28
+Status: Pending
+
+Discovered incidentally while validating F007; NOT caused by F007 (reproduced
+on clean HEAD with no modifications).
+
+Symptom: with `random_seed=0`, running the same config three times in a single
+process gives detector counts 41456, 41661, 41661. Run 1 differs from runs 2
+and 3; runs 2+ are stable. Seeds 1-7 are stable from the first run.
+
+Implication: the first raytrace in a fresh process does not see the configured
+seed state, so a single-shot script is not reproducible against a repeated one.
+This silently undermines any "set random_seed for reproducibility" workflow and
+would also affect multiprocessing workers, which each run exactly one first run.
+
+Suspected cause: seed application order in `xicsrt_raytrace` / config setup,
+where `0` may be being treated as falsy somewhere, or the global `np.random`
+stream is touched before seeding. Not yet diagnosed.
+
+Next step: bisect where the global RNG is first consumed relative to seeding.
+
+
+## F007 - Acceleration of einsum and vector operations (numpy engine)
+Started: 2026-07-28
+Status: Implemented, pending review
+Baseline commit: 7390575
+
+Goal: reduce single-core cost of the numpy raytracing hot path.
+
+IMPORTANT framing correction. This entry was opened on the premise that
+`np.einsum` is not parallelized over CPUs and that switching to BLAS calls
+would recover multicore scaling. That premise is wrong and was disproved by
+measurement:
+
+- Every hot array in XICSRT has shape (N,3). Such operations are
+  memory-bandwidth-bound, not FLOP-bound.
+- `a @ M` for a (2e6,3) @ (3,3) takes 16.5 ms on 1 thread and 16.4 ms on 10
+  threads, i.e. zero scaling, while a 2000^3 gemm in the same process scales
+  59.8 -> 31.3 ms. The BLAS alternative is therefore just as serial as einsum.
+- This independently corroborates the F006 finding that einsum does not use
+  threaded BLAS, and extends it: the BLAS replacement does not either.
+
+Cores must therefore continue to come from multiprocessing over runs (F006).
+What this entry actually buys is single-core efficiency.
+
+Key corollary: `np.einsum('ij,ij->i', a, b)` is the FASTEST available row-wise
+dot product (8.0 ms vs 15.9 ms for `(a*b).sum(axis=1)` at N=2e6). Those call
+sites are already optimal. This is a targeted change, not an einsum purge;
+"de-einsumming" the row-wise dots would be a ~2x regression.
+
+Measured hot spots (1e7 rays, spherical crystal, keep_history=False; c_einsum
+itself is only ~7% of runtime):
+
+| operation                                   | current  | replacement | gain |
+|---------------------------------------------|----------|-------------|------|
+| `np.linalg.norm(a, axis=1)`                  | 14.1 ms  | 7.5 ms      | 1.9x |
+| `einsum('ij,ki->kj', M, a)`                  | 28.8 ms  | 16.0 ms     | 1.8x |
+| `einsum('ij,ijk->ik')` + (N,3,3) assembly    | 58.3 ms  | 19.8 ms     | 2.9x |
+
+Planned work (hot path only, by user decision):
+1. `tools/xicsrt_math.py` `magnitude`/`normalize`: `np.linalg.norm(v, axis=1)`
+   -> `np.sqrt(np.einsum('ij,ij->i', v, v))`, with a comment.
+2. `objects/_GeometryObject.py` `vector_to_external`/`vector_to_local`:
+   einsum -> `vector @ orientation` / `vector @ orientation.T`. Preserve the
+   existing `copy=` handling and the `vector[:]` in-place writeback.
+3. `sources/_XicsrtSourceGeneric.py` `random_direction`: drop the (N,3,3)
+   rotation-matrix buffer in favour of the component-sum form already used by
+   the jax engine. Single code path retained.
+4. `make_normal` in `_XicsrtSourceGeneric.py` and `_XicsrtSourceDirected.py`:
+   normalize the constant axis once instead of N times. Both files need the
+   edit; the dispatcher loads element modules by file path, so patching the
+   base class alone does not cover the override.
+
+Out of scope: all `einsum('ij,ij->i')` row-wise dots (already optimal); mesh,
+torus, cylinder, mosaic, xicsrt_spread and filter call sites; the
+`location_from_distance` masked-gather rewrite (71 -> 33 ms via `where=`,
+real but a masking-semantics change rather than an einsum one -- candidate for
+its own entry).
+
+Measured result (all four changes applied).
+
+Per-function, N=2e6, base -> new:
+
+| function            | base     | new      | gain |
+|---------------------|----------|----------|------|
+| `xm.magnitude`      | 14.0 ms  | 7.7 ms   | 1.8x |
+| `xm.normalize`      | 20.5 ms  | 14.4 ms  | 1.4x |
+| `make_normal`       | 29.8 ms  | 9.1 ms   | 3.3x |
+| `random_direction`  | 219.8 ms | 155.7 ms | 1.4x |
+
+End-to-end (1e7 rays, spherical crystal, keep_history=False), separate
+processes, best of 3, run against a clean git worktree for the baseline:
+
+| source           | base    | new     | gain  |
+|------------------|---------|---------|-------|
+| SourceDirected   | 5.26 s  | 4.90 s  | 1.07x |
+| SourceFocused    | 2.80 s  | 2.61 s  | 1.07x |
+| SourceGeneric    | 4.71 s  | 4.29 s  | 1.10x |
+
+MEASUREMENT CAVEAT, recorded so it is not repeated. An earlier figure of 1.24x
+for this same change set was wrong. It came from monkeypatching the baseline
+and the optimized version into a *single* process and timing them one after
+the other; the second measurement benefits from warmed allocator and page
+cache state. Measuring each variant in its own process, with the baseline
+taken from a clean `git worktree`, gives ~1.07-1.10x. Always benchmark engine
+changes in separate processes.
+
+So the honest gain is ~7-10% end-to-end, not the ~24% first estimated. The
+per-function speedups are real and reproducible; they are simply a smaller
+share of total runtime than the microbenchmarks suggested, because the hot
+path is spread across many masked-gather and reduction operations that this
+change does not touch (see `location_from_distance`, `check_bounds`,
+`make_image` in the profile).
+
+Correctness: detector images are bit-identical to the baseline across 28
+cases (4 source configurations x 7 seeds), compared via a position-weighted
+image checksum. `pytest tests/` 36 passed. Photon statistics are untouched:
+no sampling, masking, or RNG-consumption changes; only last-bit float
+reassociation. No config, API, or output-dict change, so no version bump.
+
+Also fixed here (pre-existing, unrelated to the optimization):
+`examples/example_01/example_01.py` referenced the stale class name
+`XicsrtOpticCrystalSpherical`, which no longer exists, so the example raised
+"Could not find ... in available objects" on the baseline commit. Renamed to
+`XicsrtOpticSphericalCrystal` to match `optics/_XicsrtOpticSphericalCrystal.py`.
+The companion `example_01.ipynb` already used the correct name, which is why
+the drift went unnoticed. All three examples now run, and example_01 is usable
+as a regression check again.
+
+
 ## F006 - Raytrace memory and multiprocessing instrumentation
 Started: 2026-07-28
 Status: Pending
