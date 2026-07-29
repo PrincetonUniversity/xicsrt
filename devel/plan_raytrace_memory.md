@@ -262,6 +262,126 @@ run in separate processes against identical inputs.
 **Self-test the harness:** deliberately perturb one ray by 1 ULP and confirm
 the harness FAILS. An untested test harness is worthless.
 
+## Finding 8 (implementation time): fix 4 shifts the global stream
+
+Discovered while implementing fix 4. **Finding 6 above is incomplete and its
+Tier A prediction for fix 4 is wrong.** Recorded here rather than edited into
+Finding 6 so the original reasoning and its correction both remain visible.
+
+Finding 6 states that found rays are produced from the global stream *before*
+`_sort_raytrace` runs, so a dedicated Generator leaves them bit-identical.
+That is true **for a single iteration only**. `_sort_raytrace` is called
+inside the iteration loop (`xicsrt_raytrace.py:157`), so removing the
+`np.random.shuffle` also removes global draws that the old code made. Every
+*subsequent* iteration therefore starts from a different stream position and
+generates different rays.
+
+Measured (with `xics_jax` pre-imported to remove the confounder in Finding 9):
+
+| | num_iter=1 | num_iter=3 |
+|---|---|---|
+| found rays bit-identical to baseline | yes | no (29 vs 27 found) |
+
+Ironically this is exactly what the plan's own `number_of_iter = 3` detector
+was designed to catch; the fix itself is what trips it.
+
+### Proof that this is only a stream shift, not an algorithm change
+
+Four independent lines of evidence. The first is decisive; the rest bound the
+physical impact.
+
+**1. Compensation test (decisive, bit-exact).** Run the *new* code, keep the
+new dedicated-Generator selection, but re-inject exactly the global draws the
+old code consumed (`np.random.shuffle(np.arange(n_lost))`, result discarded).
+If the stream position is the whole difference, output must match the baseline
+bit-for-bit. Across seeds {12345, 999, 2026} x num_iter {3, 5}, comparing
+found `origin`, `direction`, `wavelength`, source `origin`, and the detector
+image:
+
+    compensated == base : True  (all 6 cases, every array)
+    plain        == base : False (all 6 cases)
+
+The *only* thing that changed is how many values were drawn from the global
+stream. The selection algorithm, the physics, and the ray generation are
+untouched.
+
+**2. Iteration 1 is bit-identical.** At `num_iter = 1` the found rays and the
+detector image match the baseline exactly for all three seeds. Sorting happens
+after iteration 1's rays exist, so nothing upstream can be affected.
+
+**3. Detected-count distribution is unchanged.** 200 independent seeds,
+num_iter=3:
+
+| | total detected | mean | sd |
+|---|---|---|---|
+| new | 6094 | 30.470 | 5.779 |
+| baseline | 6047 | 30.235 | 6.013 |
+
+    Poisson test on totals   p = 0.68
+    Welch t-test             p = 0.69
+    Mann-Whitney U           p = 0.72
+    two-sample KS            p = 0.92
+    Cohen d = 0.040 (negligible); mean diff 0.235 +/- 0.590 (95% CI [-0.92, 1.39])
+
+**4. The detected ray population itself is unchanged.** 150 seeds pooled
+(4643 vs 4628 detected rays), two-sample KS per physical quantity:
+
+| quantity | D | p |
+|---|---|---|
+| wavelength | 0.0149 | 0.67 |
+| detector x | 0.0114 | 0.92 |
+| detector y | 0.0117 | 0.90 |
+
+Summed detector image chi-square: 22.6 on 27 dof, p = 0.70; centroids agree to
+~0.02 pixel.
+
+Conclusion: photon statistics are preserved exactly (AGENTS.md core mandate).
+Reruns remain fully reproducible for a given `random_seed`; they simply do not
+reproduce the *old* implementation's stream for `num_iter > 1`.
+
+**User decision (2026-07-28):** keep the dedicated Generator (plan option as
+written) and accept the one-time stream shift, in exchange for permanently
+decoupling lost-ray diagnostics from the physics stream. Tier A for fix 4 is
+therefore re-baselined at this commit; fixes 5, 6 and 7 are held to strict
+bit-identity against that new baseline.
+
+Rejected alternative, recorded for completeness: on the global `RandomState`,
+`np.random.choice(a, k, replace=False)` consumes an identical stream and
+returns an identical selection to `shuffle(arange(N))` (verified for N in
+{100, 2392, 7166, 19782} x k in {1, 20, 833}). That would have kept strict
+bit-identity and the 21x speedup, but leaves the lost-ray sampling coupled to
+the physics stream forever. Not chosen.
+
+## Finding 9 (implementation time): pre-existing `xics_jax` RNG bug
+
+**Present on baseline e89a3bd; unrelated to F006. Reported only, not fixed,
+per user instruction.**
+
+`import xics_jax` at module scope (`sources/_XicsrtSourceGeneric.py:30`) draws
+from the global `np.random` stream as a side effect of import:
+
+    np.random.seed(12345) -> stream position 624
+    import xics_jax       -> stream position 10
+
+Because the plugin dispatcher imports element modules lazily on the first
+`instantiate()`, that draw lands *between* `np.random.seed()` and ray
+generation on the first raytrace in a process, but not on later ones. Two
+identical `raytrace()` calls in one process therefore give different results:
+
+    baseline, same config twice in one process: nfound = 27, then 29
+
+Consequences:
+
+- `random_seed` does not currently guarantee reproducibility, contrary to its
+  documentation in `xicsrt_config.default_config`.
+- Any A/B comparison must import `xics_jax` up front (as the F006 harness
+  proof scripts do) or run each case in a fresh process, or the confounder
+  swamps the signal.
+
+Suggested fix (needs its own feature entry): save and restore the global
+`np.random` state around the `xics_jax` import, or move the import so it
+cannot occur after seeding.
+
 ## Step 3 -- instrumentation (must be bit-identical under Tier A)
 
 1. `xicsrt_multiprocessing.raytrace`: replace the inert `mp: gathering` timer

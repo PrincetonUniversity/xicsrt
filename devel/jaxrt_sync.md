@@ -161,9 +161,6 @@ Never silently ignore an option.
 
 Known benign quirks:
 
-- `combine_raytrace` drops the 'weight' ray field from combined histories
-  (`RayArray.zeros` only defines origin/direction/mask/wavelength). Affects
-  both engines identically.
 - jaxrt is statistically equivalent but not bit-identical to numpy for the
   same `random_seed` (different RNG streams; approved design decision).
 
@@ -174,6 +171,17 @@ jaxrt (date, numpy file/feature, reason, and what a port would require). Future
 sessions must check this list before assuming the engines are in sync.
 
 - (none as of 2026-07-17 — engines in sync for the phase 1 element scope)
+- 2026-07-28, F006: no divergence introduced. `_sort_raytrace` and
+  `combine_raytrace` are imported directly from the numpy engine by
+  `jaxrt/_engine.py`, so fixes 4 and 7 propagated automatically; the jaxrt
+  caller was updated to pass the new `rng` and `consume_input` arguments.
+  Verified that jaxrt combined histories now carry `weight`, which resolves
+  the former "known benign quirk" (entry deleted above) for both engines.
+  Fix 5 converged `_TraceObject.make_image` onto a scatter-add, matching
+  `jaxrt/_images.py`; the numpy side uses `np.bincount` on the flattened
+  index (measured 13x faster than `np.add.at`, 75x faster than the old
+  per-ray loop, bit-identical). Fix 6 is numpy-engine-only: it releases the
+  dispatcher history, and jaxrt has no equivalent mutable dispatcher state.
 
 ## How to use this file (for the human)
 

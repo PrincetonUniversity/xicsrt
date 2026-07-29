@@ -2,10 +2,60 @@
 
 ## F006 - Raytrace memory and multiprocessing instrumentation
 Started: 2026-07-28
-Status: Pending
+Status: Implemented (2026-07-28), pending user verification
 
 Full approved plan: devel/plan_raytrace_memory.md
 Baseline commit: e89a3bd
+
+Implementation summary (2026-07-28):
+- Regression harness `testing/compare_raytrace_regression.py` (temporary, not
+  for master): Tier A bit-exact on found history / images / meta, Tier B
+  statistical on lost rays, over 4 scenario variants (history, nohistory,
+  multi-run, multiprocessing), each at `number_of_iter=3`. Self-tested by
+  injecting real source mutations: a 1 ULP ray perturbation and a global-RNG
+  stream shift both correctly FAIL the harness.
+- Instrumentation (all verified bit-identical): real `mp: pool_join` /
+  `mp: result_transfer` / `mp: combine` timers, confirming defect 3 (the old
+  `mp: gathering` measured 12 us against 1.27 s of real cost);
+  `profiler.getResults`/`profiler.merge` plus a pool initializer so worker
+  timings surface in the parent under `spawn` as well as `fork`; per-iteration
+  found/lost/history-bytes/peak-RSS logging.
+- Fix 4 (`_sort_raytrace`): dedicated `np.random.Generator` + `choice`,
+  measured 22.2x faster (0.0787 s -> 0.0035 s at 4.4e6 rays). This shifts the
+  global RNG stream for `num_iter > 1`, contrary to the plan's Finding 6; see
+  Finding 8 in the plan for the correction and a four-part proof that the
+  change is purely a stream shift (compensation test is bit-exact; detected
+  counts and per-ray distributions statistically identical, all p > 0.6).
+  User-approved 2026-07-28.
+- Fix 5 (`make_image`): `np.bincount` scatter-add, bit-identical, 75x faster
+  than the per-ray loop and 13x faster than `np.add.at`.
+- Fix 6 (`raytrace_single`): releases the dispatcher history each iteration.
+  Bit-identical; measured 1629 MB -> 1175 MB peak RSS (-27.9%) at 2.44e6
+  rays/iter, matching one full history copy (453 MB predicted) to 0.2%.
+- Fix 7 (`combine_raytrace`): allocates from the *input* ray keys with
+  `np.empty`, which fixes the dropped `weight` array; frees inputs as they are
+  consumed behind a new opt-in `consume_input` flag (default False, so the
+  documented public usage does not have its inputs destroyed). Verified
+  `weight` is now present and correct in both engines and survives the hdf5
+  round-trip.
+- jaxrt: fixes 4 and 7 propagate automatically via the direct import in
+  `jaxrt/_engine.py`; the "known benign quirk" entry in devel/jaxrt_sync.md is
+  resolved and deleted. No divergence introduced.
+- Verification: pytest tests/ (36 passed), pytest tests/jaxrt/ (10 passed),
+  example_00 and example_02, and both `python -m xicsrt` and `--mp` CLI paths.
+
+Pre-existing defects found during implementation, NOT fixed (out of scope,
+reported only):
+- `import xics_jax` at module scope in `sources/_XicsrtSourceGeneric.py:30`
+  draws from the global `np.random` stream as an import side effect. Because
+  plugin modules are imported lazily on first `instantiate()`, that draw lands
+  between `np.random.seed()` and ray generation on the first raytrace in a
+  process but not on later ones, so two identical `raytrace()` calls in one
+  process give different results (measured on baseline: nfound 27 then 29).
+  `random_seed` therefore does not currently guarantee reproducibility. See
+  Finding 9 in the plan.
+- `examples/example_01/example_01.py` is broken on baseline: it requests
+  `XicsrtOpticCrystalSpherical`, but the class is `XicsrtOpticSphericalCrystal`.
 
 Goal: enable ~1e9 generated / ~1e6 detected ray runs on the Princeton Stellar
 cluster (768 GB, 96 cores), scaling up from a working 5.295e7 / 1.272e4 run.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Fable 5)
+# This file includes AI generated code using Claude (Fable 5, Opus 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -78,7 +78,7 @@ def raytrace(config):
         output_run = raytrace_single(config_run, _internal=True)
         output_list.append(output_run)
 
-    output = combine_raytrace(output_list)
+    output = combine_raytrace(output_list, consume_input=True)
 
     # Reset the configuration options that were unique to the individual runs.
     output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
@@ -109,11 +109,14 @@ def raytrace_single(config, _internal=False):
         seed = int(np.random.default_rng().integers(2**31))
 
     # np.random is used by the numpy element setup (e.g. source Poisson
-    # draws, which jaxrt overrides) and by the lost-ray subsampling in
-    # _sort_raytrace.
+    # draws, which jaxrt overrides).
     m_log.info('Seeding np.random with {}'.format(seed))
     np.random.seed(seed)
     key = jax.random.PRNGKey(seed)
+
+    # The lost-ray subsampling in _sort_raytrace uses a dedicated generator
+    # so that it cannot perturb the global stream.
+    rng_lost = np.random.default_rng(seed)
 
     num_iter = config['general']['number_of_iter']
     max_lost_iter = int(config['general']['history_max_lost'] / num_iter)
@@ -144,10 +147,11 @@ def raytrace_single(config, _internal=False):
 
         single = trace_iteration(key_iter)
         single = _to_host(config, single, element_order)
-        sorted_single = _sort_raytrace(single, max_lost=max_lost_iter)
+        sorted_single = _sort_raytrace(
+            single, max_lost=max_lost_iter, rng=rng_lost)
         output_list.append(sorted_single)
 
-    output = combine_raytrace(output_list)
+    output = combine_raytrace(output_list, consume_input=True)
 
     if _internal is False:
         if config['general']['print_results']:

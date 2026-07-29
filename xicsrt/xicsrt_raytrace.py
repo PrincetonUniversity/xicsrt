@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Opus 5).
 """
 .. Authors:
     Novimir Pablant <npablant@pppl.gov>
@@ -12,6 +13,8 @@ Contains the main functions that are called to perform raytracing.
 import numpy as np
 
 import os
+import resource
+import sys
 
 from copy import deepcopy
 
@@ -63,9 +66,12 @@ def raytrace(config):
         config_run['general']['random_seed'] = random_seed
         
         iteration = raytrace_single(config_run, _internal=True)
+        # These runs execute in this process, so their timings are already in
+        # the profiler global. Merging them again would double count.
+        iteration.pop('profiler', None)
         output_list.append(iteration)
-        
-    output = combine_raytrace(output_list)
+
+    output = combine_raytrace(output_list, consume_input=True)
 
     # Reset the configuration options that were unique to the individual runs.
     output['config']['general']['output_run_suffix'] = config['general']['output_run_suffix']
@@ -109,6 +115,10 @@ def raytrace_single(config, _internal=False):
 
     m_log.info('Seeding np.random with {}'.format(config['general']['random_seed']))
     np.random.seed(config['general']['random_seed'])
+
+    # A dedicated generator for the lost-ray subsampling, kept separate from
+    # the global stream that generates the rays. See `_sort_raytrace`.
+    rng_lost = np.random.default_rng(config['general']['random_seed'])
 
     num_iter = config['general']['number_of_iter']
     max_lost_iter = int(config['general']['history_max_lost']/num_iter)
@@ -154,10 +164,23 @@ def raytrace_single(config, _internal=False):
         m_log.info('Starting iteration: {} of {}'.format(ii + 1, num_iter))
 
         single = _raytrace_iter(config, sources, optics)
-        sorted = _sort_raytrace(single, max_lost=max_lost_iter)
+        sorted = _sort_raytrace(single, max_lost=max_lost_iter, rng=rng_lost)
+        _log_iter_diagnostics(sorted, single['history'])
         output_list.append(sorted)
 
-    output = combine_raytrace(output_list)
+        # Release the full-width history for this iteration now that it has
+        # been reduced to found + sampled-lost rays.
+        #
+        # The dispatchers hold a deepcopy of the rays at every element, and
+        # `single` holds references to those same arrays. Without this the
+        # previous iteration's full history stays alive while the next
+        # iteration allocates its own, roughly doubling the peak. Nothing
+        # downstream reads them: `sorted` already owns fancy-indexed copies.
+        sources.history.clear()
+        optics.history.clear()
+        del single
+
+    output = combine_raytrace(output_list, consume_input=True)
 
     if _internal is False:
         if config['general']['print_results']:
@@ -171,8 +194,86 @@ def raytrace_single(config, _internal=False):
         xicsrt_io.save_images(output)
 
     profiler.stop('raytrace_single')
-    # profiler.report()
+
+    if _internal and profiler.isEnabled():
+        # The profiler results are a per-process global, so when this run is
+        # executed in a multiprocessing worker the timings are invisible to
+        # the parent unless they are shipped back explicitly. This key is
+        # consumed by `xicsrt_multiprocessing.raytrace` and is dropped by
+        # `combine_raytrace`, so it never reaches a saved results file.
+        output['profiler'] = profiler.getResults()
+
     return output
+
+
+def get_peak_rss():
+    """
+    Return the peak resident set size of this process in bytes.
+
+    `resource.getrusage` reports `ru_maxrss` in kilobytes on Linux but in
+    bytes on macOS, so the units are normalized here.
+
+    This function was AI generated using Claude (Opus 5).
+    """
+    maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if sys.platform == 'darwin':
+        return maxrss
+    return maxrss * 1024
+
+
+def get_history_bytes(history):
+    """
+    Return the total number of bytes held by a ray history dictionary.
+
+    This function was AI generated using Claude (Opus 5).
+    """
+    total = 0
+    for key_opt in history:
+        for key_ray in history[key_opt]:
+            total += history[key_opt][key_ray].nbytes
+    return total
+
+
+def _log_iter_diagnostics(sorted_output, history):
+    """
+    Log per-iteration ray counts and memory usage.
+
+    These diagnostics exist because a long raytracing run gives the user very
+    little insight into where memory is going; see F006. Everything logged
+    here is derived from data that already exists, so this adds no measurable
+    cost and does not touch the random number stream.
+
+    This function was AI generated using Claude (Opus 5).
+    """
+    if not m_log.isEnabledFor(mirlogging.INFO):
+        return
+
+    peak_rss = get_peak_rss()
+
+    if len(sorted_output['found']['history']) == 0:
+        # With keep_history disabled the counts come from the metadata.
+        key_opt_list = list(sorted_output['total']['meta'].keys())
+        num_found = sorted_output['total']['meta'][key_opt_list[-1]]['num_out']
+        m_log.info(
+            'Iteration found: {}, history: disabled, peak rss: {:0.1f} MB'
+            ''.format(num_found, peak_rss / 1024 ** 2))
+        return
+
+    key_opt_last = list(sorted_output['found']['history'].keys())[-1]
+    num_found = len(sorted_output['found']['history'][key_opt_last]['mask'])
+    num_lost = len(sorted_output['lost']['history'][key_opt_last]['mask'])
+
+    full_bytes = get_history_bytes(history)
+    kept_bytes = (get_history_bytes(sorted_output['found']['history'])
+                  + get_history_bytes(sorted_output['lost']['history']))
+
+    m_log.info(
+        'Iteration found: {}, lost retained: {}, history: {:0.1f} MB traced '
+        '-> {:0.1f} MB kept, peak rss: {:0.1f} MB'.format(
+            num_found, num_lost,
+            full_bytes / 1024 ** 2,
+            kept_bytes / 1024 ** 2,
+            peak_rss / 1024 ** 2))
 
 
 def _raytrace_iter(config, sources, optics):
@@ -226,13 +327,42 @@ def _raytrace_iter(config, sources, optics):
     return output
 
 
-def _sort_raytrace(input, max_lost=None):
+def _sort_raytrace(input, max_lost=None, rng=None):
     """
     Sort the rays into 'lost' and 'found' rays, then truncate
     the number of lost rays.
+
+    Parameters
+    ----------
+    input : dict
+      The unsorted output of a single raytracing iteration.
+
+    max_lost : int (1000)
+      The maximum number of lost rays to retain.
+
+    rng : numpy.random.Generator (None)
+      The generator used to choose which lost rays to retain. A dedicated
+      generator is used rather than the global `np.random` stream so that
+      subsampling the lost rays cannot perturb the stream that produced the
+      rays themselves; see the programming notes below. If None, a generator
+      seeded from OS entropy is created, and the retained lost rays will not
+      be reproducible. Both engine callers supply a seeded generator.
+
+    Programming Notes
+    -----------------
+
+    `np.random.shuffle` draws a number of values from the global random
+    stream that depends on the number of lost rays. Since this function runs
+    inside the iteration loop, any use of the global stream here couples the
+    lost-ray bookkeeping to the rays generated by every later iteration. A
+    dedicated `Generator` removes that coupling entirely: the found rays are
+    then bit-identical regardless of how many rays were lost or how many are
+    retained.
     """
     if max_lost is None:
         max_lost = 1000
+    if rng is None:
+        rng = np.random.default_rng()
 
     profiler.start('_sort_raytrace')
 
@@ -255,15 +385,17 @@ def _sort_raytrace(input, max_lost=None):
         key_opt_list = list(input['history'].keys())
         key_opt_last = key_opt_list[-1]
 
-        w_found = np.flatnonzero(input['history'][key_opt_last]['mask'])
-        w_lost = np.flatnonzero(np.invert(input['history'][key_opt_last]['mask']))
+        mask_last = input['history'][key_opt_last]['mask']
+        w_found = np.flatnonzero(mask_last)
+        w_lost = np.flatnonzero(np.invert(mask_last))
 
         # Save only a portion of the lost rays so that our lost history does
-        # not become too large.
+        # not become too large. Choosing the retained rays directly avoids
+        # shuffling an index array of every lost ray, which for a typical
+        # x-ray trace means shuffling millions of entries to keep a few
+        # hundred.
         max_lost = min(max_lost, len(w_lost))
-        index_lost = np.arange(len(w_lost))
-        np.random.shuffle(index_lost)
-        w_lost = w_lost[index_lost[:max_lost]]
+        w_lost = rng.choice(w_lost, size=max_lost, replace=False)
 
         for key_opt in key_opt_list:
             output['found']['history'][key_opt] = dict()
@@ -280,7 +412,8 @@ def _sort_raytrace(input, max_lost=None):
 
 def combine_raytrace(input_list,
                      keep_images=True,
-                     components=None):
+                     components=None,
+                     consume_input=False):
     """
     Produce a combined results dictionary from a list of raytrace results.
 
@@ -294,6 +427,15 @@ def combine_raytrace(input_list,
     components: list (None)
         A list of specific components to combine.
         Useful when not all components are needed in the final output.
+
+    consume_input: bool (False)
+        If True, each input history is discarded as soon as it has been
+        copied into the output. This roughly halves the peak memory of the
+        combine, since the inputs and the combined output are otherwise both
+        fully resident when the last history is copied. The inputs are left
+        unusable, so this is only appropriate for internal callers that own
+        their input list. Used by the engine when combining iterations and
+        runs.
 
     Example
     -------
@@ -356,6 +498,12 @@ def combine_raytrace(input_list,
                     output['total']['image'][key_opt] = None
 
     # Combine all the histories.
+    #
+    # The output arrays are keyed off the *input* ray keys rather than off
+    # `RayArray.zeros`, which only defines origin/direction/mask/wavelength
+    # and therefore used to silently discard the 'weight' array. They are
+    # allocated with `np.empty` and fully overwritten below, which avoids
+    # materializing every array twice (once zeroed, once copied).
     if len(input_list[0]['found']['history']) > 0:
         final_num_found = 0
         final_num_lost = 0
@@ -363,15 +511,17 @@ def combine_raytrace(input_list,
             final_num_found += len(input_list[ii_run]['found']['history'][key_opt_last]['mask'])
             final_num_lost += len(input_list[ii_run]['lost']['history'][key_opt_last]['mask'])
 
-        rays_found_temp = RayArray()
-        rays_found_temp.zeros(final_num_found)
-
-        rays_lost_temp = RayArray()
-        rays_lost_temp.zeros(final_num_lost)
-
         for key_opt in key_opt_list:
-            output['found']['history'][key_opt] = rays_found_temp.copy()
-            output['lost']['history'][key_opt] = rays_lost_temp.copy()
+            output['found']['history'][key_opt] = RayArray()
+            output['lost']['history'][key_opt] = RayArray()
+
+            for key_ray, array in input_list[0]['found']['history'][key_opt].items():
+                shape_found = (final_num_found,) + array.shape[1:]
+                shape_lost = (final_num_lost,) + array.shape[1:]
+                output['found']['history'][key_opt][key_ray] = np.empty(
+                    shape_found, dtype=array.dtype)
+                output['lost']['history'][key_opt][key_ray] = np.empty(
+                    shape_lost, dtype=array.dtype)
 
         index_found = 0
         index_lost = 0
@@ -388,6 +538,12 @@ def combine_raytrace(input_list,
 
             index_found += num_found
             index_lost += num_lost
+
+            # Free each input history as it is consumed, so that the inputs
+            # and the combined output are not both fully resident at the end.
+            if consume_input:
+                input_list[ii_run]['found']['history'].clear()
+                input_list[ii_run]['lost']['history'].clear()
 
     profiler.stop('combine_raytrace')
     return output

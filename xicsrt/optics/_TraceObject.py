@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Opus 5).
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -283,11 +284,18 @@ class TraceObject(GeometryObject):
             num_out = np.sum(~m)
             if num_out > 0:
                 self.log.warning('Rays found outside of pixel grid ({}).'.format(num_out))
-            
-            # I feel like there must be a faster way to do this than to loop over
-            # every intersection.  This could be slow for large arrays.
-            for ii in range(num_lines):
-                if m[ii]:
-                    image[channel[ii,0], channel[ii,1]] += 1
+
+            # Accumulate the hits with a scatter-add rather than a per-ray
+            # Python loop.
+            #
+            # A plain `image[x, y] += 1` cannot be used here: with repeated
+            # indices (which are the norm, since many rays land on the same
+            # pixel) it applies the increment only once per pixel. `bincount`
+            # on the flattened index counts every hit, and is substantially
+            # faster than `np.add.at` for this access pattern.
+            index_flat = (channel[m, 0].astype(np.intp) * self.param['pixel_ysize']
+                          + channel[m, 1])
+            image += np.bincount(
+                index_flat, minlength=image.size).reshape(image.shape)
 
         return image

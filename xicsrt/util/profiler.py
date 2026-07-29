@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Opus 5).
 # ------------------------------------------------------------------------------
 """
 Authors:
@@ -9,6 +10,11 @@ Purpose:
 
 Description:
   This module is meant to enable manual profiling with very low overhead.
+
+  The results are held in a module level global, which means they are
+  per-process. When raytracing runs are dispatched to a `multiprocessing`
+  pool the worker timings are therefore invisible to the parent unless they
+  are explicitly returned and merged; see `getResults` and `merge`.
 
 """
 # ------------------------------------------------------------------------------
@@ -67,6 +73,55 @@ def report(flush=True):
                 ,profiler_results[name]['time_total']
                 ,profiler_results[name]['time_total']/profiler_results[name]['num_calls']
                 ,profiler_results[name]['num_calls']))
+
+def getResults():
+    """
+    Return a picklable copy of the profiler results for this process.
+
+    This is intended for transferring timings out of a `multiprocessing`
+    worker so that the parent can `merge` them. The `time_start` entries are
+    dropped: an in-progress timer has no meaning once it leaves its process.
+
+    This function was AI generated using Claude (Opus 5).
+    """
+    results = dict()
+    for name in profiler_results:
+        results[name] = {
+            'time_total': profiler_results[name]['time_total'],
+            'num_calls': profiler_results[name]['num_calls'],
+            }
+    return results
+
+
+def merge(results, prefix=None):
+    """
+    Merge an external set of profiler results into this process's results.
+
+    Totals and call counts are summed, so merging the results from several
+    workers gives the aggregate time spent across all of them (which will
+    exceed the wall-clock time of the parent).
+
+    Parameters
+    ----------
+    results : dict
+      A results dictionary as returned by `getResults`.
+
+    prefix : str (None)
+      If given, prepended to every name. Use this to keep worker timings
+      visually distinct from the parent's own, e.g. `prefix='worker: '`.
+
+    This function was AI generated using Claude (Opus 5).
+    """
+    if not results:
+        return
+
+    for name in results:
+        key = name if prefix is None else prefix + name
+        if key not in profiler_results:
+            _newProfile(key)
+        profiler_results[key]['time_total'] += results[name]['time_total']
+        profiler_results[key]['num_calls'] += results[name]['num_calls']
+
 
 def getTimeTotal(name):
     return profiler_results[name]['time_total']
