@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Opus 5)
 """
 Authors
 -------
@@ -44,7 +45,13 @@ class XicsrtSourceDirected(XicsrtSourceGeneric):
             self.param['direction'] = self.param['zaxis']
 
     def make_normal(self):
-        array = np.empty((self.param['intensity'], 3))
-        array[:] = self.param['direction']
-        normal = array / np.linalg.norm(array, axis=1)[:, np.newaxis]
+        """
+        Programming Notes
+        -----------------
+        The emission axis is a single fixed vector, so it is normalized once
+        and then broadcast, rather than normalizing N identical copies.
+        """
+        axis = np.asarray(self.param['direction'], dtype=np.float64)
+        normal = np.empty((self.param['intensity'], 3))
+        normal[:] = axis / np.sqrt(np.dot(axis, axis))
         return normal
