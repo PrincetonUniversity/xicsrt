@@ -1,5 +1,33 @@
 # XICSRT Feature Requests
 
+## F010 - W7-X ML training-set acceleration (numpy path)
+Started: 2026-07-30
+Status: Pending
+Plan: devel/plan_w7x_training_accel.md
+
+Goal: generate 10,000 W7-X training images (~1e6 detected counts each) on the
+Princeton Stellar cluster within a ~4096-core x 24-48 h envelope. Requires
+roughly 2x end-to-end speedup of the numpy engine plasma path relative to the
+Stellar run_08 baseline (12 workers x 8 threads, 21 core-h per 1e6-count image).
+
+Scope (Phase 1, implement):
+1a. Direct Voigt sampling: replace CDF-table sampling in voigt_random /
+    multi_voigt_random with exact Normal+Cauchy mixture sampling; delete
+    xicsrt_voigt_multi_jax.py / xicsrt_faddeeva_jax.py (obsoletes F004 sampler).
+1b. Vectorized create_sources in XicsrtPlasmaGeneric (remove per-bundle
+    XicsrtSourceFocused loop); vectorize xicsrt_spread over array spread.
+1c. Relocate ar16_voigt / xics_jax out of public xicsrt into w7x_npablant via
+    a per-bundle line-parameter hook (also resolves F009 exposure).
+1d. DESC equilibrium caching + fixed-shape map_coordinates (xicsrt_contrib).
+Phase 2 (implement): SLURM job-array production template.
+Phase 3 (document only): hybrid numpy-generation -> jaxrt GPU optics design
+    note in devel/plan_hybrid_gpu.md.
+
+Constraints: exact photon statistics (no reweighting; per-image independent
+sampling), readability first, no backwards-compat shims, jaxrt sync per
+devel/jaxrt_sync.md, minor version bump on completion.
+
+
 ## F009 - `xics_jax` import consumes global RNG stream on first use in a process
 Started: 2026-07-28
 Status: Pending

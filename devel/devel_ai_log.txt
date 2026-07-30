@@ -368,3 +368,45 @@ Key prompts:
 - "On stellar I am going to use 96 cores, but distribute them to 12 runs, so
   each run has 8 processesors that numpy will use for linear algebra
   operations. I can allocate 768GB."
+
+================================================================================
+2026-07-30 — F010 planning: W7-X ML training-set acceleration on Stellar
+(planning-only session; no code changes). Goal: 10k images x ~1e6 counts.
+
+Files modified:
+- devel/features_request.md: added F010 entry (Pending).
+- devel/plan_w7x_training_accel.md: new, full self-contained plan.
+
+Key changes:
+- Approved plan: Phase 1 numpy-path (direct Voigt sampling replacing CDF
+  tables; vectorized create_sources; ar16_voigt relocated to w7x_npablant via
+  per-bundle line-parameter hook; DESC equilibrium caching + fixed shapes);
+  Phase 2 SLURM job-array template; Phase 3 hybrid GPU documented only.
+
+Key findings / gotchas:
+- run_08 baseline (12x8, 96 cores): ~21 core-h per 1e6-count image; breakdown
+  wavelength 24%, tracing 39%, direction/origin 15%, DESC mapping 14%.
+- GPU run_12 was a wash: generation dominates and one A100 shared by 12 MPS
+  workers; GPU jobs also cap the fleet at 2 nodes vs 42+ CPU-only.
+- DESC map_coordinates at 13.5 s/call for 1e4 points suggests per-call jax
+  recompilation from varying masked-point counts (shape instability).
+- Direct Normal+Cauchy mixture sampling is exactly Voigt and strictly more
+  exact than the CDF table (no cutoff truncation / interp error); obsoletes
+  the F004 jax sampler files.
+- User decisions: exact per-image statistics mandatory (no reweighting); no
+  rho interpolation table; no jaxrt plasma port; velocity deferred;
+  readability over speed.
+
+Key prompts:
+- "My overall goal is to create a ML training set of w7x xicsrt runs, which I
+  believe requires at least 10_000 images ... Each image in the training set
+  sholud have around 1e6 counts. ... I want options for how to accelerate key
+  parts of the pure python+numpy path and optionally how to connect the w7x
+  plasma model to the jax path."
+- "given that in this type of application the generation of the initial ray
+  distribution is complex and not easily portable to jax, but the rest of the
+  raytracing model is simple and uses standard optics, is there a way to
+  connect to jaxrt after ray generation and if so does this results in a
+  performance benifit."
+- "Please write out this plan and link it to a feature request in a way that
+  I can begin again in a new session with a fresh agent."
