@@ -42,7 +42,7 @@ def raytrace(config, processes=None):
     Also see :func:`~xicsrt.xicsrt_raytrace.raytrace` for a single process
     version of this routine.
     """
-    profiler.start('raytrace_multiprocessing')
+    profiler.start('raytrace_mp')
     
     # Update the default config with the user config.
     config = xicsrt_config.get_config(config)
@@ -115,5 +115,5 @@ def raytrace(config, processes=None):
     if config['general']['print_results']:
         print_raytrace(output)
         
-    profiler.stop('raytrace_multiprocessing')
+    profiler.stop('raytrace_mp')
     return output
