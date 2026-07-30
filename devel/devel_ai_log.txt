@@ -410,3 +410,58 @@ Key prompts:
   performance benifit."
 - "Please write out this plan and link it to a feature request in a way that
   I can begin again in a new session with a fresh agent."
+
+================================================================================
+2026-07-30 — F010 Phase 1-3 implementation: W7-X training-set acceleration
+(Claude Fable 5 via opencode)
+
+Goal: implement devel/plan_w7x_training_accel.md (direct Voigt sampling,
+vectorized plasma generation, ar16 relocation, DESC hygiene, SLURM template,
+hybrid-GPU design note).
+
+Files modified:
+- xicsrt: tools/xicsrt_voigt.py, tools/xicsrt_voigt_multi.py,
+  tools/xicsrt_spread.py, sources/_XicsrtSourceGeneric.py,
+  sources/_XicsrtPlasmaGeneric.py, sources/_XicsrtPlasmaToroidal.py,
+  sources/_XicsrtPlasmaCylindrical.py, jaxrt/tools/_wavelength.py,
+  _version.py (0.9.0); new tests/test_voigt_direct.py,
+  testing/compare_f010_plasma.py, devel/plan_hybrid_gpu.md; deleted
+  tools/xicsrt_{voigt_multi,faddeeva}_jax.py, tests/test_voigt_multi_jax.py.
+- xicsrt_contrib: sources/_XicsrtPlasmaVmec.py (eq cache, fixed-shape padding).
+- xicsrt_analysis: w7x_npablant sources/_XicsrtPlasmaW7xSimple.py
+  (get_line_parameters override, batched xics_jax), xicsrt_w7x_npablant.py
+  (multi_voigt), new production/ SLURM job-array template.
+
+Key changes:
+- 1a: voigt_random/multi_voigt_random = exact direct Normal+Cauchy mixture
+  sampling; new multi_voigt_random_batched (per-bundle line tables, one call
+  per iteration); ~108x vs per-bundle CDF build; jax CDF sampler deleted.
+- 1b: create_sources fully vectorized (Poisson counts -> repeat -> array ops);
+  verified 5-sigma vs baseline (0.55/0.66 sigma counts, <0.05 px centroids).
+- 1c: xics_jax/ar16_voigt removed from public xicsrt; get_line_parameters hook
+  + vmapped _compute_line_params in w7x_npablant (bit-exact vs evaluate_lines).
+- 1d: DESC equilibrium cached; map_coordinates padded to fixed bundle_count.
+- W7X e2e (10k bundles, 3 iter, M1 single process): 138.8s -> 27.4s (5.1x).
+
+Key findings / gotchas:
+- Direct sampler produces true Lorentzian tails (old table clipped ~+-0.07 A;
+  tail mass ~2e-4). Cauchy tails also mean sample mean/std do not converge;
+  test_voigt.py switched a mean check to median.
+- Batched mixture selection uses a row-offset searchsorted (2*row + cdf);
+  costs ~1e-11 relative weight quantization at 1e5 bundles (negligible).
+- np.random.standard_cauchy + normal ordering defines the new RNG stream;
+  results statistically identical but not bit-identical to old seeds.
+- Stellar re-profile / MP split re-tune (24x4, 48x2) still outstanding; needs
+  cluster access.
+
+Suggested follow-ups:
+- Stellar re-profile with run_08 layout; re-tune worker/thread split.
+- First Phase-2 production campaign; then revisit devel/plan_hybrid_gpu.md.
+- F009 (xics_jax import perturbs RNG) still open in the analysis repo.
+
+Key prompts:
+- "Implement F010 per devel/plan_w7x_training_accel.md, starting with
+  Phase 1a."
+- "Lets close this session and commit the changes. For the xicsrt_contrib and
+  xicsrt_analysis repos, please create a matching devel branch and commit to
+  that branch."

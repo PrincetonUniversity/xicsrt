@@ -67,9 +67,6 @@ break jaxrt. Check these call sites when refactoring:
   must still produce the matching per-iteration input structure.
 - `tools/xicsrt_spread.py` `_parse_spread_single`, `_parse_spread_xy` — used in
   `jaxrt/tools/_spread.setup`.
-- `tools/xicsrt_voigt.py` `voigt_cdf_tab` and `tools/xicsrt_voigt_multi.py`
-  `multi_voigt_cdf_tab` — used in `jaxrt/tools/_wavelength.setup` to build CDF
-  tables on the host.
 - `tools/xicsrt_aperture.py` `_aperture_defaults` — used in `jaxrt/_bounds.py`.
 - `tools/xicsrt_bragg.py` `read` — used in `jaxrt/interact/_crystal.setup`.
 - `_dispatch.py` reads `obj.param` and `obj.orientation` from the initialized
@@ -188,6 +185,16 @@ sessions must check this list before assuming the engines are in sync.
 Record here numpy-engine changes that *reduced* divergence, so a future session
 does not mistake the new numpy form for an unported jaxrt-only idiom.
 
+- 2026-07-30 (F010, 1a): Voigt wavelength sampling converged to direct
+  sampling on both engines. numpy `voigt_random` / `multi_voigt_random` and
+  jaxrt `tools/_wavelength.py` now all draw
+  `center + Normal(0, sigma) + Cauchy(0, gamma)` with intensity-weighted
+  mixture line selection — exact, no CDF tables. The former live-coupling
+  point (`voigt_cdf_tab` / `multi_voigt_cdf_tab` in `_wavelength.setup`) is
+  gone; `*_cdf_tab` remain available for pdf evaluation only. The numpy
+  `temperature == 0` clamp (+1 eV) was removed on both engines; a pure
+  Lorentzian is now sampled exactly. Config options `multi_gridsize` /
+  `multi_cutoff` were removed from `XicsrtSourceGeneric.default_config`.
 - 2026-07-28 (F007): `sources/_XicsrtSourceGeneric.py` `random_direction` no
   longer builds an (N,3,3) rotation matrix for `np.einsum('ij,ijk->ik', ...)`.
   It now uses the explicit component sum

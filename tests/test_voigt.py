@@ -2,7 +2,7 @@
 """
 Tests for the Voigt profile tools.
 
-This file includes AI generated code using Claude (Opus 4.8).
+This file includes AI generated code using Claude (Opus 4.8, Fable 5).
 
 These tests cover:
   * accuracy of the jax-friendly Weideman Faddeeva approximation against
@@ -108,10 +108,10 @@ def test_multi_voigt_cdf_properties():
 def test_multi_voigt_random_statistics():
     """Random samples reproduce the analytic spectrum shape.
 
-    The variance of a Voigt profile is dominated by its Lorentzian tails, so
-    ``std`` is not a meaningful check.  Instead we verify (a) the sampled
-    distribution is symmetric about the (single) line center and (b) a
-    histogram of the samples matches the analytic PDF.
+    The direct sampler draws exact (untruncated) Lorentzian tails, so
+    neither ``mean`` nor ``std`` converge usefully.  Instead we verify
+    (a) the sample median sits at the symmetry point of the two identical
+    lines and (b) a histogram of the samples matches the analytic PDF.
     """
     loc = np.array([-1.0, 2.0])
     inten = np.array([1.0, 1.0])
@@ -122,12 +122,13 @@ def test_multi_voigt_random_statistics():
     try:
         np.random.seed(42)
         samples = xicsrt_voigt_multi.multi_voigt_random(
-            loc, inten, sig, gam, size=400000, gridsize=4000)
+            loc, inten, sig, gam, size=400000)
     finally:
         np.random.set_state(rng_state)
 
-    # By symmetry the mean sits halfway between the two identical lines.
-    assert np.mean(samples) == pytest.approx(np.mean(loc), abs=0.02)
+    # By symmetry the median sits halfway between the two identical lines.
+    # (The mean of a Cauchy-tailed sample does not converge.)
+    assert np.median(samples) == pytest.approx(np.mean(loc), abs=0.02)
 
     # Histogram of the samples should match the normalized analytic PDF.
     edges = np.linspace(-4, 5, 60)

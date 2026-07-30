@@ -5,7 +5,7 @@
 
 A set of routines for related to Voigt distributions.
 
-This file includes AI generated code using Claude (Opus 4.8).
+This file includes AI generated code using Claude (Opus 4.8, Fable 5).
 """
 
 import numpy as np
@@ -163,16 +163,46 @@ def voigt_invcdf_numeric(x, gamma, sigma, gridsize=None):
     return y
 
 
-def voigt_random(gamma, sigma, size, **kwargs):
+def voigt_random(gamma, sigma, size):
     """
-    Draw random samples from a Voigt distribution.
-    
-    The tails of the distribution will be clipped;
-    the clipping level can be adjusted with the cutoff keyword.
-    The default cutoff value is 1e-5.
+    Draw random samples from a Voigt distribution by direct sampling.
+
+    A Voigt distribution is the convolution of a Gaussian and a Lorentzian
+    (Cauchy) distribution, so a Voigt variate is exactly the sum of
+    independent Normal(0, sigma) and Cauchy(0, gamma) variates:
+
+    .. math::
+
+        X = \\mathcal{N}(0, \\sigma) + \\mathrm{Cauchy}(0, \\gamma)
+
+    This is exact: unlike the tabulated inverse-CDF method previously used
+    here (see :func:`voigt_cdf_tab`), there is no tail truncation and no
+    interpolation error.
+
+    Parameters
+    ----------
+    gamma : float
+        Lorentzian half-width-at-half-max (scale of the Cauchy component).
+    sigma : float
+        Gaussian standard deviation.
+    size : int
+        Number of samples to draw.
+
+    Returns
+    -------
+    numpy.ndarray
+        Random samples centered at zero, shape (size,).
+
+    Notes
+    -----
+    Draws from the global ``numpy.random`` state. Results are statistically
+    identical to, but not bit-identical with, the old CDF-table sampler for
+    a given seed.
+
+    This function was AI generated using Claude (Fable 5).
     """
-    cdf_x, cdf = voigt_cdf_tab(gamma, sigma, **kwargs)
-    random_y = np.random.uniform(np.min(cdf), np.max(cdf), size)
-    random_x = np.interp(random_y, cdf, cdf_x)
+    random_x = np.random.normal(0.0, sigma, size)
+    if gamma != 0.0:
+        random_x += np.random.standard_cauchy(size) * gamma
     return random_x
-    
+

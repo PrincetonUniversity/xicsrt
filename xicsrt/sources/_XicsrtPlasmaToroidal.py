@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Fable 5)
 """
 Authors
 -------
@@ -32,14 +33,21 @@ class XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
         return config
 
     def flx_from_car(self, point_car):
+        """
+        Convert cartesian points to flux coordinates.
+
+        Accepts either a single point of shape (3,) or an array of points
+        of shape (N, 3); the flux-label transformation is applied along the
+        last axis in either case.
+        """
         point_flx = xm.tor_from_car(point_car - self.param['torus_origin'], self.param['major_radius'])
-        point_flx[0] = point_flx[0]**2
-        point_flx[0] /= self.param['minor_radius']
+        point_flx[..., 0] = point_flx[..., 0]**2
+        point_flx[..., 0] /= self.param['minor_radius']
         return point_flx
 
     def rho_from_car(self, point_car):
         point_flx = self.flx_from_car(point_car)
-        return np.sqrt(point_flx[0])
+        return np.sqrt(point_flx[..., 0])
 
     def car_from_flx(self, point_flx):
         point_tor = copy(point_flx)
@@ -52,17 +60,13 @@ class XicsrtPlasmaToroidal(XicsrtPlasmaGeneric):
         profiler.start("Bundle Input Generation")
         m = bundle_input['mask']
 
-        # Attempt to generate the specified number of bundles, but throw out
-        # bundles that our outside of the last closed flux surface.
-        #
-        # This loop was setup for VMEC. Here we could do this as a single
-        # vectorized operation instead.
-        rho = np.zeros(len(m[m]))
-        for ii in range(len(m[m])):
-            # convert from cartesian coordinates to normalized radial coordinate.
-            profiler.start("Fluxspace from Realspace")
-            rho[ii] = self.rho_from_car(bundle_input['origin'][m][ii, :])
-            profiler.stop("Fluxspace from Realspace")
+        # Convert from cartesian coordinates to normalized radial coordinate
+        # for all bundles in a single vectorized operation. Bundles outside
+        # the last closed flux surface are masked out below (non-finite
+        # profile values).
+        profiler.start("Fluxspace from Realspace")
+        rho = self.rho_from_car(bundle_input['origin'][m])
+        profiler.stop("Fluxspace from Realspace")
 
         # evaluate emissivity, temperature and velocity at each bundle location.
         bundle_input['temperature'][m] = self.get_temperature(rho) * self.param['temperature_scale']

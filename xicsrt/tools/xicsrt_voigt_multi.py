@@ -156,44 +156,137 @@ def multi_voigt_cdf_tab(line_locations, line_intensities, sigmas, gammas, gridsi
     return bounds[1:], cdf, pdf
 
 
-def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size, gridsize=None, cutoff=None, N=xicsrt_faddeeva.DEFAULT_N):
+def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size):
     """
     Draw random wavelength samples from a multiline Voigt spectrum.
 
-    Parameters:
-        line_locations : center wavelength of each Voigt line
-        line_intensities : intensity of each Voigt line
-        sigmas : Gaussian width of each Voigt line
-        gammas : Lorentzian width of each Voigt line
-        size : number of random wavelength samples to generate
-        gridsize : number of wavelength grid points used to build the CDF
-        cutoff : relative intensity cutoff used to determine the wavelength domain of CDF
-        N : number of terms in the Weideman approximation
+    A multiline Voigt spectrum is a mixture distribution: each sample is
+    drawn from one line, chosen with probability proportional to that
+    line's intensity, and each line's Voigt profile is sampled exactly as
+    the sum of a Normal(0, sigma) and a Cauchy(0, gamma) variate centered
+    at the line location. This direct-sampling approach is exact — unlike
+    the tabulated inverse-CDF method (see :func:`multi_voigt_cdf_tab`)
+    there is no domain truncation and no interpolation error.
 
-    Returns:
-        random_x : randomly sampled wavelengths drawn from the multiline Voigt spectrum
+    Parameters
+    ----------
+    line_locations : array_like, shape (n_lines,)
+        Center wavelength of each Voigt line.
+    line_intensities : array_like, shape (n_lines,)
+        Intensity (area) of each Voigt line. Need not be normalized.
+    sigmas : array_like, shape (n_lines,)
+        Gaussian standard deviation of each Voigt line.
+    gammas : array_like, shape (n_lines,)
+        Lorentzian half-width-at-half-max of each Voigt line.
+    size : int
+        Number of random wavelength samples to generate.
 
-    Notes: 
-        Is linear interpolation sufficient for this?
-        Should we use quadratic interpolation instead?
-        Keep in mind that linear interpolation is faster, but quadratic may behave better/worse and slower
+    Returns
+    -------
+    numpy.ndarray
+        Randomly sampled wavelengths, shape (size,).
+
+    Notes
+    -----
+    Draws from the global ``numpy.random`` state. Results are statistically
+    identical to, but not bit-identical with, the old CDF-table sampler for
+    a given seed.
+
+    This function was AI generated using Claude (Fable 5).
     """
+    line_locations = np.asarray(line_locations, dtype=float)
+    line_intensities = np.asarray(line_intensities, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    gammas = np.asarray(gammas, dtype=float)
 
-    cdf_x, cdf, pdf = multi_voigt_cdf_tab(
-        line_locations,
-        line_intensities,
-        sigmas,
-        gammas,
-        gridsize=gridsize,
-        cutoff=cutoff,
-        N=N,
-    )
+    # Choose a line for each sample with probability proportional to the
+    # line intensities (mixture weights).
+    cum = np.cumsum(line_intensities)
+    cum /= cum[-1]
+    line_index = np.searchsorted(cum, np.random.uniform(0.0, 1.0, size))
 
-    # Generate uniformly distributed random probability values
-    random_y = np.random.uniform(np.min(cdf), np.max(cdf), size)
+    # Draw the Voigt variate for each sample's chosen line:
+    # location + Normal(0, sigma) + Cauchy(0, gamma).
+    random_x = line_locations[line_index]
+    random_x += np.random.normal(0.0, 1.0, size) * sigmas[line_index]
+    random_x += np.random.standard_cauchy(size) * gammas[line_index]
 
-    # uses the inverse CDF to convert the probabilities into wavelengths
-    random_x = np.interp(random_y, cdf, cdf_x)
+    return random_x
+
+
+def multi_voigt_random_batched(
+        line_locations, line_intensities, sigmas, gammas, bundle_index):
+    """
+    Draw one wavelength per ray from per-bundle multiline Voigt spectra.
+
+    This is the batched form of :func:`multi_voigt_random`: every bundle
+    has its own set of line parameters (for example because the line
+    intensities and Doppler widths depend on the local plasma temperature),
+    and each ray samples from the spectrum of the bundle it belongs to.
+    All rays from all bundles are sampled in a single vectorized call.
+
+    The sampling is exact mixture sampling, identical in distribution to
+    calling :func:`multi_voigt_random` once per bundle.
+
+    Parameters
+    ----------
+    line_locations : array_like, shape (n_bundles, n_lines)
+        Center wavelength of each Voigt line, per bundle.
+    line_intensities : array_like, shape (n_bundles, n_lines)
+        Intensity (area) of each Voigt line, per bundle. Need not be
+        normalized; each bundle row is normalized independently.
+    sigmas : array_like, shape (n_bundles, n_lines)
+        Gaussian standard deviation of each Voigt line, per bundle.
+    gammas : array_like, shape (n_bundles, n_lines)
+        Lorentzian half-width-at-half-max of each Voigt line, per bundle.
+    bundle_index : array_like, shape (n_rays,)
+        For each ray, the index of the bundle (row) whose spectrum it
+        samples from. Values must be in ``range(n_bundles)``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Randomly sampled wavelengths, shape (n_rays,).
+
+    Notes
+    -----
+    The per-ray line selection uses a single :func:`numpy.searchsorted`
+    over a flattened, row-offset cumulative-intensity array, avoiding both
+    a Python loop over bundles and an (n_rays, n_lines) temporary. Adding
+    the row offset costs a few bits of floating-point resolution in the
+    mixture weights (relative quantization ~1e-11 at 1e5 bundles), which
+    is statistically undetectable at any achievable sample size.
+
+    This function was AI generated using Claude (Fable 5).
+    """
+    line_locations = np.asarray(line_locations, dtype=float)
+    line_intensities = np.asarray(line_intensities, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    gammas = np.asarray(gammas, dtype=float)
+    bundle_index = np.asarray(bundle_index)
+
+    n_bundles, n_lines = line_intensities.shape
+    n_rays = bundle_index.shape[0]
+
+    # Normalized cumulative mixture weights for every bundle row.
+    cum = np.cumsum(line_intensities, axis=1)
+    cum /= cum[:, -1:]
+
+    # Row-offset trick: add 2*row to each row of the (0, 1] cumulative
+    # weights so the flattened array is globally sorted, then search for
+    # (uniform + 2*bundle_index) to select a line within each ray's own
+    # bundle row with a single searchsorted call.
+    offsets = 2.0 * np.arange(n_bundles)
+    cum_flat = (cum + offsets[:, None]).ravel()
+    keys = np.random.uniform(0.0, 1.0, n_rays) + offsets[bundle_index]
+    line_index = np.searchsorted(cum_flat, keys) - bundle_index * n_lines
+
+    # Draw the Voigt variate for each ray's chosen (bundle, line):
+    # location + Normal(0, sigma) + Cauchy(0, gamma).
+    flat_index = bundle_index * n_lines + line_index
+    random_x = line_locations.ravel()[flat_index]
+    random_x += np.random.normal(0.0, 1.0, n_rays) * sigmas.ravel()[flat_index]
+    random_x += np.random.standard_cauchy(n_rays) * gammas.ravel()[flat_index]
 
     return random_x
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Fable 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -10,12 +11,14 @@ Contains the XicsrtPlasmaGeneric class.
 import logging
 
 import numpy as np
+import scipy.constants as const
 
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_spread
+from xicsrt.tools import xicsrt_voigt_multi
+from xicsrt.tools import xicsrt_math as xm
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._GeometryObject import GeometryObject
-from xicsrt.sources._XicsrtSourceFocused import XicsrtSourceFocused
 
 @dochelper
 class XicsrtPlasmaGeneric(GeometryObject):
@@ -54,11 +57,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
 
         angular_dist : string ('isotropic')
           The type of angular distribution to use for the emitted rays.
-          Available distributions: 'isotropic', 'isotropic_xy', 'flat',
-          'flat_xy', 'gaussian', and 'gaussian_flat'.
-          See `XicsrtSourceGeneric` for documentation of each distribution.
-
-          Warning: Only the 'isotropic' distribution is currently supported!
+          Only the 'isotropic' distribution is supported for plasma sources.
 
         spread: float (None) [radians]
           The angular spread for the emission cone. The spread defines the
@@ -146,6 +145,14 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['mass_number']      = 1.0
         config['linewidth']        = 0.0
 
+        # Only used for wavelength_dist = 'multi_voigt'.
+        # See get_line_parameters for how these are consumed; subclasses
+        # may override that hook to compute per-bundle line parameters.
+        config['line_locations']   = np.array([1.0])
+        config['line_intensities'] = np.array([1.0])
+        config['line_sigmas']      = np.array([0.0])
+        config['line_gammas']      = np.array([0.0])
+
         config['emissivity']      = 0.0
         config['temperature']     = 0.0
         config['temperature_e']   = 0.0
@@ -227,11 +234,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
             spread = self.param['spread']
 
         bundle_input['spread'][:] = spread
-
-        # For the time being the fuction solid_angle is not vectorized, so a
-        # loop is necessary.
-        for ii in range(len(bundle_input['spread'])):
-            bundle_input['solid_angle'][ii] = xicsrt_spread.solid_angle(bundle_input['spread'][ii])
+        bundle_input['solid_angle'][:] = xicsrt_spread.solid_angle_isotropic(
+            bundle_input['spread'])
 
         return bundle_input
 
@@ -257,138 +261,274 @@ class XicsrtPlasmaGeneric(GeometryObject):
             bundle_input = filter.filter(bundle_input)
         return bundle_input
     
+    def get_line_parameters(self, bundle_input, m, bundle_index):
+        """
+        Return per-bundle multiline Voigt parameters for wavelength sampling.
+
+        This hook is used when ``wavelength_dist = 'multi_voigt'``. The base
+        implementation broadcasts the static line parameters from the config
+        options (`line_locations`, `line_intensities`, `line_sigmas`,
+        `line_gammas`) to every bundle. Subclasses may override this to
+        compute the spectral line list from the local plasma parameters
+        (for example from the per-bundle ion and electron temperatures).
+
+        Parameters
+        ----------
+        bundle_input : dict
+            The bundle input dictionary (full length ``bundle_count``).
+        m : ndarray of bool
+            The bundle mask. Line parameters are only needed for masked
+            (active) bundles.
+        bundle_index : ndarray of int, shape (n_rays,)
+            For each ray, the index of its bundle within the *masked*
+            bundle arrays (i.e. an index into ``bundle_input['origin'][m]``).
+
+        Returns
+        -------
+        tuple of ndarray
+            Arrays ``(locations, intensities, sigmas, gammas)``, each of
+            shape (n_masked_bundles, n_lines), consumed by
+            :func:`xicsrt.tools.xicsrt_voigt_multi.multi_voigt_random_batched`.
+
+        This method was AI generated using Claude (Fable 5).
+        """
+        n_bundles = int(np.sum(m))
+        locations = np.broadcast_to(
+            np.asarray(self.param['line_locations'], dtype=np.float64),
+            (n_bundles, len(self.param['line_locations'])))
+        intensities = np.broadcast_to(
+            np.asarray(self.param['line_intensities'], dtype=np.float64),
+            locations.shape)
+        sigmas = np.broadcast_to(
+            np.asarray(self.param['line_sigmas'], dtype=np.float64),
+            locations.shape)
+        gammas = np.broadcast_to(
+            np.asarray(self.param['line_gammas'], dtype=np.float64),
+            locations.shape)
+        return locations, intensities, sigmas, gammas
+
     def create_sources(self, bundle_input):
         """
-        Generate rays from a list of bundles.
+        Generate rays from the bundle list in a single vectorized pass.
 
-        bundle_input
-          a list containing dictionaries containing the locations, emissivities,
-          temperatures and velocitities and of all ray bundles to be emitted.
+        Every active bundle emits a Poisson-distributed number of rays
+        (exact photon statistics), all of which are generated together:
+        origins, focused directions, wavelengths and Doppler shifts are
+        computed with per-ray array operations using each ray's own
+        bundle parameters. This is statistically identical to the previous
+        per-bundle XicsrtSourceFocused loop, but not bit-identical for a
+        given random seed.
+
+        Parameters
+        ----------
+        bundle_input : dict
+            Dictionary of arrays describing the locations, emissivities,
+            temperatures and velocities of all ray bundles to be emitted.
+
+        This method was AI generated using Claude (Fable 5).
         """
-
-        rays_list = []
-        count_rays_in_bundle = []
-
         m = bundle_input['mask']
+
+        # Calculate the expected number of photons from each bundle volume.
+        #
+        # We allow bundle_volume and bundle_count to be independent, which
+        # means that a bundle representing a volume in the plasma can be
+        # launched from a virtual volume of a different size. In order to
+        # allow this while maintaining overall photon statistics from the
+        # plasma, we normalize the intensity so that each bundle represents
+        # a volume of plasma_volume/bundle_count. In doing so bundle_volume
+        # cancels out, but the calculation is left separate for clarity.
+        intensity = (bundle_input['emissivity'][m]
+                     * self.param['time_resolution']
+                     * self.param['bundle_volume']
+                     * bundle_input['solid_angle'][m] / (4 * np.pi))
+        intensity *= (self.param['volume']
+                      / (self.param['bundle_count'] * self.param['bundle_volume']))
 
         # Check if the number of rays generated will exceed max ray limits.
         # This is only approximate since poisson statistics may be in use.
-
-        predicted_rays = int(np.sum(
-            bundle_input['emissivity'][m]
-            * self.param['time_resolution']
-            * self.param['bundle_volume']
-            * bundle_input['solid_angle'][m] / (4 * np.pi)
-            * self.param['volume']
-            / (self.param['bundle_count'] * self.param['bundle_volume'])))
-
+        predicted_rays = int(np.sum(intensity))
         self.log.debug(f'Predicted rays: {predicted_rays:0.2e}')
-
         if self.param['max_rays']:
             if predicted_rays > self.param['max_rays']:
                 raise ValueError(
                     f"Current settings will produce too many rays ({predicted_rays:0.2e}). "
                     f"Please reduce integration time or adjust other parameters.")
 
-        # Bundle generation loop
-        for ii in range(self.param['bundle_count']):
-            if not bundle_input['mask'][ii]:
-                continue
-            profiler.start("Ray Bundle Generation")
-            source_config = dict()
-            
-            # Specially dependent parameters
-            source_config['origin']        = bundle_input['origin'][ii]
-            source_config['temperature']   = bundle_input['temperature'][ii]
-            source_config['temperature_e'] = bundle_input['temperature_e'][ii]
-            source_config['velocity']      = bundle_input['velocity'][ii]
-            source_config['spread']        = bundle_input['spread'][ii]
+        profiler.start("Ray Bundle Generation")
 
-            # Calculate the total number of photons to launch from this bundle
-            # volume. Since the source can use poisson statistics, this should
-            # be of floating point type.
-            intensity = (bundle_input['emissivity'][ii]
-                         * self.param['time_resolution']
-                         * self.param['bundle_volume']
-                         * bundle_input['solid_angle'][ii] / (4 * np.pi))
-            
-            # Scale the number of photons based on the number of bundles.
-            #
-            # Ultimately we allow bundle_volume and bundle_count to be
-            # independent, which means that a bundle representing a volume in
-            # the plasma can be launched from virtual volume of a different
-            # size.
-            #
-            # In order to allow this while maintaining overall photon statistics
-            # from the plasma, we normalize the intensity so that each bundle
-            # represents a volume of plasma_volume/bundle_count.
-            #
-            # In doing so bundle_volume cancels out, but I am leaving the
-            # calculation separate for clarity.
-            intensity *= self.param['volume'] / (self.param['bundle_count'] * self.param['bundle_volume'])
-            
-            source_config['intensity'] = intensity
+        # The number of rays from each bundle: exact Poisson statistics.
+        if self.param['use_poisson']:
+            counts = np.random.poisson(intensity)
+        else:
+            if np.any(intensity < 1):
+                raise ValueError(
+                    'intensity of less than one encountered. Turn on poisson statistics.')
+            counts = intensity.astype(np.int64)
 
-            # constants
-            source_config['xsize']            = self.param['voxel_size']
-            source_config['ysize']            = self.param['voxel_size']
-            source_config['zsize']            = self.param['voxel_size']
-            source_config['zaxis']            = self.param['zaxis']
-            source_config['xaxis']            = self.param['xaxis']
-            source_config['target']           = self.param['target']
-            source_config['mass_number']      = self.param['mass_number']
-            source_config['wavelength_dist']  = self.param['wavelength_dist']
-            source_config['wavelength']       = self.param['wavelength']
-            source_config['wavelength_range'] = self.param['wavelength_range']
-            source_config['linewidth']        = self.param['linewidth']
-            source_config['angular_dist']      = self.param['angular_dist']
-            source_config['use_poisson']      = self.param['use_poisson']
-                
-            #create ray bundle sources and generate bundled rays
-            source       = XicsrtSourceFocused(source_config)
-            bundled_rays = source.generate_rays()
+        # For each ray, the index of its bundle within the masked arrays.
+        bundle_index = np.repeat(np.arange(len(counts)), counts)
+        total_rays = len(bundle_index)
 
-            rays_list.append(bundled_rays)
-            count_rays_in_bundle.append(len(bundled_rays['mask']))
+        rays = dict()
+        profiler.start('generate_origin')
+        rays['origin'] = self._generate_origins(bundle_input, m, bundle_index)
+        profiler.stop('generate_origin')
 
-            profiler.stop("Ray Bundle Generation")
+        profiler.start('generate_direction')
+        rays['direction'] = self._generate_directions(
+            rays['origin'], bundle_input, m, bundle_index)
+        profiler.stop('generate_direction')
 
-        profiler.start('Ray Bundle Collection')
-        # append bundled rays together to form a single ray dictionary.    
-        # create the final ray dictionary
-        total_rays = int(np.sum(count_rays_in_bundle))
-        rays                = dict()
-        rays['origin']      = np.zeros((total_rays,3), dtype=np.float64)
-        rays['direction']   = np.zeros((total_rays,3), dtype=np.float64)
-        rays['wavelength']  = np.zeros((total_rays), dtype=np.float64)
-        rays['weight']      = np.zeros((total_rays), dtype=np.float64)
-        rays['mask']        = np.ones((total_rays), dtype=np.bool_)
+        profiler.start('generate_wavelength')
+        rays['wavelength'] = self._generate_wavelengths(
+            bundle_input, m, bundle_index)
 
-        index = 0
-        for ii, num_rays in enumerate(count_rays_in_bundle):
-            rays['origin'][index:index+num_rays] = rays_list[ii]['origin']
-            rays['direction'][index:index+num_rays] = rays_list[ii]['direction']
-            rays['wavelength'][index:index+num_rays] = rays_list[ii]['wavelength']
-            rays['weight'][index:index+num_rays] = rays_list[ii]['weight']
-            rays['mask'][index:index+num_rays] = rays_list[ii]['mask']
-            index += num_rays
-        profiler.stop('Ray Bundle Collection')
-            
-        if len(rays['mask']) == 0:
+        # Doppler shift from the per-bundle plasma velocity.
+        velocity = np.asarray(bundle_input['velocity'][m], dtype=np.float64)
+        if np.any(velocity != 0.0):
+            c = const.physical_constants['speed of light in vacuum'][0]
+            v_per_ray = velocity[bundle_index]
+            rays['wavelength'] *= (
+                1 - np.einsum('ij,ij->i', v_per_ray, rays['direction']) / c)
+        profiler.stop('generate_wavelength')
+
+        rays['weight'] = np.ones(total_rays, dtype=np.float64)
+        rays['mask'] = np.ones(total_rays, dtype=np.bool_)
+
+        profiler.stop("Ray Bundle Generation")
+
+        if total_rays == 0:
             raise ValueError('No rays generated. Check plasma input parameters')
 
         self.log.debug('Bundles Generated:       {:0.4e}'.format(
             len(m[m])))
         self.log.debug('Rays per bundle, mean:   {:0.0f}'.format(
-            np.mean(count_rays_in_bundle)))
+            np.mean(counts)))
         self.log.debug('Rays per bundle, median: {:0.0f}'.format(
-            np.median(count_rays_in_bundle)))
+            np.median(counts)))
         self.log.debug('Rays per bundle, max:    {:0d}'.format(
-            np.max(count_rays_in_bundle)))
+            np.max(counts)))
         self.log.debug('Rays per bundle, min:    {:0d}'.format(
-            np.min(count_rays_in_bundle)))
+            np.min(counts)))
 
         return rays
+
+    def _generate_origins(self, bundle_input, m, bundle_index):
+        """
+        Generate per-ray origins from the bundle origins.
+
+        For 'point' bundles all rays start at the bundle origin. For 'voxel'
+        bundles a uniform offset within the voxel cube (aligned with the
+        plasma axes) is added.
+
+        This method was AI generated using Claude (Fable 5).
+        """
+        origins = bundle_input['origin'][m][bundle_index]
+
+        voxel_size = self.param['voxel_size']
+        if voxel_size > 0.0:
+            total_rays = len(bundle_index)
+            offset = np.random.uniform(
+                -voxel_size/2, voxel_size/2, (total_rays, 3))
+            origins = (origins
+                       + np.einsum('i,j', offset[:, 0], self.xaxis)
+                       + np.einsum('i,j', offset[:, 1], self.yaxis)
+                       + np.einsum('i,j', offset[:, 2], self.zaxis))
+        return origins
+
+    def _generate_directions(self, origins, bundle_input, m, bundle_index):
+        """
+        Generate per-ray focused directions.
+
+        Each ray's emission cone is aimed from its origin at the target
+        (matching XicsrtSourceFocused) with that ray's own bundle spread.
+
+        This method was AI generated using Claude (Fable 5).
+        """
+        if str.lower(self.param['angular_dist']) != 'isotropic':
+            raise NotImplementedError(
+                "Only the 'isotropic' angular_dist is supported for plasma sources.")
+
+        # Per-ray focused normal: from origin towards the target.
+        normal = self.param['target'] - origins
+        normal = normal / np.sqrt(
+            np.einsum('ij,ij->i', normal, normal))[:, np.newaxis]
+
+        spread = bundle_input['spread'][m][bundle_index]
+        dir_local = xicsrt_spread.vector_dist_isotropic(spread, len(bundle_index))
+
+        # Generate basis vectors perpendicular to the per-ray normal and
+        # project the local directions onto them. This matches the basis
+        # construction in XicsrtSourceGeneric.random_direction.
+        o_1 = (np.cross(normal, self.param['xaxis'])
+               + np.cross(normal, self.param['zaxis']))
+        o_1 = xm.normalize(o_1)
+        o_2 = xm.normalize(np.cross(normal, o_1))
+
+        direction = (dir_local[:, 0:1] * o_2
+                     + dir_local[:, 1:2] * o_1
+                     + dir_local[:, 2:3] * normal)
+        return direction
+
+    def _generate_wavelengths(self, bundle_input, m, bundle_index):
+        """
+        Generate per-ray wavelengths using each ray's bundle parameters.
+
+        For the 'voigt' distribution the Gaussian width is computed from the
+        per-bundle ion temperature; the Voigt variate is sampled directly as
+        Normal + Cauchy (exact, handles zero temperature or linewidth).
+        For 'multi_voigt' the per-bundle line parameters are provided by the
+        get_line_parameters() hook and sampled with the batched mixture
+        sampler.
+
+        This method was AI generated using Claude (Fable 5).
+        """
+        total_rays = len(bundle_index)
+        wtype = str.lower(self.param['wavelength_dist'])
+
+        if wtype == 'monochrome':
+            wavelength = np.full(total_rays, self.param['wavelength'],
+                                 dtype=np.float64)
+
+        elif wtype == 'uniform':
+            wavelength = np.random.uniform(
+                self.param['wavelength_range'][0],
+                self.param['wavelength_range'][1],
+                total_rays)
+
+        elif wtype == 'voigt':
+            c = const.physical_constants['speed of light in vacuum'][0]
+            amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
+            ev_j = const.physical_constants['electron volt-joule relationship'][0]
+
+            # Natural line width (identical for all bundles).
+            gamma = (self.param['linewidth'] * self.param['wavelength']**2
+                     / (4 * np.pi * c * 1e10))
+
+            # Doppler broadened line width from the per-bundle temperature.
+            temperature = bundle_input['temperature'][m]
+            sigma = (np.sqrt(temperature / self.param['mass_number']
+                             / amu_kg / c**2 * ev_j)
+                     * self.param['wavelength'])
+
+            # Direct Voigt sampling: center + Normal(0, sigma) + Cauchy(0, gamma).
+            wavelength = np.full(total_rays, self.param['wavelength'],
+                                 dtype=np.float64)
+            wavelength += np.random.normal(0.0, 1.0, total_rays) * sigma[bundle_index]
+            if gamma != 0.0:
+                wavelength += np.random.standard_cauchy(total_rays) * gamma
+
+        elif wtype == 'multi_voigt':
+            locations, intensities, sigmas, gammas = self.get_line_parameters(
+                bundle_input, m, bundle_index)
+            wavelength = xicsrt_voigt_multi.multi_voigt_random_batched(
+                locations, intensities, sigmas, gammas, bundle_index)
+
+        else:
+            raise Exception(f'Wavelength distribution {wtype} unknown')
+
+        return wavelength
 
     def generate_rays(self):
         ## Create an empty list of ray bundles

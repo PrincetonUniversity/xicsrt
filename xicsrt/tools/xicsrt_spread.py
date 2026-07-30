@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Sonnet 4.6)
+# This file includes AI generated code using Claude (Sonnet 4.6, Fable 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -105,8 +105,11 @@ def vector_dist_isotropic(spread, number):
 
     Parameters
     ----------
-    spread : float [radians]
+    spread : float or array [radians]
       The half-angle of the emitted cone of vectors (axis to edge).
+      Either a single value (scalar or 1-element array) used for all vectors,
+      or an array of shape (number,) giving a separate half-angle for each
+      generated vector.
 
     number : int
       The number of vectors to generate.
@@ -116,7 +119,7 @@ def vector_dist_isotropic(spread, number):
     ndarray
         A numpy array of shape (number, 3) containing the generated unit vectors.
     """
-    theta = _parse_spread_single(spread)
+    theta = _parse_spread_isotropic(spread, number)
 
     z = np.random.uniform(np.cos(theta), 1, number)
     phi = np.random.uniform(0, 2*np.pi, number)
@@ -134,16 +137,21 @@ def solid_angle_isotropic(spread):
 
     Parameters
     ----------
-    spread : float [radians]
-      The half-angle of cone of vectors (axis to edge).
+    spread : float or array [radians]
+      The half-angle of cone of vectors (axis to edge). May be a scalar or
+      an array of any shape (evaluated elementwise).
 
     Returns
     -------
-    solid_angle
+    solid_angle : float or ndarray
+      The solid angle for each input spread value. A scalar input returns
+      a scalar; an array input returns an array of the same shape.
       Units: [sr]
     """
-    theta = _parse_spread_single(spread)
-    solid_angle = 4 * np.pi * np.sin(theta[0]/2)**2
+    theta = np.asarray(spread, dtype=np.float64)
+    solid_angle = 4 * np.pi * np.sin(theta/2)**2
+    if theta.ndim == 0:
+        return float(solid_angle)
     return solid_angle
 
 def vector_dist_isotropic_xy(spread, number):
@@ -381,6 +389,24 @@ def _parse_spread_single(spread):
         raise Exception('Spread must be a scalar or one element array.')
 
     return spread
+
+def _parse_spread_isotropic(spread, number):
+    """
+    Parse a spread that may be either a single value or a per-vector array.
+
+    Returns either a 1-element array (broadcast against `number` by numpy)
+    or an array of shape (number,).
+
+    This function was AI generated using Claude (Fable 5).
+    """
+    spread = _to_ndarray(spread)
+    if len(spread) == 1:
+        return spread
+    if len(spread) == number:
+        return spread
+    raise Exception(
+        f'Spread must be a scalar, a 1-element array, or an array of '
+        f'length number={number} (got length {len(spread)}).')
 
 def _parse_spread_xy(spread):
     """

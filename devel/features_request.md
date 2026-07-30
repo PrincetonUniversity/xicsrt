@@ -2,8 +2,42 @@
 
 ## F010 - W7-X ML training-set acceleration (numpy path)
 Started: 2026-07-30
-Status: Pending
+Status: Phase 1 implemented 2026-07-30 (verification notes below); Phases 2-3
+pending.
 Plan: devel/plan_w7x_training_accel.md
+
+Phase 1 implementation notes (2026-07-30):
+- 1a: voigt_random / multi_voigt_random rewritten as exact direct sampling
+  (Normal + Cauchy; mixture by intensity weights). New batched sampler
+  multi_voigt_random_batched (per-bundle line tables, one call per iteration).
+  ~108x faster than the per-bundle CDF-table build at Ar16+ scale, and more
+  exact (no tail truncation at `cutoff`, no interpolation error). Deleted
+  xicsrt_voigt_multi_jax.py, xicsrt_faddeeva_jax.py, tests/test_voigt_multi_jax.py,
+  _USE_JAX_VOIGT_MULTI. Removed multi_gridsize/multi_cutoff config options.
+  New statistical tests: tests/test_voigt_direct.py (KS vs analytic pdf; KS vs
+  the retained CDF tables with tolerances above the tables' own ~0.2-0.6%
+  truncation bias). jaxrt _wavelength.py mirrored to direct sampling.
+- 1b: XicsrtPlasmaGeneric.create_sources vectorized: per-bundle Poisson draws,
+  bundle_index = repeat(arange, counts), vectorized origins/directions/
+  wavelengths/Doppler. XicsrtSourceFocused no longer instantiated per bundle.
+  vector_dist_isotropic and solid_angle_isotropic accept array spread.
+  Verified 5-sigma statistical equivalence vs baseline (testing/
+  compare_f010_plasma.py: generated 0.55 sigma, detected 0.66 sigma,
+  centroids <0.05 px over 5 seeds).
+- 1c: ar16_voigt and the xics_jax import removed from public xicsrt.
+  New hook XicsrtPlasmaGeneric.get_line_parameters (default: broadcast static
+  line_* config); XicsrtPlasmaW7xSimple overrides it with a vmapped+jit'd
+  xics_jax._compute_line_params over all bundle (Ti, Te) pairs (one call per
+  iteration). W7X config now uses wavelength_dist='multi_voigt'. Also removes
+  the F009 xics_jax-import exposure from the public repo (F009 itself still
+  open for the analysis repo).
+- 1d: XicsrtPlasmaVmec caches the loaded DESC equilibrium across iterations;
+  map_coordinates now always called with fixed bundle_count-shaped arrays
+  (masked rows padded) to avoid jax recompilation on masked-count changes.
+- Measured: W7X model (10k bundles, 3 iter, single process, M1) wall
+  138.8s -> 27.4s (5.1x). Direct sampling changes per-seed results
+  (statistically identical, not bit-identical).
+- Version bump 0.8.13 -> 0.9.0 (config options removed; behavior change).
 
 Goal: generate 10,000 W7-X training images (~1e6 detected counts each) on the
 Princeton Stellar cluster within a ~4096-core x 24-48 h envelope. Requires
@@ -327,6 +361,11 @@ the file extension (`.nc` -> `VMECIO.load`, `.h5` -> `desc.io.load`) inside
 ## F004 - Exploratory JAX-accelerated tools_jax for the numpy OO engine
 Started: 2026-07-21
 Status: Complete (2026-07-25). No clear advantage for CPU-based computation.
+Update 2026-07-30 (F010, 1a): the opt-in JAX CDF sampler was made obsolete by
+direct Voigt sampling (exact Normal+Cauchy mixture, no CDF tables at all).
+`xicsrt_voigt_multi_jax.py`, `xicsrt_faddeeva_jax.py`,
+`tests/test_voigt_multi_jax.py`, and the `_USE_JAX_VOIGT_MULTI` toggle were
+deleted.
 Manual benchmarking under realistic `raytrace_multiprocessing` usage (the
 actual way production W7-X jobs are run) showed no net speedup from the
 opt-in JAX path once multiprocessing already saturates the CPU; see "Final

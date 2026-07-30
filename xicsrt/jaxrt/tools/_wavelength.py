@@ -6,12 +6,12 @@
 
 JAX wavelength samplers for the jaxrt sources.
 
-The Voigt distributions are sampled by inverse-CDF interpolation. The
-CDF tables are built once on the host (in `setup`, with the same numpy
-routines used by the numpy engine) and the per-ray sampling inside the
-jit'd trace is a uniform draw plus `jnp.interp`. This is statistically
-identical to the numpy engine, which uses the same CDF tables and the
-same linear interpolation.
+The Voigt distributions are sampled directly: a Voigt variate is exactly
+``center + Normal(0, sigma) + Cauchy(0, gamma)``, and a multiline spectrum
+is a mixture where each ray's line is chosen with probability proportional
+to the line intensities. This mirrors the numpy engine's direct samplers
+(``xicsrt_voigt.voigt_random`` / ``xicsrt_voigt_multi.multi_voigt_random``)
+and is exact — there is no CDF-table truncation or interpolation error.
 
 This module was AI generated using Claude (Fable 5).
 """
@@ -21,14 +21,11 @@ import jax.numpy as jnp
 import numpy as np
 import scipy.constants as const
 
-from xicsrt.tools import xicsrt_voigt
-from xicsrt.tools import xicsrt_voigt_multi
-
 
 def setup(param):
     """
     Parse the wavelength config options (host side) into static sampler
-    parameters, precomputing CDF tables where needed.
+    parameters.
 
     Parameters
     ----------
@@ -49,15 +46,16 @@ def setup(param):
         return _setup_voigt(param)
 
     if dist == 'multi_voigt':
-        cdf_x, cdf, _ = xicsrt_voigt_multi.multi_voigt_cdf_tab(
-            param['line_locations'],
-            param['line_intensities'],
-            param['line_sigmas'],
-            param['line_gammas'],
-            gridsize=param['multi_gridsize'],
-            cutoff=param['multi_cutoff'],
-        )
-        return {'name': 'cdf', 'cdf_x': jnp.asarray(cdf_x), 'cdf': jnp.asarray(cdf)}
+        intensities = np.asarray(param['line_intensities'], dtype=np.float64)
+        cum = np.cumsum(intensities)
+        cum /= cum[-1]
+        return {
+            'name': 'multi_voigt',
+            'locations': jnp.asarray(param['line_locations'], dtype=jnp.float64),
+            'sigmas': jnp.asarray(param['line_sigmas'], dtype=jnp.float64),
+            'gammas': jnp.asarray(param['line_gammas'], dtype=jnp.float64),
+            'cum_intensity': jnp.asarray(cum),
+        }
 
     raise NotImplementedError(
         f"wavelength_dist '{dist}' is not supported by the jaxrt engine.")
@@ -69,9 +67,8 @@ def _setup_voigt(param):
 
     The special cases follow the numpy engine exactly:
     zero linewidth and temperature -> monochrome;
-    zero linewidth -> gaussian;
-    zero temperature -> voigt with temperature clamped to 1 eV
-    (the numpy engine applies the same temporary clamp).
+    zero linewidth -> gaussian.
+    The direct sampler handles zero temperature (pure Lorentzian) exactly.
     """
     wavelength = float(param['wavelength'])
     linewidth = float(param['linewidth'])
@@ -85,20 +82,14 @@ def _setup_voigt(param):
                 'wavelength': wavelength,
                 'sigma': _doppler_sigma(param)}
 
-    if temperature == 0.0:
-        # See random_wavelength_voigt in the numpy engine: the CDF
-        # generator cannot handle zero temperature, so 1 eV is added.
-        temperature = 1.0
-        param = dict(param, temperature=temperature)
-
     c = const.physical_constants['speed of light in vacuum'][0]
     gamma = linewidth * wavelength**2 / (4 * np.pi * c * 1e10)
     sigma = _doppler_sigma(param)
 
-    cdf_x, cdf = xicsrt_voigt.voigt_cdf_tab(gamma, sigma)
-    return {'name': 'cdf',
-            'cdf_x': jnp.asarray(cdf_x) + wavelength,
-            'cdf': jnp.asarray(cdf)}
+    return {'name': 'voigt',
+            'wavelength': wavelength,
+            'sigma': sigma,
+            'gamma': gamma}
 
 
 def _doppler_sigma(param):
@@ -128,12 +119,21 @@ def sample(params, num, key):
     if name == 'gaussian':
         return params['wavelength'] + params['sigma'] * jax.random.normal(key, (num,))
 
-    if name == 'cdf':
-        # Inverse-CDF sampling with a tabulated CDF, identical to the
-        # numpy engine's voigt_random / multi_voigt_random.
-        cdf = params['cdf']
-        random_y = jax.random.uniform(
-            key, (num,), minval=jnp.min(cdf), maxval=jnp.max(cdf))
-        return jnp.interp(random_y, cdf, params['cdf_x'])
+    if name == 'voigt':
+        # Direct Voigt sampling: center + Normal(0, sigma) + Cauchy(0, gamma).
+        key_n, key_c = jax.random.split(key)
+        return (params['wavelength']
+                + params['sigma'] * jax.random.normal(key_n, (num,))
+                + params['gamma'] * jax.random.cauchy(key_c, (num,)))
+
+    if name == 'multi_voigt':
+        # Mixture sampling: pick a line by intensity weight, then draw that
+        # line's Voigt variate directly.
+        key_u, key_n, key_c = jax.random.split(key, 3)
+        uniform = jax.random.uniform(key_u, (num,))
+        index = jnp.searchsorted(params['cum_intensity'], uniform)
+        return (params['locations'][index]
+                + params['sigmas'][index] * jax.random.normal(key_n, (num,))
+                + params['gammas'][index] * jax.random.cauchy(key_c, (num,)))
 
     raise NotImplementedError(f"Wavelength sampler '{name}' unknown.")

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Fable 5)
 """
 Authors
 -------
@@ -47,9 +48,9 @@ class  XicsrtPlasmaCylindrical(XicsrtPlasmaGeneric):
         
         # Let plasma temperature and emissivity fall off as a function of
         # radius.
-        bundle_input['emissivity'][:]  = self.emissivity / radius
-        bundle_input['temperature'][:] = self.temperature / radius
-        bundle_input['velocity'][:]  = self.velocity
+        bundle_input['emissivity'][:]  = self.param['emissivity'] / radius
+        bundle_input['temperature'][:] = self.param['temperature'] / radius
+        bundle_input['velocity'][:]  = self.param['velocity']
         
         return bundle_input
     

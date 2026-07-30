@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Sonnet 4.6, Opus 5)
+# This file includes AI generated code using Claude (Sonnet 4.6, Opus 5, Fable 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -17,28 +17,11 @@ import scipy.constants as const
 from xicsrt.util import profiler
 from xicsrt.tools import xicsrt_voigt
 from xicsrt.tools import xicsrt_voigt_multi
-from xicsrt.tools import xicsrt_voigt_multi_jax
 from xicsrt.tools import xicsrt_spread
 from xicsrt.tools import xicsrt_math as xm
 from xicsrt.tools.xicsrt_doc import dochelper
 from xicsrt.objects._RayArray import RayArray
 from xicsrt.objects._GeometryObject import GeometryObject
-
-
-# This is only for the ar16_voigt code wavelength distribution used for
-# modeling the W7-X XICS diagnostic. This dependency and related code should
-# not be committed to the public branches.
-import xics_jax
-
-
-# Exploratory, opt-in JAX acceleration for the multiline Voigt sampling used
-# by 'multi_voigt' and 'ar16_voigt' wavelength distributions (see
-# xicsrt_voigt_multi_jax for details and caveats, and F004 in
-# devel/features_request.md for the benchmark history). This is a hard-coded
-# local toggle, not a config option: flip to True to benchmark the JAX path.
-# Only worthwhile for large line lists (e.g. the ~184-line Ar16+ spectrum);
-# plain numpy remains faster for small hand-specified line lists.
-_USE_JAX_VOIGT_MULTI = False
 
 
 @dochelper
@@ -129,7 +112,7 @@ class XicsrtSourceGeneric(GeometryObject):
 
         wavelength_dist : str ('voigt')
           The type of wavelength distribution for this source.
-          Possible values are: 'voigt', 'uniform', 'monochrome', 'multi_voigt', and 'ar16_voigt'
+          Possible values are: 'voigt', 'uniform', 'monochrome', and 'multi_voigt'
 
           Note: A monochrome distribution can also be achieved by using a
           'voigt' distribution with zero linewidth and temperature.
@@ -190,7 +173,7 @@ class XicsrtSourceGeneric(GeometryObject):
         config['angular_dist'] = 'isotropic'
         config['spread'] = np.pi
 
-        # Possible values: 'monochrome', 'voigt', 'uniform', 'multi_voigt', 'ar16_voigt'
+        # Possible values: 'monochrome', 'voigt', 'uniform', 'multi_voigt'
         config['wavelength_dist'] = 'voigt'
 
         # Only used for wavelength_dist = 'multi_voigt'
@@ -199,13 +182,6 @@ class XicsrtSourceGeneric(GeometryObject):
         config['line_sigmas'] = np.array([0.0])
         config['line_gammas'] = np.array([0.0])
 
-        # Only used for wavelength_dist = 'ar16_voigt'
-        # config['ar16_scale_factor'] = 1.0
-        
-        # Used for wavelength_dist = 'multi_voigt' and 'ar16_voigt'
-        config['multi_gridsize'] = None
-        config['multi_cutoff'] = 1e-4
-
         # Only used for wavelength_dist = 'voigt' or 'monochrome'
         config['wavelength'] = 1.0
 
@@ -213,7 +189,6 @@ class XicsrtSourceGeneric(GeometryObject):
         config['mass_number'] = 1.0
         config['linewidth'] = 0.0
         config['temperature'] = 0.0
-        config['temperature_e'] = 0.0
         config['velocity'] = np.array([0.0, 0.0, 0.0])
 
         # Only used for wavelength_dist = 'uniform'
@@ -361,9 +336,6 @@ class XicsrtSourceGeneric(GeometryObject):
         elif wtype == 'multi_voigt':
             random_wavelength = self.random_wavelength_multi_voigt
             wavelength = random_wavelength(self.param['intensity'])
-        elif wtype == 'ar16_voigt':
-            random_wavelength = self.random_wavelength_ar16_voigt
-            wavelength = random_wavelength(self.param['intensity'])
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
 
@@ -385,14 +357,9 @@ class XicsrtSourceGeneric(GeometryObject):
         if (self.param['linewidth']  == 0.0):
             return self.random_wavelength_normal(size)
 
-        # Check for zero temperature Voigt (Lorentzian case)
-        if (self.param['temperature'] == 0.0):
-            # I need to update the cauchy routine first.
-            #raise NotImplementedError('Random Lorentzian distribution not implemented.')
-
-            # TEMPORARY:
-            # The voigt distribution generator cannot handle a zero temperature, so just add 1eV for now.
-            self.param['temperature'] += 1.0
+        # The direct Voigt sampler (Normal + Cauchy) handles the pure
+        # Lorentzian case (temperature == 0) exactly; no special casing
+        # is needed here.
 
         c = const.physical_constants['speed of light in vacuum'][0]
         amu_kg = const.physical_constants['atomic mass unit-kilogram relationship'][0]
@@ -423,76 +390,15 @@ class XicsrtSourceGeneric(GeometryObject):
                 Random wavelength samples drawn from the multiline Voigt distribution.
         """
 
-        voigt_multi = xicsrt_voigt_multi_jax if _USE_JAX_VOIGT_MULTI else xicsrt_voigt_multi
-        wavelength = voigt_multi.multi_voigt_random(
-            self.param['line_locations'], 
+        wavelength = xicsrt_voigt_multi.multi_voigt_random(
+            self.param['line_locations'],
             self.param['line_intensities'],
             self.param['line_sigmas'],
             self.param['line_gammas'],
-            size = size, 
-            gridsize = self.param['multi_gridsize'],
-            cutoff = self.param['multi_cutoff'],
+            size=size,
         )
 
         return wavelength
-
-    
-    def random_wavelength_ar16_voigt(self, size):
-        """
-        Gets the Ar16+ line parameters from xics_jax.
-        Then passes those line parameters into multi_voigt_random().
-        """
-        # Build the Ar16+ spectrum configuration
-        spectrum_config = xics_jax.load_spectrum_config('ar16', use_te=True)
-
-        ti = self.param['temperature']/1e3
-        te = self.param['temperature_e']/1e3
-
-        # The atomic physics model within xics_jax is not well-behaved
-        # for Te < 10 eV.  There are several reasons: a) actual physics,
-        # b) available data tables, c) floating point numerics.  We don't
-        # epect any emission at such low values of Te anyway sinrce there
-        # will not be any ions in the Ar16+ charge state.
-        #
-        # For now, just clamp Te to a minimum values of 10 eV.
-        te = max(te, 0.01)
-
-        # Build the plasma parameters.
-        # xics_jax expects temperatures in Kev, instead of eV
-        #
-        # ion temperature (keV) -> Doppler width
-        # electron temperature (keV) -> use_te intensities
-        params = xics_jax.ModelParams.from_dict(
-            {
-                'ti': ti,
-                'te': te,
-                'scale_factor': 1.0,
-            },
-            spectrum_config,
-        )
-
-        # Get all Voigt line parameters (line locations, line intensities, sigmas, and gammas)
-        lines = xics_jax.evaluate_lines(params, spectrum_config)
-        
-        # Extract arrays
-        line_locations = lines["location"].values
-        line_intensities = lines["intensity"].values
-        sigmas = lines["sigma"].values
-        gammas = lines["gamma"].values
-
-        # Sample wavelengths
-        voigt_multi = xicsrt_voigt_multi_jax if _USE_JAX_VOIGT_MULTI else xicsrt_voigt_multi
-        wavelengths = voigt_multi.multi_voigt_random(
-            line_locations, 
-            line_intensities, 
-            sigmas, 
-            gammas, 
-            size = size, 
-            gridsize = self.param['multi_gridsize'],
-            cutoff = self.param['multi_cutoff'],
-        )
-        
-        return wavelengths
 
     
     def random_wavelength_normal(self, size):
