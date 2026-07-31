@@ -204,6 +204,17 @@ sessions must check this list before assuming the engines are in sync.
 Record here numpy-engine changes that *reduced* divergence, so a future session
 does not mistake the new numpy form for an unported jaxrt-only idiom.
 
+- 2026-07-30 (F013): numpy `InteractCrystal.angle_calc` now wraps its
+  `arcsin(wavelength / (2d))` call in `np.errstate(invalid='ignore')`. This
+  is a downstream consequence of the F010 1a direct Voigt/Cauchy sampling
+  above: untruncated Cauchy tails can produce a wavelength outside
+  `[-2d, 2d]`, for which `arcsin` correctly returns `nan` (no photon at that
+  wavelength can Bragg-reflect), and numpy warns on this while jax does not.
+  No jaxrt change needed — `jaxrt/interact/_crystal.py`'s equivalent
+  `jnp.arcsin` call already returns `nan` silently, and the same
+  `nan >= test -> False` rejection logic already applies in
+  `rocking_curve_filter` on both engines. Purely a numpy warning-suppression
+  fix; no behavior or statistics change on either engine.
 - 2026-07-30 (F010, 1a): Voigt wavelength sampling converged to direct
   sampling on both engines. numpy `voigt_random` / `multi_voigt_random` and
   jaxrt `tools/_wavelength.py` now all draw

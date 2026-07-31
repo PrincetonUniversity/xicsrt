@@ -1,5 +1,46 @@
 # XICSRT Feature Requests
 
+## F013 - `arcsin` RuntimeWarning in InteractCrystal from untruncated Voigt tails
+Started: 2026-07-30
+Status: Done (2026-07-30)
+
+Reported: after F010 (direct Voigt/Cauchy sampling, no domain truncation),
+running the W7-X Ar16+ notebook produces
+`RuntimeWarning: invalid value encountered in arcsin` from
+`InteractCrystal.angle_calc` (`bragg_angle[m] = np.arcsin(W[m] / (2 *
+crystal_spacing))`).
+
+Root cause: before F010, wavelengths were drawn from a truncated inverse-CDF
+table (`multi_voigt_cdf_tab`, cutoff domain a few `1e-3` Å around the line
+centers), so `wavelength / (2d)` never left `[-1, 1]`. F010's direct
+`center + Normal(0, sigma) + Cauchy(0, gamma)` sampling has genuine heavy
+Cauchy tails with no cutoff, so a tiny fraction of sampled wavelengths land
+outside `[-2d, 2d]` (confirmed: samples up to ~200 Å at 5000 bundles). For
+such a wavelength no incidence angle satisfies Bragg's law, so `arcsin`
+correctly returns `nan`. That `nan` propagates into a `nan` reflection
+probability in `rocking_curve_filter` for all three rocking curve types
+(step/gaussian/file), and `nan >= test` is `False` in numpy, so the ray is
+correctly rejected. Statistics and physics are unaffected; this is a noisy
+but harmless warning, not a correctness bug.
+
+Fix: wrapped the `arcsin` call in `np.errstate(invalid='ignore')` in
+`xicsrt/optics/_InteractCrystal.py::angle_calc`, with a comment explaining
+why `nan` is expected and safely handled downstream. No change to
+`rocking_curve_filter` or the wavelength sampling itself (clamping/filtering
+the wavelength would be a physically incorrect approximation).
+`jaxrt/interact/_crystal.py` has the identical `jnp.arcsin` expression but
+`jax.numpy.arcsin` returns `nan` silently (no warning), so no jaxrt change
+was needed; documented in `devel/jaxrt_sync.md`'s convergence log.
+
+New test: `tests/test_interact_crystal_arcsin.py` asserts `angle_calc` /
+`angle_check` do not warn for an out-of-domain wavelength and that such a
+ray is masked out, for the 'step' and 'gaussian' rocking curve types. A
+'file' rocking curve variant was not added: `xicsrt_bragg.read_xop`
+references the undefined name `m_log` (should be `log`) unconditionally,
+so it currently raises `NameError` on every call regardless of this fix.
+Pre-existing, unrelated bug; not filed as its own feature, noted here only.
+
+
 ## F012 - Randomize found-ray order in the history (`shuffle_history`)
 Started: 2026-07-30
 Status: Done (2026-07-30)

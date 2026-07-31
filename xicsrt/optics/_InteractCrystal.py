@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -107,7 +108,18 @@ class InteractCrystal(InteractMirror):
 
         # returns vectors that satisfy the bragg condition
         # only perform check on rays that have intersected the optic
-        bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
+        #
+        # Direct (untruncated) Voigt/Cauchy wavelength sampling can
+        # legitimately produce a ray wavelength outside [-2d, 2d]: such a
+        # photon cannot satisfy Bragg's law at any incidence angle, so
+        # arcsin correctly returns nan here. That nan propagates into a nan
+        # reflection probability in rocking_curve_filter, and `nan >= test`
+        # is False in numpy, so the ray is correctly rejected downstream.
+        # This is expected physics, not an error, so the invalid-value
+        # warning is suppressed rather than "fixed" by clamping/filtering
+        # the wavelength.
+        with np.errstate(invalid='ignore'):
+            bragg_angle[m] = np.arcsin(W[m] / (2 * self.param['crystal_spacing']))
         dot[m] = np.abs(np.einsum('ij,ij->i', D[m], -1 * norm[m], optimize=True))
         incident_angle[m] = (np.pi / 2) - np.arccos(dot[m] / xm.magnitude(D[m]))
 
