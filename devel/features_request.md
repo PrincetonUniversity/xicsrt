@@ -1,10 +1,58 @@
 # XICSRT Feature Requests
 
+## F011 - XicsrtPlasmaCubic ignores the `velocity` option (no Doppler shift)
+Started: 2026-07-30
+Status: Pending (pre-existing bug, found while verifying F010 addendum)
+
+`XicsrtPlasmaGeneric.create_sources` applies a Doppler shift from
+`bundle_input['velocity']`, but `XicsrtPlasmaCubic.bundle_generate` only
+fills `temperature` and `emissivity`; it never copies `self.param['velocity']`
+into `bundle_input['velocity']`. The array therefore stays at its zero
+initialization and the configured `velocity` is silently ignored.
+
+Reproduce (monochrome line, temperature 0, so the shift is unambiguous):
+
+    velocity = [0, 0, 3e6] -> mean wavelength shift 0.0 (expected ~ -0.0395 A)
+
+`XicsrtPlasmaToroidal` does this correctly (`bundle_input['velocity'][m] = ...`),
+as does the new `XicsrtPlasmaBundleSource`, so the bug is specific to
+`XicsrtPlasmaCubic`. Verified present on 6a94671 (pre-dates the F010
+addendum work). Fix is a one-line addition to `bundle_generate`, but it
+changes results for any existing `XicsrtPlasmaCubic` config that sets
+`velocity`, so it is left for explicit approval rather than folded into an
+unrelated change.
+
+
 ## F010 - W7-X ML training-set acceleration (numpy path)
 Started: 2026-07-30
 Status: Phase 1 implemented 2026-07-30 (verification notes below); Phases 2-3
 pending.
 Plan: devel/plan_w7x_training_accel.md
+
+Addendum (2026-07-30, Done): Phase 1b's vectorization of
+`XicsrtPlasmaGeneric.create_sources` removed the ability to model each
+bundle with an arbitrary, user-selectable ray source (the old code
+instantiated a fresh `XicsrtSourceFocused` per bundle). This capability was
+reintroduced as a new example class, `XicsrtPlasmaBundleSource`
+(`xicsrt/sources/_XicsrtPlasmaBundleSource.py`), which loops over bundles
+and dispatches a ray source chosen by the config option
+`bundle_source_class` (resolved through the dispatcher's plugin search
+paths, so a user's own source class works). `XicsrtPlasmaGeneric` remains
+the fast, production default; the new class is documented as a worked
+example, not a performance-equivalent replacement.
+
+Enabling this required a small framework change: elements previously had
+no way to see the plugin search paths used to find them (`general.pathlist`
++ `general.pathlist_default`), since only their own element-level config is
+passed down. `Dispatcher._instantiate_single` now sets
+`obj.param['pathlist']` on every element it constructs, and
+`ConfigObject.__init__` seeds a builtin-only default so directly
+constructed elements (e.g. via `xicsrt_public.get_element`) still work. The
+class lookup half of `_instantiate_single` was factored out into
+module-level `xicsrt.objects._Dispatcher.find_xicsrt_class`, reused by the
+new plasma class. `pathlist` is a `param`-only key (never added to
+`default_config`) so it is never written into a saved config file, which
+would leak machine-specific absolute paths.
 
 Phase 1 implementation notes (2026-07-30):
 - 1a: voigt_random / multi_voigt_random rewritten as exact direct sampling

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 5).
 """
 Authors
 -------
@@ -33,6 +34,18 @@ class ConfigObject():
 
         self.param = copy.deepcopy(self.config)
         self.param = xicsrt_misc._convert_to_numpy(self.param, inplace=True)
+
+        # 'pathlist' is a reserved param key (not a config option): it is the
+        # list of directories that will be searched for dispatchable element
+        # classes (see xicsrt.objects._Dispatcher.find_xicsrt_class). It is
+        # injected here rather than added to default_config() so that it
+        # never appears in a saved config file, which would leak
+        # machine-specific absolute paths. A Dispatcher overwrites this
+        # default with the pathlist assembled from `general.pathlist` and
+        # `general.pathlist_default` immediately after construction; this
+        # default only matters for elements built directly (e.g. through
+        # xicsrt.xicsrt_public.get_element).
+        self.param['pathlist'] = xicsrt_config.get_pathlist_default()
 
         if initialize:
             self.setup()

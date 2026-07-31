@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 5).
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -14,6 +15,76 @@ from copy import deepcopy
 import importlib.util
 
 from xicsrt.util import profiler
+
+
+def find_xicsrt_objects(pathlist):
+    """
+    Return a dictionary with all the XICSRT objects found in the given
+    list of paths. Objects are identified by looking for python files
+    that start with '_Xicsrt' prefix.
+
+    Programming Notes
+    -----------------
+    If a given path does not exist glob will just return and empty list.
+    For this reason no path existence checking is needed (unless we want
+    to raise a user friendly error).
+    """
+
+    filepath_list = []
+    name_list = []
+
+    for pp in pathlist:
+        filepath_list.extend(glob.glob(os.path.join(pp, '_Xicsrt*.py')))
+
+    for ff in filepath_list:
+        filename = os.path.basename(ff)
+        objectname = os.path.splitext(filename)[0]
+        objectname = objectname[1:]
+        name_list.append(objectname)
+
+    output = dict()
+    for ii, ff in enumerate(name_list):
+        output[ff] = {
+            'filepath': filepath_list[ii],
+            'name': name_list[ii]
+        }
+
+    return output
+
+
+def find_xicsrt_class(pathlist, class_name):
+    """
+    Find and import a dispatchable XICSRT class by name.
+
+    Searches `pathlist` for a file named `_<class_name>.py` (see
+    `find_xicsrt_objects`) and returns the class object `class_name` defined
+    within it. This is the same lookup used internally by
+    `Dispatcher.instantiate`, factored out so that other objects (for
+    example a plasma source that needs to dispatch a user-selectable
+    ray-source class) can reuse it directly.
+
+    This function was AI generated using Claude (Sonnet 5).
+    """
+    obj_info = find_xicsrt_objects(pathlist)
+    return _class_from_info(obj_info, class_name)
+
+
+def _class_from_info(obj_info, class_name):
+    """
+    Import and return the class described by an entry of `obj_info`
+    (as produced by `Dispatcher.find_xicsrt_objects`).
+    """
+    if class_name in obj_info:
+        info = obj_info[class_name]
+    else:
+        raise Exception('Could not find {} in available objects.'.format(class_name))
+
+    spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls = getattr(mod, info['name'])
+    return cls
+
 
 class Dispatcher():
     """
@@ -63,52 +134,25 @@ class Dispatcher():
     def find_xicsrt_objects(self, pathlist):
         """
         Return a dictionary with all the XICSRT objects found in the given
-        list of paths. Objects are identified by looking for python files
-        that start with '_Xicsrt' prefix.
-
-        Programming Notes
-        -----------------
-        If a given path does not exist glob will just return and empty list.
-        For this reason no path existence checking is needed (unless we want
-        to raise a user friendly error).
+        list of paths. See the module-level `find_xicsrt_objects` function.
         """
-
-        filepath_list = []
-        name_list = []
-
-        for pp in pathlist:
-            filepath_list.extend(glob.glob(os.path.join(pp, '_Xicsrt*.py')))
-
-        for ff in filepath_list:
-            filename = os.path.basename(ff)
-            objectname = os.path.splitext(filename)[0]
-            objectname = objectname[1:]
-            name_list.append(objectname)
-
-        output = dict()
-        for ii, ff in enumerate(name_list):
-            output[ff] = {
-                'filepath': filepath_list[ii],
-                'name': name_list[ii]
-            }
-
-        return output
+        return find_xicsrt_objects(pathlist)
 
     def _instantiate_single(self, obj_info, config, strict=None):
         """
         Instantiate an object from a list of filenames and a class name.
         """
-
-        if config['class_name'] in obj_info:
-            info = obj_info[config['class_name']]
-        else:
-            raise Exception('Could not find {} in available objects.'.format(config['class_name']))
-
-        spec = importlib.util.spec_from_file_location(info['name'], info['filepath'])
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        cls = getattr(mod, info['name'])
+        cls = _class_from_info(obj_info, config['class_name'])
         obj = cls(config, initialize=False, strict=strict)
+
+        # Make the pathlist that was used to find this object available to
+        # the object itself (as `obj.param['pathlist']`, set by
+        # ConfigObject.__init__). This allows an element to dispatch its own
+        # sub-elements (for example a plasma source that dispatches a
+        # user-supplied ray-source class) using the same search paths that
+        # were used to find the element itself, including any user plugin
+        # directories from `general.pathlist`.
+        obj.param['pathlist'] = self.pathlist
 
         return obj
 

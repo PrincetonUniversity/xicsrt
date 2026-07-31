@@ -13,6 +13,7 @@ Built-in Source Objects
 .. toctree::
    :maxdepth: 1
 
+   xicsrt.sources.XicsrtPlasmaBundleSource
    xicsrt.sources.XicsrtPlasmaCubic
    xicsrt.sources.XicsrtPlasmaCylindrical
    xicsrt.sources.XicsrtPlasmaGeneric

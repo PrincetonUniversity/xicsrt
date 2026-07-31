@@ -179,6 +179,16 @@ sessions must check this list before assuming the engines are in sync.
   index (measured 13x faster than `np.add.at`, 75x faster than the old
   per-ray loop, bit-identical). Fix 6 is numpy-engine-only: it releases the
   dispatcher history, and jaxrt has no equivalent mutable dispatcher state.
+- 2026-07-30, F010 addendum: no divergence introduced. `objects/_Dispatcher.py`
+  changed (`obj.param['pathlist']` injection, `find_xicsrt_class` factored
+  out) and `objects/_ConfigObject.py` changed (`param['pathlist']` default).
+  Both are trigger files per this document. `jaxrt/_dispatch.py` calls
+  `Dispatcher(config, section)` / `.instantiate()` unchanged and never reads
+  `pathlist`, so it is unaffected. The new example class,
+  `sources/_XicsrtPlasmaBundleSource.py`, is a plasma source and therefore
+  in-scope per the file map, but it is explicitly documented as an example
+  (per-bundle Python loop, not vectorized) and is not a candidate for a
+  jaxrt port.
 
 ## Convergence log
 
