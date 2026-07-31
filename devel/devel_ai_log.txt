@@ -465,3 +465,52 @@ Key prompts:
 - "Lets close this session and commit the changes. For the xicsrt_contrib and
   xicsrt_analysis repos, please create a matching devel branch and commit to
   that branch."
+
+================================================================================
+2026-07-30  Reintroduce the per-bundle ray source capability removed by F010 1b.
+
+Files modified:
+- xicsrt/sources/_XicsrtPlasmaBundleSource.py (new), tests/test_plasma_bundle_source.py (new)
+- xicsrt/objects/_Dispatcher.py, xicsrt/objects/_ConfigObject.py
+- devel/features_request.md (F010 addendum, new F011), devel/jaxrt_sync.md, doc_source/apidoc/
+- AGENTS.md (close-out commit ordering)
+
+Key changes:
+- XicsrtPlasmaBundleSource: per-bundle loop instantiating a dispatched ray source
+  named by `bundle_source_class`; documented as an example, not a production path.
+- Dispatcher exposes the plugin search paths to elements as param['pathlist'];
+  class lookup factored into module-level find_xicsrt_class.
+- setup_bundle_spread uses solid_angle(name=angular_dist) instead of the parent's
+  hardcoded isotropic; raises for flat/gaussian rather than mis-normalizing.
+- Version deliberately NOT bumped (user decision).
+
+Key findings / gotchas:
+- update_config recurses into dict-valued options and strict-checks their keys, so
+  bundle_source_config must default to None, not {} (as TraceObject does for aperture).
+- use_poisson defaults to False -> per-bundle intensity truncates to int, making ray
+  counts deterministic. An equivalence test that omits use_poisson=True compares two
+  identical constants and proves nothing; the first draft of the tests had this flaw.
+- spread_radius ties counts to bundle position, and the two implementations consume
+  the RNG in different orders -> ~0.1% count difference, not bit-identical.
+- F011 filed: XicsrtPlasmaCubic never copies config velocity into bundle_input, so
+  Doppler shift is silently zero. Pre-existing on 6a94671.
+- XicsrtBundleFilterSightline reads self.config not self.param and crashes.
+  Pre-existing, not filed, out of scope.
+
+Suggested follow-ups:
+- Decide on the F011 one-line fix (changes results for existing configs).
+- Consider filing the BundleFilterSightline config-vs-param bug.
+
+Key prompts:
+- "I would like to add the old version of _XicsrtPlasmaGeneric.py back into the
+  codebase for this branch under a new name... I would like the ray source model
+  (which is used for each bundle) to be user specifiable through a string in the
+  config. Re-use the dispatcher to find and instantiate the source model... Please
+  make this code as human readable and human editable as possible."
+- "In _ConfigObject, I already copy config to params. Would it make more sense to
+  put the pathlist into params?"
+- "I realize that I might have asked for this build with Claude Sonnet 5 on 'low'.
+  Can you check the implementation and make sure this did what I wanted?"
+- "Hhelp me with my derectives to always include the devel_ai_log.txt as part of the
+  commit when I ask for committing and closing a session in the same close out
+  prompt, even if I technically as for commit first and close out second."
