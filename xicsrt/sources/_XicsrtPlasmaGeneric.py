@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Fable 5)
+# This file includes AI generated code using Claude (Opus 5, Fable 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -38,6 +38,23 @@ class XicsrtPlasmaGeneric(GeometryObject):
       then the bundle voxel volume may extend past the plasma boundary. This
       behavior is expected. If it is important to have a sharp plasma boundary
       then consider using the 'point' bundle_type instead.
+
+    **Profile hook convention**
+
+    The profile hooks (`get_emissivity`, `get_temperature`,
+    `get_temperature_e`, `get_velocity`) receive full-length arrays of
+    length `bundle_count` and return full-length arrays (or scalars, which
+    are broadcast); `bundle_generate` applies the bundle mask to the
+    result. Hooks must never compress their input by the mask: keeping the
+    array shapes fixed between iterations avoids expensive retracing in
+    jax-backed implementations (e.g. DESC equilibria).
+
+    The scalar hooks take `rho`, the normalized minor radius. `get_velocity`
+    takes `point_flx`, the full flux coordinates `[rho, theta, zeta]`,
+    because converting flux-surface velocity profiles into Cartesian
+    vectors requires the local geometry, not just rho. In both cases NaN in
+    rho (column 0 of `point_flx`) marks points outside the last closed flux
+    surface; hooks must propagate NaN so those bundles are masked out.
     """
 
     def __init__(self, *args, **kwargs):
@@ -194,8 +211,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         # These values should be overwritten in a derived class.
         bundle_input = {}
         bundle_input['origin']         = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
-        bundle_input['temperature']    = np.ones([self.param['bundle_count']], dtype = np.float64)
-        bundle_input['temperature_e']  = np.ones([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['temperature']    = np.zeros([self.param['bundle_count']], dtype = np.float64)
+        bundle_input['temperature_e']  = np.zeros([self.param['bundle_count']], dtype = np.float64)
         bundle_input['emissivity']     = np.ones([self.param['bundle_count']], dtype = np.float64)
         bundle_input['velocity']       = np.zeros([self.param['bundle_count'], 3], dtype = np.float64)
         bundle_input['mask']           = np.ones([self.param['bundle_count']], dtype = np.bool_)
@@ -240,15 +257,43 @@ class XicsrtPlasmaGeneric(GeometryObject):
         return bundle_input
 
     def get_emissivity(self, rho):
+        """
+        Emissivity profile hook. See the class docstring for the hook
+        convention (full-length arrays in, full-length arrays out).
+        """
         return self.param['emissivity']
 
     def get_temperature(self, rho):
+        """
+        Ion temperature profile hook [eV]. See the class docstring for the
+        hook convention.
+        """
         return self.param['temperature']
 
     def get_temperature_e(self, rho):
+        """
+        Electron temperature profile hook [eV]. See the class docstring for
+        the hook convention.
+        """
         return self.param['temperature_e']
 
-    def get_velocity(self, rho):
+    def get_velocity(self, point_flx):
+        """
+        Velocity profile hook [m/s].
+
+        Parameters
+        ----------
+        point_flx : ndarray, shape (bundle_count, 3)
+            Flux coordinates [rho, theta, zeta] of the bundle origins.
+            Column 0 is rho, with NaN marking points outside the last
+            closed flux surface. See the class docstring for the hook
+            convention.
+
+        Returns
+        -------
+        ndarray, shape (bundle_count, 3) or scalar
+            Cartesian velocity vectors.
+        """
         return self.param['velocity']
 
     def bundle_generate(self, bundle_input):

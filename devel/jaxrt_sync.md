@@ -198,6 +198,17 @@ sessions must check this list before assuming the engines are in sync.
   `config['general']['shuffle_history']` through, mirroring
   `xicsrt_raytrace.raytrace_single`. `xicsrt_config.py` (also a trigger
   file) gained the `shuffle_history` default; no other config-shape change.
+- 2026-07-31, F014-F019 (lalston integration): divergence noted but expected.
+  Plasma-source changes only: `_XicsrtPlasmaGeneric.py` (get_velocity now
+  takes `point_flx` instead of `rho`; temperature init 1.0 eV -> 0.0 eV; hook
+  convention documented), `_XicsrtPlasmaToroidal.py` (F019 rho fix,
+  `temperature_e_scale`, full-length hook arrays), new `tools/xicsrt_spline.py`
+  consumers in xicsrt_analysis. jaxrt has NO plasma sources
+  (`jaxrt/_dispatch.py` `_SOURCE_AIM` supports only Generic/Directed/Focused,
+  confirmed), and plasma sources are explicitly out of scope per the file map
+  ("Changes elsewhere (... plasma sources ...) do not currently affect
+  jaxrt"). The shared Doppler-sigma eV convention is now pinned on both
+  engines by `tests/test_doppler_sigma.py`. No jaxrt code change required.
 
 ## Convergence log
 

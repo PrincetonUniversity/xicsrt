@@ -643,3 +643,78 @@ Key prompts:
   other profiles should have explicit user defined ranges that govern the min
   and max ranges. For example te should be a a range of something like
   (0.2,10.0) keV."
+
+================================================================================
+2026-07-31  Notebook-only session: hdf5 round-trip for the flat results dict.
+
+Files modified:
+- notebooks/npablant-2019/logbook/2026-07-31 ... Part 9 - Flat results
+  dictionary.ipynb (outside this repo, gitignored; no xicsrt code changed)
+
+Key changes:
+- Added a save cell using xicsrt_io.generate_filename(kind='results',
+  name='flat') + xicsrt_io._file_from_dict() to write the Part 9 `flat`
+  dict to hdf5 (mirhdf5 under the hood).
+- Added a load/compare cell using xicsrt_io._dict_from_file(), diffing key
+  sets and values (np.array_equal, with None/dict handled) against the
+  in-memory `flat` dict.
+
+Key findings / gotchas:
+- No public xicsrt_io function targets an arbitrary flat dict directly:
+  save_results/load_results require a results-shaped dict with a top-level
+  'config' key for filename generation. Used the underscore-prefixed
+  _file_from_dict/_dict_from_file helpers instead (same hdf5 codepath).
+- Verified by executing the full notebook end-to-end via nbconvert with the
+  `desc` pyenv kernel (only env with xicsrt + w7x_npablant importable):
+  0 mismatched keys/values on round trip.
+
+Key prompts:
+- "First change I want to save the 'flat' results to hdf5 using the
+  xicsrt_io functions. in a new cell. I would then like you to make another
+  cell that loads the hdf5 and compares against the original python flat
+  dictionary."
+
+================================================================================
+2026-07-31  F014-F019: integrate the SULI 2026 (L. Alston) spline-profile work
+            into the optimized branch, per devel/plan_lalston_integration.md.
+
+Files modified:
+- xicsrt: tools/xicsrt_spline.py, sources/_XicsrtPlasmaGeneric.py,
+  sources/_XicsrtPlasmaToroidal.py, tests/test_spline.py (new),
+  tests/test_doppler_sigma.py (new), devel/jaxrt_sync.md, devel/features_request.md
+- xicsrt_contrib: sources/_XicsrtPlasmaVmec.py
+- xicsrt_analysis: sources/_XicsrtPlasmaW7x.py (rewritten as the shared base),
+  _XicsrtPlasmaW7xProfile.py (new), _XicsrtPlasmaW7xSimple.py,
+  xicsrt_w7x_npablant.py, production/xicsrt_train_task.py
+- logbook (outside repos): ML Training Set Parts 2 and 3
+
+Key changes:
+- xicsrt_spline: eV/m-s units with explicit ranges, masks derived from n_knots,
+  new spline_from_profile(), plotly import removed; emissivity stays peak-1.0.
+- Hook contract: get_velocity(rho) -> get_velocity(point_flx); all hooks now get
+  full-length arrays and callers apply the mask (fixed shape for DESC/jax).
+- F019 rho fix in XicsrtPlasmaToroidal; I-2 (ones->zeros) and I-3
+  (temperature_e_scale); first regression test for the eV Doppler convention.
+- New XicsrtPlasmaW7x base (Ar16+ model cached once/iteration, w-line
+  normalization, DESC velocity) with W7xSimple and new W7xProfile beneath it.
+- update_config_with_profiles() shared by the notebook and SLURM paths.
+
+Key findings / gotchas:
+- I_tot/I_w diverges at low Te (2.4e4 at 100 eV, 2.5e38 at 11 eV): the model's
+  satellite emission is unphysical where there is no Ar16+ population. Added a
+  te_min option (default 200 eV) zeroing emissivity below it; without it edge
+  bundles blow the ray budget. w-line count then verified at -0.76 sigma.
+- np.asarray() on a DESC/jax array is read-only; np.array() is required before
+  any in-place use (bit us in xm.normalize).
+- Zero detected rays in small-N W7-X runs is pre-existing, not a regression
+  (confirmed by stashing all changes and re-running).
+- xicsrt_w7x_lalston does not exist anywhere; both target notebooks were
+  unrunnable as written, independent of the merge.
+- jaxrt has no plasma sources, so this is a divergence-log note only.
+
+Key prompts:
+- "Implement the lalston integration per devel/plan_lalston_integration.md,
+  starting with Phase 0."
+- "I don't see any reasion to convert to a list instead of as a numpy array
+  (asarray)." [make_profile_dict; the .tolist() was redundant since xicsrt_io
+  already converts on save/load]

@@ -1,8 +1,49 @@
 # XICSRT Feature Requests
 
+## F020 - xarray/netCDF results output format
+Started: 2026-07-31
+Status: Pending (prototyped in a notebook only, not yet in xicsrt itself)
+
+Prototyped in notebook "Part 10 - Xarray results" converting the Part 9 flat
+results dictionary into an `xarray.Dataset` and saving it as netCDF, as a
+step towards an ML-friendly results format.
+
+Key findings:
+- netCDF attributes cannot hold `None`, `bool`, or `{}` values (raises
+  `TypeError` on `to_netcdf`), so flat config entries must be stored as
+  xarray data variables, not `attrs`. As 0-D/1-D data variables, `bool`,
+  `int`, `float`, `str`, and `ndarray` all round trip exactly.
+- `None` and empty-`dict` leaf values have no netCDF representation and are
+  dropped on write. The resulting `.nc` is therefore a derived, lossy view
+  of the sibling `.hdf5` file (`mirhdf5` stores `None`/`{}` exactly); the
+  `.hdf5` remains authoritative and the dropped keys are always recoverable
+  from it.
+- `zarr` and `h5netcdf` are not installed in the environment used for this
+  prototype; only the `netCDF4` backend was exercised.
+- `config['general']['random_seed']` defaults to `None`, so an `.hdf5`/`.nc`
+  pair saved from a `None`-seed run cannot be regenerated bit-for-bit by
+  re-running `xicsrt.raytrace` on the same config; only loading the saved
+  files is exact. Setting an explicit integer seed removes this caveat (and
+  incidentally removes `random_seed` from the dropped-key list).
+
+Round-trip verified end-to-end on a real W7-X raytrace (107 flat keys, 27277
+found rays): 0 unexpected missing keys, 0 mismatched values after loading
+the `.nc` back, aside from the expected `None`/`{}` drops.
+
+If this is promoted to a real `xicsrt_io` output format, it should reuse
+`flat_to_dataset`/`dataset_to_flat` from the Part 10 notebook as a starting
+point, and decide whether to record a `dropped_keys` manifest in `ds.attrs`
+(deliberately omitted in the prototype).
+
+
 ## F019 - `XicsrtPlasmaToroidal` evaluates profiles at the wrong radius
 Started: 2026-07-31
-Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 2)
+Status: Done 2026-07-31
+
+Implementation: `flx_from_car` now puts `rho = r/a` in column 0,
+`rho_from_car` returns it directly, and `car_from_flx` multiplies by `a`
+without the sqrt. Verified with the case below: `rho_from_car` returns
+exactly 0.5 and `car_from_flx(flx_from_car(x))` is the identity.
 
 Found incidentally while unifying flux-coordinate conventions for F014.
 `XicsrtPlasmaToroidal.flx_from_car` puts `r**2/minor_radius` in column 0,
@@ -27,7 +68,14 @@ as part of the F014 convention unification rather than defer it.
 
 ## F018 - eV/keV convention cleanup (remaining items)
 Started: 2026-07-31
-Status: Pending (deferred items; the in-scope ones are handled by F014)
+Status: Done 2026-07-31 (in-scope items; I-4 and I-5 below remain deferred)
+
+Implementation: I-1 (spline generators now emit eV / m/s), I-2
+(`temperature`/`temperature_e` init `np.ones` -> `np.zeros`) and I-3
+(`temperature_e_scale` added to `XicsrtPlasmaToroidal`) are done. The eV
+convention is now pinned on both engines by `tests/test_doppler_sigma.py`
+(anchor: 1000 eV, argon, 3.9492 A -> sigma 6.474e-4 A). I-4 and I-5 are
+in other repos / dead code and remain open.
 
 A full audit of temperature units across xicsrt, xicsrt_contrib and
 xicsrt_analysis confirmed that eV is the canonical unit and is forced by the
@@ -96,7 +144,19 @@ F017 caveat comment.
 
 ## F015 - W-line emissivity normalization for the W7-X Ar16+ model
 Started: 2026-07-31
-Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 4)
+Status: Done 2026-07-31
+
+Implementation: `XicsrtPlasmaW7x.bundle_generate` evaluates the Ar16+ line
+model once per iteration, caches it for `get_line_parameters`, and scales
+`bundle_input['emissivity']` by `I_tot/I_w` before the Poisson draw.
+
+One addition beyond the plan, approved by the user during implementation: a
+`te_min` config option (default 200 eV) below which the emissivity is set to
+zero. The measured `I_tot/I_w` diverges at low Te (2.4e4 at 100 eV, 2.5e38 at
+11 eV) because the model's satellite emission is unphysical where there is no
+Ar16+ charge-state population; without the cutoff, edge bundles blow the ray
+budget. Verified in situ: 1,123,000 w-line rays counted against a 1,123,803
+target (-0.76 sigma).
 
 For the W7-X Ar16+ model, the `emissivity` config option should mean the
 emissivity of the 'w' line only, not of the entire Ar16+ spectrum. Because
@@ -123,7 +183,19 @@ with no config option and no dedicated test.
 
 ## F014 - Randomized spline plasma profiles for the W7-X ML training set
 Started: 2026-07-31
-Status: Pending (plan approved 2026-07-31; see devel/plan_lalston_integration.md)
+Status: Done 2026-07-31 (all phases; see devel/plan_lalston_integration.md)
+
+Implementation notes: all 8 plan phases done. The stale
+`suli/suli2026_alston/xicsrt_contrib` clone was deleted; the `devel_lalston`
+branches are still deliberately kept. The two typo fixes from lalston commit
+`3ba693d` had no surviving target (F010 had already rewritten those comments
+correctly in `_XicsrtPlasmaW7xSimple.get_line_parameters`), so nothing was
+ported. `make_profile_dict` returns numpy arrays, not lists: `xicsrt_io`
+already converts arrays on save/load, matching the convention for other
+array-valued config options. Profiles are shared between the notebook and
+SLURM paths via `xicsrt_w7x_npablant.update_config_with_profiles`.
+Verification: 108 tests pass (55 baseline + new spline/doppler suites),
+`example_00` runs, and a config-save -> load -> raytrace round trip works.
 
 Integrate the SULI 2026 (L. Alston) work into the optimized branch so that
 randomized spline plasma profiles can drive the W7-X ML training-set
