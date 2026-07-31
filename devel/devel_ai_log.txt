@@ -559,3 +559,87 @@ Key prompts:
   would there be a significant performance hit to adding an option to
   randomize ray ordering (default True) either during the source ray
   generation or after?"
+
+================================================================================
+2026-07-31  Planning-only session: integrate the devel_lalston SULI work.
+
+Files modified:
+- devel/plan_lalston_integration.md (new)
+- devel/features_request.md (new F014-F019)
+
+No code changed. Plan approved by user; implementation deferred to a new session.
+
+Key changes:
+- Wrote a self-contained plan (Phases 0-8) for merging the SULI 2026
+  (L. Alston) W7-X work onto devel_npablant_accel, and filed F014-F019.
+
+Key findings / gotchas:
+- The devel_lalston branches are nearly empty: in xicsrt the local branch is
+  already an ANCESTOR of accel (1 new remote commit); in xicsrt_contrib and
+  xicsrt_analysis the diff is entirely REVERSIONS of accel work. A real git
+  merge would resurrect deleted code. The colleague's DESC work was already
+  merged in xicsrt_contrib 340961d. suli/suli2026_alston/xicsrt_contrib is a
+  stale clone whose 5 "unpushed" commits are all patch-equivalent (git cherry).
+- A 4th repo was involved and previously unknown: github lalston07/
+  xics_ml_pipeline, cloned at suli/suli2026_alston/xics_ml_pipeline. Both
+  target notebooks live there and both import w7x_npablant.xicsrt_w7x_lalston,
+  which exists in NO accessible repo/branch/commit - only on the colleague's
+  Windows machine. Notebooks are unrunnable as written; plan drops that module.
+- xicsrt_spline.py is orphaned (zero importers, no profile_* option anywhere)
+  and xicsrt_train_task.py:83 is an empty stub: two ends of a bridge never
+  built on either side. That bridge is the actual work, not the merge.
+- Do NOT normalize temperature splines to peak 1.0 (an error I made and the
+  user caught). generate_random_temp:227 draws the peak as a randomized
+  physical parameter; normalizing would give every training profile the same
+  core temperature and destroy the primary ML label. Emissivity IS normalized
+  by design (y_peak=1.0 hardcoded at :121). Fix is eV ranges, peak preserved.
+- Unit audit: eV is canonical and forced by the physics (4 duplicated
+  Doppler-sigma sites all divide by electron volt-joule relationship), with
+  ZERO test coverage. Five issues found; I-1/I-2/I-3 folded into F014,
+  I-4/I-5 deferred to F018. The /1e3 in W7xSimple.get_line_parameters is
+  correct (xics_jax documents keV and multiplies by 1e3 internally).
+- F019 found incidentally: XicsrtPlasmaToroidal evaluates profiles at
+  r/sqrt(a) instead of r/a, and car_from_flx(flx_from_car(x)) != x. Verified
+  with a=0.5, r=0.25: rho_from_car gives 0.354 (should be 0.5), round trip
+  recovers 0.177. Both defects vanish at a=1.0, hence unnoticed.
+- w-line normalization: user confirmed emissivity means the w line only, so
+  the factor is I_tot/I_w, NOT the colleague's 1+I_w/I_notw (differs by up to
+  5x and crosses over with Te). Verified exact to <0.5 sigma; must be applied
+  to emissivity BEFORE the Poisson draw in create_sources.
+- DESC velocity: eq.compute must be seeded with data={'iota': eq.iota(rho)},
+  otherwise it builds an override grid per unique rho and OOM-kills the
+  process at the production bundle_count of 1e4 (90 s at 5000). Seeded output
+  is bit-identical, 0.11 s warm. Also retraces on shape change (1.8 s vs
+  0.11 s), which is why get_velocity must take padded fixed-shape input.
+
+Suggested follow-ups:
+- Implement per the plan, starting at Phase 0.
+- devel_lalston branches are deliberately NOT deleted; that remains open.
+- Ask the colleague for xicsrt_w7x_lalston.py if their exact configs matter.
+
+Key prompts:
+- "I've been collaborating on the xicsrt w7-x model with a colleuge, and need
+  some help in merging changes... Please Fetch/pull the branch devel_lalston in
+  the xicsrt, xicsrt_contrib and xicsrt_analysis repos, and help me make a plan
+  for integrating the changes. I do not need to maintain the devel_lalston
+  branch... I ultimately want to be able to run code similar to these notebooks:
+  generate_training_configs.ipynb / generate_training_images.ipynb. But using
+  the latest optimized codebase."
+- "In phase 2, do not fall back to the inherited polynomial, this is unwanted
+  behavior. It may be better to create a new base class _XicsrtPlasmaW7x that
+  has no profiles that both _XicsrtPlasmaW7xSimple and _XicsrtPlasmaW7xProfiles
+  derive from, so that it's clear that the profiles are class specific with no
+  default."
+- "I want velocity propagated, and implemented under the assumption that
+  perpendicual and parallel velocity are flux surface functions. I also want a
+  very clear code comment that this assumption is wrong, and that a better
+  implementation is needed to take into account flow incompressability and
+  pfrist-schulder flows (and fix my spelling)."
+- "rho is alread in point_flx, so this is redundant. Is the suggestion that all
+  get_ calls have the same signiture, and because of velocity rho is not enough,
+  I need the full point_flx, if so then just doing get_temperature(self,
+  point_flx, mask) would be a better solution."
+- "The emissivity should be normalized to a peak value of 1, but all of the
+  other profiles should have explicit user defined ranges that govern the min
+  and max ranges. For example te should be a a range of something like
+  (0.2,10.0) keV."

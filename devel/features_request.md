@@ -1,5 +1,161 @@
 # XICSRT Feature Requests
 
+## F019 - `XicsrtPlasmaToroidal` evaluates profiles at the wrong radius
+Started: 2026-07-31
+Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 2)
+
+Found incidentally while unifying flux-coordinate conventions for F014.
+`XicsrtPlasmaToroidal.flx_from_car` puts `r**2/minor_radius` in column 0,
+then `rho_from_car` takes the square root, giving `rho = r/sqrt(a)` instead
+of `r/a`. Two consequences: every profile is evaluated at the wrong radius,
+and the LCFS boundary is wrong because `r/sqrt(a)` does not reach 1.0 at the
+edge. Separately, `car_from_flx` multiplies by `a` after the sqrt is undone,
+so `car_from_flx(flx_from_car(x))` is not the identity.
+
+Verified numerically with `major_radius=5.0`, `minor_radius=0.5` and a point
+at true minor radius `r=0.25` (so rho should be 0.5):
+`rho_from_car` returns 0.354, and the round trip recovers `r_min = 0.177`
+instead of 0.25. Both defects vanish when `minor_radius = 1.0`, which is
+presumably why this survived.
+
+Affects `XicsrtPlasmaToroidal` and `XicsrtPlasmaToroidalDatafile`. Prior
+results from toroidal plasma configs used the wrong radius. Fix: column 0 of
+`flx_from_car` becomes `rho = r/a`, `rho_from_car` returns it directly, and
+`car_from_flx` multiplies by `a` without the sqrt. The user chose to fix this
+as part of the F014 convention unification rather than defer it.
+
+
+## F018 - eV/keV convention cleanup (remaining items)
+Started: 2026-07-31
+Status: Pending (deferred items; the in-scope ones are handled by F014)
+
+A full audit of temperature units across xicsrt, xicsrt_contrib and
+xicsrt_analysis confirmed that eV is the canonical unit and is forced by the
+physics: all four copies of the Doppler-sigma formula divide by
+`electron volt-joule relationship`, so an input in keV would give a sigma
+too small by sqrt(1000). The audit found five issues; I-1, I-2 and I-3 are
+being fixed under F014. The remainder are logged here:
+
+- I-4: `xicsrt_contrib/.../_XicsrtPlasmaImas.py:431` converts IMAS
+  `t_i_average` (eV per the IMAS data dictionary) with `* 1.e-3`, producing
+  keV. Currently dead in xicsrt_contrib because `get_temperature` reads
+  `temperature_profile` instead, but the same bug at
+  `xicsrt_iter/xrcscore_npablant/objects/_XicsrtPlasmaImas.py:150` IS live.
+- I-5: `_XicsrtPlasmaBundleSource.py:238` forwards `temperature_e` to per-
+  bundle sources, but `XicsrtSourceGeneric` does not define that option, so
+  it is silently dropped. By design (`strict=False`), but undocumented, and
+  it means electron temperature is unreachable from a per-bundle source.
+- `xicsrt_iter` has already diverged to
+  `get_velocity(self, rho, veloc_interp)` and will not match the F014 hook
+  signature. Out of scope there, noted here.
+
+Also noted: `XicsrtPlasmaGeneric`'s docstring override degrades several
+inherited entries to "No documentation yet", including the sigma formula
+that establishes the eV convention in `XicsrtSourceGeneric`.
+
+
+## F017 - Flux-surface-average to local flow conversion
+Started: 2026-07-31
+Status: Pending (future work, not started)
+
+The F016 velocity implementation treats perpendicular and parallel velocity
+as flux-surface functions. This is physically WRONG. A correct treatment must
+account for flow incompressibility and Pfirsch-Schlueter flows, i.e. the
+local flow varies over a flux surface even when the flux-surface-average
+quantities are fixed.
+
+Converting an FSA flow to a local flow requires substantial work and is
+deliberately deferred. The F016 implementation carries an explicit code
+comment stating the assumption and its inadequacy.
+
+
+## F016 - Port the W7-X velocity profile from stelltools to DESC
+Started: 2026-07-31
+Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 5)
+
+`XicsrtPlasmaW7xSimple.get_velocity` is dead code behind `if False:`; it
+depends on LIBSTELL/STELLOPT wrappers in `stelltools`, which is not
+importable in the current environment. `enable_velocity` and
+`enable_flux_compression` are therefore inert options today, and the first
+training set was to be generated with velocity disabled.
+
+Reimplement using DESC, which the plasma source already uses for all
+coordinate transforms. Confirmed equivalences: `e^rho` for
+`gradrho_car_from_flx`, `B` for `b_car_from_flx`, `<|grad(rho)|>` and
+`<|B|>` for the flux-surface averages, all with `basis='xyz'`. Note
+stelltools flux coordinates use `s` while DESC uses `rho = sqrt(s)`.
+
+Two mandatory performance measures (both measured, see the plan): seed
+`data={'iota': eq.iota(rho)}` into `eq.compute` to avoid an internal override
+grid that OOM-kills the process at the production bundle_count of 1e4, and
+feed fixed-shape padded arrays to avoid jax retracing.
+
+Depends on the F014 `get_velocity(point_flx)` signature change. Carries the
+F017 caveat comment.
+
+
+## F015 - W-line emissivity normalization for the W7-X Ar16+ model
+Started: 2026-07-31
+Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 4)
+
+For the W7-X Ar16+ model, the `emissivity` config option should mean the
+emissivity of the 'w' line only, not of the entire Ar16+ spectrum. Because
+the ratio of total to w-line intensity is Te-dependent, the number of
+photons drawn from the multi-Voigt model must be scaled per bundle by
+`I_tot / I_w`, applied to `bundle_input['emissivity']` BEFORE the Poisson
+draw in `create_sources`.
+
+Photon statistics remain exact: this scales the true expected photon number,
+it is not a reweighting. Verified at Te = 1.0 and 4.0 keV (w-fractions 0.3633
+and 0.6807), recovering 50,107 and 49,959 w-line rays against a 50,000
+target (+0.48 and -0.18 sigma).
+
+Originates from lalston commit `3ba693d`, which used
+`size * (1 + I_w/I_notw)`. That factor is different (up to ~5x, and the two
+cross over with Te) and the user confirmed `I_tot/I_w` is the intent. That
+commit also returned more wavelengths than `size`. It does not port directly
+because F010 removed `random_wavelength_ar16_voigt` and moved the Ar16+
+physics to the per-bundle `get_line_parameters` hook.
+
+Per user direction: implement on the shared `XicsrtPlasmaW7x` base class,
+with no config option and no dedicated test.
+
+
+## F014 - Randomized spline plasma profiles for the W7-X ML training set
+Started: 2026-07-31
+Status: Pending (plan approved 2026-07-31; see devel/plan_lalston_integration.md)
+
+Integrate the SULI 2026 (L. Alston) work into the optimized branch so that
+randomized spline plasma profiles can drive the W7-X ML training-set
+generation. `xicsrt/tools/xicsrt_spline.py` is currently orphaned (zero
+importers, no `profile_*` config option anywhere) and
+`xicsrt_train_task.py:83 update_config_for_image` is an empty stub; these are
+the two ends of a bridge that was never built.
+
+Scope:
+
+- Fix `xicsrt_spline.py`: temperature ranges in eV with the randomized peak
+  PRESERVED (normalizing it would destroy the primary ML label), explicit
+  velocity ranges in m/s, remove the undeclared plotly import, fix the
+  hardcoded 5-element mask arrays, add `spline_from_profile`.
+- Change `get_velocity(rho)` to `get_velocity(point_flx)` across
+  `XicsrtPlasmaGeneric`, `XicsrtPlasmaVmec` and `XicsrtPlasmaToroidal`, so
+  that DESC receives fixed-shape input (measured 1.8 s vs 0.11 s per
+  retrace). The scalar hooks keep `rho`. Also fixes I-2 (`np.ones` ->
+  `np.zeros` for the bundle temperature arrays) and I-3 (missing
+  `temperature_e_scale`), and adds the first regression test for the eV
+  convention.
+- New `XicsrtPlasmaW7x` base class (replacing dead `W7xPlasma`) with
+  `XicsrtPlasmaW7xSimple` and a new `XicsrtPlasmaW7xProfile` beneath it. No
+  polynomial fallback in the spline class.
+- New logbook notebooks Part 2 and Part 3; wire `update_config_for_image`.
+
+The `devel_lalston` branches are deliberately NOT deleted; that is a
+remaining step to be done in a later session. The colleague's
+`xicsrt_w7x_lalston` module does not exist in any accessible repo and is
+dropped in favor of `xicsrt_w7x_npablant`.
+
+
 ## F013 - `arcsin` RuntimeWarning in InteractCrystal from untruncated Voigt tails
 Started: 2026-07-30
 Status: Done (2026-07-30)
