@@ -1,5 +1,55 @@
 # XICSRT Feature Requests
 
+## F012 - Randomize found-ray order in the history (`shuffle_history`)
+Started: 2026-07-30
+Status: Done (2026-07-30)
+
+Plasma sources emit rays in contiguous per-bundle blocks
+(`XicsrtPlasmaGeneric.create_sources`: `bundle_index = np.repeat(np.arange(len(counts)), counts)`),
+and this block order survives unshuffled through `_sort_raytrace` and
+`combine_raytrace` into the returned `found` history. A user taking a naive
+subset (e.g. `history['detector']['origin'][:1000]`) would get rays from only
+a handful of bundles instead of a statistically representative sample of the
+plasma.
+
+Implementation: new `general.shuffle_history` option (default `True`).
+`_sort_raytrace` permutes `w_found` (the found-ray index array) with a
+dedicated `rng_shuffle` generator, independent from the existing `rng` used
+for lost-ray subsampling, so enabling/disabling the shuffle cannot change
+which lost rays are retained and the shuffle cannot perturb the global
+`np.random` stream that generates the rays. The `lost` rays are already
+unordered (`rng.choice(..., replace=False)`) and are not reshuffled.
+`raytrace_single` derives `rng_shuffle` via `np.random.SeedSequence(seed,
+spawn_key=(1,))`, keeping `rng_lost`'s stream byte-identical to before this
+change. `xicsrt/jaxrt/_engine.py` mirrors the same generator setup since it
+imports `_sort_raytrace` directly.
+
+Shuffling is done at the found-ray-selection stage, not in the source: a
+benchmark of shuffling inside `XicsrtPlasmaGeneric.create_sources` (or the
+`bundle_index` array feeding it) cost 13-31% of total raytrace time for the
+'voigt' wavelength distribution, and >100% for 'multi_voigt' (random gather
+into the per-bundle line table destroys locality). Shuffling only the found
+rays in `_sort_raytrace` costs approximately 0.005% of raytrace time at a
+typical x-ray efficiency (found << traced), rising to ~2% only when a large
+fraction of traced rays are found. Cross-iteration/run shuffling in
+`combine_raytrace` was also rejected: each iteration is already an unbiased
+sample of the same config, so within-iteration shuffling alone makes any
+prefix of the found history a fair sample.
+
+New tests: `tests/test_history_shuffle.py` (unit-level `_sort_raytrace`
+behavior on synthetic bundle-blocked data, plus an end-to-end check with a
+real point-bundle plasma source). `testing/compare_raytrace_regression.py`
+sets `shuffle_history=False` in its baseline scenario (for the Tier A exact
+comparison against pre-F012 source trees) and `_call_sort` now explicitly
+disables shuffling for Tier B, which tests lost-ray subsampling and is
+orthogonal to this feature.
+
+No bundle id is stored in the ray arrays, so shuffling is currently the only
+way to lose track of bundle membership; recovering it (if ever needed) would
+require a separate per-ray bundle-index feature, deliberately left out of
+this change.
+
+
 ## F011 - XicsrtPlasmaCubic ignores the `velocity` option (no Doppler shift)
 Started: 2026-07-30
 Status: Pending (pre-existing bug, found while verifying F010 addendum)

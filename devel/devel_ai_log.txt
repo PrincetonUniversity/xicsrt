@@ -514,3 +514,48 @@ Key prompts:
 - "Hhelp me with my derectives to always include the devel_ai_log.txt as part of the
   commit when I ask for committing and closing a session in the same close out
   prompt, even if I technically as for commit first and close out second."
+
+================================================================================
+2026-07-30  F012: randomize found-ray order so history subsets are unbiased.
+
+Files modified:
+- xicsrt/xicsrt_raytrace.py, xicsrt/jaxrt/_engine.py, xicsrt/xicsrt_config.py
+- testing/compare_raytrace_regression.py
+- tests/test_history_shuffle.py (new)
+- devel/features_request.md (new F012), devel/jaxrt_sync.md
+
+Key changes:
+- New general.shuffle_history option (default True). _sort_raytrace permutes
+  the found-ray index with a dedicated rng_shuffle generator (independent of
+  the existing lost-ray rng, via SeedSequence spawn_key), so shuffling can't
+  perturb the global RNG stream or the lost-ray selection.
+- jaxrt/_engine.py mirrors the same generator setup since it imports
+  _sort_raytrace directly.
+- Regression harness baseline sets shuffle_history=False (Tier A exact
+  comparison against pre-F012 trees); Tier B's _call_sort also disables it
+  since that tier tests lost-ray subsampling, not this feature.
+
+Key findings / gotchas:
+- Plasma sources (XicsrtPlasmaGeneric.create_sources) emit rays in
+  contiguous per-bundle blocks (bundle_index = repeat(arange, counts)), and
+  this order previously survived unshuffled into results['found']['history'].
+  A naive history[...][:1000] therefore sampled a handful of bundles, not
+  the plasma.
+- Shuffling must happen at found-ray selection, not in the source: measured
+  13-31% raytrace overhead shuffling before ray generation, and >100% for
+  wavelength_dist='multi_voigt' (random gather destroys per-bundle line-table
+  locality). Shuffling only the found rays in _sort_raytrace costs ~0.005%
+  of raytrace time at typical x-ray efficiency (found << traced).
+- Cross-iteration/run shuffling (combine_raytrace) was deliberately skipped:
+  each iteration already independently samples the same config, so
+  within-iteration shuffling alone makes any prefix a fair sample.
+- Verified via a throwaway `git worktree` of pre-change HEAD as the Tier A/B
+  baseline; no lasting artifacts left behind.
+
+Key prompts:
+- "I would like to to look into the new code for vectorized ray generation
+  in XicsrtPlasmaGeneric. When the rays are generated, are they ordered by
+  bundle in the ray arrays and ultimately in the results history? If so,
+  would there be a significant performance hit to adding an option to
+  randomize ray ordering (default True) either during the source ray
+  generation or after?"

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 5).
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -138,6 +139,29 @@ def default_config():
       diagnostic purposes, a randomized truncation of the lost rays is
       performed.
 
+    shuffle_history : bool (True)
+      Controls whether the 'found' ray history is randomly reordered.
+
+      Ray sources (in particular the plasma sources) generate rays in
+      contiguous per-bundle blocks: every ray from one bundle appears before
+      any ray from the next. Without shuffling, this block order survives
+      into the 'found' history and the combined results, so a naive subset
+      such as ``history['detector']['origin'][:1000]`` returns rays from only
+      a handful of bundles rather than a statistically representative sample
+      of the source. Shuffling makes any prefix of the found history a fair
+      sample.
+
+      The reordering is a pure permutation applied after found/lost
+      selection: it does not add, remove, or otherwise alter any ray, so
+      photon statistics are unaffected and a dedicated random generator is
+      used so that the global `np.random` stream (and therefore the rays
+      themselves) is not perturbed. Iterations and runs are each shuffled
+      independently but remain in their own contiguous blocks; see
+      `combine_raytrace`.
+
+      Set to `False` to preserve the original source emission order, which
+      is occasionally useful for debugging bundle-level behavior.
+
     save_config : bool (False)
       Option whether or not to save the config dictionary. Output format
       is currently limited to json format (hdf5 and pickle coming soon).
@@ -190,6 +214,7 @@ def default_config():
     config['general']['keep_history'] = True
 
     config['general']['history_max_lost'] = 10000
+    config['general']['shuffle_history'] = True
 
     config['general']['save_config'] = False
     config['general']['save_images'] = False

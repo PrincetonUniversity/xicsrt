@@ -114,9 +114,11 @@ def raytrace_single(config, _internal=False):
     np.random.seed(seed)
     key = jax.random.PRNGKey(seed)
 
-    # The lost-ray subsampling in _sort_raytrace uses a dedicated generator
-    # so that it cannot perturb the global stream.
+    # Dedicated generators for the lost-ray subsampling and the found-ray
+    # shuffle in _sort_raytrace, kept independent so that neither can
+    # perturb the global stream or each other. See xicsrt_raytrace.py.
     rng_lost = np.random.default_rng(seed)
+    rng_shuffle = np.random.default_rng(np.random.SeedSequence(seed, spawn_key=(1,)))
 
     num_iter = config['general']['number_of_iter']
     max_lost_iter = int(config['general']['history_max_lost'] / num_iter)
@@ -148,7 +150,8 @@ def raytrace_single(config, _internal=False):
         single = trace_iteration(key_iter)
         single = _to_host(config, single, element_order)
         sorted_single = _sort_raytrace(
-            single, max_lost=max_lost_iter, rng=rng_lost)
+            single, max_lost=max_lost_iter, rng=rng_lost,
+            shuffle=config['general']['shuffle_history'], rng_shuffle=rng_shuffle)
         output_list.append(sorted_single)
 
     output = combine_raytrace(output_list, consume_input=True)

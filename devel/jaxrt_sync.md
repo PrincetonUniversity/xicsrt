@@ -189,6 +189,15 @@ sessions must check this list before assuming the engines are in sync.
   in-scope per the file map, but it is explicitly documented as an example
   (per-bundle Python loop, not vectorized) and is not a candidate for a
   jaxrt port.
+- 2026-07-30, F012: no divergence introduced. `_sort_raytrace` gained a
+  found-ray shuffle (new `shuffle`/`rng_shuffle` arguments) and is imported
+  directly by `jaxrt/_engine.py`, so the behavior change propagated
+  automatically; `jaxrt/_engine.py` (a trigger file) was updated to build
+  the same independent `rng_shuffle` generator
+  (`np.random.SeedSequence(seed, spawn_key=(1,))`) and pass
+  `config['general']['shuffle_history']` through, mirroring
+  `xicsrt_raytrace.raytrace_single`. `xicsrt_config.py` (also a trigger
+  file) gained the `shuffle_history` default; no other config-shape change.
 
 ## Convergence log
 

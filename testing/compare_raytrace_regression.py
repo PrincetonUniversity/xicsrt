@@ -134,6 +134,11 @@ def _base_config(number_of_iter=3):
         'keep_images': True,
         'keep_history': True,
         'history_max_lost': 10000,
+        # Disabled so that a Tier A exact comparison can be made against a
+        # baseline source tree that predates the found-ray shuffle (F012).
+        # `get_config` merges unrecognized 'general' keys non-strictly, so
+        # this is silently ignored (and has no effect) on such a baseline.
+        'shuffle_history': False,
         'print_results': False,
         'save_config': False,
         'save_images': False,
@@ -488,11 +493,18 @@ def _call_sort(sort_fn, single, max_lost, trial):
     The baseline implementation draws from the global `np.random` stream; the
     new one takes a dedicated `np.random.Generator`. Each trial is given an
     independent seed either way.
+
+    Where supported, the found-ray shuffle (F012) is explicitly disabled so
+    that Tier B continues to test only what it was designed for: the
+    lost-ray subsampling. The shuffle itself is covered by
+    `tests/test_history_shuffle.py`.
     """
     params = inspect.signature(sort_fn).parameters
     if 'rng' in params:
-        return sort_fn(single, max_lost=max_lost,
-                       rng=np.random.default_rng(trial))
+        kwargs = dict(rng=np.random.default_rng(trial))
+        if 'shuffle' in params:
+            kwargs['shuffle'] = False
+        return sort_fn(single, max_lost=max_lost, **kwargs)
     np.random.seed(trial)
     return sort_fn(single, max_lost=max_lost)
 
