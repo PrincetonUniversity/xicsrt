@@ -74,6 +74,14 @@ leading underscore. Config selects an element via `class_name`.
 - `util/` – `mir*` utilities (logging via `mirlogging`, hdf5, plotting, profiler).
 - `devel/` - tracking of code development and pending features.
 
+## Notebook logbooks
+
+- Dated logbook notebooks referenced by title (e.g. "2026-07-30 - W7-X XICS
+  Raytracing - SULI 2026 L. Alston, Part 7 - New acceleration updates") live
+  outside this repo, under `/u/npablant/code/notebooks/npablant-2019/logbook/`.
+  Other sibling directories under `/u/npablant/code/notebooks/` may also hold
+  relevant notebooks if not found there.
+
 ## Repo / release workflow
 
 - Two remotes: `bitbucket` (`amicitas/xicsrt`) and `princeton`
