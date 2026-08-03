@@ -209,6 +209,13 @@ sessions must check this list before assuming the engines are in sync.
   ("Changes elsewhere (... plasma sources ...) do not currently affect
   jaxrt"). The shared Doppler-sigma eV convention is now pinned on both
   engines by `tests/test_doppler_sigma.py`. No jaxrt code change required.
+- 2026-08-03, F021: no divergence introduced. `tools/xicsrt_spline.py` gained
+  `profile_seeds` (per-profile `SeedSequence` children via `spawn_key`), used
+  only by randomized plasma-profile generation in xicsrt_analysis.
+  `xicsrt_spline.py` is not a trigger file and jaxrt has no plasma sources, so
+  no jaxrt change is required. Worth noting for consistency: this uses the
+  same `SeedSequence(entropy, spawn_key=(ii,))` idiom that `jaxrt/_engine.py`
+  and `xicsrt_raytrace.raytrace_single` already use for `rng_shuffle`.
 
 ## Convergence log
 

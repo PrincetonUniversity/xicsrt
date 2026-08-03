@@ -2,7 +2,33 @@
 
 ## F021 - Randomized spline profiles are seed-correlated
 Started: 2026-08-03
-Status: Pending
+Status: Done (2026-08-03)
+
+Implemented as planned in `devel/plan_profile_seed_decorrelation.md`:
+`xicsrt_spline.profile_seeds(seed, names)` derives one independent
+`SeedSequence` per profile via `SeedSequence(parent.entropy, spawn_key=(ii,))`,
+and `generate_random_profiles` (xicsrt_analysis) now passes one child seed to
+each generator. The public signature `generate_random_profiles(seed)` is
+unchanged, so `update_config_with_profiles`, `xicsrt_train_task` and all
+notebooks inherit the fix without call-site edits.
+
+Verified: max cross-profile |r| over 500 seeds drops from 1.000 to 0.103
+(null 3-sigma is 0.134). Both rank-1 blocks are gone and the x_knots are no
+longer shared. Two regression tests added to `tests/test_spline.py`
+(110 pass); the correlation test was confirmed to fail at |r| = 1.000 when
+the old shared-seed behavior is restored.
+
+Also documented, per plan: a "Seeding" section in the `xicsrt_spline` module
+docstring explaining why shared seeds correlate, and a note in
+`generate_random_temp` that Ti and Te are drawn fully independently. Measured
+over 2000 seeds this gives Ti > Te in 25.2% of samples and Ti > 5*Te in 3.8%
+(the plan file's 24%/3.3% were from a smaller sample). A physics-constrained
+alternative enforcing Te >= Ti for ECRH is described but deliberately not
+imposed.
+
+Not done, as scoped out: the 1000 configs and 199 samples were not
+regenerated, and no new notebooks were added (Parts 2b/3c inherit the fix
+unchanged).
 
 `xicsrt_w7x_npablant.generate_random_profiles` passes the identical `seed` to
 all five spline generators. Every generator opens with

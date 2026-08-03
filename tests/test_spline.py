@@ -224,3 +224,129 @@ def test_min_spacing_too_large_raises():
     """An impossible min_spacing raises rather than silently failing."""
     with pytest.raises(ValueError):
         xicsrt_spline.generate_random_temp(n_knots=9, min_spacing=0.5, seed=0)
+
+
+# ------------------------------------------------------------------------
+# Seed decorrelation (F021)
+# ------------------------------------------------------------------------
+
+PROFILE_NAMES = [
+    "emissivity",
+    "ion_temp",
+    "electron_temp",
+    "perpendicular_velocity",
+    "parallel_velocity",
+]
+
+
+def _profiles_from_seed(seed):
+    """Build the five-profile set the way callers are expected to."""
+    seeds = xicsrt_spline.profile_seeds(seed, PROFILE_NAMES)
+    return {
+        "emissivity": xicsrt_spline.generate_random_emissivity(
+            seed=seeds["emissivity"]),
+        "ion_temp": xicsrt_spline.generate_random_ion_temp(
+            seed=seeds["ion_temp"]),
+        "electron_temp": xicsrt_spline.generate_random_electron_temp(
+            seed=seeds["electron_temp"]),
+        "perpendicular_velocity":
+            xicsrt_spline.generate_random_perpendicular_velocity(
+                seed=seeds["perpendicular_velocity"]),
+        "parallel_velocity": xicsrt_spline.generate_random_parallel_velocity(
+            seed=seeds["parallel_velocity"]),
+    }
+
+
+def test_profile_seeds_are_distinct():
+    """Child seeds are distinct, reproducible, and actually needed.
+
+    The final check pins the library contract that motivates this helper:
+    generators given the SAME seed alias onto each other. That behavior is
+    correct and intended, and it is exactly why the child seeds exist.
+    """
+    seeds = xicsrt_spline.profile_seeds(1234, PROFILE_NAMES)
+    assert set(seeds) == set(PROFILE_NAMES)
+
+    # Each child seeds a different random stream.
+    draws = [
+        np.random.default_rng(seeds[name]).uniform() for name in PROFILE_NAMES
+    ]
+    assert len(set(draws)) == len(PROFILE_NAMES)
+
+    # A fixed integer seed reproduces the children exactly.
+    seeds_again = xicsrt_spline.profile_seeds(1234, PROFILE_NAMES)
+    draws_again = [
+        np.random.default_rng(seeds_again[name]).uniform()
+        for name in PROFILE_NAMES
+    ]
+    assert draws == draws_again
+
+    # A different parent seed gives different children.
+    seeds_other = xicsrt_spline.profile_seeds(5678, PROFILE_NAMES)
+    draws_other = [
+        np.random.default_rng(seeds_other[name]).uniform()
+        for name in PROFILE_NAMES
+    ]
+    assert not set(draws) & set(draws_other)
+
+    # seed=None still gives distinct children within a single call.
+    seeds_none = xicsrt_spline.profile_seeds(None, PROFILE_NAMES)
+    draws_none = [
+        np.random.default_rng(seeds_none[name]).uniform()
+        for name in PROFILE_NAMES
+    ]
+    assert len(set(draws_none)) == len(PROFILE_NAMES)
+
+    # Sharing one seed aliases the generators: this is the defect that
+    # profile_seeds exists to avoid.
+    ion = xicsrt_spline.generate_random_ion_temp(seed=99)
+    electron = xicsrt_spline.generate_random_electron_temp(seed=99)
+    np.testing.assert_array_equal(ion["x_knots"], electron["x_knots"])
+
+
+def test_profile_seeds_decorrelate_profiles():
+    """Profiles built from child seeds are mutually uncorrelated.
+
+    Over many parent seeds, scalar labels taken from different profiles
+    must not track each other. Before this fix the temperature and velocity
+    labels were related by exact affine maps, giving |r| = 1.0.
+
+    Same-profile pairs are deliberately excluded: ordered knots within a
+    single profile are legitimately correlated with each other.
+    """
+    num_seed = 500
+
+    label_profile = []
+    label_getter = []
+    for name in PROFILE_NAMES:
+        label_profile.append(name)
+        label_getter.append((name, "x_knots", 1))
+        label_profile.append(name)
+        label_getter.append((name, "y_knots", 0))
+
+    # y_knots[0] is fixed at zero for perpendicular velocity, so use the
+    # randomized ion-root and electron-root knots as its amplitude labels.
+    index_perp = label_getter.index(("perpendicular_velocity", "y_knots", 0))
+    label_getter[index_perp] = ("perpendicular_velocity", "y_knots", 1)
+    label_getter.append(("perpendicular_velocity", "y_knots", 3))
+    label_profile.append("perpendicular_velocity")
+
+    rows = []
+    for seed in range(num_seed):
+        profiles = _profiles_from_seed(seed)
+        rows.append([
+            np.asarray(profiles[name][key])[index]
+            for name, key, index in label_getter
+        ])
+
+    labels = np.array(rows).T
+    assert np.all(np.std(labels, axis=1) > 0.0)
+
+    corr = np.corrcoef(labels)
+    profile_of = np.array(label_profile)
+    is_cross = profile_of[:, None] != profile_of[None, :]
+
+    max_cross = np.abs(corr[is_cross]).max()
+    assert max_cross < 0.20, (
+        f"Profiles are correlated across the set: max |r| = {max_cross:.3f}."
+    )

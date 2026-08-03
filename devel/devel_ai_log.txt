@@ -770,3 +770,53 @@ Key prompts:
   constrained' formulation would couple the Te and Ti profiles and enforce
   Te < Ti (for ECRH)... 3. no backwards compatability... 4. Please dont
   file anything else."
+
+================================================================================
+2026-08-03  F021: implement the profile seed decorrelation planned last session
+            (devel/plan_profile_seed_decorrelation.md), all 5 steps as written.
+
+Files modified:
+- xicsrt: tools/xicsrt_spline.py, tests/test_spline.py,
+  devel/{features_request.md,plan_profile_seed_decorrelation.md,jaxrt_sync.md}
+- xicsrt_analysis: w7x_npablant/xicsrt_w7x_npablant.py
+
+Key changes:
+- profile_seeds(seed, names) returns one SeedSequence per profile via
+  SeedSequence(parent.entropy, spawn_key=(ii,)); entropy resolved first so
+  seed=None pins a single parent. Generators accept these unchanged.
+- xicsrt_spline module docstring gained a "Seeding" section; the Ti/Te full
+  independence + ECRH Te>=Ti note went into generate_random_temp.
+- generate_random_profiles now passes child seeds; signature unchanged so
+  update_config_with_profiles/xicsrt_train_task/notebooks need no edits.
+- Two tests appended: distinctness/reproducibility, and a 500-seed
+  correlation check asserting max cross-profile |r| < 0.20.
+
+Key findings / gotchas:
+- Measured through the real caller: max cross-profile |r| 1.000 -> 0.103,
+  x_knot sets 1-of-5 distinct -> 5-of-5. 110 tests pass (was 108).
+- The correlation test was confirmed non-vacuous by monkeypatching
+  profile_seeds back to shared-seed: it fails at |r| = 1.000.
+- Plan file's Ti>Te / Ti>5Te figures (24% / 3.3%) were low; remeasured over
+  2000 seeds as 25.2% / 3.8%. Docstrings carry the remeasured values.
+- perpendicular_velocity has y_knots[0] fixed at 0, so its amplitude labels
+  must be y_knots[1] and [3]; a naive y_knots[0] label gives a zero-variance
+  column and a nan correlation matrix.
+- xicsrt_spline is not a jaxrt trigger file and jaxrt has no plasma sources;
+  logged in jaxrt_sync.md as no-change. It does reuse the same spawn_key
+  idiom jaxrt/_engine.py already uses for rng_shuffle.
+- The invalidated v00 data is not on this machine (the training dir is
+  empty here), so nothing could be cleared or regenerated locally.
+
+Suggested follow-ups:
+- Clear the w7x_ar16_ml_training dir on the cluster before rerunning Part 2b;
+  old configs are inconsistent with new ones at the same seed.
+- The ray-count spread (peak-vs-volume emissivity ~157x, Te-dependent
+  I_tot/I_w ~26x) is still deliberately unfiled; it survives only in these
+  notes. File it if it should be tracked.
+
+Key prompts:
+- "I'd like you to pickup from ## F021, plan_profile_seed_decorrelation.md.
+  Some for aditional reflreference look at [Part 3c and Part 2b notebooks].
+  Genereate new part c/f notebooks if needed."
+- Answers: no new notebooks; commit the pre-existing xicsrt_w7x_npablant.py
+  working-tree changes separately before the F021 fix.

@@ -1,8 +1,14 @@
 # F021 - Decorrelate randomized spline profile seeds
 
-Status: Planned, not yet implemented.
+Status: Implemented 2026-08-03. All five steps done as written.
 Plan approved 2026-08-03. See `devel/features_request.md` F021 for the defect
 analysis and measured correlation matrix.
+
+Outcome: max cross-profile |r| over 500 seeds went from 1.000 to 0.103;
+`pytest tests/` gives 110 passed, as predicted. Two numbers in Step 4 below
+were revised upward on remeasurement over 2000 seeds: Ti > Te is 25.2% (not
+24%) and Ti > 5*Te is 3.8% (not 3.3%). The docstring carries the remeasured
+values. Nothing else changed from the plan.
 
 This file includes AI generated content using Claude (Opus 5).
 
