@@ -1,5 +1,60 @@
 # XICSRT Feature Requests
 
+## F021 - Randomized spline profiles are seed-correlated
+Started: 2026-08-03
+Status: Pending
+
+`xicsrt_w7x_npablant.generate_random_profiles` passes the identical `seed` to
+all five spline generators. Every generator opens with
+`sample_interior_x(n_interior=3, ...)`, consuming the same three uniforms, then
+draws its amplitudes from the same stream position. With `n_knots=5` everywhere
+the streams are byte-aligned, so ~25 nominally independent ML labels collapse
+onto ~3 random numbers per sample.
+
+Measured over 600 seeds (correlation matrix of the scalar labels):
+
+```
+                  emiss_x2        Ti0        Te0  vperp_ion  vperp_ele    vpar_pk
+      emiss_x2       1.000      0.020      0.020      0.020     -0.049     -0.049
+           Ti0       0.020      1.000      1.000      1.000     -0.010     -0.010
+           Te0       0.020      1.000      1.000      1.000     -0.010     -0.010
+     vperp_ion       0.020      1.000      1.000      1.000     -0.010     -0.010
+     vperp_ele      -0.049     -0.010     -0.010     -0.010      1.000      1.000
+       vpar_pk      -0.049     -0.010     -0.010     -0.010      1.000      1.000
+```
+
+Two exact rank-1 blocks:
+- Block A (r = 1.000): Ti_core, Te_core, v_perp,ion-root
+- Block B (r = 1.000): v_perp,electron-root, v_par,peak
+- x_knots identical across all five profiles, 500/500 seeds.
+
+Proof of mechanism: the shared uniform variate is recoverable. For seeds
+1234-1243, `(Ti0-200)/4800` and `(v_perp,ion+20e3)/20e3` agree to all printed
+digits, as do `v_perp,elec/20e3` and `(v_par,peak+20e3)/40e3`. Equivalently
+`Ti = 200 + (Te-200)*4800/9800` exactly, to machine precision.
+
+As a training set this means Ti carries zero information independent of Te, and
+the 199 existing samples explore a 3-D slice of the intended parameter space.
+
+`xicsrt_spline` itself is NOT buggy: same seed -> same output is the documented
+contract. The defect is in how the caller derives the five seeds.
+
+Fix: add `profile_seeds(seed, names)` to `xicsrt/tools/xicsrt_spline.py`,
+deriving one independent `SeedSequence` per profile via
+`SeedSequence(parent.entropy, spawn_key=(ii,))`, and call it from
+`generate_random_profiles`. See `devel/plan_profile_seed_decorrelation.md`.
+
+Per user direction: Ti and Te are drawn FULLY INDEPENDENTLY (option a). No
+backwards compatibility; the 199 existing samples and 1000 configs are
+knowingly invalidated and are NOT regenerated as part of this feature.
+
+Found while investigating why per-sample ray counts span 31 to 22533 in the
+W7-X ML training set. The ray-count spread itself has a different root cause
+(peak-vs-volume emissivity normalization, and the Te-dependent I_tot/I_w
+restoration of the full Ar16+ spectrum) and is deliberately NOT tracked here,
+at user request, to keep this change focused.
+
+
 ## F020 - xarray/netCDF results output format
 Started: 2026-07-31
 Status: Pending (prototyped in a notebook only, not yet in xicsrt itself)

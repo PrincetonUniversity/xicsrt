@@ -718,3 +718,55 @@ Key prompts:
 - "I don't see any reasion to convert to a list instead of as a numpy array
   (asarray)." [make_profile_dict; the .tolist() was redundant since xicsrt_io
   already converts on save/load]
+
+================================================================================
+2026-08-03  F021 planning: diagnose why W7-X ML training-set ray counts and
+            profile labels vary the way they do; plan a seed-decorrelation fix.
+
+Files modified:
+- xicsrt: devel/features_request.md (new F021 entry),
+  devel/plan_profile_seed_decorrelation.md (new plan file)
+No code changes this session; investigation and planning only.
+
+Key findings / gotchas:
+- Ray-count spread (31-22533 rays/sample) has two independent causes, NOT
+  fixed this session per user scope: (1) generate_random_emissivity is
+  peak-normalized (=1.0) but the volume integral varies ~157x since the
+  zero-crossing radius is randomized; (2) XicsrtPlasmaW7x restores the full
+  Ar16+ spectrum from the w-line-only `emissivity` via I_tot/I_w, which is
+  strongly Te-dependent (126x at 200 eV vs 1.2x at 10 keV), adding another
+  ~26x. Combined, matches the observed spread (corr(log n, log B) = 0.996).
+- Separately, found generate_random_profiles (xicsrt_analysis) passes the
+  SAME seed to all 5 spline generators. Since every generator consumes an
+  identical draw sequence (sample_interior_x first), this creates two exact
+  rank-1 correlation blocks: {Ti_core, Te_core, v_perp,ion-root} all r=1.000,
+  and {v_perp,electron-root, v_par,peak} r=1.000, plus identical x_knots
+  across all 5 profiles. ~25 labels collapse to ~3 effective random numbers.
+  This is the bug scoped for the F021 fix (xicsrt_spline.py itself is not
+  buggy - same seed -> same output is its contract).
+- Fix design: profile_seeds(seed, names) in xicsrt_spline.py using
+  SeedSequence(parent.entropy, spawn_key=(ii,)) per profile; more robust to
+  future changes than SeedSequence.spawn(5) or a shared Generator (verified
+  independence ~0.09 max |r| over N=500 vs r=1.0 today).
+- User decision: Ti/Te drawn fully independently (not physically coupled);
+  add a documented note that a stricter model would enforce Te >= Ti for
+  ECRH. No backwards compatibility - existing 199 samples/1000 configs are
+  knowingly invalidated, not regenerated.
+
+Suggested follow-ups:
+- Implement devel/plan_profile_seed_decorrelation.md (F021) next session.
+- The two ray-count-spread causes above are understood but explicitly NOT
+  tracked as feature requests yet, per user request to keep this session
+  focused; revisit if/when prioritized.
+
+Key prompts:
+- "The starting point for Part 4 was: 'Each sample has a very different
+  number of found rays... the distribution is roughly log-normal...' I want
+  to understand this better... no matter the profiles, the number of rays
+  in each simulation should be roughly similar."
+- "I want to create a feature and plan to fix this part only: [Ti/Te
+  correlation and shared x_knots bugs]"
+- "1. a) At this stage fully independent... note... a more 'physics
+  constrained' formulation would couple the Te and Ti profiles and enforce
+  Te < Ti (for ECRH)... 3. no backwards compatability... 4. Please dont
+  file anything else."
