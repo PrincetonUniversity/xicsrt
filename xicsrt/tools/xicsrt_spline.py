@@ -524,7 +524,7 @@ def generate_random_temp(
 
 
 def generate_random_electron_temp(
-    n_knots=5, y_min=200.0, y_max=10000.0, min_spacing=0.05, seed=None
+    n_knots=5, y_min=500.0, y_max=10000.0, min_spacing=0.05, seed=None
 ):
     """
     Generate a random electron temperature profile.

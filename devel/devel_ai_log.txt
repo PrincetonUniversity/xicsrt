@@ -820,3 +820,65 @@ Key prompts:
   Genereate new part c/f notebooks if needed."
 - Answers: no new notebooks; commit the pre-existing xicsrt_w7x_npablant.py
   working-tree changes separately before the F021 fix.
+
+================================================================================
+2026-08-03  F022: normalize W7-X emissivity_scale for a consistent source ray
+            count (devel/plan_ray_count_calibration.md).
+
+Files modified:
+- xicsrt: devel/{features_request.md,plan_ray_count_calibration.md} only;
+  no engine code changed.
+- xicsrt_analysis: w7x_npablant/sources/_XicsrtPlasmaW7x.py,
+  w7x_npablant/xicsrt_w7x_npablant.py,
+  w7x_npablant/production/xicsrt_train_task.py,
+  w7x_npablant/verify_ray_calibration.py (new).
+- Notebook (untracked, gitignored): Part 2b - Generating config files.
+
+Key changes:
+- XicsrtPlasmaW7x.shape_integral(): volume-weighted average of
+  profile_emissivity(rho) * (I_tot/I_w)(Te(rho)) over the DESC flux
+  surface, normalized by V(rho=1) so it is dimensionless and independent
+  of the absolute VMEC volume.
+- xicsrt_w7x_npablant.calibrate_emissivity_scale(config): sets
+  emissivity_scale so shape_integral() hits a fixed reference
+  (TARGET_MEAN_EMISSIVITY); wired into both the Part 2b notebook and
+  xicsrt_train_task.update_config_for_image.
+- Extracted _full_spectrum_factor from bundle_generate so the calibration
+  path reuses the exact per-bundle Ar16+ physics.
+
+Key findings / gotchas:
+- First design integrated DESC's whole-torus V_r(r) directly (no V(rho=1)
+  normalization); overcounted the emitting volume ~200x vs. the raytrace's
+  local box (torus circumference ~34 m vs. box ysize=1.7 m). Fixed by
+  normalizing to a dimensionless volume-weighted average, per user
+  direction, accepting the box-vs-torus mismatch as a known approximation.
+- use_poisson=False cannot be used for verification: the emissivity
+  profile shape tapers to exactly zero at its final two knots, so some
+  radius always has nonzero-but-arbitrarily-small intensity, tripping
+  create_sources's "intensity < 1" guard regardless of time_resolution.
+- Verified over 50 random profile seeds: relative std of generated ray
+  count drops from 0.99 (one fixed emissivity_scale for all samples) to
+  0.10 (calibrated); max/min ratio from 39.7 to 1.8. Not reduced to pure
+  Poisson noise, by design (see shape_integral docstring caveat).
+- A pre-existing uncommitted change to xicsrt/tools/xicsrt_spline.py
+  (generate_random_electron_temp y_min 200.0->500.0) was found in the
+  working tree but not made this session and is left uncommitted.
+
+Suggested follow-ups:
+- Detector/imaged ray count (Bragg efficiency vs. Ti/velocity) is still
+  uncalibrated; out of scope per user direction this session.
+- Feature left as "Pending verification review" at user request; review
+  ray-count consistency on a real training-set run before marking Done.
+
+Key prompts:
+- "Rather than trying to predict the number of rays, the first step should
+  be to find a normalization of the emissivity that will give me the [same]
+  number of generated rays at the source for each run... integrated over
+  the emissivity curve and including the I_notw/I_ratio from the Te
+  dependence... applied ... through the emissivity scale factor... This
+  code should live entirely within the xicsrt_analysis repository."
+- "I want to keep using the DESC full torus volume integral approach...
+  normalize by the total volume at rho=1 to remove the vmec volume
+  information from this calibration process."
+- "Please add this calibration into the Part 2b notebook and
+  xicsrt_train_task."

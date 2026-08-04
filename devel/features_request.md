@@ -1,5 +1,55 @@
 # XICSRT Feature Requests
 
+## F022 - Normalize W7-X emissivity_scale to give a consistent source ray count
+Started: 2026-08-03
+Status: Pending verification review
+
+For the W7-X ML training set, per-sample generated ray counts vary by ~700x
+(31-22533 detected, per F021's investigation), dominated by two multiplicative
+factors upstream of the Poisson draw: `generate_random_emissivity` normalizes
+the profile SHAPE to peak 1.0 but its volume integral varies ~157x with the
+randomized zero-crossing radius, and `XicsrtPlasmaW7x.bundle_generate`'s
+Te-dependent `I_tot/I_w` full-spectrum correction varies ~26x. This blocks
+targeting a consistent ~1e4 rays/image and using a fixed-shape (rather than
+ragged) array when combining samples for ML training.
+
+Plan: `devel/plan_ray_count_calibration.md`. Entirely within `xicsrt_analysis`;
+no changes to core xicsrt. Adds `XicsrtPlasmaW7x.shape_integral()`, which
+computes the DESC-flux-surface-volume-weighted average of
+`profile_emissivity(rho) * (I_tot/I_w)(Te(rho))`, normalized by the total
+volume V(rho=1) so the result is dimensionless and independent of the
+absolute VMEC volume, and `xicsrt_w7x_npablant.calibrate_emissivity_scale
+(config)`, which sets `emissivity_scale` so this average equals a fixed
+reference value (`TARGET_MEAN_EMISSIVITY`). `time_resolution` is then
+hand-tuned once per campaign to hit the desired image ray count.
+
+Known limitation, deliberate (per user direction): `shape_integral` averages
+over the ENTIRE DESC flux-surface volume, while `XicsrtPlasmaGeneric`'s bundle
+Monte-Carlo only samples the local diagnostic box (a small fraction of the
+flux-surface volume at each rho). This is a geometric approximation, not
+exact; different samples' generated ray counts are NOT expected to be equal
+up to pure Poisson statistics, only substantially more consistent than
+without calibration. Verified over 50 random profile seeds
+(`verify_ray_calibration.py`): relative std of generated ray count drops from
+0.99 to 0.10 and max/min ratio from 39.7 to 1.8 when a per-sample calibrated
+`emissivity_scale` is used instead of one fixed value applied to all samples.
+A whole-torus DESC `V_r(r)`-based integral without this box/torus-volume
+normalization was tried first and rejected: it overcounts the emitting
+volume the raytrace can actually see by ~200x, since the raytrace box
+(`ysize=1.7 m` etc.) is a small sightline volume compared to the full torus
+(circumference ~34 m).
+
+Wired into both existing pipeline entry points: the Part 2b notebook's
+`get_w7x_ml_config` and `xicsrt_train_task.update_config_for_image` both call
+`calibrate_emissivity_scale` after `update_config_with_profiles`, so the
+notebook and SLURM production paths produce identical calibrated configs for
+the same seed.
+
+Out of scope: detected/imaged ray count (Bragg efficiency varies with
+Ti/velocity, a separate smaller effect), and the xarray/padding output-format
+question (F020).
+
+
 ## F021 - Randomized spline profiles are seed-correlated
 Started: 2026-08-03
 Status: Done (2026-08-03)
