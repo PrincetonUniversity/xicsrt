@@ -882,3 +882,54 @@ Key prompts:
   information from this calibration process."
 - "Please add this calibration into the Part 2b notebook and
   xicsrt_train_task."
+
+================================================================================
+2026-08-04  F020: padded-array ML training-set combiner (Part 4a notebook).
+
+Files modified:
+- devel/features_request.md (F020 -> Done, with resolution note).
+- Notebook (untracked, gitignored, outside this repo): new
+  "Part 4a - Combined ML training-set file.ipynb" in
+  /u/npablant/code/notebooks/npablant-2019/logbook/. Superseded (not
+  deleted) the ragged-array "Part 4" notebook, kept only as history.
+
+Key changes:
+- combine_training_set() reads per-sample xicsrt_flat_*.hdf5 directly via
+  xicsrt_io._dict_from_file (sibling .nc files globbed out, ignored).
+- Found rays stored as a padded (sample, ray, axis) float32 array, NaN
+  beyond each sample's sample_count, instead of Part 4's CF ragged array.
+- Every kept config entry gets a leading sample dimension unconditionally;
+  dropped the varying/constant split. None/empty-dict/list entries are
+  still dropped (no netCDF representation) and recorded in
+  ds.attrs['dropped_keys'].
+- Added RayReader.batch(idx) for random cross-sample selection via a single
+  isel(sample=idx) fancy-index; rasterize() reused unchanged from Part 4.
+
+Key findings / gotchas:
+- Reading .hdf5 directly is strictly better than going through the .nc
+  intermediate: ~2.7x faster (10 ms/file vs 27 ms/file, measured on 100
+  samples) and recovers 12 keys the .nc conversion silently drops
+  (None/empty-dict entries: random_seed, aperture, zsize, filters, etc.).
+- Padding is only reasonable now because F022 narrowed the per-sample ray-
+  count spread; current 100-sample set is 1797-3223 rays (~1.8x), vs. the
+  pre-F022 31-12192 (~400x) that had motivated the ragged design.
+- Estimated cost of giving every config var a sample dim (vs. splitting
+  varying/constant): ~4 KB/sample overhead, ~2.7% of file size at the
+  10k-100k sample / ~10^4-rays-per-sample target scale.
+- Verified by executing the notebook end-to-end (jupyter nbconvert) against
+  the real 100-sample directory: 0 mismatches vs. .hdf5 source rays;
+  wrote a real 3.1 MB output file at
+  .../w7x_ar16_ml_training/xicsrt_training_set_v00.nc.
+
+Key prompts:
+- "My preference is to use a padded array in the output... goal is
+  simplicity, even at the expense of repetition, inefficiency and larger
+  file sizes."
+- "I think I would like to remove the variable-splitting, and just give
+  all config var a sample dim as this is the simplest possible solution.
+  Please estimate the file size impact."
+- "Would it make more sense to instead read from the original hdf5 .hdf5
+  file? ... I may not even need to create the .nc files in the first
+  place."
+- "Part 4a should tolerate .nc files and ignore them. Don't add a note.
+  Future datasets will not include them."

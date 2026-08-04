@@ -133,7 +133,20 @@ at user request, to keep this change focused.
 
 ## F020 - xarray/netCDF results output format
 Started: 2026-07-31
-Status: Pending (prototyped in a notebook only, not yet in xicsrt itself)
+Status: Done (2026-08-04, still notebook-only, not yet in xicsrt itself)
+
+Resolved (notebook "Part 4a - Combined ML training-set file"): combined
+training-set files now read the per-sample `.hdf5` files directly (not the
+sibling `.nc`), store found rays as a padded `(sample, ray, axis)` float32
+array (NaN beyond `sample_count`) rather than a CF ragged array, and give
+every kept config entry a `sample` dimension unconditionally (no varying/
+constant split). Padding is only cheap because F022 narrowed the per-sample
+ray-count spread from ~400x to ~1.8x; the varying/constant split was
+dropped because repeating all ~121 config entries per sample costs only
+~2.7% of file size at the 10k-100k sample scale. Verified end-to-end on the
+100-sample set: 0 mismatches vs. the source `.hdf5` files. `None`/empty-
+dict/list config entries are still dropped (no netCDF representation) and
+recorded in `ds.attrs['dropped_keys']`.
 
 Prototyped in notebook "Part 10 - Xarray results" converting the Part 9 flat
 results dictionary into an `xarray.Dataset` and saving it as netCDF, as a
