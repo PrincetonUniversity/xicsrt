@@ -1,5 +1,97 @@
 # XICSRT Feature Requests
 
+## F025 - Resumable W7-X training-set generation via a pending-results manifest
+Started: 2026-08-04
+Status: Done (2026-08-04)
+
+`run_training_set` (Part 3d notebook) and `xicsrt_train_task.py` (SLURM
+production driver) both selected configuration files to process by list
+position (`num_analyze`, or a fixed `task_id * images_per_task` shard),
+relying on `run_one_sample`'s per-file skip-if-exists check to avoid
+redoing completed samples. This meant `num_analyze=100` processed the
+first 100 config files (some possibly already done), not "the next 100
+undone samples" - making it hard to resume a partially completed training
+set (e.g. after a SLURM timeout) without re-scanning from the start.
+Entirely within `xicsrt_analysis`; no changes to core xicsrt.
+
+Changes:
+- `xicsrt_results_util.py`: new `list_pending_config_files`,
+  `write_pending_manifest`, `read_manifest`. `run_training_set` gained
+  `use_manifest` (default True) and `manifest_path`; when `use_manifest`
+  is True it (re)generates a pending manifest and applies `num_analyze`
+  to that list. `overwrite` keeps its original meaning (replace an
+  existing result once a sample is run) and no longer affects which
+  configs are selected.
+- New `production/xicsrt_manifest_task.py`: manual, one-time CLI wrapping
+  `write_pending_manifest`, intended to be run once before submitting a
+  SLURM job array so that every array task shards over one fixed,
+  consistent pending list instead of each task recomputing it
+  independently while others are still writing results.
+- `xicsrt_train_task.py`: new `--use-manifest`/`--no-use-manifest`
+  (default: use manifest) and `--manifest-path`; requires the manifest to
+  already exist when enabled (fails fast with a pointer to
+  `xicsrt_manifest_task.py` otherwise).
+- `slurm_train.batch`: fails fast before launching Python if
+  `MANIFEST_PATH` does not exist, rather than generating or waiting for
+  it. Known limitation, not guarded against: resubmitting a job array (or
+  rerunning `xicsrt_manifest_task.py`) while a previous array over the
+  same config/output path is still running.
+- Part 3d notebook markdown updated to describe the new pending-manifest
+  behavior; no code cell changes needed.
+- New pytest suite `xicsrt_analysis/w7x_npablant/tests/` (previously none
+  existed for this package).
+
+Verified: new pytest suite (10 tests) passes; full core `xicsrt` suite
+(110 tests) unaffected; manual sandbox run of `xicsrt_manifest_task.py`
+and `xicsrt_train_task.py` against fake config/result directories
+confirmed correct manifest generation, shard selection, and the fail-fast
+missing-manifest error.
+
+## F024 - DESC flux-coordinate extrapolation outside the LCFS (Part 9 notebook)
+Started: 2026-08-04
+Status: Pending
+
+Follow-through on the note in section 13 of the "Part 8 - Interpolated mapping"
+notebook: the interpolation table clamps every exterior node to `rho = 1.0`,
+which biases any interpolation cell straddling the LCFS. Part 9 replaces the
+clamp with real extrapolation into a `rho <= RHO_MAX = 1.1` shell and quantifies
+how far that can be trusted. Plan: `devel/plan_desc_interpolation_and_extrapolation.md`
+(externally generated, with a measured-corrections addendum). Entirely a logbook
+notebook; no changes to core xicsrt.
+
+Decisive constraint, measured: DESC 0.17.2 `Equilibrium.map_coordinates` silently
+hard-clamps to `rho = 1` outside the LCFS - no NaN, no warning, error exactly
+`rho_asked - 1`. There is therefore no ground truth outside the LCFS, only a
+choice of convention, and exterior values can only come from the forward map
+(`eq.compute`, which accepts `rho > 1` cleanly and is essentially free).
+
+Variants: `A/E0`, `A/E1`, `C/E0`, `C/E1`, `C/E2`, where `E0` is the Part 8 clamp,
+`E1` is normal offset to the nearest LCFS foot point (`rho = 1 + d/L`,
+`L = e_rho . nhat`), and `E2` is the DESC Zernike continuation (nominal).
+`E3` (radial offset from the magnetic axis) was dropped.
+
+Delivered: 16-cell notebook mirroring Part 8's section numbering, written to the
+logbook (the previous Part 9 file, which held only the T1-T5 diagnostics used to
+write the plan, was backed up to `.bak_pre_part9`; Part 9t left untouched).
+Executed end-to-end via `nbconvert` against the real equilibrium: 0 errors, 58 s
+of in-notebook work, all 7 plots rendered, both build-time assertions pass.
+
+Verified results:
+- Interior boundary band `0.98 <= rho <= 1.0`: rms `rho` error improves 10.9x
+  (C/E0 -> C/E2) and 19.5x (A/E0 -> A/E1), while `rho < 0.9` is unchanged. This
+  confirms Part 8's suspicion that the clamp, not table resolution, set the
+  error floor near the boundary. Section 14 shows the clamped table plateauing
+  under refinement while the extrapolated one keeps converging.
+- Convention spread scales as `eps^1.82` in `rho` but `eps^0.84` in `theta`. At
+  `rho = 1.1`: `rho` spread 13.4 mm, BELOW the 16.5 mm spectral ambiguity floor;
+  `theta` spread 72.1 mm, 4.4x ABOVE it. Cause is the ~40 deg mean obliquity of
+  `e_rho` to the flux surface, so DESC's continuation slides points tangentially
+  while E1 does not. Corroborated independently by the interior `rho*dtheta`
+  score, where C/E2 beats C/E1 by 9.1x.
+- Net: the plan's headline claim holds for `rho` and fails for `theta`, so E2 is
+  nominal on C1-continuity and `theta` grounds rather than "the conventions
+  agree". Lookups run ~1400x faster than warm `map_coordinates`.
+
 ## F023 - Align W7-X SLURM production driver with the Part 3c/3d flat-file procedure
 Started: 2026-08-04
 Status: Done (2026-08-04)

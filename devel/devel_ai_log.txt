@@ -983,3 +983,58 @@ Key prompts:
   the moment not include any xarray code."
 - "Switch to loading Part 2b's saved config files" / "Flat-only" /
   "Keep multi-worker parallelism within a task" / "Contiguous block."
+
+================================================================================
+2026-08-04  F025: resumable W7-X training-set generation via a
+            pending-results manifest.
+
+Files modified:
+- xicsrt: devel/features_request.md (F025 added, Done), devel_ai_log.txt
+  (this entry). No engine code changed.
+- xicsrt_analysis: w7x_npablant/xicsrt_results_util.py (new
+  list_pending_config_files/write_pending_manifest/read_manifest,
+  run_training_set gained use_manifest/manifest_path);
+  production/xicsrt_train_task.py (new --use-manifest/--manifest-path);
+  production/slurm_train.batch (fail-fast manifest check); new
+  production/xicsrt_manifest_task.py; new tests/ suite (10 tests,
+  previously none existed for this package).
+- Notebook (untracked, gitignored): Part 3d markdown cell updated to
+  document the manifest behavior; invocation cell unchanged.
+
+Key changes:
+- run_training_set/xicsrt_train_task.py previously selected configs by
+  list position (num_analyze slice, or task_id*images_per_task shard),
+  relying only on run_one_sample's per-file skip-if-exists check;
+  num_analyze=100 therefore meant "first 100 configs", not "100 undone
+  samples". Added a pending-manifest layer so num_analyze/shards operate
+  on "configs without a result yet".
+- overwrite kept its original meaning (replace an existing result) and
+  is now decoupled from manifest-based selection (use_manifest), per
+  explicit correction mid-session.
+- SLURM manifest generation is a separate, manual, one-time CLI
+  (xicsrt_manifest_task.py) run before sbatch, not auto-generated or
+  polled by slurm_train.batch, to avoid races between array tasks
+  starting at different times; slurm_train.batch fails fast if the
+  manifest file is missing.
+
+Key findings / gotchas:
+- F024 was already in use (DESC extrapolation feature); this feature is
+  F025, not F024 as initially drafted mid-session (caught and fixed
+  across all new files before finalizing).
+- No test infra existed anywhere under xicsrt_analysis before this
+  session; added tests/__init__.py + conftest.py (sys.path insert for
+  the un-installed xicsrt_analysis package) alongside the new suite.
+
+Key prompts:
+- "please check which results have already been generated (by the
+  existence of a results .hdf5 file), and then start the run based on
+  config files that don't have a corresponding result ... add
+  num_analyze as an option with a default of None ... tolerant of slurm
+  job timeouts."
+- "I do not want the manifest list created as part of the slurm batch
+  script. This should instead be run manually before running the
+  script ... For the Part 3d notebook, it should automatically generate
+  the manifest file, and then run it."
+- "the overwrite function should not be tied to the manifest. Maybe a
+  new option 'use_manifest' would be better ... Please add a pytest
+  suite for xicsrt_analysis/w7x_npablant as needed."
