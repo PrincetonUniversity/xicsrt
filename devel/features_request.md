@@ -1,5 +1,47 @@
 # XICSRT Feature Requests
 
+## F023 - Align W7-X SLURM production driver with the Part 3c/3d flat-file procedure
+Started: 2026-08-04
+Status: Done (2026-08-04)
+
+`xicsrt_train_task.py` (F010 Phase 2) built each training image's config
+in-memory per SLURM task and called `raytrace_mp`, saving a full `.tif`
+image and full raw `.hdf5` per image. This diverged from the config-file
+and flat-output procedure developed in the "Part 2b"/"Part 3c" notebooks
+(saved JSON configs consumed one-by-one, `simplify_results`/`flatten_dict`
+reduction to config + found-ray intersections only). Entirely within
+`xicsrt_analysis`; no changes to core xicsrt.
+
+Changes:
+- New `xicsrt_analysis/w7x_npablant/xicsrt_results_util.py`: shared
+  `simplify_results`, `flatten_dict`, `run_one_sample`, `run_training_set`,
+  `list_config_files`, factored out of the Part 3c notebook (xarray/netCDF
+  conversion deliberately not included; F020's combiner reads `.hdf5`
+  directly).
+- `xicsrt_train_task.py` rewritten: consumes a contiguous shard of
+  pre-saved configuration files (`task_id * images_per_task` block)
+  instead of generating configs per-seed, and runs a `multiprocessing.Pool`
+  of `run_one_sample` calls (one single-process raytrace per config file)
+  instead of `raytrace_mp` over one shared config. Per-image profile
+  randomization/`calibrate_emissivity_scale` moved upstream to
+  config-generation time; this driver only runs whatever each file
+  specifies.
+- New `xicsrt_config_task.py`: reference CLI mirroring Part 2b's
+  `build_training_set_configs`. Not intended for SLURM (config generation
+  is fast); kept for scripted/version-controlled use, e.g. generating and
+  inspecting configs locally before uploading to the cluster.
+- New notebook "Part 3d - Generating xicsrt results" (uses
+  `xicsrt_results_util` instead of embedding the functions); Part 3c is
+  kept as history.
+- `slurm_train.batch` updated to pass `--config-path` through to
+  `xicsrt_train_task.py`.
+
+Verified: `xicsrt_config_task.py` reproduces the existing 1000-sample
+config set bit-for-bit (mount-path prefix aside) for the same seed;
+`xicsrt_train_task.py` run locally on a small shard produces the same
+flat `.hdf5` output as `xicsrt_results_util.run_training_set`, including
+the skip-if-exists and per-sample error-log behavior.
+
 ## F022 - Normalize W7-X emissivity_scale to give a consistent source ray count
 Started: 2026-08-03
 Status: Pending verification review

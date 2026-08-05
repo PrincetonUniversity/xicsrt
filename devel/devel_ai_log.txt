@@ -933,3 +933,53 @@ Key prompts:
   place."
 - "Part 4a should tolerate .nc files and ignore them. Don't add a note.
   Future datasets will not include them."
+
+================================================================================
+2026-08-04  F023: align W7-X SLURM production driver with the Part 3c/3d
+            flat-file procedure.
+
+Files modified:
+- xicsrt: devel/features_request.md (F023 added, Done), devel_ai_log.txt
+  (this entry). No engine code changed.
+- xicsrt_analysis: new w7x_npablant/xicsrt_results_util.py,
+  production/xicsrt_config_task.py; rewrote
+  production/xicsrt_train_task.py; updated production/slurm_train.batch.
+- Notebook (untracked, gitignored): new "Part 3d - Generating xicsrt
+  results" in xicsrt_analysis/w7x_npablant/notebooks/ and the logbook dir;
+  Part 3c kept as history.
+
+Key changes:
+- xicsrt_results_util.py factors simplify_results/flatten_dict/
+  run_one_sample/run_training_set/list_config_files out of the Part 3c
+  notebook (xarray/flat_to_dataset deliberately not carried over, per
+  F020's resolution favoring direct .hdf5 reads).
+- xicsrt_train_task.py rewritten: consumes a contiguous shard of
+  pre-saved config files (task_id * images_per_task block) instead of
+  generating configs in-memory per seed, and runs a
+  multiprocessing.Pool of single-process run_one_sample calls instead of
+  raytrace_mp over one shared config. Flat-only output
+  (xicsrt_flat_<sample>.hdf5), no .tif/full raw .hdf5.
+- xicsrt_config_task.py: reference CLI mirroring Part 2b's
+  build_training_set_configs; fast, explicitly not a SLURM job.
+- slurm_train.batch passes --config-path through; dropped --seed-base.
+
+Key findings / gotchas:
+- mirlogging (imported transitively via xicsrt) calls logging.basicConfig()
+  at import time without setting the root level, so a later
+  logging.basicConfig(level=INFO) in xicsrt_train_task.py is a no-op;
+  worked around with an explicit log.setLevel(logging.INFO).
+- Verified locally: xicsrt_config_task.py reproduces the existing
+  1000-sample config set bit-for-bit (mount-path prefix aside);
+  xicsrt_train_task.py exercised end-to-end on real shards (success,
+  skip-if-exists, and induced-failure paths); Part 3d notebook executed
+  via jupyter nbconvert --execute against the real 100-sample directory.
+
+Key prompts:
+- "look at the notebook Part 3c ... update the 'production' code,
+  particularly xicsrt_train_task.py to follow the basic procedure. Create
+  a new util module ... and create a new part 3d notebook."
+- "I no longer need to create xarrays as part of this process ... the
+  filename should be something like xicsrt_results_util.py and should at
+  the moment not include any xarray code."
+- "Switch to loading Part 2b's saved config files" / "Flat-only" /
+  "Keep multi-worker parallelism within a task" / "Contiguous block."
