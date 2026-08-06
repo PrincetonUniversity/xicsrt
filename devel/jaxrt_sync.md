@@ -7,7 +7,7 @@ the physics of the numpy engine. This document tells a future AI coding session
 (or human) exactly how to keep the two engines aligned when the numpy engine
 changes, without re-deriving the architecture.
 
-Background: full approved design in `devel/plan_jaxrt.md` (F003 in
+Background: full approved design in `devel/plans/plan_F003_jaxrt.md` (F003 in
 `devel/features_request.md`). Read that for rationale; read *this* file for the
 mechanical sync procedure.
 

@@ -131,6 +131,8 @@ leading underscore. Config selects an element via `class_name`.
 - Creation: Upon identifying a new feature or significant change request, immediately add it to `devel/features_request.md` with the current date and "Pending" status. Put the most recent feature requests at the top of this file.
 - Alignment: Before creating a plan, verify alignment with `devel/features_request.md`. If the task is new, create a tracking entry first.
 - Completion: Upon successful implementation and verification, ask the user if the feature is done. If so mark as "Done" in `devel/features_request.md` and include a brief note on the implementation details.
+- Summary tables: `devel/features_request.md` opens with a "Pending" and a "Done" summary table (feature id, one-phrase description, start date, status), each sorted highest feature number first. Whenever a feature entry is added, moved between Pending/Done, or has its status/description changed, update the matching row in both tables in the same edit.
+- Plan files: store feature implementation plans under `devel/plans/`, named `plan_F0XX_<slug>.md` using the tracked feature's id (the lowest id if a plan spans a range, e.g. `plan_F014_lalston_integration.md` for F014-F019). Reference the plan file from its feature entry/entries in `devel/features_request.md`.
 
 ## Coding Standards
 

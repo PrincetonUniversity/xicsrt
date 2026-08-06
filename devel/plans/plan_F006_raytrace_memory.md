@@ -466,7 +466,7 @@ key), which per `_version.py` semantics warrants a **minor** bump.
 
 ## Suggested prompt to resume in a fresh session
 
-    Read devel/plan_raytrace_memory.md (F006 in devel/features_request.md)
+    Read devel/plans/plan_F006_raytrace_memory.md (F006 in devel/features_request.md)
     and implement it. Build the regression harness in Step 2 first and
     self-test it before touching any source file, then proceed through
     Steps 3 and 4 in order, running the harness after each individual

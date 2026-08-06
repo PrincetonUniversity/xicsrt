@@ -90,7 +90,7 @@ Key prompts:
 2026-07-17 — F003 planning: JAX-accelerated engine (xicsrt.jaxrt). Plan only, no code.
 
 Files modified:
-- devel/plan_jaxrt.md (created: full approved plan + codebase research notes)
+- devel/plans/plan_F003_jaxrt.md (created: full approved plan + codebase research notes)
 - devel/features_request.md (added F003, Pending)
 - AGENTS.md (added photon-statistics Core Mandate)
 
@@ -113,7 +113,7 @@ Key findings / gotchas:
   memory contention); cross-node scaling via SLURM arrays + seeds.
 
 Suggested follow-ups:
-- Start implementation from devel/plan_jaxrt.md, order: housekeeping done ->
+- Start implementation from devel/plans/plan_F003_jaxrt.md, order: housekeeping done ->
   _rays/plane/detector -> sources -> curved shapes/crystal -> mosaic -> tests.
 
 Key prompts:
@@ -314,7 +314,7 @@ Key prompts:
 2026-07-28 — F006 planning: diagnosed the large-run memory/tail problem.
 
 Files modified:
-- devel/plan_raytrace_memory.md (new, approved plan)
+- devel/plans/plan_F006_raytrace_memory.md (new, approved plan)
 - devel/features_request.md (F006 added, Pending)
 
 Key changes:
@@ -348,7 +348,7 @@ Key findings / gotchas:
   results and measures nothing.
 
 Suggested follow-ups:
-- Implement F006 per devel/plan_raytrace_memory.md (harness first).
+- Implement F006 per devel/plans/plan_F006_raytrace_memory.md (harness first).
 - Out of scope, worth its own entry: per-element history compaction would cut
   history 195 -> ~65 B/ray and raise the in-flight ceiling ~3x.
 
@@ -375,7 +375,7 @@ Key prompts:
 
 Files modified:
 - devel/features_request.md: added F010 entry (Pending).
-- devel/plan_w7x_training_accel.md: new, full self-contained plan.
+- devel/plans/plan_F010_w7x_training_accel.md: new, full self-contained plan.
 
 Key changes:
 - Approved plan: Phase 1 numpy-path (direct Voigt sampling replacing CDF
@@ -415,7 +415,7 @@ Key prompts:
 2026-07-30 — F010 Phase 1-3 implementation: W7-X training-set acceleration
 (Claude Fable 5 via opencode)
 
-Goal: implement devel/plan_w7x_training_accel.md (direct Voigt sampling,
+Goal: implement devel/plans/plan_F010_w7x_training_accel.md (direct Voigt sampling,
 vectorized plasma generation, ar16 relocation, DESC hygiene, SLURM template,
 hybrid-GPU design note).
 
@@ -425,7 +425,7 @@ Files modified:
   sources/_XicsrtPlasmaGeneric.py, sources/_XicsrtPlasmaToroidal.py,
   sources/_XicsrtPlasmaCylindrical.py, jaxrt/tools/_wavelength.py,
   _version.py (0.9.0); new tests/test_voigt_direct.py,
-  testing/compare_f010_plasma.py, devel/plan_hybrid_gpu.md; deleted
+  testing/compare_f010_plasma.py, devel/plans/plan_F010_hybrid_gpu.md; deleted
   tools/xicsrt_{voigt_multi,faddeeva}_jax.py, tests/test_voigt_multi_jax.py.
 - xicsrt_contrib: sources/_XicsrtPlasmaVmec.py (eq cache, fixed-shape padding).
 - xicsrt_analysis: w7x_npablant sources/_XicsrtPlasmaW7xSimple.py
@@ -456,11 +456,11 @@ Key findings / gotchas:
 
 Suggested follow-ups:
 - Stellar re-profile with run_08 layout; re-tune worker/thread split.
-- First Phase-2 production campaign; then revisit devel/plan_hybrid_gpu.md.
+- First Phase-2 production campaign; then revisit devel/plans/plan_F010_hybrid_gpu.md.
 - F009 (xics_jax import perturbs RNG) still open in the analysis repo.
 
 Key prompts:
-- "Implement F010 per devel/plan_w7x_training_accel.md, starting with
+- "Implement F010 per devel/plans/plan_F010_w7x_training_accel.md, starting with
   Phase 1a."
 - "Lets close this session and commit the changes. For the xicsrt_contrib and
   xicsrt_analysis repos, please create a matching devel branch and commit to
@@ -564,7 +564,7 @@ Key prompts:
 2026-07-31  Planning-only session: integrate the devel_lalston SULI work.
 
 Files modified:
-- devel/plan_lalston_integration.md (new)
+- devel/plans/plan_F014_lalston_integration.md (new)
 - devel/features_request.md (new F014-F019)
 
 No code changed. Plan approved by user; implementation deferred to a new session.
@@ -676,7 +676,7 @@ Key prompts:
 
 ================================================================================
 2026-07-31  F014-F019: integrate the SULI 2026 (L. Alston) spline-profile work
-            into the optimized branch, per devel/plan_lalston_integration.md.
+            into the optimized branch, per devel/plans/plan_F014_lalston_integration.md.
 
 Files modified:
 - xicsrt: tools/xicsrt_spline.py, sources/_XicsrtPlasmaGeneric.py,
@@ -713,7 +713,7 @@ Key findings / gotchas:
 - jaxrt has no plasma sources, so this is a divergence-log note only.
 
 Key prompts:
-- "Implement the lalston integration per devel/plan_lalston_integration.md,
+- "Implement the lalston integration per devel/plans/plan_F014_lalston_integration.md,
   starting with Phase 0."
 - "I don't see any reasion to convert to a list instead of as a numpy array
   (asarray)." [make_profile_dict; the .tolist() was redundant since xicsrt_io
@@ -725,7 +725,7 @@ Key prompts:
 
 Files modified:
 - xicsrt: devel/features_request.md (new F021 entry),
-  devel/plan_profile_seed_decorrelation.md (new plan file)
+  devel/plans/plan_F021_profile_seed_decorrelation.md (new plan file)
 No code changes this session; investigation and planning only.
 
 Key findings / gotchas:
@@ -754,7 +754,7 @@ Key findings / gotchas:
   knowingly invalidated, not regenerated.
 
 Suggested follow-ups:
-- Implement devel/plan_profile_seed_decorrelation.md (F021) next session.
+- Implement devel/plans/plan_F021_profile_seed_decorrelation.md (F021) next session.
 - The two ray-count-spread causes above are understood but explicitly NOT
   tracked as feature requests yet, per user request to keep this session
   focused; revisit if/when prioritized.
@@ -773,7 +773,7 @@ Key prompts:
 
 ================================================================================
 2026-08-03  F021: implement the profile seed decorrelation planned last session
-            (devel/plan_profile_seed_decorrelation.md), all 5 steps as written.
+            (devel/plans/plan_F021_profile_seed_decorrelation.md), all 5 steps as written.
 
 Files modified:
 - xicsrt: tools/xicsrt_spline.py, tests/test_spline.py,
@@ -823,7 +823,7 @@ Key prompts:
 
 ================================================================================
 2026-08-03  F022: normalize W7-X emissivity_scale for a consistent source ray
-            count (devel/plan_ray_count_calibration.md).
+            count (devel/plans/plan_F022_ray_count_calibration.md).
 
 Files modified:
 - xicsrt: devel/{features_request.md,plan_ray_count_calibration.md} only;
@@ -1220,3 +1220,48 @@ Key prompts:
   scheme this will 'just work' if I pass in a lookup_table to the
   'wout_file' config option, and XicsrtPlasmaDesc will automatically lazy
   load the real desc equilibirum as expected."
+
+---
+
+## 2026-08-06: features_request.md summary tables, plans/ reorg, feature close-out
+
+Files modified:
+- devel/features_request.md, AGENTS.md, devel/jaxrt_sync.md,
+  testing/compare_raytrace_regression.py
+- devel/plan_*.md -> devel/plans/plan_F0XX_*.md (7 files renamed)
+
+Key changes:
+- Added Pending/Done summary tables (feature id, description, started,
+  status) at the top of features_request.md, sorted highest-id first,
+  Pending above Done; added an AGENTS.md directive to keep them in sync.
+- Moved all plan files into devel/plans/, renaming each to
+  plan_F0XX_<slug>.md keyed to its tracked feature (lowest id for
+  multi-feature plans, e.g. plan_F014_lalston_integration.md for
+  F014-F019); updated every reference across features_request.md,
+  jaxrt_sync.md, devel_ai_log.txt, and compare_raytrace_regression.py.
+- Closed F001, F006, F007, F010, F016, F022, F024, F027 as Done, after
+  confirming each was already fully implemented in xicsrt/xicsrt_contrib/
+  xicsrt_analysis (checked git log and current source) despite stale
+  Pending/in-progress status text.
+
+Key findings / gotchas:
+- Several entries' Status lines were stale relative to actual
+  implementation (e.g. F010 said "Phases 2-3 pending" but both the SLURM
+  production driver and the hybrid-GPU design note existed; F016 said
+  "plan approved" but get_velocity was already ported to DESC with no
+  stelltools dependency). Verified via git log + grep before closing,
+  not from the stale text alone.
+- Initial attempt to bulk-replace old plan paths with `perl -pi -e` failed
+  silently (shell escaping of the substitution literals); redid the
+  replacement with a small Python script operating on file contents
+  directly.
+
+Key prompts:
+- "Can you make a summary tables at the top of features_requests that
+  lists each feature with a one phrase description, date started and
+  status? ... make two tables: Pending and Done. Also update the
+  directive in my AGENTS.md file ... rename the plans so that the
+  filename includes the attached feature ... move all plans into a
+  subdirectory of devel called 'plans'."
+- "Now let me do some feature cleanup: Close F001, F006, F007, F010,
+  F016, F022, F024, and F027 as 'Done'"

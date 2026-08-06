@@ -5,7 +5,7 @@ Tracking: F014-F019 in devel/features_request.md.
 
 This plan is self-contained: a fresh agent session should be able to implement
 it starting from this file alone. Instruct the agent:
-"Implement the lalston integration per devel/plan_lalston_integration.md,
+"Implement the lalston integration per devel/plans/plan_F014_lalston_integration.md,
 starting with Phase 0."
 
 Note: this plan was produced with AI assistance using Claude (Opus 5).

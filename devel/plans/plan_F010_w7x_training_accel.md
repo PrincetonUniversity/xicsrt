@@ -5,7 +5,7 @@ Tracking: F010 in devel/features_request.md.
 
 This plan is self-contained: a fresh agent session should be able to implement
 it starting from this file alone. Instruct the agent:
-"Implement F010 per devel/plan_w7x_training_accel.md, starting with Phase 1a."
+"Implement F010 per devel/plans/plan_F010_w7x_training_accel.md, starting with Phase 1a."
 
 ## Objective
 
@@ -146,7 +146,7 @@ framework owns parameter sweeps; do not build sweep/combining tooling.
 
 ## Phase 3 - hybrid GPU (document only, DO NOT implement)
 
-Write devel/plan_hybrid_gpu.md describing: numpy plasma generation -> padded
+Write devel/plans/plan_F010_hybrid_gpu.md describing: numpy plasma generation -> padded
 fixed-capacity ray handoff -> jaxrt jit'd optics chain on GPU (jaxrt's
 _build_trace boundary already separates generation from tracing). Include:
 Amdahl ceiling ~2-2.4x/node post-Phase-1 (tracing ~60% share); fleet

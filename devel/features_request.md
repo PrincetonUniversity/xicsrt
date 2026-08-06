@@ -1,8 +1,52 @@
 # XICSRT Feature Requests
 
+Keep both summary tables below up to date whenever a feature entry is added,
+started, or its status changes (see AGENTS.md "Feature Requests"). Entries in
+each table are sorted with the highest feature number first, matching the
+order of the detailed entries below.
+
+## Pending
+
+| Feature | Description | Started | Status |
+|---|---|---|---|
+| F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
+| F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
+| F009 | Fix `xics_jax` import consuming global RNG stream | 2026-07-28 | Pending |
+| F008 | Fix raytrace non-reproducibility on first run of a process | 2026-07-28 | Pending |
+| F003 | JAX-accelerated raytracing engine (`xicsrt.jaxrt`) | 2026-07-17 | In progress |
+| F002 | Kent/FB8 directional distribution for angular spread | 2026-07-17 | Pending |
+
+## Done
+
+| Feature | Description | Started | Status |
+|---|---|---|---|
+| F027 | Wire `FluxLookupTable` into renamed `XicsrtPlasmaDesc` plasma source | 2026-08-06 | Done (2026-08-06) |
+| F026 | Persistent full-torus DESC flux-coordinate lookup table | 2026-08-05 | Done (2026-08-06) |
+| F025 | Resumable W7-X training-set generation via pending-results manifest | 2026-08-04 | Done (2026-08-04) |
+| F024 | DESC flux-coordinate extrapolation outside the LCFS | 2026-08-04 | Done (2026-08-04) |
+| F023 | Align W7-X SLURM driver with flat-file config/result procedure | 2026-08-04 | Done (2026-08-04) |
+| F022 | Normalize W7-X `emissivity_scale` for consistent source ray count | 2026-08-03 | Done (2026-08-06) |
+| F021 | Decorrelate seed-correlated randomized spline profiles | 2026-08-03 | Done (2026-08-03) |
+| F020 | xarray/netCDF results output format | 2026-07-31 | Done (2026-08-04, notebook-only) |
+| F019 | Fix `XicsrtPlasmaToroidal` wrong-radius profile evaluation | 2026-07-31 | Done (2026-07-31) |
+| F018 | eV/keV temperature convention cleanup | 2026-07-31 | Done (2026-07-31) |
+| F016 | Port W7-X velocity profile from stelltools to DESC | 2026-07-31 | Done (2026-08-06) |
+| F015 | W-line emissivity normalization for W7-X Ar16+ model | 2026-07-31 | Done (2026-07-31) |
+| F014 | Randomized spline plasma profiles for W7-X ML training set | 2026-07-31 | Done (2026-07-31) |
+| F013 | Fix `arcsin` RuntimeWarning from untruncated Voigt tails | 2026-07-30 | Done (2026-07-30) |
+| F012 | Randomize found-ray order in history (`shuffle_history`) | 2026-07-30 | Done (2026-07-30) |
+| F010 | W7-X ML training-set acceleration (numpy path) | 2026-07-30 | Done (2026-08-06) |
+| F007 | Acceleration of einsum and vector operations (numpy engine) | 2026-07-28 | Done (2026-08-06) |
+| F006 | Raytrace memory and multiprocessing instrumentation | 2026-07-28 | Done (2026-08-06) |
+| F005 | Allow `XicsrtPlasmaVmec` to load VMEC or saved DESC equilibria | 2026-07-26 | Done (2026-07-26) |
+| F004 | Exploratory JAX-accelerated `tools_jax` for numpy OO engine | 2026-07-21 | Done (2026-07-25) |
+| F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
+
+---
+
 ## F027 - Integrate FluxLookupTable into a renamed XicsrtPlasmaDesc
 Started: 2026-08-06
-Status: Pending
+Status: Done (2026-08-06)
 
 Follow-on to F026: wires the dependency-free `FluxLookupTable` (built by
 F026) into `xicsrt_contrib`'s VMEC/DESC plasma source so that
@@ -135,7 +179,7 @@ missing-manifest error.
 
 ## F024 - DESC flux-coordinate extrapolation outside the LCFS (Part 9 notebook)
 Started: 2026-08-04
-Status: Pending
+Status: Done (2026-08-04)
 
 Follow-through on the note in section 13 of the "Part 8 - Interpolated mapping"
 notebook: the interpolation table clamps every exterior node to `rho = 1.0`,
@@ -222,7 +266,7 @@ the skip-if-exists and per-sample error-log behavior.
 
 ## F022 - Normalize W7-X emissivity_scale to give a consistent source ray count
 Started: 2026-08-03
-Status: Pending verification review
+Status: Done (2026-08-06)
 
 For the W7-X ML training set, per-sample generated ray counts vary by ~700x
 (31-22533 detected, per F021's investigation), dominated by two multiplicative
@@ -233,7 +277,7 @@ Te-dependent `I_tot/I_w` full-spectrum correction varies ~26x. This blocks
 targeting a consistent ~1e4 rays/image and using a fixed-shape (rather than
 ragged) array when combining samples for ML training.
 
-Plan: `devel/plan_ray_count_calibration.md`. Entirely within `xicsrt_analysis`;
+Plan: `devel/plans/plan_F022_ray_count_calibration.md`. Entirely within `xicsrt_analysis`;
 no changes to core xicsrt. Adds `XicsrtPlasmaW7x.shape_integral()`, which
 computes the DESC-flux-surface-volume-weighted average of
 `profile_emissivity(rho) * (I_tot/I_w)(Te(rho))`, normalized by the total
@@ -274,7 +318,7 @@ question (F020).
 Started: 2026-08-03
 Status: Done (2026-08-03)
 
-Implemented as planned in `devel/plan_profile_seed_decorrelation.md`:
+Implemented as planned in `devel/plans/plan_F021_profile_seed_decorrelation.md`:
 `xicsrt_spline.profile_seeds(seed, names)` derives one independent
 `SeedSequence` per profile via `SeedSequence(parent.entropy, spawn_key=(ii,))`,
 and `generate_random_profiles` (xicsrt_analysis) now passes one child seed to
@@ -338,7 +382,7 @@ contract. The defect is in how the caller derives the five seeds.
 Fix: add `profile_seeds(seed, names)` to `xicsrt/tools/xicsrt_spline.py`,
 deriving one independent `SeedSequence` per profile via
 `SeedSequence(parent.entropy, spawn_key=(ii,))`, and call it from
-`generate_random_profiles`. See `devel/plan_profile_seed_decorrelation.md`.
+`generate_random_profiles`. See `devel/plans/plan_F021_profile_seed_decorrelation.md`.
 
 Per user direction: Ti and Te are drawn FULLY INDEPENDENTLY (option a). No
 backwards compatibility; the 199 existing samples and 1000 configs are
@@ -483,7 +527,7 @@ comment stating the assumption and its inadequacy.
 
 ## F016 - Port the W7-X velocity profile from stelltools to DESC
 Started: 2026-07-31
-Status: Pending (plan approved; see devel/plan_lalston_integration.md Phase 5)
+Status: Done (2026-08-06; see devel/plans/plan_F014_lalston_integration.md Phase 5)
 
 `XicsrtPlasmaW7xSimple.get_velocity` is dead code behind `if False:`; it
 depends on LIBSTELL/STELLOPT wrappers in `stelltools`, which is not
@@ -547,7 +591,7 @@ with no config option and no dedicated test.
 
 ## F014 - Randomized spline plasma profiles for the W7-X ML training set
 Started: 2026-07-31
-Status: Done 2026-07-31 (all phases; see devel/plan_lalston_integration.md)
+Status: Done 2026-07-31 (all phases; see devel/plans/plan_F014_lalston_integration.md)
 
 Implementation notes: all 8 plan phases done. The stale
 `suli/suli2026_alston/xicsrt_contrib` clone was deleted; the `devel_lalston`
@@ -708,9 +752,8 @@ unrelated change.
 
 ## F010 - W7-X ML training-set acceleration (numpy path)
 Started: 2026-07-30
-Status: Phase 1 implemented 2026-07-30 (verification notes below); Phases 2-3
-pending.
-Plan: devel/plan_w7x_training_accel.md
+Status: Done (2026-08-06; all phases, verification notes below)
+Plan: devel/plans/plan_F010_w7x_training_accel.md
 
 Addendum (2026-07-30, Done): Phase 1b's vectorization of
 `XicsrtPlasmaGeneric.create_sources` removed the ability to model each
@@ -786,7 +829,7 @@ Scope (Phase 1, implement):
 1d. DESC equilibrium caching + fixed-shape map_coordinates (xicsrt_contrib).
 Phase 2 (implement): SLURM job-array production template.
 Phase 3 (document only): hybrid numpy-generation -> jaxrt GPU optics design
-    note in devel/plan_hybrid_gpu.md.
+    note in devel/plans/plan_F010_hybrid_gpu.md.
 
 Constraints: exact photon statistics (no reweighting; per-image independent
 sampling), readability first, no backwards-compat shims, jaxrt sync per
@@ -844,7 +887,7 @@ Next step: bisect where the global RNG is first consumed relative to seeding.
 
 ## F007 - Acceleration of einsum and vector operations (numpy engine)
 Started: 2026-07-28
-Status: Implemented, pending review
+Status: Done (2026-08-06)
 Baseline commit: 7390575
 
 Goal: reduce single-core cost of the numpy raytracing hot path.
@@ -952,9 +995,9 @@ as a regression check again.
 
 ## F006 - Raytrace memory and multiprocessing instrumentation
 Started: 2026-07-28
-Status: Implemented (2026-07-28), pending user verification
+Status: Done (2026-08-06)
 
-Full approved plan: devel/plan_raytrace_memory.md
+Full approved plan: devel/plans/plan_F006_raytrace_memory.md
 Baseline commit: e89a3bd
 
 Implementation summary (2026-07-28):
@@ -1293,7 +1336,7 @@ dependency. Priorities, in order: (1) readability for doctorate-level physics
 researchers without CS background, (2) exact photon statistics at every
 element (core XICSRT tenet, no exceptions), (3) acceleration.
 
-Full approved plan: devel/plan_jaxrt.md
+Full approved plan: devel/plans/plan_F003_jaxrt.md
 
 Key decisions (approved 2026-07-17):
 - Parallel subpackage `xicsrt/jaxrt/`, pure functions + config dicts (no
@@ -1347,7 +1390,7 @@ Findings / notes (from code review, 2026-07-17):
 
 ## F001 - Performance enhancement for tools/xicsrt_voigt_multi.py
 Started: 2026-07-17
-Status: In Progress (2026-07-17: implemented jax-friendly Weideman kernel)
+Status: Done (2026-08-06: jax-friendly Weideman kernel implemented)
 
 Goal: Faster multi_voigt / multi_voigt_cdf_tab / multi_voigt_random.
 

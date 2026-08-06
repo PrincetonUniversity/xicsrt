@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # This file includes AI generated code using Claude (Opus 5).
 """
-Temporary regression harness for F006 (devel/plan_raytrace_memory.md).
+Temporary regression harness for F006 (devel/plans/plan_F006_raytrace_memory.md).
 
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
