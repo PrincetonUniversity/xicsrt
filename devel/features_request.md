@@ -1,5 +1,46 @@
 # XICSRT Feature Requests
 
+## F027 - Integrate FluxLookupTable into a renamed XicsrtPlasmaDesc
+Started: 2026-08-06
+Status: Pending
+
+Follow-on to F026: wires the dependency-free `FluxLookupTable` (built by
+F026) into `xicsrt_contrib`'s VMEC/DESC plasma source so that
+`XicsrtPlasmaW7x` (and other subclasses) can use the fast lookup table for
+`flx_from_car`/`bundle_generate` instead of always calling DESC's
+`map_coordinates` directly, while transparently falling back to a real DESC
+equilibrium for any operation the table cannot serve.
+
+Planned changes:
+- Rename `xicsrt_contrib.sources.XicsrtPlasmaVmec` ->
+  `XicsrtPlasmaDesc` (file and class), and `initialize_vmec` ->
+  `initialize_desc`. Rename `XicsrtPlasmaVmecDatafile` ->
+  `XicsrtPlasmaDescDatafile`, also fixing its pre-existing broken import
+  (`xicsrt.sources._XicsrtPlasmaVmec` -> `xicsrt_contrib.sources._XicsrtPlasmaDesc`).
+- `wout_file` (key name unchanged) now accepts a VMEC `.nc`, a saved DESC
+  `.h5` equilibrium, or a saved `FluxLookupTable` `.h5` file. The format is
+  identified from file content (magic bytes + top-level HDF5 dataset
+  names), not the extension.
+- `self.eq` becomes a lazy-loading property: in lookup-table mode,
+  `flx_from_car` uses `FluxLookupTable.car_to_flx` directly; any other
+  access to `self.eq` (e.g. `car_from_flx`, or `XicsrtPlasmaW7x`'s direct
+  `eq.compute`/`eq.M_grid`/`eq.iota` use) transparently loads the real DESC
+  equilibrium on first access, using the source-equilibrium path recorded
+  in the table's own metadata (or a same-named file next to the table).
+  `bundle_generate`'s outside-LCFS validity check uses the table's own
+  `is_valid` output in table mode instead of the DESC round-trip check.
+- `cyl_from_car`/`car_from_cyl` switched to `xicsrt.tools.xicsrt_math`
+  (pure geometry), since they never actually needed `self.eq`.
+- New standalone CLI `xicsrt_contrib/xicsrt_contrib/tools/generate_desc_lookup.py`,
+  extracted from Part A of the "2026-07-28 ... Part 11" logbook notebook,
+  to build a `FluxLookupTable` from a DESC equilibrium file from the
+  command line.
+- Updated `xicsrt_analysis/w7x_npablant` (`XicsrtPlasmaW7x`,
+  `xicsrt_w7x_npablant.calibrate_emissivity_scale`) to the renamed class
+  and method.
+
+---
+
 ## F026 - Persistent full-torus DESC flux-coordinate lookup table
 Started: 2026-08-05
 Status: Done (2026-08-06)

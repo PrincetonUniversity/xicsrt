@@ -1161,3 +1161,62 @@ Key prompts:
   the final grid."
 - "Please subsample to N_POINTS with a default value of 10,000 as
   suggested."
+
+---
+
+## 2026-08-06: Integrate FluxLookupTable into XicsrtPlasmaVmec -> XicsrtPlasmaDesc (F027)
+
+Files modified (xicsrt_contrib repo):
+- xicsrt_contrib/sources/_XicsrtPlasmaVmec.py -> _XicsrtPlasmaDesc.py (renamed)
+- xicsrt_contrib/sources/_XicsrtPlasmaVmecDatafile.py -> _XicsrtPlasmaDescDatafile.py (renamed)
+- xicsrt_contrib/tools/generate_desc_lookup.py (new)
+- doc_source/apidoc/*.rst (renamed/updated stubs and toctree)
+
+Files modified (xicsrt_analysis repo):
+- w7x_npablant/sources/_XicsrtPlasmaW7x.py, xicsrt_w7x_npablant.py (renamed
+  class/method references)
+
+Files modified (xicsrt repo):
+- devel/features_request.md (F027 entry)
+
+Key changes:
+- Renamed XicsrtPlasmaVmec -> XicsrtPlasmaDesc, initialize_vmec ->
+  initialize_desc; renamed XicsrtPlasmaVmecDatafile -> XicsrtPlasmaDescDatafile
+  and fixed its pre-existing broken import.
+- wout_file now accepts a VMEC .nc, a DESC .h5 equilibrium, or a saved
+  FluxLookupTable .h5, identified from file content (magic bytes + HDF5
+  dataset names), not extension.
+- self.eq is now a lazy-loading property: in lookup-table mode,
+  flx_from_car/bundle_generate use FluxLookupTable.car_to_flx directly,
+  while any other access to self.eq transparently loads the real DESC
+  equilibrium on first use (via the source path recorded in the table's
+  metadata, or a same-named file next to the table), raising a clear
+  RuntimeError if none is found. This makes XicsrtPlasmaW7x work
+  unmodified (beyond the rename) with a lookup-table wout_file.
+- cyl_from_car/car_from_cyl switched to xicsrt.tools.xicsrt_math (pure
+  geometry, no self.eq dependency).
+- New generate_desc_lookup.py CLI, extracted from notebook Part A, builds
+  and saves a FluxLookupTable from a DESC equilibrium file.
+
+Key findings / gotchas:
+- XicsrtPlasmaVmecDatafile's import was already broken pre-session
+  (wrong package path); fixed as part of the rename.
+- Verified all three wout_file modes (vmec .nc, desc .h5, lookup .h5) via
+  bundle_generate end-to-end, plus the lazy-eq fallback/error paths and
+  the eq property setter (used by xicsrt_w7x_npablant's equilibrium
+  cache). xicsrt core pytest suite (110 tests) unaffected.
+
+Key prompts:
+- "I would like to integrate the FluxLookupTable that we developed in the
+  last session into the XicsrtPlasmaVmec object ... 1. rename
+  XicsrtPlasmaVmec to XicsrtPlasmaDesc ... 2. add the ability for this
+  object to use the FluxLookupTable ... switch between using desc
+  map_coordinates and FluxLookupTable based on the file given to
+  initialize_vmec (which should be renamed to initialize_desc) ... 3.
+  create a new stand alone tool in xicsrt_contrib.tools called
+  generate_desc_lookup.py."
+- "The main purpose of the new look up table is to use it with
+  XicsrtPlasmaW7x to accelerate bundle creation. I believe that with this
+  scheme this will 'just work' if I pass in a lookup_table to the
+  'wout_file' config option, and XicsrtPlasmaDesc will automatically lazy
+  load the real desc equilibirum as expected."
