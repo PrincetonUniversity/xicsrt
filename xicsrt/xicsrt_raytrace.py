@@ -260,8 +260,8 @@ def _log_iter_diagnostics(sorted_output, history):
         key_opt_list = list(sorted_output['total']['meta'].keys())
         num_found = sorted_output['total']['meta'][key_opt_list[-1]]['num_out']
         m_log.info(
-            'Iteration found: {}, history: disabled, peak rss: {:0.1f} MB'
-            ''.format(num_found, peak_rss / 1024 ** 2))
+            'Iteration found: {}, history: disabled, peak rss: {:0.1f} GB'
+            ''.format(num_found, peak_rss / 1024 ** 3))
         return
 
     key_opt_last = list(sorted_output['found']['history'].keys())[-1]
@@ -273,12 +273,12 @@ def _log_iter_diagnostics(sorted_output, history):
                   + get_history_bytes(sorted_output['lost']['history']))
 
     m_log.info(
-        'Iteration found: {}, lost retained: {}, history: {:0.1f} MB traced '
-        '-> {:0.1f} MB kept, peak rss: {:0.1f} MB'.format(
+        'Iteration found: {}, lost retained: {}, history: {:0.1f} GB traced '
+        '-> {:0.1f} GB kept, peak rss: {:0.1f} GB'.format(
             num_found, num_lost,
-            full_bytes / 1024 ** 2,
-            kept_bytes / 1024 ** 2,
-            peak_rss / 1024 ** 2))
+            full_bytes / 1024 ** 3,
+            kept_bytes / 1024 ** 3,
+            peak_rss / 1024 ** 3))
 
 
 def _raytrace_iter(config, sources, optics):
