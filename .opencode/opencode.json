@@ -3,6 +3,8 @@
   "permission": {
     "external_directory": {
       "*": "ask",
+      "/tmp/**": "allow",
+
       "/u/npablant/code/mirfusion/**": "ask",
       "/u/npablant/code/mirproject/xics_jax/**": "allow",
       "/u/npablant/remote/stellar_princeton_edu/scratch/xicsrt/**": "allow",
@@ -10,6 +12,14 @@
       "/u/npablant/code/mirproject/xicsrt_analysis/**": "allow",
       "/u/npablant/code/mirproject/xicsrt_contrib/**": "allow",
       "/u/npablant/code/notebooks/npablant-2019/logbook/**": "allow",
+
+      "/Volumes/Data HD/u/npablant/code/mirfusion/**": "ask",
+      "/Volumes/Data HD/u/npablant/code/mirproject/xics_jax/**": "allow",
+      "/Volumes/Data HD/u/npablant/remote/stellar_princeton_edu/scratch/xicsrt/**": "allow",
+      "/Volumes/Data HD/u/npablant/analysis/xicsrt_results/**": "allow",
+      "/Volumes/Data HD/u/npablant/code/mirproject/xicsrt_analysis/**": "allow",
+      "/Volumes/Data HD/u/npablant/code/mirproject/xicsrt_contrib/**": "allow",
+      "/Volumes/Data HD/u/npablant/code/notebooks/npablant-2019/logbook/**": "allow"
     }
   }
 }
