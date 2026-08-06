@@ -1,5 +1,50 @@
 # XICSRT Feature Requests
 
+## F026 - Persistent full-torus DESC flux-coordinate lookup table
+Started: 2026-08-05
+Status: Done (2026-08-06)
+
+Part 10's ("Path C/E2, simplified") interpolated Cartesian -> flux-coordinate
+table covered only a single small box around one poloidal cross-section and
+was rebuilt from scratch every notebook run. This extends it to a table
+covering a full half field period (exploiting stellarator symmetry to fold
+the other half and NFP periodicity to cover the whole torus), with save/load
+to disk so the table build is a one-time-per-equilibrium cost, and a
+dependency-free query module usable without `desc`/`jax` installed. Intended
+eventually to replace the direct `eq.map_coordinates` calls in
+`xicsrt_contrib`'s `XicsrtPlasmaVmec` (tracked as separate future work, not
+part of this feature).
+
+Delivered: new logbook notebook `2026-07-28 - Desc Coordinate Transform
+Performance Minimal Example - Part 11 - Full torus persistent lookup
+table.ipynb` (desc-dependent; split into a fully independent "Part A: build
+and save" and "Part B: load, validate, and profile" so Part B can be re-run
+on its own, in a fresh kernel, from just the saved table file), plus a new
+dependency-free `xicsrt_contrib/xicsrt_contrib/tools/flux_lookup_table.py`
+module (`FluxLookupTable` dataclass: `car_to_flx`, `save`/`load` via plain
+h5py, float32/lzf-compressed storage, plus a module-level `load()`
+convenience wrapper) with no `desc`/`jax` import.
+
+Verified: notebook executed end-to-end via `nbconvert` against the real
+W7-X equilibrium (`wout_desc_solved.h5`, NFP=5): 0 errors, table build
+(120 x 161 x 160 = 3.09M nodes, `CloughTocher2DInterpolator` per-plane
+resample) took ~19 s one-time, saved table is 12.1 MB. Validation against
+`eq.map_coordinates` used query points with the cylindrical toroidal angle
+spanning `phi` in `[-2*pi, 3*pi]` (5 field periods each direction, both the
+direct and mirrored half of each period): interior (`rho<=1`) rms `rho`
+error 3.9e-5 (`rho<0.9`) / 7.1e-5 (`0.9<=rho<=1.0`), and `zeta` (the analytic
+toroidal-angle passthrough) matched to <1e-9 rad in all zones, confirming
+the fold/mirror/periodicity logic is correct, not just the interpolation. A
+second validation pass at a random subsample of the table's own grid nodes
+(isolating the resampling error from the `RegularGridInterpolator`
+between-node interpolation error) showed rms `rho` error of 2.0e-6
+(`rho<0.9`) / 5.7e-6 (`0.9<=rho<=1.0`), confirming most of the total error
+comes from between-node interpolation, not resampling. Lookup measured
+~580-610x faster than warm `map_coordinates` over the same full-torus
+points. Loaded and queried the saved table successfully in a separate
+Python environment with `desc`/`jax` not installed, confirming the query
+module has no such dependency.
+
 ## F025 - Resumable W7-X training-set generation via a pending-results manifest
 Started: 2026-08-04
 Status: Done (2026-08-04)

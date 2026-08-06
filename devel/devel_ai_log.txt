@@ -1038,3 +1038,126 @@ Key prompts:
 - "the overwrite function should not be tied to the manifest. Maybe a
   new option 'use_manifest' would be better ... Please add a pytest
   suite for xicsrt_analysis/w7x_npablant as needed."
+
+================================================================================
+2026-08-05  Notebook-only session: Part 10, simplified Path C/E2 flux lookup.
+
+Files modified:
+- notebooks/npablant-2019/logbook/2026-07-28 ... Part 10 - Path C-E2,
+  simplified.ipynb (new, outside this repo, gitignored; no xicsrt code
+  changed)
+
+Key changes:
+- Built Part 10 from scratch as a readable, from-scratch extraction of
+  Part 9's best-performing variant (Path C, forward-map cloud extended to
+  RHO_MAX=1.1, resampled per zeta plane): dropped all other Part 9
+  strategies (path A, E0/E1 conventions) and all exploratory analysis
+  (fold guard, ambiguity floor, theta-obliquity study, convergence scan).
+- Kept only: table build, lookup, interior validation vs
+  eq.map_coordinates, profiling vs map_coordinates, and two plots.
+- Fixed a real bug found during review: fill_beyond_rho_max's
+  nearest-neighbour theta fill for beyond-RHO_MAX table nodes is not
+  smooth, so RegularGridInterpolator can blend a real (u,v) with a filled
+  one across the valid/invalid cell boundary and produce an interpolated
+  rho that lands anywhere (including < 1.0), even though every
+  contributing node was >= 1.0. Thresholding on interpolated rho near
+  RHO_MAX is therefore unreliable.
+- Fix: make_lookup now also interpolates the boolean valid table and
+  returns a second output, is_valid (True only if all 8 bracketing table
+  corners were valid). xyz_to_flux returns (flux, is_valid); validation
+  and plotting use is_valid instead of a rho threshold. Added a third
+  plot showing the mask itself.
+
+Key findings / gotchas:
+- Confirmed by direct geometric check (eq.compute at rho=RHO_MAX across
+  all zeta planes in the box) that the reported bad points (R < 5.25 m)
+  are unambiguously beyond RHO_MAX everywhere in the box, i.e. a real
+  bug and not a legitimate boundary ambiguity.
+- After the fix, all originally-misclassified points are correctly
+  excluded (0 false positives against the geometric ground truth) and
+  is_valid's true-fraction matches the underlying valid-table-node
+  fraction (~21%).
+- Verified by executing the full notebook end-to-end via nbconvert with
+  the `desc` pyenv kernel, both before and after the fix.
+
+Key prompts:
+- "For part 10 I only want the Path C/E2 ... start from scratch and do
+  not keep any unnecessary parts of Part 9 ... make the code simple and
+  human readable, performance is only a secondary goal ... include
+  validation and profiling for interior points against a standard
+  map_coordinates call, and plotting, but only for the most important
+  quantities."
+- "there are some points far outside the lcfs (rho > 1.1) that have
+  values that are not equal to the expected RHO_MAX, and are actually
+  less than 1.0 ... I need to be able to reliably know what points are
+  outside RHO_MAX and can be excluded."
+
+================================================================================
+2026-08-06  F026: persistent full-torus DESC flux-coordinate lookup table.
+
+Files modified:
+- devel/features_request.md (new F026 entry)
+- notebooks/npablant-2019/logbook/2026-07-28 ... Part 11 - Full torus
+  persistent lookup table.ipynb (new, outside this repo, gitignored)
+- xicsrt_contrib/xicsrt_contrib/tools/flux_lookup_table.py (new, sibling
+  repo, dependency-free query module)
+- xicsrt_contrib/xicsrt_contrib/tools/__init__.py (new, empty, new package)
+
+Key changes:
+- Extended Part 10's single-cross-section flux lookup table to a full
+  half field period (zeta in [0, pi/NFP]); a stellarator-symmetry
+  mirror plus NFP-periodicity fold covers the entire torus from that
+  one stored half period.
+- Factored the query side (interpolation, fold/mirror, save/load) into
+  FluxLookupTable, a frozen dataclass with no `desc`/`jax` import, so it
+  can be used standalone; only Part A of the notebook (table generation)
+  needs `desc`.
+- Split the notebook into two independent sections at the user's
+  request: Part A (build + save) and Part B (load + validate +
+  profile), where Part B re-derives every constant (RHO_MAX, NFP,
+  HALF_PERIOD, the (R,Z) box) from the loaded table's own attributes
+  rather than any Part A Python variable, so Part B can run standalone
+  in a fresh kernel given only the saved table file.
+- Added a second validation pass at a random subsample of the table's
+  own grid nodes, isolating resampling error (LinearNDInterpolator/
+  CloughTocher2DInterpolator onto the regular grid) from the
+  RegularGridInterpolator between-node interpolation error that the
+  original random-point validation could not separate.
+- User made manual edits after the initial delivery: renamed the module
+  `_flux_lookup_table.py` -> `flux_lookup_table.py` (dropped leading
+  underscore) and added a module-level `load()` wrapper; switched the
+  notebook's per-plane resampler from `LinearNDInterpolator` to
+  `CloughTocher2DInterpolator`; tightened the round-trip tolerance to
+  1e-8; added a `factor` knob to scale table resolution.
+
+Key findings / gotchas:
+- `CloughTocher2DInterpolator` materially improves resampling accuracy
+  over `LinearNDInterpolator`: grid-node rms rho error dropped from
+  ~4.2e-5 to ~2.0e-6 (rho<0.9) in side-by-side notebook runs.
+- Verified Part B's independence directly, not just by inspection: 
+  extracted its cells into a standalone script and ran it in a fresh
+  Python process with no Part A code executed, confirming it loads
+  the saved table and reproduces identical validation/profiling output.
+- Verified the query module imports and runs correctly (loads the saved
+  table, calls car_to_flx) in a separate Python environment with
+  `desc`/`jax` not installed.
+- Full notebook executed end-to-end via nbconvert with 0 errors after
+  every edit round (including after the user's manual changes); core
+  xicsrt pytest suite (110 tests) unaffected throughout, since no core
+  xicsrt code was touched.
+
+Key prompts:
+- "I would like you to look at this notebook ... Part 10 ... and make a
+  new Part 11 notebook that generates the interpolated mapping on a
+  full half field period (assume stellarator symmetry), and then allows
+  for mapping from anywhere around the torus in 3d space ... I would
+  like an easy way to save and load the results to disk."
+- "I would like you to better separate the building from the validation
+  in this notebook ... please re-organize so the build/save is clearly
+  separated from validation and profiling."
+- "Please make the sections fully independent."
+- "In addition to the validation on a random selection of points, I
+  would also like a validation on the actual grid points that make up
+  the final grid."
+- "Please subsample to N_POINTS with a default value of 10,000 as
+  suggested."
