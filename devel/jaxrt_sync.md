@@ -216,6 +216,14 @@ sessions must check this list before assuming the engines are in sync.
   no jaxrt change is required. Worth noting for consistency: this uses the
   same `SeedSequence(entropy, spawn_key=(ii,))` idiom that `jaxrt/_engine.py`
   and `xicsrt_raytrace.raytrace_single` already use for `rng_shuffle`.
+- 2026-08-08, F028: no divergence introduced. `_XicsrtPlasmaGeneric.py`
+  gained `wavelength_line_range` (default `None`) and
+  `_filter_lines_by_wavelength`, filtering the `multi_voigt` line list from
+  `get_line_parameters` before `multi_voigt_random_batched`. Plasma-source-
+  only change; jaxrt has no plasma sources (see F014-F019 entry above), so
+  no jaxrt change is required. jaxrt's own `multi_voigt` support
+  (`jaxrt/tools/_wavelength.py`, non-plasma sources only) is untouched and
+  has no equivalent per-instance line-filter option.
 
 ## Convergence log
 

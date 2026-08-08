@@ -1314,3 +1314,50 @@ Key prompts:
   100 iterations and about 1e7 rays per iteration. The initial iteration
   use about 3.5GB of total peak memory per iteration, but then this
   steady rises to 8.0 GB of tot peak memory usage by iteration 100."
+
+================================================================================
+2026-08-08 — Added a user-defined line wavelength filter for multi_voigt
+plasma emission (F028).
+
+Files modified:
+- xicsrt/sources/_XicsrtPlasmaGeneric.py
+- devel/features_request.md, devel/jaxrt_sync.md
+- tests/test_plasma_wavelength_line_filter.py (new)
+
+Key changes:
+- Added `wavelength_line_range` config option (default `None`) to
+  `XicsrtPlasmaGeneric`, used only for `wavelength_dist = 'multi_voigt'`.
+  When set to `[min, max]`, lines from `get_line_parameters` whose center
+  wavelength falls outside the inclusive range are dropped from the line
+  list entirely before sampling; this filters which lines participate in
+  the emission, it does not truncate the sampled Voigt distribution of a
+  kept line.
+- New `_filter_lines_by_wavelength` helper, called from
+  `_generate_wavelengths` right after `get_line_parameters` returns (plain
+  numpy), so it applies uniformly to the base broadcast implementation and
+  any subclass override (including ones using jax internally, since
+  filtering happens after any jax boundary). Raises `ValueError` if the
+  range excludes every line.
+- jaxrt has no plasma sources, so no jaxrt change was needed (noted in
+  devel/jaxrt_sync.md divergence log).
+
+Key findings / gotchas:
+- `line_locations`/`line_intensities`/`line_sigmas`/`line_gammas` were
+  previously undocumented in `default_config`'s docstring despite being
+  real config options consumed by `get_line_parameters`; added
+  documentation for the new option alongside them.
+
+Key prompts:
+- "I would like to add a new feature. For the 'multi_voigt' wavelength
+  distribution in XicsrtPlasmaGeneric I would like to add a user defined
+  line wavelenth filter. The filter should only lines in the list from
+  self.get_line_parameters, not the wavelenth distribution; this is
+  important because voigt profiles have very wide distributions, so this
+  about excluding lines, not about truncating the distribution. By
+  defualt all lines should be included. Readability is the primary
+  importance, and this feature is unlikely to be used, so performance and
+  readability of the default (include all lines) is imporntant. Keep in
+  mind jax accelerations, so line filtering should be done after any jax
+  boundray."
+- "I only want to adjust the config name please use instead
+  'wavelength_line_range'"

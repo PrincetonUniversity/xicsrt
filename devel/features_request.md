@@ -20,6 +20,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F028 | User-defined line wavelength filter for `multi_voigt` plasma emission | 2026-08-08 | Done (2026-08-08) |
 | F027 | Wire `FluxLookupTable` into renamed `XicsrtPlasmaDesc` plasma source | 2026-08-06 | Done (2026-08-06) |
 | F026 | Persistent full-torus DESC flux-coordinate lookup table | 2026-08-05 | Done (2026-08-06) |
 | F025 | Resumable W7-X training-set generation via pending-results manifest | 2026-08-04 | Done (2026-08-04) |
@@ -41,6 +42,30 @@ order of the detailed entries below.
 | F005 | Allow `XicsrtPlasmaVmec` to load VMEC or saved DESC equilibria | 2026-07-26 | Done (2026-07-26) |
 | F004 | Exploratory JAX-accelerated `tools_jax` for numpy OO engine | 2026-07-21 | Done (2026-07-25) |
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
+
+---
+
+## F028 - User-defined line wavelength filter for `multi_voigt` plasma emission
+Started: 2026-08-08
+Status: Done (2026-08-08)
+
+Added a `wavelength_line_range` config option to `XicsrtPlasmaGeneric`, used
+only when `wavelength_dist = 'multi_voigt'`. When set to `[min, max]`,
+spectral lines from `get_line_parameters` whose center wavelength falls
+outside that inclusive range are excluded from sampling entirely (this is a
+line-list filter, not a truncation of the sampled Voigt distribution, since
+Voigt tails are intentionally wide). Default `None` includes all lines with
+no added overhead. Filtering is applied on the plain-numpy output of
+`get_line_parameters`, after any jax-based computation a subclass override
+might use internally, so it works uniformly for the base broadcast
+implementation and any per-bundle dynamic line-list override.
+
+Implementation: new `_filter_lines_by_wavelength` helper in
+`_XicsrtPlasmaGeneric.py`, called from `_generate_wavelengths` right after
+`get_line_parameters`; raises `ValueError` if the range excludes every
+line. jaxrt has no plasma sources, so no jaxrt change was needed (noted in
+`devel/jaxrt_sync.md`). Tests added in
+`tests/test_plasma_wavelength_line_filter.py`.
 
 ---
 

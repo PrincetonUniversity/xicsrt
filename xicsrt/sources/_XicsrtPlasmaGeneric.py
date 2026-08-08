@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Opus 5, Fable 5)
+# This file includes AI generated code using Claude (Opus 5, Fable 5, Sonnet 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -143,6 +143,16 @@ class XicsrtPlasmaGeneric(GeometryObject):
         filters
           No documentation yet. Please help improve XICSRT!
 
+        wavelength_line_range : tuple (None) [Angstroms]
+          Only used for `wavelength_dist = 'multi_voigt'`. An inclusive
+          `[min, max]` wavelength range used to filter the *list of lines*
+          returned by :any:`get_line_parameters` before sampling: only
+          lines whose center wavelength (`line_locations`) falls within
+          the range are kept. This filters which lines participate in the
+          emission, it does not truncate the sampled Voigt distribution of
+          any individual line (Voigt profiles have intentionally wide
+          tails). If `None` (the default) all lines are included.
+
         """
         config = super().default_config()
                 
@@ -169,6 +179,7 @@ class XicsrtPlasmaGeneric(GeometryObject):
         config['line_intensities'] = np.array([1.0])
         config['line_sigmas']      = np.array([0.0])
         config['line_gammas']      = np.array([0.0])
+        config['wavelength_line_range'] = None
 
         config['emissivity']      = 0.0
         config['temperature']     = 0.0
@@ -352,6 +363,38 @@ class XicsrtPlasmaGeneric(GeometryObject):
             locations.shape)
         return locations, intensities, sigmas, gammas
 
+    def _filter_lines_by_wavelength(self, locations, intensities, sigmas, gammas):
+        """
+        Drop lines outside `wavelength_line_range` from the line list.
+
+        This filters the *list of lines* used for `multi_voigt` sampling
+        (as returned by :any:`get_line_parameters`), not the sampled Voigt
+        distribution of an individual line. Line identity/order is assumed
+        to be the same for every bundle, so the keep mask is computed from
+        the first bundle row.
+
+        Parameters
+        ----------
+        locations, intensities, sigmas, gammas : ndarray, shape (n_bundles, n_lines)
+            Per-bundle line parameters, as returned by
+            :any:`get_line_parameters`.
+
+        Returns
+        -------
+        tuple of ndarray
+            The same four arrays, each with columns outside
+            `wavelength_line_range` removed.
+
+        This method was AI generated using Claude (Sonnet 5).
+        """
+        lo, hi = self.param['wavelength_line_range']
+        keep = (locations[0] >= lo) & (locations[0] <= hi)
+        if not np.any(keep):
+            raise ValueError(
+                f"wavelength_line_range {[lo, hi]} excludes all lines in the"
+                f" line list (locations: {locations[0]}).")
+        return locations[:, keep], intensities[:, keep], sigmas[:, keep], gammas[:, keep]
+
     def create_sources(self, bundle_input):
         """
         Generate rays from the bundle list in a single vectorized pass.
@@ -524,7 +567,8 @@ class XicsrtPlasmaGeneric(GeometryObject):
         per-bundle ion temperature; the Voigt variate is sampled directly as
         Normal + Cauchy (exact, handles zero temperature or linewidth).
         For 'multi_voigt' the per-bundle line parameters are provided by the
-        get_line_parameters() hook and sampled with the batched mixture
+        get_line_parameters() hook, optionally filtered by
+        `wavelength_line_range`, and sampled with the batched mixture
         sampler.
 
         This method was AI generated using Claude (Fable 5).
@@ -567,6 +611,9 @@ class XicsrtPlasmaGeneric(GeometryObject):
         elif wtype == 'multi_voigt':
             locations, intensities, sigmas, gammas = self.get_line_parameters(
                 bundle_input, m, bundle_index)
+            if self.param['wavelength_line_range'] is not None:
+                locations, intensities, sigmas, gammas = self._filter_lines_by_wavelength(
+                    locations, intensities, sigmas, gammas)
             wavelength = xicsrt_voigt_multi.multi_voigt_random_batched(
                 locations, intensities, sigmas, gammas, bundle_index)
 
