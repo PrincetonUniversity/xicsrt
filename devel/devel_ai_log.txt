@@ -1265,3 +1265,52 @@ Key prompts:
   subdirectory of devel called 'plans'."
 - "Now let me do some feature cleanup: Close F001, F006, F007, F010,
   F016, F022, F024, and F027 as 'Done'"
+
+================================================================================
+2026-08-08 — Diagnosed W7-X production memory growth as a jax.jit
+recompilation leak (fix lives in xicsrt_analysis, not this repo).
+
+Files modified:
+- None in this repo (read-only investigation). Fix committed separately
+  in xicsrt_analysis: w7x_npablant/sources/_XicsrtPlasmaW7x.py.
+
+Key changes:
+- Investigated a report of xicsrt_train_task.py peak RSS climbing from
+  3.5 GB to 8.0 GB over 100 iterations of the W7-X production config.
+  Ruled out the xicsrt core engine (Dispatcher history clearing, the
+  F006 fix, output_list/combine_raytrace bounding) as the cause.
+- Root cause: `XicsrtPlasmaW7x.bundle_generate` (xicsrt_analysis) called
+  the jax-jitted `_batched_line_params` with mask-compressed
+  (`[m]`-sliced) temperature arrays. The active-bundle count `m.sum()` is
+  a Monte Carlo random variable that changes almost every iteration,
+  so jax.jit compiled and permanently cached a new XLA executable per
+  distinct shape seen (jit's dispatch cache has no default eviction).
+  Fixed by evaluating the line model on the full fixed-length
+  (`bundle_count`) arrays and masking the result afterward, matching the
+  existing `XicsrtPlasmaDesc._pad_masked` convention.
+- Verified fix: `_batched_line_params._cache_size()` stayed at 2 for 200
+  iterations post-fix vs. growing to 40 pre-fix; peak RSS plateaued at
+  ~2.17 GB post-fix vs. climbing past 2.59 GB and still rising pre-fix;
+  bit-exact bundle_generate output for a fixed seed before/after.
+
+Key findings / gotchas:
+- `_log_iter_diagnostics`'s "history: X GB traced -> Y GB kept" line only
+  measures the ray-history dict; it does not account for JIT/device
+  memory, so "0.0 GB kept" alongside rising peak RSS pointed away from
+  ray history and toward something else entirely.
+- `peak_rss` in that log line is `ru_maxrss`, a process-lifetime
+  high-water mark — it never decreases, so its absolute value at one
+  iteration is not informative; only its trend across iterations is.
+- jax.jit's in-process dispatch cache is keyed on argument shape/dtype
+  (not value) and is unbounded/unevicted by default; only
+  `<jit_fn>.clear_cache()` frees it, which nothing in this codebase calls.
+  `<jit_fn>._cache_size()` and `JAX_LOG_COMPILES=1` are useful for
+  diagnosing this class of leak.
+
+Key prompts:
+- "I would like you to help me figure out some issues with memory usage
+  when performing many iterations in xicsrt. I am trying to run my w7x
+  model (xicsrt_analysis/w7x_npablant/production/xicsrt_train_task) with
+  100 iterations and about 1e7 rays per iteration. The initial iteration
+  use about 3.5GB of total peak memory per iteration, but then this
+  steady rises to 8.0 GB of tot peak memory usage by iteration 100."
