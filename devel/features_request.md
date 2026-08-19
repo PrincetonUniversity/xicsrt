@@ -20,6 +20,8 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F030 | Physics-constrained spline profiles for W7-X ML training configs | 2026-08-18 | Done (2026-08-19) |
+| F029 | Move orphaned `xicsrt_spline.py` from `xicsrt` core into `xicsrt_analysis` | 2026-08-18 | Done (2026-08-18) |
 | F028 | User-defined line wavelength filter for `multi_voigt` plasma emission | 2026-08-08 | Done (2026-08-08) |
 | F027 | Wire `FluxLookupTable` into renamed `XicsrtPlasmaDesc` plasma source | 2026-08-06 | Done (2026-08-06) |
 | F026 | Persistent full-torus DESC flux-coordinate lookup table | 2026-08-05 | Done (2026-08-06) |
@@ -44,6 +46,92 @@ order of the detailed entries below.
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
 
 ---
+
+## F030 - Physics-constrained spline profiles for W7-X ML training configs
+Started: 2026-08-18
+Status: Done (2026-08-19)
+
+Reworked 2026-08-19 so the `PhysicsConstraintOptions` toggles are captured
+in the xicsrt config under `config['scenario']['physics_constraints']`
+(following the standard `xicsrt_config.default_config` `scenario`
+convention) instead of being passed only as a Python function argument
+that never reached the saved config file. `xicsrt_w7x_npablant.get_config()`
+now populates the defaults (all off); `update_config_with_profiles` reads
+them from the config instead of taking a `physics_constraints` argument;
+`xicsrt_config_task.py`'s CLI/`get_w7x_ml_config` apply overrides as a
+plain dict onto `config['scenario']['physics_constraints']`. See
+`devel/plans/plan_F030_physics_constrained_profiles.md` ("Rework:
+config-driven physics constraints" section) for details.
+
+Two optional, independently-toggleable, off-by-default physics constraints
+for the randomized spline plasma profiles used by
+`xicsrt_analysis/w7x_npablant/production/xicsrt_config_task.py` and the
+"Part 2b" notebook:
+
+- `enable_emissivity_te_cutoff`: forces the emissivity profile's zero-point
+  knot (`x_knots[-2]`) to land at or inside the rho where the electron
+  temperature profile crosses `te_min` (default 200 eV, matching
+  `XicsrtPlasmaW7x.te_min`), so the randomized emissivity never claims
+  nonzero emission where the real Ar16+ line model would already return
+  zero. A user-supplied `emissivity_zero_knot_range` is clipped to that
+  crossing; passing `(1.0, 1.0)` always forces the knot exactly to it.
+- `enable_ti_le_te`: forces the ion temperature profile to never exceed the
+  electron temperature profile: the core (rho=0) value is resampled below
+  the electron core value, and from the first knot where Ti would exceed
+  Te onward, Ti's knots are pinned to Te's spline value (documented as an
+  at-the-knots guarantee, not a pointwise one between knots).
+
+Implementation: entirely in `xicsrt_analysis` (depends on F029). New sibling
+module `w7x_npablant/xicsrt_spline_constrained.py` holds
+`generate_random_emissivity_constrained`,
+`generate_random_temp_constrained`/`generate_random_ion_temp_constrained`,
+`find_te_cutoff_rho`, and the `PhysicsConstraintOptions` frozen dataclass
+carrying all four toggles/parameters. Per user direction, these duplicate
+the bulk of the corresponding `xicsrt_spline` generator bodies rather than
+refactoring shared pieces out of the unconstrained originals, which remain
+untouched. `xicsrt_w7x_npablant.generate_random_profiles` generates the
+electron temperature profile first when either constraint is enabled and
+threads it through as the `te_profile` reference; with
+`PhysicsConstraintOptions()` (all off, the default), profile generation is
+bit-identical to pre-F030. CLI flags added to `xicsrt_config_task.py`:
+`--enable-emissivity-te-cutoff`, `--te-min`, `--emissivity-zero-knot-range`,
+`--enable-ti-le-te`.
+
+Verification: `tests/test_xicsrt_spline_constrained.py` (17 tests) and
+`tests/test_xicsrt_w7x_npablant.py` (9 tests, incl. 4 added for the
+config-driven rework) in `xicsrt_analysis`, covering `find_te_cutoff_rho`,
+forced/default-range knot placement (including the near-axis and near-edge
+feasibility edge cases discovered while implementing the `min_spacing`
+feasibility floor), the Ti<=Te clamp, the bit-identical-when-disabled
+regression, and `config['scenario']['physics_constraints']` defaults/
+plumbing. Full `xicsrt_analysis` `w7x_npablant` suite: 94 passed.
+
+
+## F029 - Move orphaned `xicsrt_spline.py` from `xicsrt` core into `xicsrt_analysis`
+Started: 2026-08-18
+Status: Done (2026-08-18)
+
+Prerequisite for F030. `xicsrt/xicsrt/tools/xicsrt_spline.py` had exactly
+one consumer (`xicsrt_analysis/w7x_npablant`) and zero other importers in
+the public `xicsrt` package; keeping it in `xicsrt` core meant F030's new
+physics-constrained sibling module would either need to live in the wrong
+repo or duplicate private helpers across a repo boundary for no benefit.
+
+Moved verbatim (module docstring updated only to note the move) to
+`xicsrt_analysis/w7x_npablant/xicsrt_spline.py`; `tests/test_spline.py`
+moved to `xicsrt_analysis/w7x_npablant/tests/test_xicsrt_spline.py` with
+only its import path fixed. Deleted both from `xicsrt`. Updated the two
+importers (`xicsrt_w7x_npablant.py`, `sources/_XicsrtPlasmaW7xProfile.py`)
+and the two notebooks that imported `xicsrt.tools.xicsrt_spline` directly.
+Per user direction, no `_version.py` bump (this is an internal/private
+dependency removal, not a change to any documented public API surface used
+outside `xicsrt_analysis`).
+
+Not a jaxrt trigger file (jaxrt has no plasma sources); noted in
+`devel/jaxrt_sync.md`. Verification: `xicsrt` `tests/` still 64 passed
+(the removed `test_spline.py`'s ~40 tests moved, not lost); `xicsrt_analysis`
+`w7x_npablant` `tests/` 89 passed after the move; `example_00` runs.
+
 
 ## F028 - User-defined line wavelength filter for `multi_voigt` plasma emission
 Started: 2026-08-08

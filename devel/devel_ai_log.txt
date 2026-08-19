@@ -1361,3 +1361,155 @@ Key prompts:
   boundray."
 - "I only want to adjust the config name please use instead
   'wavelength_line_range'"
+
+================================================================================
+2026-08-09 — Diagnosed JAX CPU thread oversubscription in xicsrt_train_task
+(Princeton Stellar), 96 cpus / 24 workers / 4 threads each.
+
+Files modified (in sibling repo xicsrt_analysis, no xicsrt files changed):
+- w7x_npablant/production/xicsrt_train_task.py
+- w7x_npablant/production/slurm_train.batch
+
+Key changes:
+- Added a `multiprocessing.Pool` worker initializer that sets `PJRT_NPROC`
+  (plus OMP/MKL/etc.) and pins each worker to a disjoint CPU slice via
+  `sched_setaffinity`, run before jax is ever imported in the worker.
+  `--num-workers`/`--threads-per-worker` CLI args added; slurm_train.batch
+  updated to 24x4 and no longer sets job-wide OMP_NUM_THREADS=1 etc.
+
+Key findings / gotchas:
+- JAX's CPU backend sizes its own native XLA/Eigen intra-op thread pool
+  from `PJRT_NPROC`/`NPROC` env vars (fallback: CPU affinity mask size),
+  independent of OMP_NUM_THREADS/MKL_NUM_THREADS/Python threading; setting
+  only the latter (as the job script previously did) has no effect on it.
+  `XLA_FLAGS=--xla_cpu_multi_thread_eigen=false` disables it entirely
+  (bool flag, forces single-thread); there is no
+  `intra_op_parallelism_threads` XLA flag (that's a TF1/2 session-config
+  concept, not XLA_FLAGS).
+- After the fix, 24x4 runs without oversubscription but shows poor total
+  CPU utilization (~35% of 96 cores) with System% roughly half of User%,
+  suggesting per-JIT-call ops are too small to benefit from 4 Eigen
+  threads (wake/sleep futex overhead on mostly-idle extra threads) rather
+  than a remaining oversubscription bug. Not yet root-caused; prepared an
+  A/B test matrix (96x1, 48x2, 24x4, 12x8, plus a PJRT_NPROC=1-with-4-cpu-
+  affinity isolation run) and py-spy/JAX_LOG_COMPILES instrumentation
+  commands for the user to run interactively and report back.
+
+Suggested follow-ups:
+- Run the prepared A/B matrix and py-spy/JAX_LOG_COMPILES probes on
+  Stellar; pick the worker/thread split by samples/node-hour, not CPU%.
+- If JIT recompilation shows up in JAX_LOG_COMPILES output, that is a
+  separate bug in _XicsrtPlasmaW7x.py's shape handling, independent of
+  worker/thread tuning.
+
+Key prompts:
+- "I am trying to get the xicsrt_train_task to work on the princeton
+  stellar cluster wth a pattern such as using one node 96 cpus for 24
+  workers, each of which uses 4 cps. ... Setting
+  os.environ["XLA_FLAGS"] = "--xla_cpu_multi_thread_eigen=false" forces
+  jax into using only a single cpu. os.environ["XLA_FLAGS"] =
+  "intra_op_parallelism_threads=4" does not work and results in the
+  error..."
+- "This runs, and seems to be have as expected, but is is rather
+  ineficient. It seems I don't gain any benifit from using multiple
+  threads, this is for 96 cups, 24 workers, 4 threads per worker case: ..."
+
+================================================================================
+2026-08-18 — F029/F030: move xicsrt_spline.py out of xicsrt core, add
+optional physics constraints (Te-cutoff emissivity, Ti<=Te) for W7-X ML
+training profiles. F030 reopened as Pending same session; see below.
+
+Files modified (xicsrt repo):
+- Deleted xicsrt/xicsrt/tools/xicsrt_spline.py, tests/test_spline.py
+- devel/features_request.md, devel/jaxrt_sync.md, devel/plans/
+  plan_F029_move_xicsrt_spline.md, plan_F030_physics_constrained_profiles.md
+
+Files modified (xicsrt_analysis repo, uncommitted):
+- New w7x_npablant/xicsrt_spline.py (moved), xicsrt_spline_constrained.py
+- New tests/test_xicsrt_spline.py (moved), test_xicsrt_spline_constrained.py,
+  test_xicsrt_w7x_npablant.py
+- w7x_npablant/xicsrt_w7x_npablant.py, sources/_XicsrtPlasmaW7xProfile.py,
+  production/xicsrt_config_task.py, tests/test_xicsrt_config_task.py
+- Both "Part 1"/"Part 2b" notebooks (import path only, outputs cleared)
+
+Key changes:
+- F029: moved xicsrt_spline.py (zero importers outside xicsrt_analysis)
+  verbatim into xicsrt_analysis/w7x_npablant; no version bump per user
+  direction (private dependency, not a public API change).
+- F030: new xicsrt_spline_constrained.py with generate_random_emissivity_
+  constrained (zero-point knot forced to/inside the Te=te_min crossing)
+  and generate_random_temp_constrained/generate_random_ion_temp_constrained
+  (Ti core resampled below Te core, Ti knots clamped to Te from the first
+  crossing onward). A `PhysicsConstraintOptions` frozen dataclass and CLI
+  flags on xicsrt_config_task.py were added to control both toggles.
+
+Key findings / gotchas:
+- Forcing the emissivity zero-knot to the Te cutoff can leave no room for
+  the remaining interior knots at min_spacing; fixed with a feasibility
+  floor on the low side only (no floor near rho=1: physics placement wins
+  over preserving a final min_spacing gap there).
+- Both xicsrt (64) and xicsrt_analysis/w7x_npablant (89) test suites passed
+  before the session was closed out.
+
+Rework needed (F030 reopened as Pending): `PhysicsConstraintOptions` was
+only ever passed as a Python function argument through
+generate_random_profiles/update_config_with_profiles/get_w7x_ml_config; it
+never reaches the saved config dict. User wants the constraint options
+captured under a new top-level `config['scenario']` section and propagated
+the same way other xicsrt config options are (via xicsrt_config.
+update_config/strict_config_check), so a saved xicsrt_config_NNNNNN.json
+records which constraints produced it. F029 (the move) is unaffected and
+stays Done; only F030 needs rework. See devel/features_request.md F030 and
+plan_F030_physics_constrained_profiles.md for detail.
+
+Key prompts:
+- "I would like to develop a new feature for xicsrt_analysis in which
+  additional physics contraints are included when generating spline
+  profiles for the config files ... Ensure that the emissivity goes to
+  zero at or inside (smaller rho) the location where the Te profile
+  becomes less than 200eV ... Ti <= Te ... if at any point Ti becomes
+  greater that Te, then use the Te knot locations for the rest of the
+  profile."
+- "I would like to move xicsrt_spline.py entirely into xicsrt_analysis,
+  and remove it from the xicsrt repo. ... It may make sence to create
+  another entirely separate module ... named xicsrt_spline_constrained.py."
+- "The new options need to be caputured in the config under a new top
+  level section called 'scenario', and this should propagate similarly to
+  other configuration options in xicsrt."
+
+================================================================================
+2026-08-19 — F030 rework: physics constraints moved into config['scenario']
+(closes the F030 rework opened 2026-08-18).
+
+Files modified (xicsrt_analysis repo, uncommitted):
+- xicsrt_w7x_npablant.py, production/xicsrt_config_task.py
+- notebooks "Part 1" and "Part 2b"
+- tests/test_xicsrt_w7x_npablant.py, tests/test_xicsrt_config_task.py
+
+Files modified (xicsrt repo):
+- devel/features_request.md, devel/plans/plan_F030_physics_constrained_profiles.md
+- devel/devel_ai_log.txt (this entry)
+
+Key changes:
+- get_config() now populates config['scenario']['physics_constraints']
+  (all four PhysicsConstraintOptions fields, off by default).
+- update_config_with_profiles(config, seed) dropped its
+  physics_constraints argument; derives it via a new
+  _physics_constraints_from_config(config) helper instead.
+  generate_random_profiles kept its explicit-argument signature unchanged.
+- xicsrt_config_task.py's get_w7x_ml_config/build_training_set_configs/
+  main() now take/build a plain dict of scenario overrides instead of a
+  PhysicsConstraintOptions instance.
+- Notebooks updated to demonstrate setting the scenario overrides.
+
+Key findings / gotchas:
+- verify_ray_calibration.py and generate_random_profiles required no
+  changes: the former never passed physics_constraints, the latter stays
+  a pure function used directly by tests.
+- xicsrt_analysis/w7x_npablant suite: 94 passed (89 + 5 new).
+
+Key prompts:
+- "1. Please update the notebooks to demonstrate setting the physics
+  constraints. 2. Yes I confirm." (re: scenario key layout nested under
+  physics_constraints, and CLI setting config['scenario'] fields directly
+  rather than constructing PhysicsConstraintOptions at that boundary)

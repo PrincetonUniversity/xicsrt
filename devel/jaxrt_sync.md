@@ -224,6 +224,14 @@ sessions must check this list before assuming the engines are in sync.
   no jaxrt change is required. jaxrt's own `multi_voigt` support
   (`jaxrt/tools/_wavelength.py`, non-plasma sources only) is untouched and
   has no equivalent per-instance line-filter option.
+- 2026-08-18, F029/F030: no divergence introduced; `xicsrt` core change
+  only. `xicsrt/xicsrt/tools/xicsrt_spline.py` (never a trigger file, zero
+  importers outside `xicsrt_analysis`) was deleted from `xicsrt` and moved
+  verbatim to `xicsrt_analysis/w7x_npablant/xicsrt_spline.py`. F030's new
+  physics-constrained sibling module
+  (`xicsrt_analysis/w7x_npablant/xicsrt_spline_constrained.py`) is
+  entirely within `xicsrt_analysis` and touches no `xicsrt` file. jaxrt has
+  no plasma sources, so neither change requires a jaxrt change.
 
 ## Convergence log
 
