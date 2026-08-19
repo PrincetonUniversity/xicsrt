@@ -20,6 +20,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F031 | Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config | 2026-08-19 | Done (2026-08-19) |
 | F030 | Physics-constrained spline profiles for W7-X ML training configs | 2026-08-18 | Done (2026-08-19) |
 | F029 | Move orphaned `xicsrt_spline.py` from `xicsrt` core into `xicsrt_analysis` | 2026-08-18 | Done (2026-08-18) |
 | F028 | User-defined line wavelength filter for `multi_voigt` plasma emission | 2026-08-08 | Done (2026-08-08) |
@@ -46,6 +47,36 @@ order of the detailed entries below.
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
 
 ---
+
+## F031 - Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config
+Started: 2026-08-19
+Status: Done (2026-08-19)
+
+Entirely in `xicsrt_analysis` (depends on F029/F030). Renames the `min_spacing`
+parameter to `min_dx` across every generator in `w7x_npablant/xicsrt_spline.py`
+and `xicsrt_spline_constrained.py`, adds a matching `min_dy` parameter to the
+temperature generators (`generate_random_temp`/`_constrained`,
+`generate_random_electron_temp`, `generate_random_ion_temp`/`_constrained`)
+that previously lacked one, and introduces `DEFAULT_MIN_DX`/`DEFAULT_MIN_DY`
+module constants so the `0.05`/`0.0` defaults are defined once.
+
+Extends `PhysicsConstraintOptions` with 10 new per-profile fields
+(`ti_min_dx`, `ti_min_dy`, `te_min_dx`, `te_min_dy`, `emiss_min_dx`,
+`emiss_min_dy`, `vperp_min_dx`, `vperp_min_dy`, `vpara_min_dx`,
+`vpara_min_dy`), mirrored into `config['scenario']['physics_constraints']`
+by `xicsrt_w7x_npablant.get_config()`/`_physics_constraints_from_config` and
+threaded through `generate_random_profiles`. `vperp_min_dy` is accepted for
+symmetry but is a no-op: `generate_random_perpendicular_velocity` draws two
+independent scalar amplitudes, not a monotonic interior sequence.
+`xicsrt_config_task.py` gains one `--xxx-min-dx`/`--xxx-min-dy` CLI flag per
+new option, defaulting to the unconstrained generator defaults. The "Part 2b"
+notebook needs no changes: it already sets `config['scenario']
+['physics_constraints'][...]` directly.
+
+Verification: full `xicsrt_analysis` `w7x_npablant` pytest suite (101 tests,
+including new/updated coverage in `test_xicsrt_spline.py`,
+`test_xicsrt_spline_constrained.py`, `test_xicsrt_w7x_npablant.py`, and
+`test_xicsrt_config_task.py`).
 
 ## F030 - Physics-constrained spline profiles for W7-X ML training configs
 Started: 2026-08-18
