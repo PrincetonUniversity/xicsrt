@@ -20,6 +20,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F033 | Fix `xicsrt_config_task.py` CLI defaults clobbering `user_config_update` | 2026-08-23 | Done (2026-08-23) |
 | F032 | CLI for combining W7-X per-sample results into one ML training-set file | 2026-08-23 | Done (2026-08-23) |
 | F031 | Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config | 2026-08-19 | Done (2026-08-19) |
 | F030 | Physics-constrained spline profiles for W7-X ML training configs | 2026-08-18 | Done (2026-08-19) |
@@ -48,6 +49,40 @@ order of the detailed entries below.
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
 
 ---
+
+## F033 - Fix `xicsrt_config_task.py` CLI defaults clobbering `user_config_update`
+Started: 2026-08-23
+Status: Done (2026-08-23)
+
+Entirely within `xicsrt_analysis`; no changes to core xicsrt. Session was
+started directly in `xicsrt_analysis` without access to this repo's
+`AGENTS.md`, so this entry backfills the tracking after the fact.
+
+`xicsrt_config_task.py`'s CLI previously gave every physics-constraint flag
+(F030/F031) its own `argparse` default and always assembled a full
+`physics_constraints` dict from `args`, then applied it *before*
+`user_config_update`. That meant an unset CLI flag (i.e. its argparse
+default) silently overrode any site-specific default set in
+`user_config_update`, and `user_config_update`'s changes could never win.
+
+Fix: removed the per-flag CLI options entirely (they are experiment-design
+choices, not per-invocation options) and made `main()` forward only
+CLI arguments the user actually passed (defaults `None`, filtered before
+calling `build_training_set_configs`) so unset arguments fall through to
+`build_training_set_configs`'s own defaults instead of a competing argparse
+default. Also reordered `get_w7x_ml_config` so `user_config_update` runs
+before an explicit `physics_constraints` override is applied, so the
+explicit override always wins over both library and site defaults.
+
+Verification: `w7x_npablant/tests/test_xicsrt_config_task.py` updated
+(`test_main_forwards_only_explicit_args`,
+`test_main_forwards_all_explicit_args`,
+`test_get_w7x_ml_config_physics_constraints_override_user_config`); full
+`xicsrt_analysis` `w7x_npablant` pytest suite run via a throwaway venv
+(`/tmp/xicsrt_test_venv`) with `xicsrt`/`xicsrt_contrib`/`xicsrt_analysis` on
+`PYTHONPATH`: 113 passed, plus the same 4 pre-existing
+`test_xicsrt_spline*.py` failures as F032 (confirmed unrelated via
+`git stash`).
 
 ## F032 - CLI for combining W7-X per-sample results into one ML training-set file
 Started: 2026-08-23

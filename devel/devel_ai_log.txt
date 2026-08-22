@@ -1548,3 +1548,37 @@ Key prompts:
 - "I'd like you to make me a new cli in xicsrt_analysis/.../production based
   on the Part4a notebook. This cli should generate a combined ML training
   file out of all of the individual results."
+
+================================================================================
+2026-08-23 — F033: reviewed and logged a change made in a prior session that
+was started directly in xicsrt_analysis (no access to this repo's AGENTS.md).
+
+Files modified (xicsrt_analysis repo, reviewed here, not committed by this
+session):
+- w7x_npablant/production/xicsrt_config_task.py, tests/test_xicsrt_config_task.py
+- w7x_npablant/notebooks Part 2b (outputs cleared only)
+
+Files modified (xicsrt repo):
+- devel/features_request.md (new F033 entry)
+- devel/devel_ai_log.txt (this entry)
+
+Key changes:
+- Reviewed the xicsrt_analysis diff: removed per-flag physics-constraint CLI
+  options from xicsrt_config_task.py; main() now forwards only explicitly
+  passed CLI args; reordered get_w7x_ml_config so user_config_update runs
+  before an explicit physics_constraints override, fixing a bug where unset
+  CLI defaults silently clobbered user_config_update's site defaults.
+- No code changes made in this session; this was a review/verification pass.
+
+Key findings / gotchas:
+- Reused the throwaway venv at /tmp/xicsrt_test_venv from a prior session
+  (has pytest/xarray/netCDF4); needed xicsrt/xicsrt_contrib/xicsrt_analysis
+  on PYTHONPATH since xicsrt_config_task.py imports xicsrt directly.
+- test_xicsrt_config_task.py: 10/10 passed. Full w7x_npablant suite: 113
+  passed, same 4 pre-existing test_xicsrt_spline*.py failures as F032,
+  reconfirmed unrelated via git stash.
+
+Key prompts:
+- "I made some changes in an opencode session started in xicsrt_analysis,
+  that didn't have access to my AGENTS file, can you please check those
+  changes, and if ok, log the change, close this session and commit."
