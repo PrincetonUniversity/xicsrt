@@ -1513,3 +1513,38 @@ Key prompts:
   constraints. 2. Yes I confirm." (re: scenario key layout nested under
   physics_constraints, and CLI setting config['scenario'] fields directly
   rather than constructing PhysicsConstraintOptions at that boundary)
+
+================================================================================
+2026-08-23 — F032: CLI for combining W7-X per-sample results into an ML
+training-set file.
+
+Files modified (xicsrt_analysis repo):
+- w7x_npablant/xicsrt_results_util.py (added combine_training_set,
+  _is_dropped_value)
+- w7x_npablant/production/xicsrt_combine_task.py (new CLI)
+- w7x_npablant/tests/test_xicsrt_combine_task.py (new, 14 tests)
+- w7x_npablant/notebooks "Part 4a" (now imports the shared implementation)
+
+Files modified (xicsrt repo):
+- devel/features_request.md, devel/plans/plan_F032_combine_training_task.md
+- devel/devel_ai_log.txt (this entry)
+
+Key changes:
+- Moved `combine_training_set`/`_is_dropped_value` out of the Part 4a
+  notebook into `xicsrt_results_util.py`, mirroring F023's notebook/
+  production-script convergence pattern; the notebook now imports them.
+- New `production/xicsrt_combine_task.py`: thin argparse CLI, default
+  `--input-path ./training_results`, `--output-filename` defaults to
+  `<input-path>/xicsrt_training_set.nc`.
+
+Key findings / gotchas:
+- No local Python env has h5py/xarray/netCDF4 installed; verification used a
+  throwaway venv at /tmp/xicsrt_test_venv.
+- xicsrt_analysis w7x_npablant suite: 113 passed; 4 pre-existing failures in
+  test_xicsrt_spline*.py (`min_dy` interior-spacing) confirmed unrelated via
+  git stash.
+
+Key prompts:
+- "I'd like you to make me a new cli in xicsrt_analysis/.../production based
+  on the Part4a notebook. This cli should generate a combined ML training
+  file out of all of the individual results."

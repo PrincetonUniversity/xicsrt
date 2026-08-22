@@ -20,6 +20,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F032 | CLI for combining W7-X per-sample results into one ML training-set file | 2026-08-23 | Done (2026-08-23) |
 | F031 | Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config | 2026-08-19 | Done (2026-08-19) |
 | F030 | Physics-constrained spline profiles for W7-X ML training configs | 2026-08-18 | Done (2026-08-19) |
 | F029 | Move orphaned `xicsrt_spline.py` from `xicsrt` core into `xicsrt_analysis` | 2026-08-18 | Done (2026-08-18) |
@@ -47,6 +48,36 @@ order of the detailed entries below.
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
 
 ---
+
+## F032 - CLI for combining W7-X per-sample results into one ML training-set file
+Started: 2026-08-23
+Status: Done (2026-08-23)
+
+Entirely within `xicsrt_analysis`; no changes to core xicsrt. The "Part 4a -
+Combined ML training-set file" notebook (F020) defined `combine_training_set`
+inline to stream the per-sample `xicsrt_flat_*.hdf5` files (written by
+`run_one_sample`/`xicsrt_train_task.py`) into one padded-ray-array netCDF
+training-set file. That logic had no scripted/version-controlled entry point,
+unlike config generation (F023's `xicsrt_config_task.py`) and result
+generation (F023's `xicsrt_train_task.py`), so it could not be run as part of
+an automated production pipeline the way the earlier stages could.
+
+Plan: `devel/plans/plan_F032_combine_training_task.md`. Moved
+`combine_training_set`/`_is_dropped_value` from the Part 4a notebook into
+`xicsrt_results_util.py` (mirroring F023's notebook/production-script
+convergence); the notebook now imports them instead of defining them inline.
+New thin CLI wrapper `production/xicsrt_combine_task.py` (`--input-path`,
+default `./training_results`; `--output-filename`, default
+`<input-path>/xicsrt_training_set.nc`; `--overwrite`; `--max-samples`).
+
+Verification: new `tests/test_xicsrt_combine_task.py` (14 tests covering
+dropped-key logic, the padded ray array/`sample_count`, the `sample`
+coordinate sourced from `config__scenario__sample_index` including gaps and
+the missing-index fallback, the detector-geometry-mismatch error, and CLI
+argument forwarding); full `xicsrt_analysis` `w7x_npablant` pytest suite (113
+passed, plus 4 pre-existing failures in `test_xicsrt_spline*.py` unrelated to
+this change); a manual end-to-end run of `xicsrt_combine_task.py` against
+real `.hdf5` fixtures produced a correct combined `.nc` file.
 
 ## F031 - Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config
 Started: 2026-08-19
