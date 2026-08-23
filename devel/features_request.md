@@ -9,6 +9,8 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F035 | Always-computed per-ray line label for `multi_voigt` sampling | 2026-08-23 | Pending |
+| F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Pending |
 | F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
 | F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
 | F009 | Fix `xics_jax` import consuming global RNG stream | 2026-07-28 | Pending |
@@ -47,6 +49,52 @@ order of the detailed entries below.
 | F005 | Allow `XicsrtPlasmaVmec` to load VMEC or saved DESC equilibria | 2026-07-26 | Done (2026-07-26) |
 | F004 | Exploratory JAX-accelerated `tools_jax` for numpy OO engine | 2026-07-21 | Done (2026-07-25) |
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
+
+---
+
+## F035 - Always-computed per-ray line label for `multi_voigt` sampling
+Started: 2026-08-23
+Status: Pending
+
+`xicsrt/tools/xicsrt_voigt_multi.py`'s `multi_voigt_random` and
+`multi_voigt_random_batched` already compute which discrete spectral line
+each sampled ray belongs to (`line_index`) but currently discard it, only
+returning the sampled wavelength. This feature makes both functions always
+return `(wavelength, line_index)` (no toggle) and wires `line_index` into
+the new `rays['label']` field (F034) whenever `wavelength_dist ==
+'multi_voigt'` is selected, in both `XicsrtSourceGeneric` (single-source
+path) and `XicsrtPlasmaGeneric` (batched plasma path). Depends on F034.
+
+Motivating use case: `xicsrt_analysis/w7x_npablant`'s `XicsrtPlasmaW7x`
+Ar16+ model samples wavelengths from the `multi_voigt` mixture over several
+atomic emission lines (w, z, etc., from `line_table.labels`). Labeling each
+ray by its emission line will let `xicsrt_ml` training apply per-line
+augmentations (dropping a line, nudging poorly-constrained lines) using the
+existing raytraced photon statistics rather than re-running the raytracer
+per line. `XicsrtPlasmaW7x` will record the int-to-name mapping once as
+`config['scenario']['line_labels']` (a list indexed by the int label).
+
+Plan: `devel/plans/plan_F035_w7x_line_labels.md`.
+
+## F034 - Optional per-ray integer `label` field in the ray-data pipeline
+Started: 2026-08-23
+Status: Pending
+
+Adds a general-purpose, opt-in `label` array (dtype int) to the ray-data
+dict alongside the existing `origin`/`direction`/`wavelength`/`mask`
+fields. Like `weight` today, `label` is absent unless a source explicitly
+sets it; the rest of the pipeline (`Dispatcher`, `_sort_raytrace`,
+`combine_raytrace`, `mirhdf5` HDF5 save/load) is already key-generic and
+requires no changes. `RayArray.zeros()` (a documentation-only convenience
+method, not on the hot path) gains `label`/`weight` defaults so it stays an
+accurate reference of all standard ray-dict fields; jaxrt's
+`_rays.new_rays` gains an always-present, currently-inert `label` field for
+engine schema parity per `devel/jaxrt_sync.md`.
+
+No specific labeling scheme is implied by this feature; F035 is the first
+concrete consumer (per-emission-line labeling for the W7-X XICS model).
+
+Plan: `devel/plans/plan_F034_ray_label_infrastructure.md`.
 
 ---
 
