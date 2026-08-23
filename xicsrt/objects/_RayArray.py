@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# This file includes AI generated code using Claude (Sonnet 5).
 """
 Authors
 -------
@@ -15,6 +16,16 @@ class RayArray(dict):
 
     The RayArray object is essentially a dictionary of numpy arrays.
     Some convenience methods have been added.
+
+    Standard ray fields (not all of which are required) are `origin`,
+    `direction`, `mask`, `wavelength`, `weight`, and `label`. `origin`,
+    `direction`, `mask`, and `wavelength` are structurally required and
+    are populated automatically by `initialize()` if not already present.
+    `weight` and `label` are optional and opt-in: a source sets them only
+    if it has a reason to, and no downstream code requires them to be
+    present. `label` is a per-ray integer field intended for
+    general-purpose metadata (e.g. tagging rays by emission line); no
+    labeling scheme or sentinel value is defined here.
     """
 
     def __init__(self, *args, **kwargs):
@@ -84,6 +95,8 @@ class RayArray(dict):
         self['direction'] = np.zeros((num, 3))
         self['mask'] = np.zeros((num), dtype=bool)
         self['wavelength'] = np.zeros((num))
+        self['weight'] = np.ones((num), dtype=np.float64)
+        self['label'] = np.zeros((num), dtype=int)
 
     def copy(self):
         ray_new = RayArray()

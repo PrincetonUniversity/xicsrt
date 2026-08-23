@@ -1582,3 +1582,40 @@ Key prompts:
 - "I made some changes in an opencode session started in xicsrt_analysis,
   that didn't have access to my AGENTS file, can you please check those
   changes, and if ok, log the change, close this session and commit."
+
+================================================================================
+2026-08-23 — F034: added optional per-ray integer `label` field to the
+ray-data pipeline (infrastructure only; F035 is the first consumer).
+
+Files modified:
+- xicsrt/objects/_RayArray.py (AI header; `label`/`weight` added to
+  `zeros()`; docstring documents `label`/`weight` as optional fields)
+- xicsrt/jaxrt/_rays.py (`new_rays` gains always-present, inert
+  `label` field; docstring updated)
+- devel/jaxrt_sync.md (divergence-log entry: opt-in numpy vs.
+  always-present jaxrt convention, no functional divergence)
+- doc_source/userguide/development_projects.rst (RayDict admonition note)
+- tests/test_ray_label.py (new: label survives full `xicsrt.raytrace`
+  found/lost split; HDF5 save/load round trip)
+- tests/jaxrt/test_engine.py (new test: label present, inert, correct
+  dtype/shape through `xicsrt.jaxrt.raytrace`)
+- xicsrt/_version.py (0.9.0 -> 0.10.0, per minor-version policy: new
+  optional output-dict field)
+- devel/features_request.md (F034 moved to Done)
+
+Key changes:
+- Confirmed via grep that `Dispatcher`, `_sort_raytrace`/
+  `combine_raytrace`, and `mirhdf5` are already key-generic and needed no
+  changes; `label` flows through the full pipeline untouched.
+- `RayArray.zeros()` is documentation-only (not on the hot path); added
+  `weight`/`label` there for accuracy.
+
+Key findings / gotchas:
+- System `python3` (pyenv 3.14.5) has no pytest/xicsrt install; used
+  `/Users/npablant/.pyenv/versions/3.14.3/bin/python` (has xicsrt
+  editable-installed, jax, pytest) to run tests.
+- Full suite (67 tests, numpy + jaxrt) and `examples/example_00` pass.
+
+Key prompts:
+- "I'd like you to implement F034. Please ask questions if anything is
+  unsettled or comes up during implementation."

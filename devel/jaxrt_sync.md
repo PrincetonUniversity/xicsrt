@@ -232,6 +232,17 @@ sessions must check this list before assuming the engines are in sync.
   (`xicsrt_analysis/w7x_npablant/xicsrt_spline_constrained.py`) is
   entirely within `xicsrt_analysis` and touches no `xicsrt` file. jaxrt has
   no plasma sources, so neither change requires a jaxrt change.
+- 2026-08-23, F034: intentional convention divergence, no functional
+  divergence. `objects/_RayArray.py` gained an optional, opt-in `label`
+  field (per-ray int, absent unless a source sets it), matching how
+  `weight` already behaves. jaxrt's `_rays.new_rays` cannot support a
+  truly optional field (fixed-shape pytree for `jit`), so `label` was
+  added there unconditionally as `jnp.zeros(num, dtype=jnp.int64)`,
+  always present but inert. Both engines' `label` are all-zero/absent by
+  default as of this feature; no jaxrt source or interact routine reads
+  or writes it. Future sessions: if a jaxrt source is ever added that
+  wants to populate `label`, it can simply assign into the
+  already-present key.
 
 ## Convergence log
 

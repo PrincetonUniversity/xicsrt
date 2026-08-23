@@ -176,6 +176,24 @@ def test_bragg_selection():
     assert np.all(dtheta_equiv < 5 * config['optics']['crystal']['rocking_fwhm'])
 
 
+def test_label_field_present_and_inert():
+    """
+    F034: `new_rays` includes an always-present `label` field, which must
+    pass through `xicsrt.jaxrt.raytrace` unchanged (all zeros, correct
+    shape, integer dtype) since no jaxrt source populates it.
+    """
+    config = _base_config()
+    results = xicsrt.jaxrt.raytrace(config)
+
+    for name in ('source', 'crystal', 'detector'):
+        for section in ('found', 'lost'):
+            history = results[section]['history'][name]
+            assert 'label' in history
+            assert history['label'].shape == history['mask'].shape
+            assert history['label'].dtype.kind in ('i', 'u')
+            assert np.all(history['label'] == 0)
+
+
 def test_multiple_runs_combine():
     """
     number_of_runs > 1 must combine correctly and use different seeds

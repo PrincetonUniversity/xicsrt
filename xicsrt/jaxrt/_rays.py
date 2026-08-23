@@ -17,6 +17,10 @@ wavelength : (num,) float64
     Ray wavelengths in Angstroms.
 weight : (num,) float64
     Statistical weight of each ray (currently always 1.0).
+label : (num,) int64
+    General-purpose per-ray integer label (currently always 0 and
+    unused; mirrors the numpy engine's optional `label` field, but is
+    always present here for pytree shape stability).
 mask : (num,) bool
     True for rays that are still alive ('found' so far).
     Rays are never removed from the arrays; instead they are masked
@@ -54,6 +58,7 @@ def new_rays(num):
         'direction': jnp.zeros((num, 3), dtype=jnp.float64),
         'wavelength': jnp.zeros(num, dtype=jnp.float64),
         'weight': jnp.ones(num, dtype=jnp.float64),
+        'label': jnp.zeros(num, dtype=jnp.int64),
         'mask': jnp.ones(num, dtype=bool),
     }
     return rays

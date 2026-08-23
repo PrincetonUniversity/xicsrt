@@ -173,6 +173,12 @@ numerical programming concepts!
     so that the RayDict object can eventually contain some convenience
     methods.
 
+  Note:
+    As of 2026-08-23, `weight` and `label` are also standard ray-dict
+    fields, alongside `origin`/`direction`/`mask`/`wavelength`. Like
+    `weight`, `label` (a per-ray integer field) is optional: it is only
+    present if a source sets it.
+
   |     added: 2021-02-01 by Novimir
 
 

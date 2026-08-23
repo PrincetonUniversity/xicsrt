@@ -10,7 +10,6 @@ order of the detailed entries below.
 | Feature | Description | Started | Status |
 |---|---|---|---|
 | F035 | Always-computed per-ray line label for `multi_voigt` sampling | 2026-08-23 | Pending |
-| F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Pending |
 | F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
 | F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
 | F009 | Fix `xics_jax` import consuming global RNG stream | 2026-07-28 | Pending |
@@ -22,6 +21,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Done (2026-08-23) |
 | F033 | Fix `xicsrt_config_task.py` CLI defaults clobbering `user_config_update` | 2026-08-23 | Done (2026-08-23) |
 | F032 | CLI for combining W7-X per-sample results into one ML training-set file | 2026-08-23 | Done (2026-08-23) |
 | F031 | Rename spline `min_spacing`->`min_dx`, add per-profile `min_dx`/`min_dy` config | 2026-08-19 | Done (2026-08-19) |
@@ -78,7 +78,7 @@ Plan: `devel/plans/plan_F035_w7x_line_labels.md`.
 
 ## F034 - Optional per-ray integer `label` field in the ray-data pipeline
 Started: 2026-08-23
-Status: Pending
+Status: Done (2026-08-23)
 
 Adds a general-purpose, opt-in `label` array (dtype int) to the ray-data
 dict alongside the existing `origin`/`direction`/`wavelength`/`mask`
@@ -95,6 +95,17 @@ No specific labeling scheme is implied by this feature; F035 is the first
 concrete consumer (per-emission-line labeling for the W7-X XICS model).
 
 Plan: `devel/plans/plan_F034_ray_label_infrastructure.md`.
+
+Implementation: confirmed via grep that `Dispatcher`, `_sort_raytrace`/
+`combine_raytrace`, and `mirhdf5` needed no changes (already key-generic).
+Changed only `RayArray.zeros()` (added `weight`/`label` defaults) and
+jaxrt's `_rays.new_rays` (`label` always `jnp.zeros(..., int64)`), plus
+docstrings/docs and a `jaxrt_sync.md` divergence-log entry. New tests:
+`tests/test_ray_label.py` (label survives full `xicsrt.raytrace`
+found/lost split and an HDF5 save/load round trip) and
+`tests/jaxrt/test_engine.py::test_label_field_present_and_inert`. Bumped
+`xicsrt/_version.py` to 0.10.0 (new optional ray-dict field affects output
+dict structure per the minor-version policy).
 
 ---
 
