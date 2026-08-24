@@ -21,6 +21,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F036 | Hollow-core (off-axis-peaked) Ti/Te physics constraint for W7-X profiles | 2026-08-25 | Done (2026-08-25) |
 | F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Done (2026-08-23) |
 | F033 | Fix `xicsrt_config_task.py` CLI defaults clobbering `user_config_update` | 2026-08-23 | Done (2026-08-23) |
 | F032 | CLI for combining W7-X per-sample results into one ML training-set file | 2026-08-23 | Done (2026-08-23) |
@@ -49,6 +50,41 @@ order of the detailed entries below.
 | F005 | Allow `XicsrtPlasmaVmec` to load VMEC or saved DESC equilibria | 2026-07-26 | Done (2026-07-26) |
 | F004 | Exploratory JAX-accelerated `tools_jax` for numpy OO engine | 2026-07-21 | Done (2026-07-25) |
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
+
+---
+
+## F036 - Hollow-core (off-axis-peaked) Ti/Te physics constraint for W7-X profiles
+Started: 2026-08-25
+Status: Done (2026-08-25)
+
+Entirely within `xicsrt_analysis` (`w7x_npablant`); no changes to core
+xicsrt. Adds two new opt-in toggles, `enable_ti_hollow` and
+`enable_te_hollow`, to the existing `PhysicsConstraintOptions`
+framework (F030/F031) in `xicsrt_spline_constrained.py`. When enabled,
+the corresponding temperature profile's core (rho=0) value is pushed
+below its first interior knot after the profile is otherwise fully
+generated (`apply_hollow_core`: new core = knot-1 y-value minus the
+original knot-0/knot-1 y-delta, clamped at 0.0), producing a hollow
+(off-axis-peaked) profile. No renormalization of the rest of the
+profile is performed, so the resulting maximum value is generally
+lower than the unhollowed profile's.
+
+`enable_te_hollow` is applied to the electron temperature profile
+before it is used as the reference for `enable_ti_le_te` and
+`enable_emiss_te_cutoff`, so those constraints see the already-hollowed
+Te profile. As with the existing Ti<=Te constraint, an already-low
+hollowed Te core can trigger the existing (documented) infeasible-
+sampling `ValueError` in `generate_random_ion_temp_constrained` when
+combined with `enable_ti_le_te`; this is an existing failure mode
+(also present for a low unhollowed Te core), not new behavior, and
+production code already catches/skips `ValueError` per sample.
+
+See `plan_F036_hollow_core_constraint.md`.
+
+Verification: `w7x_npablant` pytest suite via a throwaway venv
+(`xicsrt`/`xicsrt_analysis` on `PYTHONPATH`): 99 passed (2 pre-existing,
+unrelated collection errors from a missing `xarray` dependency, per
+F020).
 
 ---
 

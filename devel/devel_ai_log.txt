@@ -1619,3 +1619,53 @@ Key findings / gotchas:
 Key prompts:
 - "I'd like you to implement F034. Please ask questions if anything is
   unsettled or comes up during implementation."
+
+================================================================================
+2026-08-25 — F036: added hollow-core (off-axis-peaked) Ti/Te physics
+constraint to W7-X randomized spline profiles. Also includes prior
+uncommitted xicsrt_analysis changes (F033 rework, F031 min_dy
+normalization, results-util label passthrough) from outside this session.
+
+Files modified (all xicsrt_analysis/w7x_npablant):
+- xicsrt_spline_constrained.py (new `apply_hollow_core`; new
+  `enable_ti_hollow`/`enable_te_hollow` fields on
+  `PhysicsConstraintOptions`)
+- xicsrt_w7x_npablant.py (get_config/_physics_constraints_from_config
+  wire the two new options; generate_random_profiles hollows Te before
+  it is used as the Ti<=Te/Te-cutoff reference, then hollows Ti)
+- tests/test_xicsrt_spline_constrained.py,
+  tests/test_xicsrt_w7x_npablant.py (new tests for apply_hollow_core and
+  the dispatch order)
+- production/xicsrt_config_task.py, tests/test_xicsrt_config_task.py,
+  tests/test_xicsrt_spline.py, xicsrt_results_util.py (pre-existing,
+  uncommitted changes from a prior session outside this repo's AGENTS.md
+  scope; reviewed and included in this commit per user request)
+- xicsrt/devel/features_request.md (F036 added and marked Done)
+- xicsrt/devel/plans/plan_F036_hollow_core_constraint.md (new)
+
+Key changes:
+- `apply_hollow_core(profile)`: new core y = max(0, y1 - (y0 - y1)), no
+  renormalization of the rest of the profile (explicit user decision:
+  hollowed peak is lower than unhollowed).
+- `enable_te_hollow` is applied before Te is used as the reference for
+  `enable_ti_le_te`/`enable_emiss_te_cutoff`, so those see the hollowed
+  Te.
+
+Key findings / gotchas:
+- Combining `enable_te_hollow` with `enable_ti_le_te` can drive the
+  hollowed Te core at/below the Ti generator's y_min=200eV floor,
+  triggering the existing (pre-F036) infeasible-sampling `ValueError`
+  in `generate_random_ion_temp_constrained` for ~20% of seeds; not a
+  bug, matches existing per-sample error handling in
+  `xicsrt_config_task.py`. Test skips failing seeds, asserts >=1 succeeds.
+- No local pytest install; verified via a throwaway venv with
+  `xicsrt`/`xicsrt_analysis` on PYTHONPATH: 99 passed (2 pre-existing
+  unrelated collection errors from missing `xarray`, per F020).
+
+Key prompts:
+- "What did we do so far?" (session resumed from a prior compacted
+  context)
+- "please go ahead." (plan approval, after clarifying no renormalization
+  after hollowing)
+- "Please mark as done, close this session and commit the changes.
+  Please include changes made outside of this session in the commit."
