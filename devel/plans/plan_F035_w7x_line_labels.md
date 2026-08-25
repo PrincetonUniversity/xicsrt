@@ -1,6 +1,7 @@
 # F035 - Always-computed per-ray line label for `multi_voigt` sampling
 
-Status: Pending
+Status: Done (2026-08-26). See `devel/features_request.md` for the
+implementation summary and verification notes.
 
 This file includes AI generated content using Claude (Sonnet 5).
 

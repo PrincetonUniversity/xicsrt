@@ -111,7 +111,8 @@ def test_plasma_generic_doppler_sigma():
     bundle_index = np.repeat(np.arange(n_bundles), rays_per_bundle)
 
     np.random.seed(2)
-    wavelength = plasma._generate_wavelengths(bundle_input, m, bundle_index)
+    wavelength, line_index = plasma._generate_wavelengths(bundle_input, m, bundle_index)
+    assert line_index is None
     sigma = np.std(wavelength)
     np.testing.assert_allclose(sigma, ANCHOR_SIGMA, rtol=0.02)
 

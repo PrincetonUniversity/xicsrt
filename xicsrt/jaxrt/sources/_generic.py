@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Fable 5)
+# This file includes AI generated code using Claude (Fable 5, Sonnet 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -126,8 +126,10 @@ def generate(source, key):
 
     rays['origin'] = _generate_origin(source, num, key_origin)
     rays['direction'] = _generate_direction(source, rays['origin'], key_direction)
-    rays['wavelength'] = _generate_wavelength(
+    rays['wavelength'], label = _generate_wavelength(
         source, rays['direction'], num, key_wavelength)
+    if label is not None:
+        rays['label'] = label
 
     return rays
 
@@ -207,12 +209,20 @@ def _generate_wavelength(source, direction, num, key):
     """
     Draw ray wavelengths, applying a Doppler shift if the source has a
     bulk velocity.
+
+    Returns
+    -------
+    wavelength : jnp.ndarray, shape (num,)
+    label : jnp.ndarray of int64, shape (num,), or None
+        See :any:`xicsrt.jaxrt.tools._wavelength.sample`. The "line index"
+        interpretation is specific to `multi_voigt` sampling, not a
+        property of `label` in general.
     """
-    wavelength = _wavelength.sample(source['wavelength'], num, key)
+    wavelength, label = _wavelength.sample(source['wavelength'], num, key)
 
     if bool(np.any(np.asarray(source['velocity']) != 0.0)):
         c = const.physical_constants['speed of light in vacuum'][0]
         wavelength = wavelength * (
             1 - jnp.sum(source['velocity'] * direction, axis=1) / c)
 
-    return wavelength
+    return wavelength, label

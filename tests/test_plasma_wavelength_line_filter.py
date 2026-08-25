@@ -114,3 +114,46 @@ def test_range_does_not_truncate_included_line_tails():
 def test_range_excluding_all_lines_raises():
     with pytest.raises(ValueError, match='excludes all lines'):
         _generate(_scenario_config(wavelength_line_range=[10.0, 11.0]))
+
+
+# ---------------------------------------------------------------------------
+# F035: rays['label'] for wavelength_dist='multi_voigt' (batched plasma path)
+# ---------------------------------------------------------------------------
+
+def test_label_present_and_matches_line():
+    """
+    `rays['label']` must be present, match the nearest configured line
+    index for every ray, and cover every configured line at this sample
+    size.
+    """
+    rays = _generate(_scenario_config())
+    assert 'label' in rays
+    assert rays['label'].shape == rays['wavelength'].shape
+    assert np.issubdtype(rays['label'].dtype, np.integer)
+
+    expected_label = np.argmin(
+        np.abs(rays['wavelength'][:, None] - LINE_LOCATIONS[None, :]), axis=1)
+    np.testing.assert_array_equal(rays['label'], expected_label)
+    assert set(np.unique(rays['label'])) == {0, 1, 2}
+
+
+def test_label_reindexed_after_line_filter():
+    """
+    When `wavelength_line_range` drops a line, `label` must index into the
+    *filtered* line list (0/1 for the two kept lines), not the original
+    three-line list.
+    """
+    rays = _generate(_scenario_config(wavelength_line_range=[3.93, 3.955]))
+    kept_locations = LINE_LOCATIONS[:2]
+
+    assert set(np.unique(rays['label'])) <= {0, 1}
+    expected_label = np.argmin(
+        np.abs(rays['wavelength'][:, None] - kept_locations[None, :]), axis=1)
+    np.testing.assert_array_equal(rays['label'], expected_label)
+
+
+def test_label_absent_for_other_wavelength_dist():
+    """`label` must not be set for a non-multi_voigt wavelength_dist."""
+    rays = _generate(_scenario_config(
+        wavelength_dist='monochrome', wavelength=3.95))
+    assert 'label' not in rays

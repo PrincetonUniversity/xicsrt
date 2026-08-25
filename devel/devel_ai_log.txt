@@ -1669,3 +1669,54 @@ Key prompts:
   after hollowing)
 - "Please mark as done, close this session and commit the changes.
   Please include changes made outside of this session in the commit."
+
+================================================================================
+2026-08-26 — F035: always-computed per-ray line label for `multi_voigt`
+sampling. Spans two repos: `xicsrt` (core) and `xicsrt_analysis`
+(w7x_npablant integration).
+
+Files modified (xicsrt):
+- xicsrt/tools/xicsrt_voigt_multi.py, xicsrt/sources/_XicsrtSourceGeneric.py,
+  xicsrt/sources/_XicsrtPlasmaGeneric.py, xicsrt/jaxrt/tools/_wavelength.py,
+  xicsrt/jaxrt/sources/_generic.py
+- tests/test_voigt.py, tests/test_voigt_direct.py, tests/test_doppler_sigma.py,
+  tests/test_plasma_wavelength_line_filter.py, tests/jaxrt/test_engine.py
+- devel/jaxrt_sync.md, devel/features_request.md,
+  devel/plans/plan_F035_w7x_line_labels.md
+
+Files modified (xicsrt_analysis/w7x_npablant, separate repo):
+- sources/_XicsrtPlasmaW7x.py, xicsrt_w7x_npablant.py,
+  tests/test_xicsrt_w7x_npablant.py
+
+Key changes:
+- `multi_voigt_random`/`multi_voigt_random_batched` always return
+  `(wavelength, line_index)` (no toggle).
+- `generate_wavelength`/`_generate_wavelengths` return `(wavelength,
+  label)`, `label=None` for every `wavelength_dist` except `multi_voigt`;
+  `generate_rays`/`create_sources` set `rays['label']` only when not
+  `None`. Same pattern mirrored in jaxrt's single-source path (no jaxrt
+  plasma sources).
+- `XicsrtPlasmaW7x.get_line_labels()` (new) returns the Ar16+ line
+  model's line names in `get_line_parameters`'s order;
+  `xicsrt_w7x_npablant.initialize()` calls it once to set
+  `config['scenario']['line_labels']`.
+
+Key findings / gotchas:
+- Naming: kept `line_index` only inside the multi_voigt-specific sampler
+  code; everywhere else (source/plasma generic wavelength methods, jaxrt
+  wavelength sampler) uses the generic `label` name per user request,
+  since the "line index" interpretation is specific to `multi_voigt`.
+- `get_line_labels()` is cheap (~6ms, no DESC dependency) so it's called
+  unconditionally in `initialize()` via `get_element(..., initialize=False)`.
+- Verified with `/Users/npablant/.pyenv/versions/3.14.3/envs/desc/bin/python`
+  (has xicsrt editable install, jax, xics_jax, desc-opt; xicsrt_contrib
+  pip-installed with --no-deps for this session). `pytest tests/`: 71
+  passed (xicsrt), 124 passed (xicsrt_analysis/w7x_npablant).
+
+Key prompts:
+- "Please implement F035, lables for multi-voigt"
+- "I want a small change: in XicsrtSourceGeneric the variable line_index
+  is used to track the label in all wavelength distributions, but this
+  interpretation of the label is specific to multi-voigt. Please use the
+  generic name except for the specific case of the multi-voigt
+  distribution."

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Sonnet 4.6, Opus 5, Fable 5)
+# This file includes AI generated code using Claude (Sonnet 4.6, Opus 5, Fable 5, Sonnet 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -221,7 +221,11 @@ class XicsrtSourceGeneric(GeometryObject):
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        rays['wavelength'] = self.generate_wavelength(rays['direction'])
+        # Currently 'label' is defined at this step, but it doesn't have to be attached
+        # to generate_wavelength, and could be generalized.
+        rays['wavelength'], label = self.generate_wavelength(rays['direction'])
+        if label is not None:
+            rays['label'] = label
         profiler.stop('generate_wavelength')
 
         profiler.start('generate_weight')
@@ -318,7 +322,26 @@ class XicsrtSourceGeneric(GeometryObject):
         return direction
 
     def generate_wavelength(self, direction):
+        """
+        Draw ray wavelengths from the configured `wavelength_dist`.
+
+        Returns
+        -------
+        wavelength : ndarray
+            Per-ray wavelength, shape (intensity,).
+        label : ndarray of int or None
+            When `wavelength_dist == 'multi_voigt'`, the index of the
+            spectral line each ray was drawn from (see
+            :any:`random_wavelength_multi_voigt`); `None` for every other
+            `wavelength_dist`. `generate_rays` uses this to populate the
+            optional `rays['label']` field (F035); the "line index"
+            interpretation is specific to `multi_voigt` sampling, not a
+            property of `label` in general.
+
+        This method was AI generated using Claude (Sonnet 5).
+        """
         wtype = str.lower(self.param['wavelength_dist'])
+        label = None
         if wtype == 'monochrome':
             wavelength  = np.ones(self.param['intensity'], dtype = np.float64)
             wavelength *= self.param['wavelength']
@@ -335,7 +358,7 @@ class XicsrtSourceGeneric(GeometryObject):
             wavelength = random_wavelength(self.param['intensity'])
         elif wtype == 'multi_voigt':
             random_wavelength = self.random_wavelength_multi_voigt
-            wavelength = random_wavelength(self.param['intensity'])
+            wavelength, label = random_wavelength(self.param['intensity'])
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
 
@@ -344,7 +367,7 @@ class XicsrtSourceGeneric(GeometryObject):
             c = const.physical_constants['speed of light in vacuum'][0]
             wavelength *= 1 - (np.einsum('j,ij->i', self.param['velocity'], direction) / c)
 
-        return wavelength
+        return wavelength, label
 
     def random_wavelength_voigt(self, size):
         #Units: wavelength (angstroms), natural_linewith (1/s), temperature (eV)
@@ -380,17 +403,19 @@ class XicsrtSourceGeneric(GeometryObject):
     def random_wavelength_multi_voigt(self, size):
         """
         Draw random wavelength samples from a multiline Voigt spectrum.
-        
-        Parameters: 
+
+        Parameters:
             size : int
                 Number of wavelength samples to draw.
 
-        Returns: 
+        Returns:
             wavelength : ndarray
                 Random wavelength samples drawn from the multiline Voigt distribution.
+            line_index : ndarray of int
+                Index of the line each sample was drawn from, shape (size,).
         """
 
-        wavelength = xicsrt_voigt_multi.multi_voigt_random(
+        wavelength, line_index = xicsrt_voigt_multi.multi_voigt_random(
             self.param['line_locations'],
             self.param['line_intensities'],
             self.param['line_sigmas'],
@@ -398,7 +423,7 @@ class XicsrtSourceGeneric(GeometryObject):
             size=size,
         )
 
-        return wavelength
+        return wavelength, line_index
 
     
     def random_wavelength_normal(self, size):

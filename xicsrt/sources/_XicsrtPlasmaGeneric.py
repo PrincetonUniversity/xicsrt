@@ -469,8 +469,10 @@ class XicsrtPlasmaGeneric(GeometryObject):
         profiler.stop('generate_direction')
 
         profiler.start('generate_wavelength')
-        rays['wavelength'] = self._generate_wavelengths(
+        rays['wavelength'], label = self._generate_wavelengths(
             bundle_input, m, bundle_index)
+        if label is not None:
+            rays['label'] = label
 
         # Doppler shift from the per-bundle plasma velocity.
         velocity = np.asarray(bundle_input['velocity'][m], dtype=np.float64)
@@ -571,10 +573,24 @@ class XicsrtPlasmaGeneric(GeometryObject):
         `wavelength_line_range`, and sampled with the batched mixture
         sampler.
 
-        This method was AI generated using Claude (Fable 5).
+        Returns
+        -------
+        wavelength : ndarray
+            Per-ray wavelength, shape (n_rays,).
+        label : ndarray of int or None
+            When `wavelength_dist == 'multi_voigt'`, the index of the
+            spectral line each ray was drawn from (see
+            :any:`xicsrt.tools.xicsrt_voigt_multi.multi_voigt_random_batched`);
+            `None` for every other `wavelength_dist`. `create_sources` uses
+            this to populate the optional `rays['label']` field (F035); the
+            "line index" interpretation is specific to `multi_voigt`
+            sampling, not a property of `label` in general.
+
+        This method was AI generated using Claude (Fable 5, Sonnet 5).
         """
         total_rays = len(bundle_index)
         wtype = str.lower(self.param['wavelength_dist'])
+        label = None
 
         if wtype == 'monochrome':
             wavelength = np.full(total_rays, self.param['wavelength'],
@@ -614,13 +630,13 @@ class XicsrtPlasmaGeneric(GeometryObject):
             if self.param['wavelength_line_range'] is not None:
                 locations, intensities, sigmas, gammas = self._filter_lines_by_wavelength(
                     locations, intensities, sigmas, gammas)
-            wavelength = xicsrt_voigt_multi.multi_voigt_random_batched(
+            wavelength, label = xicsrt_voigt_multi.multi_voigt_random_batched(
                 locations, intensities, sigmas, gammas, bundle_index)
 
         else:
             raise Exception(f'Wavelength distribution {wtype} unknown')
 
-        return wavelength
+        return wavelength, label
 
     def generate_rays(self):
         ## Create an empty list of ray bundles

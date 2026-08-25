@@ -9,7 +9,6 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
-| F035 | Always-computed per-ray line label for `multi_voigt` sampling | 2026-08-23 | Pending |
 | F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
 | F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
 | F009 | Fix `xics_jax` import consuming global RNG stream | 2026-07-28 | Pending |
@@ -22,6 +21,7 @@ order of the detailed entries below.
 | Feature | Description | Started | Status |
 |---|---|---|---|
 | F036 | Hollow-core (off-axis-peaked) Ti/Te physics constraint for W7-X profiles | 2026-08-25 | Done (2026-08-25) |
+| F035 | Always-computed per-ray line label for `multi_voigt` sampling | 2026-08-23 | Done (2026-08-26) |
 | F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Done (2026-08-23) |
 | F033 | Fix `xicsrt_config_task.py` CLI defaults clobbering `user_config_update` | 2026-08-23 | Done (2026-08-23) |
 | F032 | CLI for combining W7-X per-sample results into one ML training-set file | 2026-08-23 | Done (2026-08-23) |
@@ -90,7 +90,7 @@ F020).
 
 ## F035 - Always-computed per-ray line label for `multi_voigt` sampling
 Started: 2026-08-23
-Status: Pending
+Status: Done (2026-08-26)
 
 `xicsrt/tools/xicsrt_voigt_multi.py`'s `multi_voigt_random` and
 `multi_voigt_random_batched` already compute which discrete spectral line
@@ -111,6 +111,28 @@ per line. `XicsrtPlasmaW7x` will record the int-to-name mapping once as
 `config['scenario']['line_labels']` (a list indexed by the int label).
 
 Plan: `devel/plans/plan_F035_w7x_line_labels.md`.
+
+Implementation: `multi_voigt_random`/`multi_voigt_random_batched` always
+return `(wavelength, line_index)`. `XicsrtSourceGeneric.generate_wavelength`
+and `XicsrtPlasmaGeneric._generate_wavelengths` return `(wavelength,
+label)`, where `label` is `None` for every `wavelength_dist` except
+`multi_voigt` (the "line index" interpretation is specific to `multi_voigt`
+sampling, not a general property of `label`); `generate_rays`/
+`create_sources` set `rays['label'] = label` only when not `None`. jaxrt's
+`jaxrt/tools/_wavelength.py` (`sample`) and `jaxrt/sources/_generic.py`
+mirror this for the single-source path (jaxrt has no plasma sources). In
+`xicsrt_analysis/w7x_npablant`, `XicsrtPlasmaW7x` gained `get_line_labels()`
+(returns `line_table.labels` as a list, matching the line axis order used
+by `get_line_parameters`/`_eval_line_model`), and
+`xicsrt_w7x_npablant.initialize()` calls it once via `get_element(...,
+initialize=False)` to set `config['scenario']['line_labels']`. New/updated
+tests: `tests/test_voigt.py`, `tests/test_voigt_direct.py`,
+`tests/test_plasma_wavelength_line_filter.py` (label matches nearest line,
+reindexed correctly after `wavelength_line_range` filtering, absent for
+non-multi_voigt), `tests/jaxrt/test_engine.py::test_label_field_multi_voigt`,
+and `xicsrt_analysis/w7x_npablant`'s
+`test_initialize_sets_scenario_line_labels`. Verified: `pytest tests/` in
+`xicsrt` (71 passed) and in `xicsrt_analysis/w7x_npablant` (124 passed).
 
 ## F034 - Optional per-ray integer `label` field in the ray-data pipeline
 Started: 2026-08-23

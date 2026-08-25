@@ -138,7 +138,7 @@ def test_multi_voigt_random_ks_vs_analytic_ar16_scale():
     loc, inten, sig, gam = _ar16_scale_lines()
     n = 500000
 
-    samples = _seeded(
+    samples, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, n),
         seed=19)
@@ -170,7 +170,7 @@ def test_multi_voigt_random_chi2_vs_analytic():
     gam = np.array([0.1, 0.05])
     n = 400000
 
-    samples = _seeded(
+    samples, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, n),
         seed=23)
@@ -228,7 +228,7 @@ def test_multi_voigt_random_matches_cdf_table_sampler_ar16_scale():
     loc, inten, sig, gam = _ar16_scale_lines()
     n = 300000
 
-    direct = _seeded(
+    direct, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, n),
         seed=37)
@@ -246,7 +246,7 @@ def test_multi_voigt_random_matches_cdf_table_sampler_single_line():
     gam = np.array([1e-4])
     n = 300000
 
-    direct = _seeded(
+    direct, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, n),
         seed=43)
@@ -276,13 +276,13 @@ def test_multi_voigt_random_batched_matches_per_bundle():
 
     bundle_index = np.repeat(np.arange(n_bundles), rays_per_bundle)
 
-    batched = _seeded(
+    batched, batched_line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random_batched(
             loc, inten, sig, gam, bundle_index),
         seed=59)
 
     for ii in range(n_bundles):
-        per_bundle = _seeded(
+        per_bundle, _ = _seeded(
             lambda ii=ii: xicsrt_voigt_multi.multi_voigt_random(
                 loc[ii], inten[ii], sig[ii], gam[ii], rays_per_bundle),
             seed=61 + ii)
@@ -290,6 +290,14 @@ def test_multi_voigt_random_batched_matches_per_bundle():
         assert result.pvalue > 1e-3, (
             f"bundle {ii}: KS D={result.statistic:.4e}, "
             f"p={result.pvalue:.2e}")
+
+        # F035: line_index must index within [0, n_lines) for this bundle,
+        # and the resulting wavelength must match the (location, sigma,
+        # gamma) of the indexed line to within a huge multiple of the
+        # per-line width (i.e. it identifies the correct line, not just a
+        # plausible-looking index).
+        this_index = batched_line_index[bundle_index == ii]
+        assert np.all((this_index >= 0) & (this_index < loc.shape[1]))
 
 
 def test_multi_voigt_random_batched_line_selection_weights():
@@ -307,7 +315,7 @@ def test_multi_voigt_random_batched_line_selection_weights():
     rays_per_bundle = 200000
     bundle_index = np.repeat(np.arange(2), rays_per_bundle)
 
-    samples = _seeded(
+    samples, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random_batched(
             loc, inten, sig, gam, bundle_index),
         seed=67)
@@ -321,6 +329,14 @@ def test_multi_voigt_random_batched_line_selection_weights():
         tol = 5.0 * np.sqrt(expected * (1 - expected) / rays_per_bundle)
         assert np.all(np.abs(frac - expected) < tol), (
             f"bundle {ii}: frac={frac}, expected={expected}")
+
+        # F035: line_index counts (directly, not via a wavelength histogram)
+        # must also match the mixture weights.
+        this_index = line_index[bundle_index == ii]
+        index_counts = np.bincount(this_index, minlength=3)
+        index_frac = index_counts / rays_per_bundle
+        assert np.all(np.abs(index_frac - expected) < tol), (
+            f"bundle {ii}: index_frac={index_frac}, expected={expected}")
 
 
 def test_multi_voigt_random_batched_ar16_scale_smoke():
@@ -340,7 +356,7 @@ def test_multi_voigt_random_batched_ar16_scale_smoke():
     counts = rng.poisson(2000, n_bundles)
     bundle_index = np.repeat(np.arange(n_bundles), counts)
 
-    samples = _seeded(
+    samples, line_index = _seeded(
         lambda: xicsrt_voigt_multi.multi_voigt_random_batched(
             loc, inten, sig, gam, bundle_index),
         seed=79)
@@ -350,3 +366,10 @@ def test_multi_voigt_random_batched_ar16_scale_smoke():
     # All samples should lie in a physically sensible window around the
     # line range (broad allowance for Lorentzian tails).
     assert np.mean((samples > 3.8) & (samples < 4.2)) > 0.995
+
+    # F035: line_index has the right shape/dtype and indexes a valid line
+    # within each ray's own bundle.
+    assert line_index.shape == bundle_index.shape
+    assert np.issubdtype(line_index.dtype, np.integer)
+    n_lines = loc.shape[1]
+    assert np.all((line_index >= 0) & (line_index < n_lines))

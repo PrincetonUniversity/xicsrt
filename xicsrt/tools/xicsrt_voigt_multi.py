@@ -183,8 +183,10 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size):
 
     Returns
     -------
-    numpy.ndarray
+    random_x : numpy.ndarray
         Randomly sampled wavelengths, shape (size,).
+    line_index : numpy.ndarray of int
+        Index of the line each sample was drawn from, shape (size,).
 
     Notes
     -----
@@ -192,7 +194,7 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size):
     identical to, but not bit-identical with, the old CDF-table sampler for
     a given seed.
 
-    This function was AI generated using Claude (Fable 5).
+    This function was AI generated using Claude (Fable 5, Sonnet 5).
     """
     line_locations = np.asarray(line_locations, dtype=float)
     line_intensities = np.asarray(line_intensities, dtype=float)
@@ -211,7 +213,7 @@ def multi_voigt_random(line_locations, line_intensities, sigmas, gammas, size):
     random_x += np.random.normal(0.0, 1.0, size) * sigmas[line_index]
     random_x += np.random.standard_cauchy(size) * gammas[line_index]
 
-    return random_x
+    return random_x, line_index
 
 
 def multi_voigt_random_batched(
@@ -245,8 +247,11 @@ def multi_voigt_random_batched(
 
     Returns
     -------
-    numpy.ndarray
+    random_x : numpy.ndarray
         Randomly sampled wavelengths, shape (n_rays,).
+    line_index : numpy.ndarray of int
+        Index (within its own bundle's line list) of the line each ray was
+        drawn from, shape (n_rays,).
 
     Notes
     -----
@@ -257,7 +262,7 @@ def multi_voigt_random_batched(
     mixture weights (relative quantization ~1e-11 at 1e5 bundles), which
     is statistically undetectable at any achievable sample size.
 
-    This function was AI generated using Claude (Fable 5).
+    This function was AI generated using Claude (Fable 5, Sonnet 5).
     """
     line_locations = np.asarray(line_locations, dtype=float)
     line_intensities = np.asarray(line_intensities, dtype=float)
@@ -288,5 +293,5 @@ def multi_voigt_random_batched(
     random_x += np.random.normal(0.0, 1.0, n_rays) * sigmas.ravel()[flat_index]
     random_x += np.random.standard_cauchy(n_rays) * gammas.ravel()[flat_index]
 
-    return random_x
+    return random_x, line_index
 

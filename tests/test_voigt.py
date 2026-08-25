@@ -121,7 +121,7 @@ def test_multi_voigt_random_statistics():
     rng_state = np.random.get_state()
     try:
         np.random.seed(42)
-        samples = xicsrt_voigt_multi.multi_voigt_random(
+        samples, line_index = xicsrt_voigt_multi.multi_voigt_random(
             loc, inten, sig, gam, size=400000)
     finally:
         np.random.set_state(rng_state)
@@ -141,6 +141,12 @@ def test_multi_voigt_random_statistics():
     # Compare where the PDF is appreciable to avoid noisy empty-tail bins.
     mask = pdf > 0.02 * pdf.max()
     assert np.allclose(hist[mask], pdf[mask], atol=0.1 * pdf.max())
+
+    # F035: line_index must match the intensity-weighted mixture weights
+    # (here the two lines have equal intensity, so ~50/50).
+    assert set(np.unique(line_index)) <= {0, 1}
+    frac = np.mean(line_index == 0)
+    assert frac == pytest.approx(0.5, abs=0.01)
 
 
 def test_default_N_is_16():

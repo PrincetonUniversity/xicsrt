@@ -180,7 +180,8 @@ def test_label_field_present_and_inert():
     """
     F034: `new_rays` includes an always-present `label` field, which must
     pass through `xicsrt.jaxrt.raytrace` unchanged (all zeros, correct
-    shape, integer dtype) since no jaxrt source populates it.
+    shape, integer dtype) for a `wavelength_dist` other than `multi_voigt`
+    (see `test_label_field_multi_voigt` for the populated case, F035).
     """
     config = _base_config()
     results = xicsrt.jaxrt.raytrace(config)
@@ -192,6 +193,42 @@ def test_label_field_present_and_inert():
             assert history['label'].shape == history['mask'].shape
             assert history['label'].dtype.kind in ('i', 'u')
             assert np.all(history['label'] == 0)
+
+
+def test_label_field_multi_voigt():
+    """
+    F035: with `wavelength_dist = 'multi_voigt'`, `rays['label']` must be
+    populated with the sampled line index (matching the nearest configured
+    line center for every ray), for the jaxrt engine's single-source path.
+    """
+    line_locations = np.array([3.94, 3.95, 3.96])
+    config = _base_config()
+    config['sources']['source']['wavelength_dist'] = 'multi_voigt'
+    config['sources']['source']['line_locations'] = line_locations
+    config['sources']['source']['line_intensities'] = np.array([1.0, 1.0, 1.0])
+    config['sources']['source']['line_sigmas'] = np.array([1e-4, 1e-4, 1e-4])
+    config['sources']['source']['line_gammas'] = np.array([0.0, 0.0, 0.0])
+
+    results = xicsrt.jaxrt.raytrace(config)
+
+    # The narrow rocking curve Bragg-selects almost exclusively the line
+    # nearest the crystal's reflection wavelength, so only 'lost' (not
+    # 'found') is guaranteed to contain rays from every configured line.
+    for section in ('found', 'lost'):
+        history = results[section]['history']['source']
+        assert 'label' in history
+        assert history['label'].shape == history['wavelength'].shape
+        assert history['label'].dtype.kind in ('i', 'u')
+
+        expected_label = np.argmin(
+            np.abs(history['wavelength'][:, None] - line_locations[None, :]),
+            axis=1)
+        np.testing.assert_array_equal(history['label'], expected_label)
+
+    all_labels = np.concatenate([
+        results['found']['history']['source']['label'],
+        results['lost']['history']['source']['label']])
+    assert set(np.unique(all_labels)) == {0, 1, 2}
 
 
 def test_multiple_runs_combine():

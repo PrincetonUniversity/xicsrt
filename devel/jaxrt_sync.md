@@ -232,6 +232,21 @@ sessions must check this list before assuming the engines are in sync.
   (`xicsrt_analysis/w7x_npablant/xicsrt_spline_constrained.py`) is
   entirely within `xicsrt_analysis` and touches no `xicsrt` file. jaxrt has
   no plasma sources, so neither change requires a jaxrt change.
+- 2026-08-23, F035: no divergence introduced; both engines updated in
+  lockstep. `xicsrt_voigt_multi.py`'s `multi_voigt_random` /
+  `multi_voigt_random_batched` now always return `(wavelength,
+  line_index)` (no toggle) instead of just `wavelength`. Every call site
+  was updated for the new tuple return: numpy `sources/_XicsrtSourceGeneric.py`
+  (`generate_wavelength`/`random_wavelength_multi_voigt`) and
+  `sources/_XicsrtPlasmaGeneric.py` (`_generate_wavelengths`) now thread a
+  `line_index` (or `None` for non-multi_voigt distributions) out to
+  `create_sources`/`generate_rays`, which set `rays['label'] = line_index`
+  when not `None` (F034's opt-in `label` field). jaxrt's mirror,
+  `jaxrt/tools/_wavelength.py`'s `sample`, was updated the same way
+  (`(wavelength, line_index)`, `line_index=None` except for `multi_voigt`),
+  and `jaxrt/sources/_generic.py` sets the always-present `rays['label']`
+  (F034) from it. jaxrt has no plasma sources (see F014-F019 entry above),
+  so only the single-source path needed a jaxrt-side change.
 - 2026-08-23, F034: intentional convention divergence, no functional
   divergence. `objects/_RayArray.py` gained an optional, opt-in `label`
   field (per-ray int, absent unless a source sets it), matching how

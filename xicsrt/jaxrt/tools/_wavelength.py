@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# This file includes AI generated code using Claude (Fable 5)
+# This file includes AI generated code using Claude (Fable 5, Sonnet 5)
 """
 .. Authors
     Novimir Pablant <npablant@pppl.gov>
@@ -106,25 +106,41 @@ def _doppler_sigma(param):
 def sample(params, num, key):
     """
     Draw `num` wavelengths from the configured distribution.
+
+    Returns
+    -------
+    wavelength : jnp.ndarray, shape (num,)
+    label : jnp.ndarray of int64, shape (num,), or None
+        For the 'multi_voigt' distribution, the index of the line each ray
+        was drawn from (see :any:`xicsrt.tools.xicsrt_voigt_multi`); `None`
+        for every other distribution. The "line index" interpretation is
+        specific to `multi_voigt` sampling, not a property of `label` in
+        general. The caller (`sources/_generic.py`) uses this to populate
+        the always-present `rays['label']` field (F034/F035).
+
+    This function was AI generated using Claude (Fable 5, Sonnet 5).
     """
     name = params['name']
 
     if name == 'monochrome':
-        return jnp.full(num, params['wavelength'], dtype=jnp.float64)
+        return jnp.full(num, params['wavelength'], dtype=jnp.float64), None
 
     if name == 'uniform':
-        return jax.random.uniform(
+        wavelength = jax.random.uniform(
             key, (num,), minval=params['range'][0], maxval=params['range'][1])
+        return wavelength, None
 
     if name == 'gaussian':
-        return params['wavelength'] + params['sigma'] * jax.random.normal(key, (num,))
+        wavelength = params['wavelength'] + params['sigma'] * jax.random.normal(key, (num,))
+        return wavelength, None
 
     if name == 'voigt':
         # Direct Voigt sampling: center + Normal(0, sigma) + Cauchy(0, gamma).
         key_n, key_c = jax.random.split(key)
-        return (params['wavelength']
-                + params['sigma'] * jax.random.normal(key_n, (num,))
-                + params['gamma'] * jax.random.cauchy(key_c, (num,)))
+        wavelength = (params['wavelength']
+                      + params['sigma'] * jax.random.normal(key_n, (num,))
+                      + params['gamma'] * jax.random.cauchy(key_c, (num,)))
+        return wavelength, None
 
     if name == 'multi_voigt':
         # Mixture sampling: pick a line by intensity weight, then draw that
@@ -132,8 +148,9 @@ def sample(params, num, key):
         key_u, key_n, key_c = jax.random.split(key, 3)
         uniform = jax.random.uniform(key_u, (num,))
         index = jnp.searchsorted(params['cum_intensity'], uniform)
-        return (params['locations'][index]
-                + params['sigmas'][index] * jax.random.normal(key_n, (num,))
-                + params['gammas'][index] * jax.random.cauchy(key_c, (num,)))
+        wavelength = (params['locations'][index]
+                      + params['sigmas'][index] * jax.random.normal(key_n, (num,))
+                      + params['gammas'][index] * jax.random.cauchy(key_c, (num,)))
+        return wavelength, index.astype(jnp.int64)
 
     raise NotImplementedError(f"Wavelength sampler '{name}' unknown.")
