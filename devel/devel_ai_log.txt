@@ -1792,3 +1792,53 @@ Key prompts:
   review the plan and the areas in which review is needed. In particular,
   any 'physics' decisions should be flagged, while straight forward coding
   decisions do not need review."
+
+
+================================================================================
+2026-09-04 - F038: per-ray line labels through combine to the ML training set
+================================================================================
+
+Goal: implement F038 per its existing plan (`plan_F037_multi_species_
+spectra.md` section 5) -- get the F034/F035 per-ray `label` field through
+`combine_training_set` into the combined netCDF, and readable by
+`xicsrt_ml`. All code changes are in `xicsrt_analysis` and `xicsrt_ml`;
+this repo only tracks the feature status.
+
+Files modified:
+- devel/features_request.md (F038 moved Pending -> Done, implementation
+  notes added)
+- xicsrt_analysis/w7x_npablant/xicsrt_results_util.py
+  (`combine_training_set`)
+- xicsrt_analysis/w7x_npablant/tests/test_xicsrt_combine_task.py (+6 tests)
+- xicsrt_ml/xicsrt_ml/schema.py, dataset.py (`RayReader`)
+- xicsrt_ml/xicsrt_ml/tests/test_ray_reader_label.py (new, 6 tests)
+
+Key changes:
+- `combine_training_set` pads optional `label` into a `(sample, ray)`
+  int16 array (-1 beyond sample_count), mirroring `intersect`; raises if
+  `label` is present in some samples but not others.
+- Added a consistency check that `config__scenario__line_labels` is
+  identical across every combined sample (raises otherwise), since a
+  shared line table is required for the label indices to mean the same
+  thing across the whole file.
+- `xicsrt_ml`'s `RayReader.read()` gained a third return value (`label`,
+  or `None` if absent); `XicsXarrayDataset.__getitem__` updated for the
+  new signature but does not surface `label` yet -- no consumer exists
+  until the (separate, out-of-scope) training-loop augmentation feature.
+
+Key findings / gotchas:
+- Reproduced the plan's predicted failure exactly before fixing: ragged
+  `label` hit `np.stack` -> `ValueError: all input arrays must have the
+  same shape`.
+- The plan's open question about `config__scenario__line_labels`
+  surviving `to_netcdf` was moot: verified directly that a
+  `(sample, n_lines)` `<U` string array round-trips fine with both the
+  default and explicit `h5netcdf` engines; no attribute-based fallback
+  needed.
+- Full test suites green: xicsrt_analysis/w7x_npablant 127 passed (2
+  pre-existing, unrelated `xicsrt_contrib` import failures, confirmed
+  present before this change too); xicsrt_ml 386 passed.
+
+Key prompts:
+- "I would like to implement F038. Please use the existing saved feature
+  and plan."

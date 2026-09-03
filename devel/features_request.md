@@ -10,7 +10,6 @@ order of the detailed entries below.
 | Feature | Description | Started | Status |
 |---|---|---|---|
 | F039 | Te-dependent Li-like/He-like fraction (`li_fraction` frozen at 0.1) | 2026-09-03 | Pending (not started) |
-| F038 | Per-ray line labels through combine to the ML training set | 2026-09-03 | Pending (not started) |
 | F037 | Multi-species composite spectra; S XV / S XVI in the Ar16+ model | 2026-09-03 | Pending (not started) |
 | F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
 | F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
@@ -23,6 +22,7 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F038 | Per-ray line labels through combine to the ML training set | 2026-09-03 | Done (2026-09-04) |
 | F036 | Hollow-core (off-axis-peaked) Ti/Te physics constraint for W7-X profiles | 2026-08-25 | Done (2026-08-25) |
 | F035 | Always-computed per-ray line label for `multi_voigt` sampling | 2026-08-23 | Done (2026-08-26) |
 | F034 | Optional per-ray integer `label` field in the ray-data pipeline | 2026-08-23 | Done (2026-08-23) |
@@ -123,7 +123,7 @@ unaffected, since the satellite blend shifts the apparent line widths.
 
 ## F038 - Per-ray line labels through combine to the ML training set
 Started: 2026-09-03
-Status: Pending (not started)
+Status: Done (2026-09-04)
 
 Spans `xicsrt_analysis` and `xicsrt_ml`; no changes to core xicsrt.
 
@@ -163,6 +163,46 @@ stacking to a `(sample, n_lines)` `<U` array may not survive
 Scoped as a prerequisite within the F037 plan
 (`plan_F037_multi_species_spectra.md`, Part 3) but tracked separately
 because it is independently useful and independently testable.
+
+### Implementation notes (2026-09-04)
+
+Implemented per `plan_F037_multi_species_spectra.md` section 5, in
+`xicsrt_analysis` and `xicsrt_ml` (no `xicsrt` core changes).
+
+- Reproduced the predicted failure first: two flat files with
+  different-length `label` arrays raised
+  `ValueError: all input arrays must have the same shape` from
+  `np.stack`, confirming it had never been exercised since F035.
+- `xicsrt_analysis/w7x_npablant/xicsrt_results_util.py`
+  (`combine_training_set`): `label` is now popped and padded like
+  `intersect`, into a `(sample, ray)` `int16` array with `-1` beyond
+  `sample_count`. Raises if `label` is present in only some samples.
+  `config__scenario__line_labels` is now checked for exact equality
+  across every sample (raises otherwise), since combined `label`
+  indices are only meaningful under one shared line table.
+- The plan's open question about `config__scenario__line_labels`
+  surviving `to_netcdf` turned out to be moot: a `(sample, n_lines)`
+  `<U` string array round-trips cleanly with both the default
+  (`h5netcdf`-selected) and explicit `h5netcdf` engines with no special
+  handling; verified directly rather than adding an attribute-based
+  fallback.
+- `xicsrt_ml/xicsrt_ml/schema.py`: added `label`/`line_labels` field
+  names to `XarraySchema`.
+- `xicsrt_ml/xicsrt_ml/dataset.py`: `RayReader.read()` gained a third
+  return value, `label` (the same ray-slot slice as `local_x`/
+  `local_y`, or `None` if the file has no `label` dataset); added
+  `RayReader.has_label`. `XicsXarrayDataset.__getitem__` updated for the
+  new 3-tuple but does not yet surface `label` in its own return value --
+  no consumer exists yet; that is the (out-of-scope) training-loop
+  augmentation feature.
+- Tests: 6 new cases in `xicsrt_analysis/w7x_npablant/tests/
+  test_xicsrt_combine_task.py` (label padding, absent-label passthrough,
+  present-in-some-not-all error, line_labels mismatch error, line_labels
+  round-trip through `to_netcdf`). New file `xicsrt_ml/xicsrt_ml/tests/
+  test_ray_reader_label.py` (6 cases) for `RayReader`'s label reading.
+  Full suites: `xicsrt_analysis/w7x_npablant` 127 passed (2 pre-existing,
+  unrelated `xicsrt_contrib` import failures also present before this
+  change); `xicsrt_ml` 386 passed.
 
 ---
 
