@@ -1720,3 +1720,75 @@ Key prompts:
   interpretation of the label is specific to multi-voigt. Please use the
   generic name except for the specific case of the multi-voigt
   distribution."
+
+
+================================================================================
+2026-09-03 - Plan F037/F038/F039: multi-species spectra and sulfur contamination
+================================================================================
+
+Goal: plan (no implementation) the addition of S XV / S XVI contaminant
+lines to the Ar16+ ML training set, generalized to multi-species spectra.
+
+Files modified:
+- devel/features_request.md (F037, F038, F039 entries + Pending table)
+- devel/plans/plan_F037_multi_species_spectra.md (new)
+- devel/plans/review_F037_multi_species_spectra.md (new)
+
+Key changes:
+- F037: composite multi-species spectra in xics_jax; new TYPE=STATIC line
+  type, per-line atomic_mass, atomic_number column, CompositeSpectrumConfig.
+- F038: per-ray labels never reach the combined netCDF; prerequisite for
+  in-loop line-intensity augmentation.
+- F039: li_fraction frozen at 0.1 and Te-independent; larger error on the
+  primary Te observable than sulfur is.
+- Review file flags physics decisions (P1-P8) and explicitly excludes
+  routine coding decisions from review.
+
+Key findings / gotchas:
+- S XV is He-like S14+, S XVI is H-like S15+. xics_jax names by charge
+  number, so these are `s14`/`s15`. Easy to invert.
+- S XVI is charge state 15, colliding with Li-like Ar, which
+  _resolve_use_te_branch keys BRANCH_LILIKE off. Resolve branches per
+  component before concatenation; match on (atomic_number, charge_state).
+- SpectrumConfig.atomic_mass is a scalar; S is 11.6% Doppler-broader than
+  Ar at equal Ti, so it must become per-line. Breaking change, approved.
+- combine_training_set pads only `intersect`; ragged per-ray `label` hits
+  a generic np.stack and should raise ValueError. No test, no combined
+  .nc on disk -> apparently never exercised since F035. VERIFY FIRST.
+- mass_number/wavelength/linewidth in the plasma config are inert under
+  wavelength_dist='multi_voigt' (only monochrome/voigt branches read them).
+- Ray-drop augmentation preserves Poisson statistics downward only, so
+  samples are generated sulfur-rich (ratio 1.0) and augmented down.
+- No devel/jaxrt_sync.md entry needed: multi_voigt is species-agnostic in
+  both engines.
+
+Suggested follow-ups:
+- Verify the F038 combine failure empirically before implementing F037.
+- Resolve F039 before any Te training; requires an ionization-balance
+  data source (ADAS/ColRadPy/FLYCHK) not currently in the stack.
+
+Key prompts:
+- "I would like to add a new feature: include sulfur lines in Ar16+
+  spectrum. This feature will mean developing in multiple repositories
+  including xicsrt_analysis and xics_jax. ... I would like to build a new
+  atomic data file for 'S XV' and 'S XVI' that can be retrieved with
+  xics_jax, and modify xicsrt_analysis to accept multiple atomic data
+  inputs from different species and charge states. This is also important
+  for future models of the Ar17+ spectra which need to simulteaniously
+  inculde Fe24+, Mo32+ and another S line which I have not yet identified.
+  Please present a plan for adding 'S XV' and 'S XVI' lines to my training
+  set generation, and the generalization of multiple species spectra for
+  future training."
+- "0.1 to 1.0. Now that we have implemented line labels, I can take care
+  of augmentation of line intensities in the training loop instead of
+  needing to get this right in the training set, we should err on the side
+  of more rays so that augmentation of line intensity has more to work
+  with, and so I don't need to regenerate the data set in the future."
+- "The breaking API change is ok. Please add a new feature with explaination
+  for the li_fraction issue. Please write the feature and plan so that I can
+  start in a new session. Also I would like to review this plan with another
+  AI agent, please create another file in devel/plans/ with a similar naming
+  structure named review_FXXX_... with instructions for how to efficently
+  review the plan and the areas in which review is needed. In particular,
+  any 'physics' decisions should be flagged, while straight forward coding
+  decisions do not need review."

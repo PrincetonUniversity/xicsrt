@@ -9,6 +9,9 @@ order of the detailed entries below.
 
 | Feature | Description | Started | Status |
 |---|---|---|---|
+| F039 | Te-dependent Li-like/He-like fraction (`li_fraction` frozen at 0.1) | 2026-09-03 | Pending (not started) |
+| F038 | Per-ray line labels through combine to the ML training set | 2026-09-03 | Pending (not started) |
+| F037 | Multi-species composite spectra; S XV / S XVI in the Ar16+ model | 2026-09-03 | Pending (not started) |
 | F017 | Flux-surface-average to local flow conversion | 2026-07-31 | Pending (not started) |
 | F011 | Fix `XicsrtPlasmaCubic` ignoring `velocity` option (no Doppler shift) | 2026-07-30 | Pending |
 | F009 | Fix `xics_jax` import consuming global RNG stream | 2026-07-28 | Pending |
@@ -50,6 +53,186 @@ order of the detailed entries below.
 | F005 | Allow `XicsrtPlasmaVmec` to load VMEC or saved DESC equilibria | 2026-07-26 | Done (2026-07-26) |
 | F004 | Exploratory JAX-accelerated `tools_jax` for numpy OO engine | 2026-07-21 | Done (2026-07-25) |
 | F001 | Performance enhancement for `xicsrt_voigt_multi.py` | 2026-07-17 | Done (2026-08-06) |
+
+---
+
+## F039 - Te-dependent Li-like/He-like fraction (`li_fraction` frozen at 0.1)
+Started: 2026-09-03
+Status: Pending (not started)
+
+Spans `xics_jax` and `xicsrt_analysis`; no changes to core xicsrt.
+
+In the `use_te=True` Ar16+ atomic model, the Li-like dielectronic
+satellites (q, r, s, t, u, v -- the `BRANCH_LILIKE` path in
+`xics_jax/model/excitation.py`) scale as:
+
+    w_intensity * params.li_fraction * (rate(line) * k) / rate(w)
+
+`li_fraction` is the Li-like/He-like charge-state population ratio,
+i.e. n(Ar15+)/n(Ar16+). It is a genuine ionization-balance quantity and
+in reality varies strongly and monotonically with Te.
+
+In the current W7-X training-set pipeline it is never set.
+`_XicsrtPlasmaW7x._eval_line_model` passes only `{'scale_factor': 1.0}`
+to `ModelParams.from_dict`, so `li_fraction` falls through to its
+default of 0.1 (`xics_jax/model/params.py`). A repo-wide search for
+`li_fraction` in `xicsrt_analysis` returns zero hits. Every bundle, at
+every Te from `te_min` (200 eV) to 10 keV, therefore uses
+Li-like/He-like = 0.1.
+
+Why this matters more than it looks: `li_fraction` directly sets the
+satellite-to-resonance intensity ratio, which is the single most
+important Te diagnostic in the He-like spectrum and precisely the
+feature a Te-inference network would be expected to key on. Freezing it
+means the satellite/resonance ratio in the training set carries a
+Te dependence that comes only from the excitation rates, with the
+charge-state population dependence -- comparable in magnitude and
+opposite in sense over part of the range -- entirely missing. A network
+trained on this data would learn a Te mapping that does not exist in
+real spectra. The existing `te_min` = 200 eV cutoff masks the worst
+divergence but does nothing about the wrong Te dependence in the
+200 eV - 1 keV band where the satellites still carry real weight
+(measured I_tot/I_w: 126 at 200 eV, 6.1 at 500 eV, 2.75 at 1 keV).
+
+Note this is an error on the *primary* observable, whereas F037
+(sulfur contamination) is a correction for a few-percent contaminant.
+F039 should be resolved before any Te training is attempted; it does
+not block F037, and the two are independent.
+
+Scope sketch (not a plan):
+- Source a Te-dependent n(Ar15+)/n(Ar16+) curve. Candidates: ADAS/ColRadPy
+  ionization balance, FLYCHK, or a coronal-equilibrium calculation. The
+  choice, and whether transport-corrected (non-coronal) balance is
+  required for W7-X, is an open physics question.
+- Decide whether `li_fraction` becomes a Te-indexed lookup in `xics_jax`
+  (analogous to the existing Marchuk rate tables) or stays a free
+  parameter that `xicsrt_analysis` evaluates per bundle. The former keeps
+  the physics with the atomic data; the latter keeps `xics_jax` a pure
+  forward model.
+- Whether a residual free multiplier on the balance curve should remain,
+  to absorb transport and impurity-transport effects.
+- Re-verify `te_min`: with a correct fractional abundance the emissivity
+  should fall off smoothly, so the hard 200 eV step may become
+  unnecessary (or actively harmful).
+
+Consequence: any training set generated before this is fixed will need
+regeneration for Te work. Ti-only training is less affected, but not
+unaffected, since the satellite blend shifts the apparent line widths.
+
+---
+
+## F038 - Per-ray line labels through combine to the ML training set
+Started: 2026-09-03
+Status: Pending (not started)
+
+Spans `xicsrt_analysis` and `xicsrt_ml`; no changes to core xicsrt.
+
+F034/F035 added a per-ray integer `label` recording which spectral line
+each ray was sampled from, and `xicsrt_results_util.simplify_results`
+already writes it into each per-sample flat hdf5 when present. The chain
+stops there:
+
+- `combine_training_set` special-cases only `intersect` for ragged
+  NaN-padding into a `(sample, ray, axis)` array. `label` is
+  ragged in exactly the same way (its length is the per-sample found-ray
+  count) but falls through to the generic
+  `np.stack([config[key] for config in config_list])` path, which raises
+  `ValueError` on inhomogeneous shapes. There is no test covering a
+  flat file that contains `label`, and no combined `.nc` file exists in
+  the repo, so this path appears never to have been exercised since F035
+  landed. Verify the exact failure mode before fixing.
+- `xicsrt_ml` has zero references to `label` or `line_labels`. Its
+  `RayReader` reads only `schema.intersect`, and `XarraySchema` has no
+  label field.
+
+Required because it is a hard prerequisite for in-training-loop line
+intensity augmentation: to scale one line's contribution the loop must
+know which rays belong to that line. Without it, every line ratio in the
+training set is frozen at whatever the raytrace produced, and F037's
+sulfur amplitudes could not be varied after generation.
+
+Also persist the index-to-name map (`config__scenario__line_labels`,
+set by F035) into the combined file so augmentation can target lines by
+name (e.g. `s15:Lyb1`) rather than by a hardcoded integer index that
+would silently change meaning if the line table is edited. Note that
+this key is a per-sample list of strings and may itself need attention
+in `combine_training_set` (it is non-empty so it is not dropped, but
+stacking to a `(sample, n_lines)` `<U` array may not survive
+`to_netcdf` cleanly).
+
+Scoped as a prerequisite within the F037 plan
+(`plan_F037_multi_species_spectra.md`, Part 3) but tracked separately
+because it is independently useful and independently testable.
+
+---
+
+## F037 - Multi-species composite spectra; S XV / S XVI in the Ar16+ model
+Started: 2026-09-03
+Status: Pending (not started)
+
+Spans `xics_jax` (tracked there as FR-008) and `xicsrt_analysis`; no
+changes to core xicsrt.
+
+Two contaminating sulfur features are present in real W7-X Ar16+
+spectrometer data near 3.98-4.00 A, strong enough that they must be
+included in the ML training set -- especially for future Te training,
+which relies on line ratios. Each observed feature is an unresolved
+doublet, so four NIST lines are involved:
+
+| Ion | Ritz lambda (A) | Transition | A_ki (1/s) | NIST rel. int. |
+|---|---|---|---|---|
+| S XVI (S15+) | 3.99080124 | 1s 2S_1/2 - 3p 2P_3/2 | 1.0949e13 | 130 |
+| S XVI (S15+) | 3.99194352 | 1s 2S_1/2 - 3p 2P_1/2 | 1.0941e13 | 70 |
+| S XV  (S14+) | 3.997757   | 1s2 1S_0 - 1s5p 1P_1  | 3.82e12   | 50 |
+| S XV  (S14+) | 3.998749   | 1s2 1S_0 - 1s5p 3P_1  | --        | 2 |
+
+Source: NIST ASD, 3.98-4.00 A vacuum wavelength query. Note the
+spectroscopic-to-charge-number mapping: S XV is He-like S14+ and S XVI
+is H-like S15+; `xics_jax` names spectra by charge number, so these
+become `s14` and `s15`.
+
+All four fall inside the existing Ar16 model's 3.9449-4.0732 A span and
+overlap the Li-like j/k satellites (3.9900, 3.9941) and the z line
+(3.9944) -- the same satellite/resonance region a Te-from-line-ratios
+model depends on.
+
+Rather than special-casing sulfur, this feature generalizes `xics_jax`
+to composite multi-species spectra, which is also required for the
+future Ar17+ model (simultaneous Fe24+, Mo32+ and a further
+unidentified S line).
+
+Key elements:
+- New `TYPE = STATIC` line type: intensity = `slot_value * K`, in both
+  `use_te` modes, reusing the `K` column to carry fixed intra-ion
+  branching so each S ion has exactly one free amplitude.
+- Per-line `atomic_mass` on `LineTable` (breaking change to
+  `SpectrumConfig`, which currently carries a single scalar). Sulfur is
+  11.6% Doppler-broader than argon at equal Ti, and the Doppler width is
+  the Ti observable, so this cannot be approximated.
+- New `atomic_number` column, so species is never inferred from charge
+  state. Necessary because S XVI is charge state 15, colliding with
+  Li-like argon, which `_resolve_use_te_branch` keys `BRANCH_LILIKE` off.
+- `CompositeSpectrumConfig` composing named component spectra, with
+  branch resolution done per component *before* concatenation and
+  `element:label` label prefixing.
+
+Amplitudes `s14_ratio` / `s15_ratio` (each defined as total ion photons
+divided by Ar16+ w-line photons) are fixed at 1.0 rather than
+randomized, so that every sample sits at the augmentation ceiling;
+variation is applied in the training loop by statistics-preserving
+downward ray dropping (requires F038). Sulfur is excluded from the
+`shape_integral` / `emissivity_scale` calibration so Ar16+ photon
+statistics remain identical to existing training sets.
+
+Known accepted limitation: the S lines inherit the Ar16+ w-line radial
+emissivity profile, so their Doppler widths reflect an Ar-weighted Ti
+rather than their own emission-weighted Ti.
+
+Depends on F038 for the augmentation strategy to be usable.
+Independent of F039.
+
+See `plan_F037_multi_species_spectra.md` and
+`review_F037_multi_species_spectra.md`.
 
 ---
 
