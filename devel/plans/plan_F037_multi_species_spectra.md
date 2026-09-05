@@ -1,7 +1,9 @@
 # Plan F037 - Multi-species composite spectra; S XV / S XVI in the Ar16+ model
 
-Status: Pending (not started)
-Date: 2026-09-03
+Status: Pending (not started); reviewed 2026-09-04, see
+`review_F037_multi_species_spectra.md`. Review changes are folded in
+below and marked "(review)".
+Date: 2026-09-03, revised 2026-09-04
 
 Repos touched (feature tracking lives here in `xicsrt` per the
 F029/F030/F031 precedent; no core xicsrt code changes):
@@ -19,10 +21,18 @@ F039 (`li_fraction`) is independent and NOT addressed here.
 
 Two contaminating sulfur features appear in real W7-X Ar16+ spectrometer
 data near 3.98-4.00 A, strong enough to require inclusion in the ML
-training set. Each is an unresolved doublet, so four NIST lines are
-involved. They land on top of the Li-like j/k satellites and the z line,
-i.e. exactly the satellite/resonance region that a Te-from-line-ratios
-model keys on.
+training set. Each is an unresolved doublet. They land on top of the
+Li-like j/k satellites and the z line, i.e. exactly the
+satellite/resonance region that a Te-from-line-ratios model keys on.
+
+(review) The 3.998 A feature (S XV 1s2-1s5p) is one member of a Rydberg
+series. The next member, **1s2-1s6p at 3.95012 A, is on the detector
+0.92 mA redward of the Ar w line** at ~0.57x the 5p intensity, and
+1s2-1s7p (3.92193 A) is partially on-detector. 6p is therefore a direct
+contaminant of the primary Ti observable and must be included. The
+actual Ar16+ detector span is 3.9154-4.0239 A (all rows; 3.9406-4.0239
+on the mid row), computed from `xics_jax.geometry` for three
+calibration blocks.
 
 The same machinery is required for the future Ar17+ model (simultaneous
 Fe24+, Mo32+ and a further unidentified S line), so this is built as a
@@ -46,13 +56,15 @@ never re-derive it inline.
 
 | Decision | Value | Rationale |
 |---|---|---|
-| Lines included | All 4 | Doublet splitting is comparable to the instrumental width |
-| S XVI branching | gA-weighted 2.0015:1 | `Rel. Int.` (130:70 = 1.857) are rounded observational estimates; gA is the statistical result expected for Lyman-beta fine structure |
-| S XV branching | NIST rel. int. 50:2 | No A value published for the triplet component |
-| Amplitude values | `s14_ratio = s15_ratio = 1.0`, fixed | Maximizes downward-augmentation headroom |
-| Amplitude definition | total ion photons / Ar16+ w-line photons | Composes with the existing w-line emissivity convention (F015); directly measurable from real data |
+| Lines included (review) | Full NIST S XV 1s2-1s np series n=4..8 (singlets + 4p/5p triplet partners) and both S XVI Lyb components; off-detector members filtered as for Ar16 | 6p sits on the Ar w line; the series is physically tied together; user wants the wider set with filtering downstream |
+| S XV series ratios (review) | Frozen at NIST A-value ratios (electron-impact scaling, ~n^-3); one amplitude per ion | No data yet constrain 5p:6p:7p; revisit if recombination/CX flattening is found |
+| S XVI branching | gA-weighted, Lyb 1/2 = 0.4996 x Lyb 3/2 | `Rel. Int.` (130:70 = 1.857) are rounded observational estimates; gA is the statistical result for Lyman-beta fine structure, good to ~1% |
+| S XV triplet branching | NIST rel. int. (5p: 2:50, 4p: 5:100) | No A value published; ratio is actually Te-dependent (2-10%), immaterial for a nuisance line |
+| Amplitude values | `s14_ratio = s15_ratio = 1.0`, fixed | Maximizes downward-augmentation headroom; 0.5-1.0 x w has been observed at campaign startup, so 1.0 is physical |
+| Amplitude definition (review) | photons in one named **reference line** / Ar16+ w-line photons. S XV ref = 1s5p 1P1; S XVI ref = Lyb 3/2 | Same convention as Ar `w_intensity`; survives any wavelength filter; directly measurable |
+| Ratio storage (review) | YAML `static_ratios` + `static_reference` per component, NOT the `.xc_param` `K` column | Ratios are a provisional model assumption, not atomic data; avoids relabelling the dielectronic `K` |
 | Emissivity calibration | S excluded from `I_tot` | Keeps Ar16+ photon statistics identical to existing training sets |
-| S radial profile | Inherits Ar16+ w-line shape | Accepted v1 limitation; documented |
+| S radial profile | Inherits Ar16+ w-line shape | Accepted v1 limitation; S XV Ti error ~15-30% in high-Te cores, small at startup; S XVI <~10% |
 | Breaking API change | Approved | `SpectrumConfig.atomic_mass` scalar -> per-line |
 
 ### Why the amplitudes are fixed rather than randomized
@@ -74,49 +86,94 @@ plasma; it is deliberately sulfur-rich. Augmentation is mandatory for it
 to be used correctly. This must be stated in the combined-file
 `description` attribute.
 
+(review) Two constraints on the training loop follow and must also be
+stated there:
+
+1. Any per-sample normalization (total counts, max pixel, ...) must be
+   computed **after** thinning, never cached from the raw sulfur-rich
+   file; otherwise low-sulfur samples are mis-normalized in a way that
+   correlates with the nuisance.
+2. Thinning must select rays by `label` (F038), never by wavelength or
+   detector region: 6p is inside the w line.
+
 
 ## 2. Reference data
 
-### 2.1 Lines (NIST ASD, 3.98-4.00 A, vacuum)
+### 2.1 Lines (NIST ASD ver. 5.12, S XIV-XVI, 3.90-4.10 A, vacuum) (review)
 
-| Ion | Ritz lambda (A) | unc. | Transition | A_ki (1/s) | g_k | Rel. Int. |
-|---|---|---|---|---|---|---|
-| S XVI (S15+) | 3.99080124 | 5e-8 | 1s 2S_1/2 - 3p 2P_3/2 | 1.0949e13 | 4 | 130 |
-| S XVI (S15+) | 3.99194352 | 8e-8 | 1s 2S_1/2 - 3p 2P_1/2 | 1.0941e13 | 2 | 70 |
-| S XV  (S14+) | 3.997757   | 3e-6 | 1s2 1S_0 - 1s5p 1P_1  | 3.82e12   | 3 | 50 |
-| S XV  (S14+) | 3.998749   | 3e-6 | 1s2 1S_0 - 1s5p 3P_1  | --        | 3 | 2 |
+All NIST-tabulated lines in the window. Labels are the suggested
+`.xc_param` labels. "Det." is whether the line lands on the Ar16+
+detector (span 3.9154-4.0239 A over all rows).
 
-Use the **Ritz** wavelengths (8 significant figures) rather than the
-observed values (S XV observed is given only as 3.9983, 4 figures).
+| Ion | Label | Ritz lambda (A) | unc. | Transition | A_ki (1/s) | g_k | Rel. Int. | Det. |
+|---|---|---|---|---|---|---|---|---|
+| S XV (S14+) | He8s | 3.903850 | 3e-6 | 1s2 1S_0 - 1s8p 1P_1 | 9.21e11 | 3 | 20 | no |
+| S XV (S14+) | He7s | 3.921932 | 3e-6 | 1s2 1S_0 - 1s7p 1P_1 | 1.38e12 | 3 | 25 | high-y rows |
+| S XV (S14+) | He6s | 3.950117 | 3e-6 | 1s2 1S_0 - 1s6p 1P_1 | 2.19e12 | 3 | 35 | **yes, on Ar w** |
+| S XVI (S15+) | Lyb1 | 3.99080124 | 5e-8 | 1s 2S_1/2 - 3p 2P_3/2 | 1.0949e13 | 4 | 130 | yes, on k |
+| S XVI (S15+) | Lyb2 | 3.99194352 | 8e-8 | 1s 2S_1/2 - 3p 2P_1/2 | 1.0941e13 | 2 | 70 | yes, on j |
+| S XV (S14+) | He5s | 3.997757 | 3e-6 | 1s2 1S_0 - 1s5p 1P_1 | 3.82e12 | 3 | 50 | yes, z red wing |
+| S XV (S14+) | He5t | 3.998749 | 3e-6 | 1s2 1S_0 - 1s5p 3P_1 | -- | 3 | 2 | yes |
+| S XV (S14+) | He4s | 4.088498 | 3e-6 | 1s2 1S_0 - 1s4p 1P_1 | 7.53e12 | 3 | 100 | no |
+| S XV (S14+) | He4t | 4.090551 | 3e-6 | 1s2 1S_0 - 1s4p 3P_1 | -- | 3 | 5 | no |
 
-### 2.2 Derived branching ratios for the `K` column
+Use the **Ritz** wavelengths rather than the observed values (S XV
+observed values are 4 figures). Include the off-detector lines in the
+files; `exclude_outside_lines` / the detector range filter them, as for
+the Ar16 file's own out-of-range members.
 
-S XVI, gA-weighted:
+The Ar w line is at 3.9492 A (MZ file). He6s is +0.92 mA from it, about
+2 pixels at 0.426 mA/pixel, i.e. fully blended at any W7-X Ti.
+
+### 2.2 Fixed intra-ion ratios (YAML `static_ratios`) (review)
+
+Each ion has one free amplitude equal to the photon count of its
+**reference line**; every other line is a fixed multiple. Ratios live in
+the component YAML (section 3.5), not in the `.xc_param` `K` column.
+
+S XV, reference `He5s` = 1.0. Singlet ratios are NIST A-value ratios
+(equivalent to electron-impact excitation scaling, ~n^-3, to ~1%);
+triplet ratios are NIST relative intensities scaled to the same
+reference:
+
+    He4s  7.53e12 / 3.82e12 = 1.9712
+    He5s                    = 1.0
+    He6s  2.19e12 / 3.82e12 = 0.5733
+    He7s  1.38e12 / 3.82e12 = 0.3613
+    He8s  9.21e11 / 3.82e12 = 0.2411
+    He5t  2/50              = 0.0400
+    He4t  (5/100) * 1.9712  = 0.0986
+
+S XVI, reference `Lyb1` = 1.0, gA-weighted:
 
     gA(3/2) = 4 * 1.0949e13 = 4.3796e13
     gA(1/2) = 2 * 1.0941e13 = 2.1882e13
-    ratio   = 2.00146
-    K       = 0.666829  (3.99080124 A)
-              0.333171  (3.99194352 A)
+    Lyb2 / Lyb1 = 2.1882e13 / 4.3796e13 = 0.4996
 
-S XV, from relative intensities 50:2:
-
-    K       = 0.961538  (3.997757 A)
-              0.038462  (3.998749 A)
-
-`K` is normalized to sum to 1.0 within each ion, so the intensity slot
-value equals that ion's total photon count directly. Record the derivation
-arithmetic in the file header so it can be re-checked.
+Record the derivation arithmetic in the YAML comments so it can be
+re-checked. State there that the S XV n-series ratio assumes
+electron-impact excitation and is Te-independent by assumption
+(excitation thresholds rise ~37 eV 5p->6p and ~60 eV 6p->7p, so 6p/5p is
+~7% lower at 500 eV than at 3 keV; recombination/CX at low Te could
+flatten the series further -- both unmodelled), and that the triplet
+ratios are Te-dependent in reality (2-10% plausible) and frozen.
 
 ### 2.3 Other per-species constants
 
-- S atomic mass: 32.06 amu (Ar: 39.948). Doppler width ratio
+- S atomic mass: 32.06 amu (Ar: 39.948), both standard atomic weights;
+  be consistent (do not mix with isotope masses). Doppler width ratio
   `sqrt(39.948/32.06) = 1.11626`, i.e. S lines are 11.6% broader than Ar
   at equal Ti.
 - `atomic_number`: S = 16, Ar = 18.
-- `LINE_WIDTH` = A_ki. The S XV triplet has no published A value; use the
-  singlet's 3.82e12. Natural width here is ~1e-4 of the Doppler width, so
-  this substitution is immaterial -- but note it in the header.
+- `LINE_WIDTH` = A_ki (nominally the total upper-level decay rate; for
+  S XVI 3p the 3p->2s channel adds ~10%, immaterial). The S XV triplet
+  lines have no published A value; use the corresponding singlet's.
+  (review) Natural width here is ~1e-3 to 5e-3 of the Doppler width
+  over Ti = 0.2-4 keV (gamma = 0.0016 mA vs sigma = 0.33-1.46 mA), so
+  the substitution is immaterial -- note it and the convention in the
+  header.
+- `K`, `QD`, `ES` are all `0.0` for `STATIC` lines and unused; say so in
+  the header.
 
 
 ## 3. Part 1 -- `xics_jax` (FR-008)
@@ -130,15 +187,19 @@ Existing 13-column whitespace format, `;` comment header. Columns:
 `LABEL CHARGE_STATE TYPE WAVELENGTH LINE_WIDTH K QD ES N CONF_UPPER
 TERM_UPPER CONF_LOWER TERM_LOWER`.
 
-Header must record: NIST ASD as the source with the full query URL and
-retrieval date; the Roman-numeral-to-charge-number mapping; that `K`
-carries fixed intra-ion branching (NOT a dielectronic branching ratio);
-the gA derivation for S XVI; the A-value substitution for the S XV
-triplet; and that `QD`/`ES` are unused (set 0.0) for `STATIC` lines.
+Header must record: NIST ASD ver. 5.12 as the source with the full
+query URL and retrieval date; the Roman-numeral-to-charge-number
+mapping; that the file is pure atomic data and the intra-ion intensity
+ratios live in the spectrum YAML (review: NOT in `K`); that `K`, `QD`,
+`ES` are `0.0` and unused for `STATIC` lines; the `LINE_WIDTH`
+convention and the A-value substitution for the S XV triplets; and a
+note that the Ar16 file's k line must stay at the MZ value 3.9900 A
+because the historical +0.3/+0.6 mA "corrections" are consistent with an
+unmodelled Lyb1 blend (see review section 4).
 
-Suggested labels: `Lyb1`/`Lyb2` (S XVI), `He5s`/`He5t` (S XV). These get
-`element:` prefixes on composition, so they need only be unique within
-their own file.
+Labels (review): `Lyb1`/`Lyb2` (S XVI); `He4s`/`He4t`/`He5s`/`He5t`/
+`He6s`/`He7s`/`He8s` (S XV). These get `element:` prefixes on
+composition, so they need only be unique within their own file.
 
 Note: these are the first `.xc_param` files in the project not generated
 by the IDL `XC_BUILD_ATOMIC_DATA_FILES_*` routines. State that in the
@@ -146,28 +207,39 @@ header so provenance is not misattributed.
 
 ### 3.2 New `TYPE = STATIC`
 
-Third line type alongside `DIRECT` and `DIELECTRONIC`:
+Third line type alongside `DIRECT` and `DIELECTRONIC` (review: ratio
+source changed from `K` to a new `static_factor`):
 
-    intensity = slot_value * K
+    intensity = slot_value * static_factor
 
 Applied identically in both `use_te` modes. This is what collapses each
-sulfur ion to a single free amplitude while preserving its internal
-doublet structure.
+sulfur ion to a single free amplitude (the reference line's photon
+count) while preserving its internal line-ratio structure.
 
 Implementation:
 - `model/lines.py`: add `BRANCH_STATIC = 5` to the `BRANCH_*` constants.
   In `_resolve_use_te_branch`, return `(BRANCH_STATIC, RATE_NONE)` for
   `line_type == "STATIC"`.
-- `model/lines.py`: in `build_line_table`, set `intensity_factor = K` for
-  `STATIC` lines (`DIELECTRONIC` keeps `qd/1e13`, `DIRECT` keeps 1.0).
-  This makes the `use_te=False` path work with no further change.
+- `model/lines.py`: add `static_factor: np.ndarray` to `LineTable`
+  (include in `_hash_key`). In `build_line_table`, for `STATIC` lines
+  look the label up in `config.static_ratios`; the reference label gets
+  1.0; a `STATIC` label absent from `static_ratios` is an error (no
+  silent zero). Non-`STATIC` lines get `static_factor = 1.0`. Set
+  `intensity_factor = static_factor` for `STATIC` lines (`DIELECTRONIC`
+  keeps `qd/1e13`, `DIRECT` keeps 1.0), so the `use_te=False` path works
+  with no further change.
+- `model/lines.py`: guard -- `k` must never reach a `STATIC` line's
+  intensity by any path. Assert `k == 0.0` for `STATIC` lines on read of
+  the vendored files, or document and test that no branch multiplies
+  `k` for `BRANCH_STATIC`.
 - `model/excitation.py`: in `compute_use_te_intensities`, add a
   `BRANCH_STATIC` arm to the nested `jnp.where` chain computing
-  `slot_value * k`. Note the existing asymmetry -- the `use_te=True` path
-  does not apply `intensity_factor` -- so `K` must be applied explicitly
-  here rather than relying on `intensity_factor`.
+  `slot_value * static_factor`. Note the existing asymmetry -- the
+  `use_te=True` path does not apply `intensity_factor` -- so
+  `static_factor` must be applied explicitly here.
 - `io/line_file.py`: `type` is already `.upper()`-ed on read; no reader
-  change needed beyond confirming `STATIC` is accepted.
+  change needed beyond confirming `STATIC` is accepted. The file format
+  is unchanged (review: no new column).
 
 ### 3.3 Per-line `atomic_mass` (breaking change)
 
@@ -227,12 +299,44 @@ New YAML `xics_jax/data/spectra/ar16_s.yaml`:
     name: ar16_s
     components: [ar16, s14, s15]
 
+New component YAMLs `s14.yaml` / `s15.yaml` (review) carry the fixed
+ratios alongside the usual keys, e.g. for `s14`:
+
+    name: s14
+    line_source_file: 2026-09_NIST_S14.xc_param
+    atomic_mass: 32.06
+    atomic_number: 16
+    wavelength_ref: 3.997757
+    use_te_supported: true      # STATIC-only, no rates needed
+    intensity_param_names: [he5s_intensity]
+    intensity_rules:
+      - [STATIC, He5s, he5s_intensity]
+      - [STATIC, He5t, he5s_intensity]
+      - [STATIC, He4s, he5s_intensity]
+      ...                       # every S XV label -> the one slot
+    static_reference: He5s
+    static_ratios:              # relative to static_reference (= 1.0)
+      He4s: 1.9712              # 7.53e12 / 3.82e12  (NIST A ratio)
+      He6s: 0.5733              # 2.19e12 / 3.82e12
+      He7s: 0.3613              # 1.38e12 / 3.82e12
+      He8s: 0.2411              # 9.21e11 / 3.82e12
+      He5t: 0.0400              # NIST rel. int. 2/50
+      He4t: 0.0986              # (5/100) * 1.9712
+
+and for `s15`: `static_reference: Lyb1`, `static_ratios: {Lyb2: 0.4996}`
+(gA-weighted; derivation in a comment). `SpectrumConfig` gains
+`static_reference: str` and `static_ratios: tuple[tuple[str, float],
+...]` (tuple, so it stays hashable). Both are optional for components
+with no `STATIC` lines. Keep the physics-assumption comments from
+section 2.2 in these files: this is where a future reader will look
+when the n-series ratio is revisited.
+
 `load_spectrum_config` detects the `components` key and returns a
 composite; keep the `lru_cache` (frozen and hashable). Decide how
 `use_te` composes -- recommendation: it is a property of the *composite*,
-and `use_te_supported` is the AND over components that actually need
-rates. `STATIC`-only components (s14, s15) have no rate requirement and
-must not veto `use_te` for the composite.
+and `use_te_supported` is the AND over components that contain any
+non-`STATIC` line. `STATIC`-only components (s14, s15) have no rate
+requirement and must not veto `use_te` for the composite.
 
 `build_composite_line_table(composite_config)`:
 
@@ -278,9 +382,9 @@ All in `w7x_npablant/`.
 | Site | Change |
 |---|---|
 | `sources/_XicsrtPlasmaW7x.py` `_eval_line_model`, `get_line_labels` | Replace the two hardcoded `load_spectrum_config('ar16', use_te=True)` calls with a `spectrum_name` config option (default `'ar16_s'`) |
-| `sources/_XicsrtPlasmaW7x.py` `default_config` | Add `spectrum_name`, `s14_ratio`, `s15_ratio`; required because `strict_config_check` is True |
+| `sources/_XicsrtPlasmaW7x.py` `default_config` | Add `spectrum_name`, `s14_ratio`, `s15_ratio`; required because `strict_config_check` is True. (review) Document them as I(S XV He5s)/I(Ar w) and I(S XVI Lyb1)/I(Ar w) -- reference-line photon counts, not ion totals |
 | `sources/_XicsrtPlasmaW7x.py` `_eval_line_model` | `w_mask = labels == 'W'` -> `'ar16:W'` |
-| `sources/_XicsrtPlasmaW7x.py` `_eval_line_model` | Pass `s14_ratio`/`s15_ratio` into `ModelParams.from_dict` alongside `scale_factor` |
+| `sources/_XicsrtPlasmaW7x.py` `_eval_line_model` | Pass `s14_ratio`/`s15_ratio` into `ModelParams.from_dict` as the `s14:he5s_intensity` / `s15:lyb1_intensity` slots, alongside `scale_factor` |
 | `sources/_XicsrtPlasmaW7x.py` `_full_spectrum_factor` | `I_tot` must sum **Ar components only** (see 4.1) |
 | `sources/_XicsrtPlasmaW7x.py` `check_param` | Update the "models the Ar16+ spectrum" message |
 | `xicsrt_w7x_npablant.py` `get_config` | **Delete** `mass_number`, `wavelength`, `linewidth` (see 4.2) |
@@ -306,9 +410,15 @@ add the sulfur contribution as a separate additive term that does not
 feed `shape_integral`. Use the `atomic_number` / label prefix to select,
 never a wavelength range or a hardcoded index.
 
-Expect the total ray count per sample to rise. Confirm the increase is
-consistent with `s14_ratio + s15_ratio` relative to the w line and that
-run time / `max_rays` headroom is still acceptable.
+Expect the total ray count per sample to rise. (review) With the
+reference-line definition and the full line set, the S photon load in
+w-line units is `s14_ratio * sum(static_ratios on detector)` +
+`s15_ratio * 1.4996`; at ceiling that is roughly 1.6-1.9 (S XV,
+depending on how much of He7s is on-detector) + 1.5 (S XVI) ~ 3.3
+w-equivalents, against an Ar `I_tot/I_w` of ~2.75 at 1 keV -- i.e. up
+to ~+100% rays at 1 keV, proportionally less at low Te where Ar
+satellites dominate `I_tot`. Confirm the measured increase matches this
+and that run time / `max_rays` headroom is still acceptable.
 
 ### 4.2 Deleting the inert options
 
@@ -388,13 +498,32 @@ change is being made on either side).
 - **Training-loop intensity augmentation.** Downward-only Bernoulli ray
   dropping. Preserves Poisson statistics exactly; upward scaling would
   not and must never be added. File separately once F038 lands.
-- **F039 `li_fraction`.** Independent, and a larger error on the primary
-  observable than sulfur is. Should be fixed before Te training.
-- **Sulfur-specific radial emissivity profiles.** Accepted v1 limitation.
-- **The unidentified Ar17+ sulfur line.** Not yet identified.
+- **F039 `li_fraction`.** Independent. (review) Which of F037/F039 is
+  the larger error depends on the target: for **Te**, F039 is larger
+  (q/r/s/t satellites are comparable to w at 200 eV-1 keV) and must be
+  fixed before Te training; for **Ti**, F037 is larger (He6s directly
+  broadens the w line) and must be fixed, with 6p included, before Ti
+  training.
+- **Sulfur-specific radial emissivity profiles.** Accepted v1 limitation
+  (S XV Ti error ~15-30% in high-Te cores; S XVI <~10%).
+- **S XV n-series ratio flexibility.** One amplitude per ion, ratios
+  frozen at electron-impact scaling. Promote to one amplitude per upper
+  n only if data show recombination/CX flattening.
+- **Lyb dielectronic satellites; Te dependence of the S XV triplet
+  ratios.** Few-percent effects; accepted omissions.
+- **The unidentified Ar17+ sulfur line.** Not yet identified. (review)
+  Lead: S XVI Lyg (1s-4p) scales to ~3.784 A, inside the Ar17+ window;
+  verify against NIST when that model is built.
 - **Fe24+ / Mo32+ composites.** Enabled by this work but not built here;
   Mo32 line data does not exist yet and the Ar17 `use_te` path is
-  unsupported.
+  unsupported. Mo is traces-only on W7-X and not diagnostic.
+- **Research items surfaced by the review** (not F037): test whether
+  unmodelled sulfur explains (a) the historical apparent k-line shift,
+  (b) the z/k vs w/n=3 vs Thomson Te disagreement, (c) the w-line Ti
+  being ~165 eV high in many discharges (prediction: a red asymmetry of
+  w that scales with the 3.998 A feature). PHA and HEXOS can bound
+  typical post-startup S levels. The S line files from this feature are
+  the tool for that investigation.
 
 
 ## 8. Verification
@@ -402,27 +531,41 @@ change is being made on either side).
 1. `pytest` green in `xics_jax`, including the bit-for-bit `ar16` golden
    test (3.6), and in `xicsrt_analysis` (`w7x_npablant/tests/`).
    Note the 2 pre-existing `xarray` collection errors per F020.
-2. `evaluate_spectrum('ar16_s')` over 3.94-4.08 A: exactly 4 sulfur lines
-   at the tabulated Ritz wavelengths; S line sigma / Ar line sigma =
-   1.11626 at equal Ti; S XVI doublet intensity ratio = 2.0015; each S
-   ion's total = its slot value.
-3. Composite line count = 184 (ar16) + 2 + 2 = 188; labels all prefixed;
-   no duplicate labels.
+2. `evaluate_lines('ar16_s')` (unfiltered): exactly 9 sulfur lines at
+   the tabulated Ritz wavelengths (7 S XV, 2 S XVI); S line sigma / Ar
+   line sigma = 1.11626 at equal Ti; per-line intensities equal
+   `slot * static_ratios[label]` with the reference line equal to the
+   slot value exactly; S XVI Lyb1/Lyb2 = 2.0015; He6s/He5s = 0.5733.
+   (review) Then with a 3.9154-4.0239 A filter: 6 sulfur lines remain
+   (He7s, He6s, Lyb1, Lyb2, He5s, He5t) and the reference lines' values
+   are unchanged by the filter.
+3. Composite line count = 184 (ar16) + 7 + 2 = 193 unfiltered; labels
+   all prefixed; no duplicate labels.
 4. S XVI resolves to `BRANCH_STATIC`, not `BRANCH_LILIKE` (the charge
-   state 15 collision, 3.4).
+   state 15 collision, 3.4). `k` is `0.0` on every `STATIC` line and no
+   branch multiplies it.
 5. `verify_ray_calibration.py`: Ar16+ ray-count relative std unchanged
    from the current 0.10 over 50 seeds.
 6. End-to-end: 5-sample training set -> combine -> confirm `label`
    present and `-1`-padded, `line_labels` retrievable, and S-labelled
-   rays land in the expected detector region.
+   rays land in the expected detector region. (review) Specifically
+   check that `s14:He6s` rays land within ~2 pixels of `ar16:W` rays --
+   this is the blend the whole review turned on.
 7. Confirm the combined-file `description` attribute states that the set
-   is deliberately sulfur-rich and requires augmentation.
+   is deliberately sulfur-rich, requires augmentation by `label`, and
+   that per-sample normalization must be computed post-thinning.
+8. (review) Environment note: `jax`/`xics_jax` are not on the default
+   pyenv interpreter on the development Mac; the `desc` pyenv has them.
+   Run the `xics_jax` checks there.
 
 
-## 9. Open questions for the reviewer
+## 9. Review
 
-Flagged in detail in `review_F037_multi_species_spectra.md`. In brief:
-the gA-vs-observed branching choice, the missing S XV triplet A value,
-the shared-emissivity-profile approximation, the "sulfur-rich then
-augment down" dataset design, and whether excluding sulfur from the
-emissivity calibration is the right normalization convention.
+Reviewed 2026-09-04. Brief: `review_request_F037_multi_species_spectra.md`.
+Findings and the decisions log: `review_F037_multi_species_spectra.md`.
+All review outcomes are folded into this plan and marked "(review)".
+The one blocking finding was the omission of S XV 1s6p on the Ar w line
+(section 2.1); the other changes are the reference-line amplitude
+definition, moving the fixed ratios from the `K` column to YAML
+`static_ratios`, the corrected natural-width magnitude, and the Ti/Te
+ordering relative to F039.

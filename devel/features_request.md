@@ -94,10 +94,11 @@ divergence but does nothing about the wrong Te dependence in the
 200 eV - 1 keV band where the satellites still carry real weight
 (measured I_tot/I_w: 126 at 200 eV, 6.1 at 500 eV, 2.75 at 1 keV).
 
-Note this is an error on the *primary* observable, whereas F037
-(sulfur contamination) is a correction for a few-percent contaminant.
-F039 should be resolved before any Te training is attempted; it does
-not block F037, and the two are independent.
+Note this is an error on the primary *Te* observable. F039 should be
+resolved before any Te training is attempted; it does not block F037,
+and the two are independent. (F037 review, 2026-09-04: for *Ti* the
+ordering is reversed -- S XV 1s6p sits 0.92 mA from the Ar w line and
+directly broadens the Ti observable, so F037 is the larger Ti error.)
 
 Scope sketch (not a plan):
 - Source a Te-dependent n(Ar15+)/n(Ar16+) curve. Candidates: ADAS/ColRadPy
@@ -217,24 +218,22 @@ Two contaminating sulfur features are present in real W7-X Ar16+
 spectrometer data near 3.98-4.00 A, strong enough that they must be
 included in the ML training set -- especially for future Te training,
 which relies on line ratios. Each observed feature is an unresolved
-doublet, so four NIST lines are involved:
+doublet: S XVI Lyman-beta (3.99080 / 3.99194 A) on the k/j satellites,
+and S XV 1s2-1s5p (3.99776 / 3.99875 A) on the z red wing.
 
-| Ion | Ritz lambda (A) | Transition | A_ki (1/s) | NIST rel. int. |
-|---|---|---|---|---|
-| S XVI (S15+) | 3.99080124 | 1s 2S_1/2 - 3p 2P_3/2 | 1.0949e13 | 130 |
-| S XVI (S15+) | 3.99194352 | 1s 2S_1/2 - 3p 2P_1/2 | 1.0941e13 | 70 |
-| S XV  (S14+) | 3.997757   | 1s2 1S_0 - 1s5p 1P_1  | 3.82e12   | 50 |
-| S XV  (S14+) | 3.998749   | 1s2 1S_0 - 1s5p 3P_1  | --        | 2 |
+The 2026-09-04 review found the 5p feature is one member of the S XV
+1s2-1s np Rydberg series, and that **1s2-1s6p (3.95012 A) is on the
+detector 0.92 mA redward of the Ar w line** at ~0.57x the 5p intensity,
+with 1s7p (3.92193 A) partially on-detector. 6p is therefore a direct
+contaminant of the primary Ti observable. The line files now carry the
+full NIST S XV n=4..8 series plus both Lyb components (9 lines), with
+off-detector members filtered downstream. Actual Ar16+ span:
+3.9154-4.0239 A.
 
-Source: NIST ASD, 3.98-4.00 A vacuum wavelength query. Note the
+Source: NIST ASD ver. 5.12, S XIV-XVI, 3.90-4.10 A vacuum. Note the
 spectroscopic-to-charge-number mapping: S XV is He-like S14+ and S XVI
 is H-like S15+; `xics_jax` names spectra by charge number, so these
 become `s14` and `s15`.
-
-All four fall inside the existing Ar16 model's 3.9449-4.0732 A span and
-overlap the Li-like j/k satellites (3.9900, 3.9941) and the z line
-(3.9944) -- the same satellite/resonance region a Te-from-line-ratios
-model depends on.
 
 Rather than special-casing sulfur, this feature generalizes `xics_jax`
 to composite multi-species spectra, which is also required for the
@@ -242,9 +241,13 @@ future Ar17+ model (simultaneous Fe24+, Mo32+ and a further
 unidentified S line).
 
 Key elements:
-- New `TYPE = STATIC` line type: intensity = `slot_value * K`, in both
-  `use_te` modes, reusing the `K` column to carry fixed intra-ion
-  branching so each S ion has exactly one free amplitude.
+- New `TYPE = STATIC` line type: intensity = `slot_value *
+  static_factor`, in both `use_te` modes. Each S ion has exactly one
+  free amplitude, the photon count of a named reference line (S XV
+  1s5p 1P1; S XVI Lyb 3/2); the other lines are fixed multiples given
+  by `static_ratios` in the component YAML (NIST A-value ratios for the
+  S XV series, gA weighting for Lyb). The `.xc_param` files stay pure
+  atomic data; the `K` column is not reused.
 - Per-line `atomic_mass` on `LineTable` (breaking change to
   `SpectrumConfig`, which currently carries a single scalar). Sulfur is
   11.6% Doppler-broader than argon at equal Ti, and the Doppler width is
@@ -256,23 +259,30 @@ Key elements:
   branch resolution done per component *before* concatenation and
   `element:label` label prefixing.
 
-Amplitudes `s14_ratio` / `s15_ratio` (each defined as total ion photons
-divided by Ar16+ w-line photons) are fixed at 1.0 rather than
-randomized, so that every sample sits at the augmentation ceiling;
+Amplitudes `s14_ratio` / `s15_ratio` (each the reference-line photon
+count divided by Ar16+ w-line photons) are fixed at 1.0 rather than
+randomized, so that every sample sits at the augmentation ceiling (0.5-
+1.0 x w has been observed at campaign startup, so 1.0 is physical);
 variation is applied in the training loop by statistics-preserving
-downward ray dropping (requires F038). Sulfur is excluded from the
+downward ray dropping by `label` (requires F038), with any per-sample
+normalization computed post-thinning. Sulfur is excluded from the
 `shape_integral` / `emissivity_scale` calibration so Ar16+ photon
 statistics remain identical to existing training sets.
 
-Known accepted limitation: the S lines inherit the Ar16+ w-line radial
-emissivity profile, so their Doppler widths reflect an Ar-weighted Ti
-rather than their own emission-weighted Ti.
+Known accepted limitations: the S lines inherit the Ar16+ w-line radial
+emissivity profile (S XV Ti error ~15-30% in high-Te cores, small at
+startup; S XVI <~10%); the S XV n-series ratios assume electron-impact
+excitation and are Te-independent by assumption; Lyb satellites and the
+Te dependence of the S XV triplet ratios are omitted.
 
-Depends on F038 for the augmentation strategy to be usable.
-Independent of F039.
+Depends on F038 for the augmentation strategy to be usable. Ordering
+relative to F039: F039 first for Te training, F037 first for Ti
+training (6p on w).
 
-See `plan_F037_multi_species_spectra.md` and
-`review_F037_multi_species_spectra.md`.
+See `plan_F037_multi_species_spectra.md`,
+`review_request_F037_multi_species_spectra.md` (what to review), and
+`review_F037_multi_species_spectra.md` (findings; complete 2026-09-04,
+outcomes folded into the plan).
 
 ---
 

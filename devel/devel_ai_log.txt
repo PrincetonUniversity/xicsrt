@@ -1842,3 +1842,59 @@ Key findings / gotchas:
 Key prompts:
 - "I would like to implement F038. Please use the existing saved feature
   and plan."
+
+
+================================================================================
+2026-09-04 - F037 review: physics/atomic-data review of the multi-species plan
+================================================================================
+
+Goal: interactive physics review of `plan_F037_multi_species_spectra.md`
+with the domain expert, one item at a time, then fold outcomes back into
+the plan. No code changes; docs and devel tracking only.
+
+Files modified:
+- devel/plans/review_F037_multi_species_spectra.md (new: findings,
+  decisions log)
+- devel/plans/review_F037_... -> review_request_F037_... (renamed brief)
+- devel/plans/plan_F037_multi_species_spectra.md (review outcomes folded
+  in, marked "(review)")
+- devel/features_request.md (F037 entry; F039 cross-reference)
+- AGENTS.md (review-file naming convention bullet)
+
+Key changes:
+- Blocking finding: S XV 1s2-1s6p (3.95012 A) is on-detector 0.92 mA
+  redward of the Ar w line at ~0.57x the 5p line; 7p partially on. Plan
+  line set extended to the full NIST S XV n=4..8 series + both Lyb.
+- Amplitude redefined as a named reference line (He5s, Lyb1) so it
+  survives wavelength filtering; fixed ratios moved from the `.xc_param`
+  `K` column to YAML `static_ratios`/`static_reference` with a new
+  `LineTable.static_factor`.
+- gA Lyb branching, triplet A-value stand-in, shared emissivity profile,
+  S-excluded calibration, and sulfur-rich-then-thin design all upheld.
+- F037/F039 ordering stated per target: F039 first for Te, F037 for Ti.
+
+Key findings / gotchas:
+- Real Ar16+ span is 3.9154-4.0239 A (from `xics_jax.geometry`, three
+  calibration blocks agree); the "3.4-4.1" figure was a typo.
+- Plan's natural-width magnitude was off 10x (gamma/sigma ~1e-3, not
+  1e-4); conclusion unchanged.
+- Unmodelled sulfur plausibly explains three long-standing anomalies
+  (k-line apparent shift, z/k vs w/n=3 Te mismatch, w Ti ~165 eV high);
+  recorded as research items with the w red-asymmetry as the test.
+- `jax`/`xics_jax` only importable from the `desc` pyenv on this Mac.
+- Live NIST ASD fetches were blocked; user supplied a saved `.mhtml`.
+
+Key prompts:
+- "I would like you to review a pending feature F037. Please read the
+  feature, plan, and review files. I am a world leading expert in this
+  field, so please ask me questions as needed. I would like to work slowly
+  through the physics and atomic-physics together."
+- "I would like your review to be saved into a file in devel/ please
+  suggest a good naming scheme for plan/make-review-plan/review."
+- "For now I would like to assume electron-impact excitation and use a
+  single parameter."
+- "I don't really like the idea of overloading the k-column. It seems
+  better to add a new column so there is no physics confusion to a human
+  reader trying to understand the atomic data file in the future."
+- "P4-a, yes YAML static_ratios. I agree with the P8 ordering statement.
+  Please write the review, then update the plan."

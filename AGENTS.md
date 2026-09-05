@@ -133,6 +133,7 @@ leading underscore. Config selects an element via `class_name`.
 - Completion: Upon successful implementation and verification, ask the user if the feature is done. If so mark as "Done" in `devel/features_request.md` and include a brief note on the implementation details.
 - Summary tables: `devel/features_request.md` opens with a "Pending" and a "Done" summary table (feature id, one-phrase description, start date, status), each sorted highest feature number first. Whenever a feature entry is added, moved between Pending/Done, or has its status/description changed, update the matching row in both tables in the same edit.
 - Plan files: store feature implementation plans under `devel/plans/`, named `plan_F0XX_<slug>.md` using the tracked feature's id (the lowest id if a plan spans a range, e.g. `plan_F014_lalston_integration.md` for F014-F019). Reference the plan file from its feature entry/entries in `devel/features_request.md`.
+- Review files: when a plan is reviewed, the brief given to the reviewer (what to review, what to skip, output format) is `review_request_F0XX_<slug>.md` and the reviewer's findings are `review_F0XX_<slug>.md`, both alongside the plan in `devel/plans/` with the same `<slug>`. Fold accepted review outcomes back into the plan (marked "(review)") rather than leaving the plan and review in disagreement; a later review round appends a dated section to the existing review file instead of creating a new one.
 
 ## Coding Standards
 
