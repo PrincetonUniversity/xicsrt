@@ -9,6 +9,7 @@ build
 doc_build
 xicsrt_contrib
 tutorial
+worktrees
 
 ## Data files
 *.nc
