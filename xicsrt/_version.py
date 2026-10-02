@@ -1,3 +1,4 @@
+# This file includes AI generated code using Claude (Sonnet 5.5)
 """
 Version Description:
 major.minor.revision
@@ -14,5 +15,5 @@ revision:
   - New release that does not break any compatibility.
 """
 
-__version__="0.10.0"
-__version_date__ = "2026-08-23"
+__version__="0.10.1"
+__version_date__ = "2026-10-02"
